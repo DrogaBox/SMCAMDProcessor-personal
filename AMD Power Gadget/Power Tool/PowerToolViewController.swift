@@ -41,16 +41,10 @@ class PowerToolViewController: NSViewController, NSWindowDelegate {
     @IBOutlet weak var boardHelpButton: NSButton!
     @IBAction func boardHelp(_ sender: Any) {
         let alert = NSAlert()
-        alert.messageText = "To enable motherboard display:"
-        alert.informativeText = """
-        Open your OpenCore config file,
-        
-        Go to Misc -> Security -> ExposeSensitiveData,
-        
-        Set the value to 0x08 to expose board information.
-        """
+        alert.messageText = NSLocalizedString("To enable motherboard display:", comment: "")
+        alert.informativeText = NSLocalizedString("Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.", comment: "")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Done")
+        alert.addButton(withTitle: NSLocalizedString("Done", comment: ""))
         alert.beginSheetModal(for: view.window!, completionHandler: nil)
     }
     @IBOutlet weak var cpbSupportedBox: NSButton!

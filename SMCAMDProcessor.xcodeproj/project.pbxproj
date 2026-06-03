@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B5F3A1032B7C010300ABCDEF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B5F3A1002B7C010000ABCDEF /* Localizable.strings */; };
 		5B72086C247C884C00BF7492 /* ISSuperIOIT86XXEFamily.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5B72086A247C884C00BF7492 /* ISSuperIOIT86XXEFamily.hpp */; };
 		5B72086D247C884C00BF7492 /* ISSuperIOIT86XXEFamily.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5B72086B247C884C00BF7492 /* ISSuperIOIT86XXEFamily.cpp */; };
 		AABB001100001002 /* TelemetryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100001001 /* TelemetryModel.swift */; };
@@ -70,6 +71,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B5F3A1012B7C010100ABCDEF /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B5F3A1022B7C010200ABCDEF /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5B72086A247C884C00BF7492 /* ISSuperIOIT86XXEFamily.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ISSuperIOIT86XXEFamily.hpp; sourceTree = "<group>"; };
 		5B72086B247C884C00BF7492 /* ISSuperIOIT86XXEFamily.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ISSuperIOIT86XXEFamily.cpp; sourceTree = "<group>"; };
 		AABB001100001001 /* TelemetryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryModel.swift; sourceTree = "<group>"; usesTabs = 0; };
@@ -186,6 +189,7 @@
 		B56162C52400EF770006A7D8 /* AMD Power Gadget */ = {
 			isa = PBXGroup;
 			children = (
+				B5F3A1002B7C010000ABCDEF /* Localizable.strings */,
 				B5735D3924724AC9002BA4DE /* GraphView */,
 				B595D3E124166F6000B704F7 /* Resources */,
 				B5F46D80240E6F19009F2961 /* ProcessorModel.swift */,
@@ -514,6 +518,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B5F3A1032B7C010300ABCDEF /* Localizable.strings in Resources */,
 				B595D3E52416702000B704F7 /* SF-Pro-Rounded-Semibold.otf in Resources */,
 				B595D3E42416701D00B704F7 /* SF-Pro-Rounded-Medium.otf in Resources */,
 				B56162CB2400EF780006A7D8 /* Assets.xcassets in Resources */,
@@ -597,6 +602,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
+		B5F3A1002B7C010000ABCDEF /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B5F3A1012B7C010100ABCDEF /* en */,
+				B5F3A1022B7C010200ABCDEF /* es */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
 		B56162CC2400EF780006A7D8 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (

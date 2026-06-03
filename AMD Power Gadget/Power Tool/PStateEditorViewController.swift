@@ -135,27 +135,19 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
 
     func alertInvaildInput(){
         let alert = NSAlert()
-        alert.messageText = "Invaild Input"
-        alert.informativeText = "Please type in numbers in hexadecimal."
+        alert.messageText = NSLocalizedString("Invalid Input", comment: "")
+        alert.informativeText = NSLocalizedString("Please type in numbers in hexadecimal.", comment: "")
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "Done")
+        alert.addButton(withTitle: NSLocalizedString("Done", comment: ""))
         alert.beginSheetModal(for: view.window!, completionHandler: nil)
     }
 
     func alertNoPrivilege(){
         let alert = NSAlert()
-        alert.messageText = "Unable to Set PStateDef"
-        alert.informativeText = """
-        Action was denied as current user does not have enough privilege,
-        or was canceled by current user.
-
-
-        Run AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'
-
-        Otherwise, click 'Once' in the warning message to allow this change.
-        """
+        alert.messageText = NSLocalizedString("Unable to Set PStateDef", comment: "")
+        alert.informativeText = NSLocalizedString("Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.", comment: "")
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "Done")
+        alert.addButton(withTitle: NSLocalizedString("Done", comment: ""))
         alert.beginSheetModal(for: view.window!, completionHandler: nil)
     }
 
@@ -171,11 +163,11 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
         }
 
         let alert = NSAlert()
-        alert.messageText = "Your changes will not be saved"
-        alert.informativeText = "Click apply to save changes before closing this windows."
+        alert.messageText = NSLocalizedString("Your changes will not be saved", comment: "")
+        alert.informativeText = NSLocalizedString("Click apply to save changes before closing this windows.", comment: "")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Cancel")
-        alert.addButton(withTitle: "Close without saving")
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Close without saving", comment: ""))
         alert.beginSheetModal(for: view.window!) { (res) in
             if res == NSApplication.ModalResponse.alertSecondButtonReturn {
                 self.closeActually()
@@ -204,10 +196,10 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
 
         guard let arr = NSArray(contentsOf: url) as? [UInt64] else {
             let alert = NSAlert()
-            alert.messageText = "Invalid File"
-            alert.informativeText = "The selected file could not be read or is not a valid pstate file."
+            alert.messageText = NSLocalizedString("Invalid File", comment: "")
+            alert.informativeText = NSLocalizedString("The selected file could not be read or is not a valid pstate file.", comment: "")
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
             alert.beginSheetModal(for: view.window!, completionHandler: nil)
             return
         }
