@@ -114,7 +114,7 @@ struct MainDashboardView: View {
         case .fanControl: FanControlContentView(model: model)
         case .profiles:   ProfilesContentView(model: model)
         case .advanced:   AdvancedContentView(model: model)
-        case .menuBar:    MenuBarConfigView()
+        case .menuBar:    MenuBarConfigView(model: model)
         case .systemInfo: SystemInfoContentView(model: model)
         }
     }
@@ -1647,6 +1647,7 @@ struct MenuBarPreview: View {
 
 // MARK: - Menu Bar Config Tab
 struct MenuBarConfigView: View {
+    @ObservedObject var model: TelemetryModel
     @State private var cfg = MenuBarConfig.shared
     @State private var needsRestart = false
 
@@ -1699,10 +1700,9 @@ struct MenuBarConfigView: View {
                             get: { cfg.fanIndex },
                             set: { cfg.fanIndex = $0; notify() }
                         )) {
-                            Text("Fan 1").tag(0)
-                            Text("Fan 2").tag(1)
-                            Text("Fan 3").tag(2)
-                            Text("Fan 4").tag(3)
+                            ForEach(0..<max(1, model.fans.count), id: \.self) { idx in
+                                Text(LocalizedStringKey("Fan \(idx + 1)")).tag(idx)
+                            }
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 200)

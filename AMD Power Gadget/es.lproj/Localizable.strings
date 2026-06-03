@@ -85,6 +85,15 @@
 "AMD Power Tool" = "AMD Power Tool";
 "SMC Fans" = "SMC Fans";
 
+"Fan 1" = "Ventilador 1";
+"Fan 2" = "Ventilador 2";
+"Fan 3" = "Ventilador 3";
+"Fan 4" = "Ventilador 4";
+"Fan 5" = "Ventilador 5";
+"Fan 6" = "Ventilador 6";
+"Fan 7" = "Ventilador 7";
+"Fan 8" = "Ventilador 8";
+
 /* Alerts */
 "To enable motherboard display:" = "Para habilitar la visualización de la placa madre:";
 "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Abrí tu archivo de configuración de OpenCore,\n\nAndá a Misc -> Security -> ExposeSensitiveData,\n\nEstablecé el valor en 0x08 para exponer la información de la placa.";
@@ -100,3 +109,8 @@
 "Invalid File" = "Archivo Inválido";
 "The selected file could not be read or is not a valid pstate file." = "El archivo seleccionado no pudo ser leído o no es un archivo pstate válido.";
 "OK" = "Aceptar";
+
+/* Dynamic format strings */
+"Avg: %.2f Ghz, Max: %.2f Ghz" = "Prom.: %.2f GHz, Máx.: %.2f GHz";
+"%.2f °C" = "%.2f °C";
+"%.2f Watt" = "%.2f W";
