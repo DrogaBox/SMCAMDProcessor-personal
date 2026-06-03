@@ -2,7 +2,7 @@
 //  KeyImplementations.cpp
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 2/12/20.
+//  Created by trulyspinach, modified by Droga (2026) on 2/12/20.
 //
 
 #include "KeyImplementations.hpp"

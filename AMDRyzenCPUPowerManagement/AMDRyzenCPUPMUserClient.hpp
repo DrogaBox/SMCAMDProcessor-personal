@@ -2,7 +2,7 @@
 //  AMDRyzenCPUPowerManagementUserClient.hpp
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 2/4/20.
+//  Created by trulyspinach, modified by Droga (2026) on 2/4/20.
 //
 
 #ifndef AMDRyzenCPUPowerManagementUserClient_hpp

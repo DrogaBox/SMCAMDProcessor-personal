@@ -2,7 +2,7 @@
 //  SystemMonitorViewController.swift
 //  AMD Power Gadget
 //
-//  Created by trulyspinach on 5/16/20.
+//  Created by trulyspinach, modified by Droga (2026) on 5/16/20.
 //
 
 import Cocoa
@@ -106,7 +106,7 @@ class SystemMonitorViewController: NSViewController, NSTableViewDelegate, NSTabl
     }
     
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-        return 30
+        return 42
     }
     
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -170,5 +170,70 @@ extension SystemMonitorViewController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         SystemMonitorViewController.activeSelf = nil
         AppDelegate.updateDockIcon()
+    }
+}
+
+class AMDFanSliderCell: NSSliderCell {
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        // Calculate slider metrics
+        let minValue = self.minValue
+        let maxValue = self.maxValue
+        let currentValue = self.doubleValue
+        
+        let fraction = CGFloat(max(0.0, min(1.0, (currentValue - minValue) / (maxValue - minValue))))
+        
+        let knobSize: CGFloat = 14.0
+        let trackHeight: CGFloat = 4.0
+        
+        // Track bounds: horizontally padded by knobSize/2, vertically centered
+        let trackPadding = knobSize / 2
+        let trackWidth = cellFrame.width - (trackPadding * 2)
+        if trackWidth <= 0 { return }
+        
+        let trackRect = NSRect(
+            x: cellFrame.minX + trackPadding,
+            y: cellFrame.minY + (cellFrame.height - trackHeight) / 2,
+            width: trackWidth,
+            height: trackHeight
+        )
+        
+        // Draw track background (subtle dark gray)
+        let trackPath = NSBezierPath(roundedRect: trackRect, xRadius: trackHeight / 2, yRadius: trackHeight / 2)
+        NSColor(deviceWhite: 0.25, alpha: 1.0).setFill()
+        trackPath.fill()
+        
+        // Draw track active part (vibrant blue or system accent)
+        let activeWidth = trackWidth * fraction
+        if activeWidth > 0 {
+            let activeRect = NSRect(
+                x: trackRect.minX,
+                y: trackRect.minY,
+                width: activeWidth,
+                height: trackHeight
+            )
+            let activePath = NSBezierPath(roundedRect: activeRect, xRadius: trackHeight / 2, yRadius: trackHeight / 2)
+            NSColor.systemBlue.setFill()
+            activePath.fill()
+        }
+        
+        // Calculate knob rect
+        let knobX = trackRect.minX + activeWidth - (knobSize / 2)
+        let knobY = cellFrame.minY + (cellFrame.height - knobSize) / 2
+        let knobRect = NSRect(x: knobX, y: knobY, width: knobSize, height: knobSize)
+        
+        // Draw knob shadow
+        let shadowPath = NSBezierPath(ovalIn: knobRect.insetBy(dx: -1, dy: -1))
+        NSColor(deviceWhite: 0.0, alpha: 0.2).setFill()
+        shadowPath.fill()
+        
+        // Draw knob circle
+        let knobPath = NSBezierPath(ovalIn: knobRect)
+        NSColor.white.setFill()
+        knobPath.fill()
+        
+        // Draw subtle border around knob
+        NSColor(deviceWhite: 0.75, alpha: 1.0).setStroke()
+        knobPath.lineWidth = 1.0
+        knobPath.stroke()
     }
 }

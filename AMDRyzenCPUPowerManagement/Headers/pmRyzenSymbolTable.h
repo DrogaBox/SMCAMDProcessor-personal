@@ -2,7 +2,7 @@
 //  pmRyzenSymbolTable.c
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 9/2/20.
+//  Created by trulyspinach, modified by Droga (2026) on 9/2/20.
 //
 
 

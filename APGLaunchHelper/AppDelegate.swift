@@ -2,7 +2,7 @@
 //  AppDelegate.swift
 //  APGLaunchHelper
 //
-//  Created by trulyspinach on 7/30/21.
+//  Created by trulyspinach, modified by Droga (2026) on 7/30/21.
 //
 
 import Cocoa

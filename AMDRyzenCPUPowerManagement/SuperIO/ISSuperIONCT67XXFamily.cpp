@@ -2,7 +2,7 @@
 //  ISSuperIODevice.cpp
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 5/14/20.
+//  Created by trulyspinach, modified by Droga (2026) on 5/14/20.
 //
 
 #include "ISSuperIONCT67XXFamily.hpp"

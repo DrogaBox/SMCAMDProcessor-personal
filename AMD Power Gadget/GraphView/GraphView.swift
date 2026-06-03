@@ -2,7 +2,7 @@
 //  GraphView.swift
 //  AMD Power Gadget
 //
-//  Created by trulyspinach on 2/22/20.
+//  Created by trulyspinach, modified by Droga (2026) on 2/22/20.
 //
 
 import Cocoa
