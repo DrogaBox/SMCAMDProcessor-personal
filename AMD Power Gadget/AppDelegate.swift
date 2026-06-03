@@ -19,7 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 
     @IBAction func openPage(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/trulyspinach/SMCAMDProcessor")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
     }
 
     @IBAction func gadget(_ sender: Any) {

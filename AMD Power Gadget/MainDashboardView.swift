@@ -1916,7 +1916,7 @@ struct SystemInfoContentView: View {
                 SectionTitle("Links")
                 HStack(spacing: 10) {
                     TahoeButton(label: "GitHub Repository", icon: "link", accent: .tahoeAccentCyan) {
-                        NSWorkspace.shared.open(URL(string: "https://github.com/trulyspinach/SMCAMDProcessor")!)
+                        NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
                     }
                 }
             }

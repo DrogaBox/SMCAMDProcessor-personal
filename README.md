@@ -1,7 +1,7 @@
 # SMCAMDProcessor & AMD Power Gadget (Tahoe Edition)
 
-[![Github release](https://img.shields.io/github/downloads/trulyspinach/SMCAMDProcessor/total.svg?color=pink)](https://github.com/trulyspinach/SMCAMDProcessor/releases)
-![Github release](https://img.shields.io/github/repo-size/trulyspinach/SMCAMDProcessor.svg?color=blue)
+[![Github release](https://img.shields.io/github/downloads/DrogaBox/SMCAMDProcessor-personal/total.svg?color=pink)](https://github.com/DrogaBox/SMCAMDProcessor-personal/releases)
+![Github release](https://img.shields.io/github/repo-size/DrogaBox/SMCAMDProcessor-personal.svg?color=blue)
 
 XNU kernel extensions for power management and monitoring of AMD Zen processors on macOS, coupled with a premium, optimized GUI application: **AMD Power Gadget**.
 
@@ -94,3 +94,13 @@ All telemetry queries are performed directly through safe reads on Zen SMN regis
 * **aluveitie** for improvements and macOS Sequoia/Tahoe adaptations.
 * **mauricelos**, **Lorys89**, **mbarbierato** for SMC SuperIO chip drivers.
 
+## AMD-OSX Community Acknowledgements
+
+This project would not be possible without the extensive research, development, and support provided by the **AMD-OSX** community. Special recognition goes to:
+
+* **Shaneee**: Administrator and core developer of AMD-OSX, whose dedication and technical leadership keep the community thriving.
+* **AlGrey**: Developer of the core AMD Vanilla kernel patches, which serve as the foundation for running macOS on Zen processors.
+* **Edhawk**: Respected forum moderator and helper, whose continuous support and detailed guides have helped countless users configure their systems.
+* **CorpGhost**: Valued forum contributor, widely recognized for motherboard patching, ACPI solutions, and helping users resolve complex configuration issues.
+* **Royal**: Discord server moderator and helper, for maintaining the community platform and providing essential support to Ryzentosh users.
+* **The AMD-OSX Community**: All the forum moderators, Discord staff, developers, and active testers who contribute their time and feedback to keep the Ryzentosh ecosystem active and stable.

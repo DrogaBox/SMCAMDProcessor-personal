@@ -53,7 +53,7 @@ class SystemMonitorViewController: NSViewController, NSTableViewDelegate, NSTabl
             let res = alert.runModal()
             
             if res == .alertSecondButtonReturn {
-                NSWorkspace.shared.open(URL(string: "https://github.com/trulyspinach/SMCAMDProcessor/issues/66")!)
+                NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal/issues")!)
             }
             
         } else {driverLoaded = true}
