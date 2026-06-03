@@ -2,7 +2,7 @@
 //  CPUBarLayer.swift
 //  AMD Power Gadget
 //
-//  Created by trulyspinach on 3/5/20.
+//  Created by trulyspinach, modified by Droga (2026) on 3/5/20.
 //
 
 import Cocoa

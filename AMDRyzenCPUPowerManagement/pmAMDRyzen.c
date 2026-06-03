@@ -2,7 +2,7 @@
 //  pmAMDRyzen.c
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 3/27/20.
+//  Created by trulyspinach, modified by Droga (2026) on 3/27/20.
 //
 
 #include "pmAMDRyzen.h"
@@ -110,7 +110,7 @@ void pmRyzen_init_PState(){
     uint64_t p1 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1);
     uint64_t p1fid = (uint64_t)((p0spd * 0.80F) / 200.0F * (float)((p1 >> 8) & 0x1f));
     
-    wrmsr64(MSR_PSTATE_0 + 1, (p1 & ~0xFFULL) | p1fid | (1ULL << 63));
+    pmRyzen_wrmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1, (p1 & ~0xFFULL) | p1fid | (1ULL << 63));
 }
 
 inline void set_PState(pmProcessor_t *cpu, uint8_t state){

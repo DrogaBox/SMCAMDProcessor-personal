@@ -2,7 +2,7 @@
 //  pmAMDRyzen.h
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 3/27/20.
+//  Created by trulyspinach, modified by Droga (2026) on 3/27/20.
 //
 
 #ifndef pmAMDRyzen_h

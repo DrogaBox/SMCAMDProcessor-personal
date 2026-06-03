@@ -2,7 +2,7 @@
 //  PowerToolViewController.swift
 //  AMD Power Gadget
 //
-//  Created by trulyspinach on 3/3/20.
+//  Created by trulyspinach, modified by Droga (2026) on 3/3/20.
 //
 
 import Cocoa
@@ -33,6 +33,7 @@ class PowerToolViewController: NSViewController, NSWindowDelegate {
     @IBOutlet var vsView: NSVisualEffectView!
     @IBOutlet weak var boxView: NSBox!
     func toggleTranslucency(enabled : Bool) {
+        guard vsView != nil, boxView != nil else { return }
         vsView.state = enabled ? .active : .inactive
         boxView.isTransparent = enabled
     }
@@ -215,7 +216,7 @@ class PowerToolViewController: NSViewController, NSWindowDelegate {
         vaildStatesClock = ProcessorModel.shared.getVaildPStateClocks()
         let pstateCur = ProcessorModel.shared.getPState()
         let s = ProcessorModel.shared.getPPM()
-        let pdt = vaildStatesClock.map{ "\(Int($0))Mhz" }
+        let pdt = vaildStatesClock.map { $0.isNaN || $0.isInfinite ? "0Mhz" : "\(Int($0))Mhz" }
         overviewSpeedShift.setOptions(newOptions: pdt, selection: s ? -1 : pstateCur)
     }
     

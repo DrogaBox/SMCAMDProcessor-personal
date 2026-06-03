@@ -2,7 +2,7 @@
 //  ISSuperIONCT6683.cpp
 //  AMDRyzenCPUPowerManagement
 //
-//  Created by trulyspinach on 5/17/20.
+//  Created by trulyspinach, modified by Droga (2026) on 5/17/20.
 //
 
 #include "ISSuperIONCT668X.hpp"

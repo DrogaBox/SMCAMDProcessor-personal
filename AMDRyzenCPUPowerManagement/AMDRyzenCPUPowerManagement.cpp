@@ -273,9 +273,8 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     cpuFamily = ((cpuid_eax >> 20) & 0xff) + ((cpuid_eax >> 8) & 0xf);
     cpuModel = ((cpuid_eax >> 16) & 0xf) + ((cpuid_eax >> 4) & 0xf);
     
-    //Only 17h Family are supported offically by now.
-    // EDIT: add check bypass for 19h Zen 3 processors
-    cpuSupportedByCurrentVersion = (cpuFamily == 0x17 || cpuFamily == 0x19)? 1 : 0;
+    // Support for Zen (17h), Zen 2/3/4 (19h), and Zen 5 (1Ah)
+    cpuSupportedByCurrentVersion = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A)? 1 : 0;
     IOLog("AMDCPUSupport::start Family %02Xh, Model %02Xh\n", cpuFamily, cpuModel);
     
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
@@ -393,9 +392,29 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     IOLog("AMDCPUSupport stopped\n");
     
     stopWorkLoop();
-    timerEvent_main->cancelTimeout();
-    workLoop->removeEventSource(timerEvent_main);
-    timerEvent_main->release();
+    
+    if (timerEvent_main) {
+        timerEvent_main->cancelTimeout();
+        if (workLoop) {
+            workLoop->removeEventSource(timerEvent_main);
+        }
+        timerEvent_main->release();
+        timerEvent_main = nullptr;
+    }
+    
+    if (timerEvent_tempe) {
+        timerEvent_tempe->cancelTimeout();
+        if (workLoop) {
+            workLoop->removeEventSource(timerEvent_tempe);
+        }
+        timerEvent_tempe->release();
+        timerEvent_tempe = nullptr;
+    }
+    
+    if (workLoop) {
+        workLoop->release();
+        workLoop = nullptr;
+    }
     
     if(superIO){
         for (int i = 0; i < superIO->getNumberOfFans(); i++) {
@@ -403,6 +422,7 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
         }
 
         delete superIO;
+        superIO = nullptr;
     }
 
     PMstop();
@@ -650,8 +670,7 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
 
     uint32_t energyValue = (uint32_t)(msr_value_buf & 0xffffffff);
 
-    uint64_t energyDelta = (lastUpdateEnergyValue <= energyValue) ?
-    energyValue - lastUpdateEnergyValue : UINT32_MAX - lastUpdateEnergyValue;
+    uint32_t energyDelta = energyValue - (uint32_t)lastUpdateEnergyValue;
 
     double seconds = (ctsc - pwrLastTSC) / (double)(xnuTSCFreq);
     double e = (pwrEnergyUnit * energyDelta) / (seconds);

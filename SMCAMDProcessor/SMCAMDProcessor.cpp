@@ -80,7 +80,7 @@ bool SMCAMDProcessor::init(OSDictionary *dictionary){
 }
 
 void SMCAMDProcessor::free(void){
-    
+    IOService::free();
 }
 
 bool SMCAMDProcessor::start(IOService *provider){
@@ -101,5 +101,9 @@ bool SMCAMDProcessor::start(IOService *provider){
 }
 
 void SMCAMDProcessor::stop(IOService *provider){
-    
+    if (vsmcNotifier) {
+        vsmcNotifier->remove();
+        vsmcNotifier = nullptr;
+    }
+    IOService::stop(provider);
 }

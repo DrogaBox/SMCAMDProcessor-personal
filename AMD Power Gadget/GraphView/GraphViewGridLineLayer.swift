@@ -2,7 +2,7 @@
 //  GraphViewGridLineLayer.swift
 //  AMD Power Gadget
 //
-//  Created by trulyspinach on 5/18/20.
+//  Created by trulyspinach, modified by Droga (2026) on 5/18/20.
 //
 
 import Cocoa
