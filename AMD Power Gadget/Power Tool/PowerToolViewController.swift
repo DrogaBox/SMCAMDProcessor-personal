@@ -237,7 +237,7 @@ class PowerToolViewController: NSViewController, NSWindowDelegate {
     }
     
     @IBAction func openGitHub(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/trulyspinach/SMCAMDProcessor")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
     }
     
     func suffixNumber(number:NSNumber) -> String {
