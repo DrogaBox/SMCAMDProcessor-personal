@@ -93,11 +93,11 @@ public:
     char kMODULE_VERSION[12]{};
     
     /**
-     *  MSRs supported by AMD 17h CPU from:
+     *  MSRs supported by AMD 17h/19h/1Ah CPU from:
      *  https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/blob/master/LibreHardwareMonitorLib/Hardware/Cpu/Amd17Cpu.cs
      * and
-     * Processor Programming Reference for AMD 17h CPU,
-     *
+     * Processor Programming Reference for AMD Family 17h/19h/1Ah CPUs,
+     * Linux kernel k10temp driver (drivers/hwmon/k10temp.c)
      */
     
     static constexpr uint32_t kCOFVID_STATUS = 0xC0010071;
@@ -107,6 +107,22 @@ public:
     static constexpr uint32_t kF17H_TEMP_OFFSET_FLAG = 0x80000;
     static constexpr uint32_t kF18H_TEMP_OFFSET_FLAG = 0x60000;
     static constexpr uint8_t kFAMILY_17H_PCI_CONTROL_REGISTER = 0x60;
+    
+    /**
+     *  CCD (Core Complex Die) temperature register offsets.
+     *  These offsets are added to kF17H_M01H_THM_TCON_CUR_TMP (0x59800)
+     *  to get the per-CCD temperature register addresses.
+     *
+     *  Values sourced from Linux kernel k10temp.c:
+     *  - 0x154: Family 17h (Zen/Zen+/Zen2), Family 19h models 00-5Fh (Zen3/3+)
+     *  - 0x308: Family 19h models 60-7Fh (Zen4), Family 1Ah (Zen5 Granite Ridge)
+     */
+    static constexpr uint32_t kZEN_CCD_OFFSET_LEGACY = 0x154;
+    static constexpr uint32_t kZEN_CCD_OFFSET_ZEN4_5 = 0x308;
+    static constexpr uint8_t  kMAX_CCD_COUNT = 8;
+    static constexpr uint32_t kZEN_CCD_TEMP_VALID_BIT = (1 << 11);
+    static constexpr uint32_t kZEN_CCD_TEMP_MASK = 0x7FF;
+    
     static constexpr uint32_t kMSR_HWCR = 0xC0010015;
     static constexpr uint32_t kMSR_CORE_ENERGY_STAT = 0xC001029A;
     static constexpr uint32_t kMSR_HARDWARE_PSTATE_STATUS = 0xC0010293;
@@ -161,6 +177,7 @@ public:
 #define HF_TEMP_SAMPLE_REP (1.0f / (float)HF_TEMP_SAMPLE_FREQ)
 #define HF_TEMP_SAMPLE_PERIOD (int)(HF_TEMP_SAMPLE_REP * 1000.0)
     inline float getPackageTemp();
+    float getCCDTemp(uint8_t ccd);
     void updatePackageTemp();
     
     void updatePackageEnergy();
@@ -183,6 +200,11 @@ public:
     uint8_t cpuFamily;
     uint8_t cpuModel;
     uint8_t cpuSupportedByCurrentVersion;
+    
+    uint32_t ccdOffset = kZEN_CCD_OFFSET_LEGACY;
+    uint8_t  ccdCount = 0;
+    float    ccdTemperatures[kMAX_CCD_COUNT] {};
+    char     cpuArchName[16] {};
     
     //Cache size in KB
     uint32_t cpuCacheL1_perCore;
