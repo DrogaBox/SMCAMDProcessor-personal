@@ -1704,8 +1704,8 @@ struct MenuBarConfigView: View {
                                 Text(LocalizedStringKey("Fan \(idx + 1)")).tag(idx)
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 200)
+                        .pickerStyle(.menu)
+                        .frame(width: 140)
                     }
                     .padding(.vertical, 8).padding(.horizontal, 14)
                     .background(Color.tahoeCard)
