@@ -335,8 +335,17 @@ class StatusbarController: NSObject, NSMenuDelegate {
     var updateTimer: Timer?
     var menu: NSMenu?
 
+    private var smcReady = false
+    private var numFans = 0
+
     override init() {
         super.init()
+
+        let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
+        smcReady = initRes.count > 0 && initRes[0] == 1
+        if smcReady {
+            numFans = Int(ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91).first ?? 0)
+        }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.isVisible = true
@@ -415,11 +424,8 @@ class StatusbarController: NSObject, NSMenuDelegate {
         // Extra items
         // Fan: read from AMDRyzenCPUPowerManagement kext
         let fanIdx = max(0, MenuBarConfig.shared.fanIndex)
-        let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
-        let smcReady = initRes.count > 0 && initRes[0] == 1
         
         if smcReady {
-            let numFans = Int(ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91).first ?? 0)
             if numFans > 0 {
                 let rpms = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 93)
                 view?.fanRPM = (fanIdx < rpms.count) ? rpms[fanIdx] : 0

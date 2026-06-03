@@ -25,6 +25,7 @@ class NetworkStats {
     
     private let queue = DispatchQueue(label: "com.amdpowergadget.network", qos: .utility)
     private var currentSnapshot: NetworkSnapshot?
+    private var physicalInterfaceCache: [UInt32: Bool] = [:]
 
     init() {
         // In-process sysctl does not require initialization or background processes
@@ -74,15 +75,21 @@ class NetworkStats {
                             let if2m = ptr.withMemoryRebound(to: if_msghdr2.self, capacity: 1) { $0.pointee }
                             let index = UInt32(if2m.ifm_index)
                             
-                            var nameBuffer = [CChar](repeating: 0, count: 16) // 16 is IF_NAMESIZE
-                            if if_indextoname(index, &nameBuffer) != nil {
-                                let ifName = String(cString: nameBuffer)
-                                // We sum all physical ethernet/wifi interfaces (e.g. en0, en1, en2...)
-                                // We exclude loopback (lo0), tunnel adapters (utun*), and packet taps (pktap*)
-                                if ifName.hasPrefix("en") {
-                                    bytesIn += if2m.ifm_data.ifi_ibytes
-                                    bytesOut += if2m.ifm_data.ifi_obytes
+                            var isPhysical = self.physicalInterfaceCache[index]
+                            if isPhysical == nil {
+                                var nameBuffer = [CChar](repeating: 0, count: 16) // 16 is IF_NAMESIZE
+                                if if_indextoname(index, &nameBuffer) != nil {
+                                    let ifName = String(cString: nameBuffer)
+                                    isPhysical = ifName.hasPrefix("en")
+                                } else {
+                                    isPhysical = false
                                 }
+                                self.physicalInterfaceCache[index] = isPhysical
+                            }
+                            
+                            if isPhysical == true {
+                                bytesIn += if2m.ifm_data.ifi_ibytes
+                                bytesOut += if2m.ifm_data.ifi_obytes
                             }
                         }
                         ptr = ptr.advanced(by: Int(ifm.ifm_msglen))
