@@ -217,13 +217,13 @@ fileprivate class StatusbarView: NSView {
                 let bytesPerSec = mbps * 1024.0 * 1024.0
                 if bytesPerSec >= 1024.0 * 1024.0 {
                     let val = bytesPerSec / (1024.0 * 1024.0)
-                    return String(format: "%.1f MB/s", val).replacingOccurrences(of: ".", with: ",")
+                    return String(format: "%.1f MB/s", locale: Locale.current, val)
                 } else if bytesPerSec >= 1.0 {
                     let val = bytesPerSec / 1024.0
                     if val < 1.0 {
-                        return String(format: "%.3f KB/s", val).replacingOccurrences(of: ".", with: ",")
+                        return String(format: "%.3f KB/s", locale: Locale.current, val)
                     } else {
-                        return String(format: "%.1f KB/s", val).replacingOccurrences(of: ".", with: ",")
+                        return String(format: "%.1f KB/s", locale: Locale.current, val)
                     }
                 } else {
                     return "0 KB/s"
@@ -521,17 +521,17 @@ class StatusbarController: NSObject, NSMenuDelegate {
             menu?.removeAllItems()
         }
         guard let m = menu else { return }
-        var item = NSMenuItem(title: "AMD Power Gadget", action: #selector(gadget), keyEquivalent: ""); item.target = self
+        var item = NSMenuItem(title: NSLocalizedString("AMD Power Gadget", comment: ""), action: #selector(gadget), keyEquivalent: ""); item.target = self
         m.addItem(item)
-        item = NSMenuItem(title: "AMD Power Tool", action: #selector(tool), keyEquivalent: ""); item.target = self
+        item = NSMenuItem(title: NSLocalizedString("AMD Power Tool", comment: ""), action: #selector(tool), keyEquivalent: ""); item.target = self
         m.addItem(item)
-        item = NSMenuItem(title: "SMC Fans", action: #selector(fans), keyEquivalent: ""); item.target = self
+        item = NSMenuItem(title: NSLocalizedString("SMC Fans", comment: ""), action: #selector(fans), keyEquivalent: ""); item.target = self
         m.addItem(item)
         
         m.addItem(NSMenuItem.separator())
         
         // Colores Dinámicos (Solo Temp)
-        let alertsItem = NSMenuItem(title: "Colores Dinámicos (Solo Temp)", action: #selector(toggleColorAlerts(_:)), keyEquivalent: "")
+        let alertsItem = NSMenuItem(title: NSLocalizedString("Colores Dinámicos (Solo Temp)", comment: ""), action: #selector(toggleColorAlerts(_:)), keyEquivalent: "")
         alertsItem.target = self
         alertsItem.state = MenuBarConfig.shared.enableColorAlerts ? .on : .off
         m.addItem(alertsItem)
@@ -539,13 +539,14 @@ class StatusbarController: NSObject, NSMenuDelegate {
         let tempColorSubmenu = NSMenu()
         let colorsList = ["Verde", "Azul", "Naranja", "Rojo", "Morado", "Rosa", "Turquesa"]
         for (idx, colorName) in colorsList.enumerated() {
-            let colorItem = NSMenuItem(title: colorName, action: #selector(changeTempColor(_:)), keyEquivalent: "")
+            let localizedColor = NSLocalizedString(colorName, comment: "")
+            let colorItem = NSMenuItem(title: localizedColor, action: #selector(changeTempColor(_:)), keyEquivalent: "")
             colorItem.target = self
             colorItem.tag = idx
             colorItem.state = (MenuBarConfig.shared.tempColorIdx == idx) ? .on : .off
             tempColorSubmenu.addItem(colorItem)
         }
-        let tempColorMenuItem = NSMenuItem(title: "Color de Alerta de Temp", action: nil, keyEquivalent: "")
+        let tempColorMenuItem = NSMenuItem(title: NSLocalizedString("Color de Alerta de Temp", comment: ""), action: nil, keyEquivalent: "")
         tempColorMenuItem.submenu = tempColorSubmenu
         m.addItem(tempColorMenuItem)
 
@@ -566,7 +567,7 @@ class StatusbarController: NSObject, NSMenuDelegate {
             limitItem.state = (currentLimit == limit) ? .on : .off
             tempLimitSubmenu.addItem(limitItem)
         }
-        let tempLimitMenuItem = NSMenuItem(title: "Límite de Temp de Alerta", action: nil, keyEquivalent: "")
+        let tempLimitMenuItem = NSMenuItem(title: NSLocalizedString("Límite de Temp de Alerta", comment: ""), action: nil, keyEquivalent: "")
         tempLimitMenuItem.submenu = tempLimitSubmenu
         m.addItem(tempLimitMenuItem)
         
@@ -575,18 +576,19 @@ class StatusbarController: NSObject, NSMenuDelegate {
         let colorSubmenu = NSMenu()
         let colors = ["Verde", "Azul", "Naranja", "Rojo", "Morado", "Rosa", "Turquesa"]
         for (idx, colorName) in colors.enumerated() {
-            let colorItem = NSMenuItem(title: colorName, action: #selector(changeNetColor(_:)), keyEquivalent: "")
+            let localizedColor = NSLocalizedString(colorName, comment: "")
+            let colorItem = NSMenuItem(title: localizedColor, action: #selector(changeNetColor(_:)), keyEquivalent: "")
             colorItem.target = self
             colorItem.tag = idx
             colorItem.state = (MenuBarConfig.shared.netColorIdx == idx) ? .on : .off
             colorSubmenu.addItem(colorItem)
         }
-        let colorMenuItem = NSMenuItem(title: "Color de Flechas de Red", action: nil, keyEquivalent: "")
+        let colorMenuItem = NSMenuItem(title: NSLocalizedString("Color de Flechas de Red", comment: ""), action: nil, keyEquivalent: "")
         colorMenuItem.submenu = colorSubmenu
         m.addItem(colorMenuItem)
         
         m.addItem(NSMenuItem.separator())
-        item = NSMenuItem(title: "Exit", action: #selector(exitApp), keyEquivalent: ""); item.target = self
+        item = NSMenuItem(title: NSLocalizedString("Exit", comment: ""), action: #selector(exitApp), keyEquivalent: ""); item.target = self
         m.addItem(item)
     }
 

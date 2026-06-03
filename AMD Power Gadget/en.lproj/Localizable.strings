@@ -1,0 +1,102 @@
+/* 
+  Localizable.strings (English)
+  AMD Power Gadget
+*/
+
+"Dashboard" = "Dashboard";
+"Telemetry" = "Telemetry";
+"Fan Control" = "Fan Control";
+"Profiles" = "Profiles";
+"Advanced" = "Advanced";
+"Menu Bar" = "Menu Bar";
+"System Info" = "System Info";
+
+"AMD Power" = "AMD Power";
+"Gadget" = "Gadget";
+
+"CPU" = "CPU";
+"GPU" = "GPU";
+"Freq" = "Freq";
+"Average" = "Average";
+"Avg: %@" = "Avg: %@";
+"Collecting data…" = "Collecting data…";
+
+"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
+"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
+"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
+"Update Interval" = "Update Interval";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+
+"Opciones en Menú Bar" = "Menu Bar Options";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
+"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
+"Límite de Temp de Alerta" = "Alert Temp Limit";
+"Color de Alerta de Temp" = "Alert Temp Color";
+"Color de Flechas" = "Arrows Color";
+"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
+"GPU data is shown inside Temp and Power columns when enabled." = "GPU data is shown inside Temp and Power columns when enabled.";
+
+"No fans detected." = "No fans detected.";
+"SMC driver not available" = "SMC driver not available";
+"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"RPM" = "RPM";
+"Throttle" = "Throttle";
+"↩ Reset to Auto" = "↩ Reset to Auto";
+
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
+"Disabled — work in progress" = "Disabled — work in progress";
+"WIP" = "WIP";
+
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Motherboard info not available";
+
+"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
+"Ancho estimado: %dpt" = "Estimated Width: %dpt";
+"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
+"Small (%dpt)" = "Small (%dpt)";
+"Medium (%dpt)" = "Medium (%dpt)";
+"Large (%dpt)" = "Large (%dpt)";
+
+"Green" = "Green";
+"Blue" = "Blue";
+"Orange" = "Orange";
+"Red" = "Red";
+"Purple" = "Purple";
+"Pink" = "Pink";
+"Teal" = "Teal";
+"Turquoise" = "Turquoise";
+
+"Verde" = "Green";
+"Azul" = "Blue";
+"Naranja" = "Orange";
+"Rojo" = "Red";
+"Morado" = "Purple";
+"Rosa" = "Pink";
+"Turquesa" = "Teal";
+
+"Colores Dinámicos (Solo Temp)" = "Dynamic Colors (Temp Only)";
+"Color de Flechas de Red" = "Network Arrows Color";
+"Exit" = "Exit";
+"AMD Power Gadget" = "AMD Power Gadget";
+"AMD Power Tool" = "AMD Power Tool";
+"SMC Fans" = "SMC Fans";
+
+/* Alerts */
+"To enable motherboard display:" = "To enable motherboard display:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
+"Done" = "Done";
+"Invalid Input" = "Invalid Input";
+"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
+"Unable to Set PStateDef" = "Unable to Set PStateDef";
+"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
+"Your changes will not be saved" = "Your changes will not be saved";
+"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
+"Cancel" = "Cancel";
+"Close without saving" = "Close without saving";
+"Invalid File" = "Invalid File";
+"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
+"OK" = "OK";

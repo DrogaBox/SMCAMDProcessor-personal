@@ -191,7 +191,7 @@ private struct SidebarItem: View {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 2).fill(isSelected ? Color.tahoeAccentCyan : Color.clear).frame(width: 3, height: 20)
                 Image(systemName: tab.icon).font(.system(size: 13, weight: .medium)).foregroundColor(isSelected ? .tahoeAccentCyan : .tahoeSubtext).frame(width: 18)
-                Text(tab.rawValue).font(.system(size: 13, weight: isSelected ? .semibold : .regular)).foregroundColor(isSelected ? .tahoeText : .tahoeSubtext)
+                Text(LocalizedStringKey(tab.rawValue)).font(.system(size: 13, weight: isSelected ? .semibold : .regular)).foregroundColor(isSelected ? .tahoeText : .tahoeSubtext)
                 Spacer()
             }
             .padding(.vertical, 7).padding(.trailing, 12)
@@ -204,15 +204,15 @@ private struct SidebarItem: View {
 
 // MARK: - Reusable Components
 private struct SectionTitle: View {
-    let text: String
-    init(_ text: String) { self.text = text }
+    let text: LocalizedStringKey
+    init(_ text: LocalizedStringKey) { self.text = text }
     var body: some View {
         Text(text).font(.system(size: 13, weight: .semibold)).foregroundColor(.tahoeText).padding(.bottom, 2)
     }
 }
 
 private struct InfoRow: View {
-    let label: String; let value: String
+    let label: LocalizedStringKey; let value: String
     var body: some View {
         HStack {
             Text(label).font(.system(size: 12, weight: .medium)).foregroundColor(.tahoeSubtext)
@@ -250,7 +250,7 @@ private struct TahoeCard<Content: View>: View {
 }
 
 private struct TahoeButton: View {
-    let label: String; let icon: String; let accent: Color; let action: () -> Void
+    let label: LocalizedStringKey; let icon: String; let accent: Color; let action: () -> Void
     var body: some View {
         Button(action: action) {
             HStack(spacing: 7) {
@@ -269,12 +269,12 @@ private struct TahoeButton: View {
 }
 
 private struct ToggleRow: View {
-    let label: String; let detail: String; @Binding var isOn: Bool; let accent: Color; let onChange: (Bool) -> Void
+    let label: LocalizedStringKey; let detail: LocalizedStringKey; @Binding var isOn: Bool; let accent: Color; let onChange: (Bool) -> Void
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label).font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                if !detail.isEmpty { Text(detail).font(.system(size: 10)).foregroundColor(.tahoeSubtext) }
+                Text(detail).font(.system(size: 10)).foregroundColor(.tahoeSubtext)
             }
             Spacer()
             Toggle("", isOn: $isOn)
@@ -328,8 +328,8 @@ struct ResizableChart<Content: View>: View {
 // MARK: - Dashboard Tab (3 charts separados, tamaño configurable)
 // MARK: - WIP Placeholder Card
 struct WIPCard: View {
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
 
     var body: some View {
         TahoeCard(accent: Color.gray.opacity(0.15)) {
@@ -389,8 +389,8 @@ struct DashboardContentView: View {
                     ResizableChart(chartId: "dash_freq", small: 70, medium: 100, large: 150) { height in
                         OriginalLineChartCard(
                             title: "Frequency",
-                            subtitle: String(format: "Avg: %.2f Ghz, Max: %.2f Ghz",
-                                             model.cpuFreqAvgGHz, model.cpuFreqMaxGHz),
+                            subtitle: String(format: NSLocalizedString("Avg: %.2f Ghz, Max: %.2f Ghz", comment: ""),
+                                             locale: Locale.current, model.cpuFreqAvgGHz, model.cpuFreqMaxGHz),
                             accent: .tahoeAccentCyan,
                             data: model.history,
                             line1: { $0.cpuFreqGHz },
@@ -405,7 +405,8 @@ struct DashboardContentView: View {
                     ResizableChart(chartId: "dash_temp", small: 70, medium: 100, large: 150) { height in
                         OriginalLineChartCard(
                             title: "Temperature",
-                            subtitle: String(format: "%.2f °C", model.cpuTempC),
+                            subtitle: String(format: NSLocalizedString("%.2f °C", comment: ""),
+                                             locale: Locale.current, model.cpuTempC),
                             accent: .tahoeAccentOrange,
                             data: model.history,
                             line1: { $0.cpuTempC },
@@ -420,7 +421,8 @@ struct DashboardContentView: View {
                     ResizableChart(chartId: "dash_pwr", small: 70, medium: 100, large: 150) { height in
                         OriginalLineChartCard(
                             title: "Power",
-                            subtitle: String(format: "%.2f Watt", model.cpuWatts),
+                            subtitle: String(format: NSLocalizedString("%.2f Watt", comment: ""),
+                                             locale: Locale.current, model.cpuWatts),
                             accent: .tahoeAccentGreen,
                             data: model.history,
                             line1: { $0.cpuWatts },
@@ -451,7 +453,7 @@ struct DashboardContentView: View {
 }
 
 private struct StatCard: View {
-    let label: String; let value: String; let accent: Color; let icon: String
+    let label: LocalizedStringKey; let value: String; let accent: Color; let icon: String
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -477,14 +479,14 @@ private struct StatCard: View {
 
 // MARK: - Original-style Line Chart Card
 struct OriginalLineChartCard: View {
-    let title: String
+    let title: LocalizedStringKey
     let subtitle: String
     let accent: Color
     let data: [TelemetryPoint]
     let line1: (TelemetryPoint) -> Double
     let line2: ((TelemetryPoint) -> Double)?
-    let line1Label: String
-    let line2Label: String?
+    let line1Label: LocalizedStringKey
+    let line2Label: LocalizedStringKey?
     let height: CGFloat
 
     private var yMin: Double {
@@ -751,7 +753,7 @@ struct PowerToolBarChart: View {
 
 // MARK: - Network Line Chart Card
 struct NetworkLineChartCard: View {
-    let title: String
+    let title: LocalizedStringKey
     @ObservedObject var model: TelemetryModel
     let height: CGFloat
 
@@ -762,13 +764,13 @@ struct NetworkLineChartCard: View {
         let bytesPerSec = absMbps * 1024.0 * 1024.0
         if bytesPerSec >= 1024.0 * 1024.0 {
             let val = bytesPerSec / (1024.0 * 1024.0)
-            return String(format: "%.2f MB/s", val).replacingOccurrences(of: ".", with: ",")
+            return String(format: "%.2f MB/s", locale: Locale.current, val)
         } else if bytesPerSec >= 1024.0 {
             let val = bytesPerSec / 1024.0
-            return String(format: "%.2f KB/s", val).replacingOccurrences(of: ".", with: ",")
+            return String(format: "%.2f KB/s", locale: Locale.current, val)
         } else if bytesPerSec >= 1.0 {
             let val = bytesPerSec / 1024.0
-            return String(format: "%.3f KB/s", val).replacingOccurrences(of: ".", with: ",")
+            return String(format: "%.3f KB/s", locale: Locale.current, val)
         } else {
             return "0 KB/s"
         }

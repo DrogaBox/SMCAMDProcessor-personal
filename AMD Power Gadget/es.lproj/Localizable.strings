@@ -1,0 +1,102 @@
+/* 
+  Localizable.strings (Spanish)
+  AMD Power Gadget
+*/
+
+"Dashboard" = "Panel de Control";
+"Telemetry" = "Telemetría";
+"Fan Control" = "Control de Ventiladores";
+"Profiles" = "Perfiles";
+"Advanced" = "Avanzado";
+"Menu Bar" = "Barra de Menús";
+"System Info" = "Información de Sistema";
+
+"AMD Power" = "AMD Power";
+"Gadget" = "Gadget";
+
+"CPU" = "CPU";
+"GPU" = "GPU";
+"Freq" = "Frecuencia";
+"Average" = "Promedio";
+"Avg: %@" = "Prom.: %@";
+"Collecting data…" = "Recopilando datos…";
+
+"Low Power Mode (LPM)" = "Modo de Bajo Consumo (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Permite a macOS administrar automáticamente la frecuencia del CPU";
+"Forces CPU to lowest frequency for minimum power" = "Fuerza al CPU a la frecuencia más baja para el mínimo consumo";
+"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
+"Update Interval" = "Intervalo de Actualización";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Ajustá la frecuencia de actualización. Menor = más responsivo, mayor = menos uso de CPU.";
+
+"Opciones en Menú Bar" = "Opciones en Barra de Menú";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Elegí qué elementos aparecen en la barra de menú. Los cambios se aplican inmediatamente.";
+"Customize the visual appearance of the menu bar items." = "Personalizá la apariencia visual de los elementos en la barra de menú.";
+"Límite de Temp de Alerta" = "Límite de Temp de Alerta";
+"Color de Alerta de Temp" = "Color de Alerta de Temp";
+"Color de Flechas" = "Color de Flechas";
+"Additional telemetry for the menu bar." = "Telemetría adicional para la barra de menú.";
+"GPU data is shown inside Temp and Power columns when enabled." = "Los datos del GPU se muestran en las columnas de Temp y Power si se activa.";
+
+"No fans detected." = "No se detectaron ventiladores.";
+"SMC driver not available" = "Controlador SMC no disponible";
+"Your SMC chip may not be supported." = "Es posible que tu chip SMC no sea compatible.";
+"RPM" = "RPM";
+"Throttle" = "Aceleración";
+"↩ Reset to Auto" = "↩ Volver a Automático";
+
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Seleccioná un perfil para ajustar el rango de operación del CPU. Se aplica de inmediato.";
+
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Editá directamente los registros P-State. Requiere desactivar el control de privilegios del kext por boot-arg o root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Esto escribirá las definiciones de P-State crudas directamente al CPU. ¿Continuar?";
+"Disabled — work in progress" = "Desactivado — trabajo en progreso";
+"WIP" = "Trabajo en Progreso";
+
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Habilitar en OC: Misc → Security → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Información de placa madre no disponible";
+
+"Vista previa de la Barra de Menús:" = "Vista previa de la Barra de Menú:";
+"Ancho estimado: %dpt" = "Ancho estimado: %dpt";
+"Restart the app to fully apply width changes." = "Reiniciá la aplicación para aplicar por completo los cambios de ancho.";
+"Small (%dpt)" = "Pequeño (%dpt)";
+"Medium (%dpt)" = "Medio (%dpt)";
+"Large (%dpt)" = "Grande (%dpt)";
+
+"Green" = "Verde";
+"Blue" = "Azul";
+"Orange" = "Naranja";
+"Red" = "Rojo";
+"Purple" = "Morado";
+"Pink" = "Rosa";
+"Teal" = "Turquesa";
+"Turquoise" = "Turquesa";
+
+"Verde" = "Verde";
+"Azul" = "Azul";
+"Naranja" = "Naranja";
+"Rojo" = "Rojo";
+"Morado" = "Morado";
+"Rosa" = "Rosa";
+"Turquesa" = "Turquesa";
+
+"Colores Dinámicos (Solo Temp)" = "Colores Dinámicos (Solo Temp)";
+"Color de Flechas de Red" = "Color de Flechas de Red";
+"Exit" = "Salir";
+"AMD Power Gadget" = "AMD Power Gadget";
+"AMD Power Tool" = "AMD Power Tool";
+"SMC Fans" = "SMC Fans";
+
+/* Alerts */
+"To enable motherboard display:" = "Para habilitar la visualización de la placa madre:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Abrí tu archivo de configuración de OpenCore,\n\nAndá a Misc -> Security -> ExposeSensitiveData,\n\nEstablecé el valor en 0x08 para exponer la información de la placa.";
+"Done" = "Listo";
+"Invalid Input" = "Entrada Inválida";
+"Please type in numbers in hexadecimal." = "Por favor, ingresá números en hexadecimal.";
+"Unable to Set PStateDef" = "No se pudo establecer PStateDef";
+"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "La acción fue denegada porque el usuario actual no tiene suficientes privilegios,\no fue cancelada por el usuario.\n\nEjecutá AMD Power Gadget como usuario root o desactivá el control de privilegios con el boot-arg '-amdpnopchk'\n\nDe lo contrario, hacé clic en 'Once' (Una vez) en el mensaje de advertencia para permitir este cambio.";
+"Your changes will not be saved" = "Tus cambios no se guardarán";
+"Click apply to save changes before closing this windows." = "Hacé clic en aplicar para guardar los cambios antes de cerrar esta ventana.";
+"Cancel" = "Cancelar";
+"Close without saving" = "Cerrar sin guardar";
+"Invalid File" = "Archivo Inválido";
+"The selected file could not be read or is not a valid pstate file." = "El archivo seleccionado no pudo ser leído o no es un archivo pstate válido.";
+"OK" = "Aceptar";
