@@ -1,4 +1,3 @@
-
 Lilu.kext/
 VirtualSMC.kext/
 VirtualSMC/
@@ -6,4 +5,4 @@ SMCAMDProcessor.xcodeproj/
 .DS_Store
 
 cleanup.py
-
+build/
