@@ -277,6 +277,45 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     cpuSupportedByCurrentVersion = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A)? 1 : 0;
     IOLog("AMDCPUSupport::start Family %02Xh, Model %02Xh\n", cpuFamily, cpuModel);
     
+    // Determine architecture name for logging and app display
+    if (cpuFamily == 0x17) {
+        if (cpuModel <= 0x0F)
+            strlcpy(cpuArchName, "Zen", sizeof(cpuArchName));
+        else if (cpuModel >= 0x10 && cpuModel <= 0x2F)
+            strlcpy(cpuArchName, "Zen+", sizeof(cpuArchName));
+        else
+            strlcpy(cpuArchName, "Zen 2", sizeof(cpuArchName));
+    } else if (cpuFamily == 0x19) {
+        if (cpuModel >= 0x60 && cpuModel <= 0x7F)
+            strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
+        else if (cpuModel >= 0x40 && cpuModel <= 0x5F)
+            strlcpy(cpuArchName, "Zen 3+", sizeof(cpuArchName));
+        else if (cpuModel >= 0x10 && cpuModel <= 0x1F)
+            strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
+        else
+            strlcpy(cpuArchName, "Zen 3", sizeof(cpuArchName));
+    } else if (cpuFamily == 0x1A) {
+        strlcpy(cpuArchName, "Zen 5", sizeof(cpuArchName));
+    } else {
+        strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
+    }
+    IOLog("AMDCPUSupport::start Architecture: %s\n", cpuArchName);
+    
+    // Determine CCD temperature register offset based on CPU family/model.
+    // Sourced from Linux kernel drivers/hwmon/k10temp.c:
+    //   Family 17h: offset 0x154 (all models)
+    //   Family 19h models 00-5Fh: offset 0x154 (Zen 3/3+)
+    //   Family 19h models 60-7Fh: offset 0x308 (Zen 4)
+    //   Family 1Ah models 40-4Fh: offset 0x308 (Zen 5 Granite Ridge)
+    if (cpuFamily == 0x1A) {
+        ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
+    } else if (cpuFamily == 0x19 && cpuModel >= 0x60 && cpuModel <= 0x7F) {
+        ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
+    } else {
+        ccdOffset = kZEN_CCD_OFFSET_LEGACY;
+    }
+    IOLog("AMDCPUSupport::start CCD temperature offset: 0x%X\n", ccdOffset);
+    
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpuCacheL1_perCore = (cpuid_ecx >> 24) + (cpuid_ecx >> 24);
     
@@ -341,6 +380,18 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         IOLog("AMDCPUSupport::start no PCI support found, failing...\n");
         return false;
     }
+    
+    // Probe for available CCDs by reading CCD temperature registers.
+    // A CCD is considered present if the valid bit (bit 11) is set.
+    ccdCount = 0;
+    for (uint8_t i = 0; i < kMAX_CCD_COUNT; i++) {
+        float t = getCCDTemp(i);
+        if (t > 0.0f) {
+            ccdCount = i + 1;
+            IOLog("AMDCPUSupport::start CCD%u detected, temp: %.1f°C\n", i, t);
+        }
+    }
+    IOLog("AMDCPUSupport::start Total CCDs detected: %u\n", ccdCount);
     
 //    while (!pmRyzen_symtable_ready) {
 //        IOSleep(200);
@@ -653,6 +704,30 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
         t -= 49.0f;
     
     return t;
+}
+
+float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
+    if (ccd >= kMAX_CCD_COUNT) return 0.0f;
+    
+    IOPCIAddressSpace space;
+    space.bits = 0x00;
+    
+    // Calculate CCD register address:
+    // Base (0x59800) + ccdOffset (0x154 or 0x308) + (ccd_index * 4)
+    uint32_t ccdRegAddr = kF17H_M01H_THM_TCON_CUR_TMP + ccdOffset + (ccd * 4);
+    
+    fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)ccdRegAddr);
+    uint32_t regVal = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
+    
+    // Check CCD valid bit (bit 11) — if not set, CCD is not present
+    if (!(regVal & kZEN_CCD_TEMP_VALID_BIT)) return 0.0f;
+    
+    // Temperature formula from Linux k10temp:
+    // temp = (regVal & 0x7FF) * 125 - 49000 (in millidegrees)
+    // We convert to float degrees Celsius:
+    float temp = (float)(regVal & kZEN_CCD_TEMP_MASK) * 0.125f - 49.0f;
+    
+    return temp;
 }
 
 void AMDRyzenCPUPowerManagement::updatePackageTemp(){
