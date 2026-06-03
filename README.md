@@ -56,8 +56,6 @@ Includes a modern protection toggle in the Advanced speed shift panel. Controls 
 ### Custom Fan Overrides (SMC Fans)
 Features a redesigned AppKit fan speed view that supports dynamic width scaling up to 300px to display full fan names (e.g., "CPU OPT Fan"), alongside custom-drawn sliders aligning track progress with the active accent color.
 
-![SMC Fans Fan Control Override](imgs/fans.png)
-
 ---
 
 ## 🛡️ Safety & Security
