@@ -7,7 +7,7 @@ XNU kernel extensions for power management and monitoring of AMD Zen processors 
 
 This fork represents the modernized **Tahoe Edition (2026)**, updated and fully optimized for stability, performance, and rich visual styling under macOS Sonoma (14.0) through macOS Tahoe (15.x / 16.x).
 
-![AMD Power Gadget Tahoe Edition Dashboard](imgs/all.png)
+![AMD Power Gadget Tahoe Edition Animated Preview](imgs/ani.gif)
 
 ---
 
@@ -52,8 +52,6 @@ Ensure the kexts are loaded in the correct dependency order in your `config.plis
 
 ### P-State Editor (Safe Mode Guard)
 Includes a modern protection toggle in the Advanced speed shift panel. Controls are locked and rendered translucent (`opacity(0.4)`) until safety is unlocked, preventing accidental hardware setting changes.
-
-![AMD Power Gadget Tahoe Edition Settings & P-State Editor](imgs/pe.png)
 
 ### Custom Fan Overrides (SMC Fans)
 Features a redesigned AppKit fan speed view that supports dynamic width scaling up to 300px to display full fan names (e.g., "CPU OPT Fan"), alongside custom-drawn sliders aligning track progress with the active accent color.
