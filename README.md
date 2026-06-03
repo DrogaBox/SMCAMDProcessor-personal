@@ -7,6 +7,10 @@ XNU kernel extensions for power management and monitoring of AMD Zen processors 
 
 This fork represents the modernized **Tahoe Edition (2026)**, updated and fully optimized for stability, performance, and rich visual styling under macOS Sonoma (14.0) through macOS Tahoe (15.x / 16.x).
 
+> [!NOTE]
+> **Community Disclaimer & Development Context:**
+> This modernized fork was developed with the assistance of **Antigravity 2** (an agentic AI coding assistant). We apologize if this approach offends anyone in the community. The decision to use AI support was made because the original source repository has not been updated since 2024, and no other developer had taken over to modernize it. The sole intention of this project is to keep this essential utility functional and up-to-date for the Hackintosh community.
+
 ![AMD Power Gadget Tahoe Edition Animated Preview](imgs/ani.gif)
 
 ---
