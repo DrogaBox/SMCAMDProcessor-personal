@@ -63,7 +63,7 @@ class ProcessorModel {
 
         var isCompatible = compatVers.contains(AMDRyzenCPUPowerManagementVersion)
         if !isCompatible {
-            // Permitir dinámicamente cualquier versión igual o superior a 0.7.2 para estándares de 2026
+            // Dynamically allow any version >= 0.7.2 for compatibility with 2026 standards
             if AMDRyzenCPUPowerManagementVersion.compare("0.7.2", options: .numeric) != .orderedAscending {
                 isCompatible = true
             }
@@ -343,15 +343,15 @@ class ProcessorModel {
             }
         }
 
-        // Si detectamos que solo hay un P-state legado o ninguno debido a UEFI/BIOS Zen 3,
-        // activamos el modo de emulación permanente para esta sesión.
+        // If we detect only one (or zero) legacy P-states due to UEFI/BIOS behavior on Zen 3,
+        // activate permanent emulation mode for this session.
         if vaildPStateLength <= 1 {
             var baseClock: Float = 0.0
             if PStateDefClock.count > 0 && PStateDefClock[0] > 1000.0 {
                 baseClock = PStateDefClock[0]
             }
 
-            // Si baseClock es inválido, deducirlo del brand string
+            // If baseClock is invalid, derive it from the CPU brand string
             if baseClock < 1000.0 {
                 let cpuBrand = ProcessorModel.sysctlString(key: "machdep.cpu.brand_string").lowercased()
                 if let range = cpuBrand.range(of: #"(\d+\.\d+)\s*ghz"#, options: .regularExpression) {
@@ -413,18 +413,18 @@ class ProcessorModel {
     }
 
     func setPState(state : Int) {
-        // Si estamos en modo de emulación (es decir, el hardware solo reporta 1 P-state pero expusimos 5 en la GUI)
+        // If we are in emulation mode (hardware reports only 1 P-state but we expose 5 in the GUI)
         if PStateDef.count > 1 && (PStateDef[1] & 0x8000000000000000) == 0 {
             emulatedPState = state
 
-            // Mapeo inteligente a los controles de hardware reales en Zen 3:
+            // Smart mapping to real hardware controls in Zen 3:
             switch state {
             case 0, 1: // Boost / High Performance (4900 MHz / 4100 MHz)
                 setCPB(enabled: true)
                 setLPM(enabled: false)
                 setPPM(enabled: true)
             case 2: // Base Clock (3300 MHz)
-                setCPB(enabled: false) // Capa físicamente a la frecuencia base máxima para control térmico ideal
+                setCPB(enabled: false) // Cap to base frequency for optimal thermal control
                 setLPM(enabled: false)
                 setPPM(enabled: true)
             case 3: // Balanced / Low-Medium (2800 MHz)
@@ -433,7 +433,7 @@ class ProcessorModel {
                 setPPM(enabled: true)
             case 4: // LPM / Idle (2200 MHz)
                 setCPB(enabled: false)
-                setLPM(enabled: true) // Activa Low Power Mode directamente
+                setLPM(enabled: true) // Activate Low Power Mode directly
             default:
                 break
             }
@@ -461,8 +461,8 @@ class ProcessorModel {
             } else if cpb.count > 1 && !cpb[1] {
                 return 2 // Base Clock (CPB desactivado)
             } else {
-                // Si CPB está activo, retornamos la última selección emulada (0 o 1 o 3)
-                // de lo contrario, 0 (Boost) por defecto
+                // If CPB is active, return the last emulated selection (0, 1, or 3)
+                // otherwise default to 0 (Boost)
                 return emulatedPState == 4 || emulatedPState == 2 ? 0 : emulatedPState
             }
         }
@@ -475,7 +475,7 @@ class ProcessorModel {
 
     func getVaildPStateClocks() -> [Float] {
         if vaildPStateLength <= 0 || PStateDefClock.isEmpty {
-            return [3300.0] // Fallback seguro: retornar al menos un valor válido
+            return [3300.0] // Safe fallback: return at least one valid value
         }
         let len = min(vaildPStateLength, PStateDefClock.count)
         return Array(PStateDefClock[0...len-1])
@@ -643,61 +643,35 @@ class ProcessorModel {
         // Desactivado para evitar telemetría a servidores obsoletos en 2026.
     }
 
-    // MARK: - GPU Temperature (from IOAccelerator PerformanceStatistics)
-    func getGPUTemp() -> Float {
-        var iter : io_iterator_t = 0
-        let err = IOServiceGetMatchingServices(kIOMainPortDefault,
-                                               IOServiceMatching("IOAccelerator"), &iter)
-        if err != kIOReturnSuccess { return 0 }
+    // MARK: - GPU Statistics (from IOAccelerator PerformanceStatistics)
 
-        var temp: Float = 0
+    /// Reads a numeric value from the IOAccelerator PerformanceStatistics dictionary.
+    private func getIOAcceleratorStat(key: String) -> Float {
+        var iter: io_iterator_t = 0
+        let err = IOServiceGetMatchingServices(kIOMainPortDefault,
+                                              IOServiceMatching("IOAccelerator"), &iter)
+        if err != kIOReturnSuccess { return 0 }
+        defer { IOObjectRelease(iter) }
+
         while true {
             let reg = IOIteratorNext(iter)
             if reg == 0 { break }
+            defer { IOObjectRelease(reg) }
 
-            if let dict = IORegistryEntryCreateCFProperty(reg, "PerformanceStatistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
-                if let t = dict["Temperature(C)"] as? NSNumber {
-                    temp = t.floatValue
-                    IOObjectRelease(reg)
-                    break
-                } else if let t = dict["Temperature(C)"] as? Int {
-                    temp = Float(t)
-                    IOObjectRelease(reg)
-                    break
-                }
+            if let dict = IORegistryEntryCreateCFProperty(reg, "PerformanceStatistics" as CFString,
+                                                         kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
+                if let v = dict[key] as? NSNumber { return v.floatValue }
+                if let v = dict[key] as? Int      { return Float(v) }
             }
-            IOObjectRelease(reg)
         }
-        IOObjectRelease(iter)
-        return temp
+        return 0
     }
 
-    // MARK: - GPU Power (from IOAccelerator PerformanceStatistics)
+    func getGPUTemp() -> Float {
+        return getIOAcceleratorStat(key: "Temperature(C)")
+    }
+
     func getGPUPower() -> Float {
-        var iter : io_iterator_t = 0
-        let err = IOServiceGetMatchingServices(kIOMainPortDefault,
-                                               IOServiceMatching("IOAccelerator"), &iter)
-        if err != kIOReturnSuccess { return 0 }
-
-        var power: Float = 0
-        while true {
-            let reg = IOIteratorNext(iter)
-            if reg == 0 { break }
-
-            if let dict = IORegistryEntryCreateCFProperty(reg, "PerformanceStatistics" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any] {
-                if let p = dict["Total Power(W)"] as? NSNumber {
-                    power = p.floatValue
-                    IOObjectRelease(reg)
-                    break
-                } else if let p = dict["Total Power(W)"] as? Int {
-                    power = Float(p)
-                    IOObjectRelease(reg)
-                    break
-                }
-            }
-            IOObjectRelease(reg)
-        }
-        IOObjectRelease(iter)
-        return power
+        return getIOAcceleratorStat(key: "Total Power(W)")
     }
 }

@@ -26,13 +26,16 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
 
         tableView.sizeToFit()
 
+        isZen5 = {
+            let id = ProcessorModel.shared.cpuidBasic
+            return id.count > 0 && id[0] >= 0x1A
+        }()
+
         data = ProcessorModel.shared.getPStateDef().map({value2Dict(v: $0)})
     }
 
-    var isZen5: Bool {
-        let id = ProcessorModel.shared.cpuidBasic
-        return id.count > 0 && id[0] >= 0x1A
-    }
+    // Cached at viewDidLoad to avoid re-reading cpuidBasic on every table cell render
+    var isZen5: Bool = false
 
     func value2Dict(v : UInt64) -> [String: UInt32]{
         var r = [String: UInt32]()
@@ -244,9 +247,9 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
         op.isExtensionHidden = false
         op.allowedContentTypes = [UTType(filenameExtension: "pstate")].compactMap { $0 }
 
-        op.runModal()
+        guard op.runModal() == .OK, let url = op.url else { return }
 
         let arr = data.map{ dict2Value(d: $0) }
-        (arr as NSArray).write(to: op.url!, atomically: true)
+        (arr as NSArray).write(to: url, atomically: true)
     }
 }

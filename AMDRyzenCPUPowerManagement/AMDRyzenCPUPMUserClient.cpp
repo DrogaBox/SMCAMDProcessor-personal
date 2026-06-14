@@ -495,11 +495,6 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             break;
         }
-            
-        default: {
-            IOLog("AMDCPUSupportUserClient::externalMethod: invalid method.\n");
-            break;
-        }
         
         //SMC fan throttles and control mode
         case 94: {
@@ -518,7 +513,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
-        //SMC fan overrride control
+        //SMC fan override control
         case 95: {
             if(!fProvider->superIO)
                 return kIOReturnNoDevice;
@@ -574,6 +569,11 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                     fProvider->superIO->setDefaultFanControl(i);
             }
             
+            break;
+        }
+        
+        default: {
+            IOLog("AMDCPUSupportUserClient::externalMethod: invalid method.\n");
             break;
         }
     }
