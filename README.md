@@ -31,6 +31,19 @@ Full compatibility with all AMD Zen architectures supported by the **AMD Vanilla
 
 > **Note:** Per-CCD temperature monitoring uses architecture-specific SMN register offsets (`0x154` for Zen 1–3, `0x308` for Zen 4–5) matching the Linux kernel `k10temp` driver for accurate thermal reporting across all generations.
 
+### Zen 5 (Family 1Ah) & Newer AMD Processor Support
+To support frequency monitoring, P-state customization, and logging diagnostics on newer AMD Zen 5 (Family 1Ah) processors, the following technical changes were implemented:
+
+* **12-bit Multiplier (CpuFid):** In Zen 5, the `CpuFid` multiplier field inside the P-state registers (`MSRC001_0064` / `0xC0010064` through `0xC001006B`) was expanded from 8 bits to 12 bits (bits 0–11).
+* **Omission of Divisor (CpuDfsId):** The legacy frequency divisor `CpuDfsId` is no longer utilized by the Zen 5 hardware.
+* **New Frequency Formula:** The clock speed is calculated directly as `CpuFid * 5.0 MHz` instead of the legacy Zen 1–4 formula `(CpuFid / CpuDfsId) * 200.0 MHz`.
+* **Kext and GUI Sync:** Both the `AMDRyzenCPUPowerManagement` kernel extension and the `AMD Power Gadget` P-State Editor dynamically detect `cpuFamily >= 0x1A` to apply these decoding and encoding rules. In the GUI P-State Editor, the `CpuDfsId` column is dynamically disabled and locked for Zen 5 to prevent invalid values.
+* **Kernel Extension Debugging Infrastructure:**
+  * Built dedicated `Debug` versions of `AMDRyzenCPUPowerManagement.kext` and `SMCAMDProcessor.kext` to preserve verbose logs.
+  * Added the `-amdpdbg` OpenCore boot argument requirement to activate `debugEnabled` at the kernel extension level.
+  * Provided instructions to fetch kext logs using the macOS Unified Logging system (e.g. `log show --predicate 'sender == "wtf.spinach.AMDRyzenCPUPowerManagement"' --info --debug --last 10m`) to bypass the quick rollover of the `dmesg` ring buffer on modern macOS releases (Sonoma/Sequoia/Tahoe).
+* **Kernel Panic Mitigation:** Replaced fragile `panic()` calls in critical MSR operations (such as `updateClockSpeed`, `updateInstructionDelta`, `setCPBState`, etc.) with safe checks and `IOLog` reporting. If reading/writing a register fails, the kext logs the event and continues execution instead of crashing the operating system.
+
 ---
 
 ## Key Modernizations (Tahoe Edition)
