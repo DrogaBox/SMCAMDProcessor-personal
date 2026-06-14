@@ -168,7 +168,13 @@ private struct SidebarView: View {
                     }
                 }
                 Spacer()
-                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0") · macOS Tahoe").font(.system(size: 9, weight: .regular)).foregroundColor(Color(white: 0.35)).padding(.horizontal, 18).padding(.bottom, 14)
+                Link(destination: URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!) {
+                    Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0") · macOS Tahoe")
+                        .font(.system(size: 9, weight: .regular))
+                        .foregroundColor(Color(white: 0.35))
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 14)
             }
         }
     }
