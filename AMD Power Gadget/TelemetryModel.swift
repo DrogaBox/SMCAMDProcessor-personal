@@ -178,6 +178,7 @@ final class TelemetryModel: ObservableObject {
         sample()
 
         restartTimer()
+        NotificationCenter.default.addObserver(self, selector: #selector(handleActiveWindowsChanged), name: .init("AppActiveWindowsChanged"), object: nil)
     }
 
     private func buildSystemInfo() {
@@ -241,6 +242,17 @@ final class TelemetryModel: ObservableObject {
         timer = Timer.publish(every: interval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.sample() }
+    }
+
+    @objc private func handleActiveWindowsChanged(_ notification: Notification) {
+        if let active = notification.object as? Bool {
+            if active {
+                restartTimer()
+            } else {
+                timer?.cancel()
+                timer = nil
+            }
+        }
     }
 
     private func sample() {
