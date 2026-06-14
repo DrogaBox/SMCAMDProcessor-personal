@@ -15,7 +15,7 @@ This fork represents the modernized **Tahoe Edition (2026)**, updated and fully 
 
 ---
 
-## 🧬 Supported AMD Processors
+## Supported AMD Processors
 
 Full compatibility with all AMD Zen architectures supported by the **AMD Vanilla kernel patches**:
 
@@ -33,14 +33,14 @@ Full compatibility with all AMD Zen architectures supported by the **AMD Vanilla
 
 ---
 
-## 🚀 Key Modernizations (Tahoe Edition)
+## Key Modernizations (Tahoe Edition)
 
-### 🖥️ Performance & Resource Optimization
+### Performance & Resource Optimization
 * **In-Process Network Telemetry (0% CPU Overhead):** Replaced the resource-heavy, background `/usr/bin/nettop` subprocess loops with a high-performance, in-process network query engine using low-level `sysctl(NET_RT_IFLIST2)` calls. CPU usage dropped from 20% to **literally 0%**, matching professional tools like *iStat Menus*.
 * **Memory & Kernel Panic Immunization:** Added safety handlers to automatically de-register and clean up VirtualSMC notifications (`vsmcNotifier->remove()`) when unloading drivers, eliminating kernel dangling-pointer panics. Added float-to-int conversion protections to prevent SwiftUI runtime crashes.
 * **Dynamic 32-Thread Monitoring:** Enhanced the Dashboard grid utilizing the Darwin kernel API `host_processor_info` to accurately track and report the usage of up to 32 logical threads (e.g., Ryzen 9 5900XT) in real-time.
 
-### 🎨 Premium Visual Overhaul
+### Premium Visual Overhaul
 * **Full-Bleed AMD Ryzen "SMC" AppIcon:** Designed a 3D-modeled, full-bleed AMD Ryzen Zen architecture processor icon in high resolution, displaying the acronym **"SMC"** with bold typography and elegant drop shadows.
 * **Interactive Menu Bar Preview (`MenuBarPreview`):** Added a real-time status bar layout preview inside the Settings panel that updates instantly as you customize columns, Fahrenheit conversion, or alert colors.
 * **Multi-Style Network Charts:** A three-mode interactive graph in the Dashboard featuring:
@@ -48,14 +48,14 @@ Full compatibility with all AMD Zen architectures supported by the **AMD Vanilla
   * *Curves (Overlaid)*: Smoothed Catmull-Rom curves with translucent gradients.
   * *Total*: Combined bandwidth tracking with a horizontal dashed `RuleMark` displaying your dynamic average download speed.
 
-### 🛠️ Configurable Alert Colors & Presets
+### Configurable Alert Colors & Presets
 * **Dynamic Color Alerts (Temperature Only):** Restructured to colorize *only* the temperature readings when active, keeping GHz, Power, Fan, and Memory columns in standard `.labelColor` to avoid distraction.
 * **Custom Alert Limits (Text Input):** Replaced the limit slider with a direct text input box supporting thresholds from 30°C (perfect for idle testing) up to 100°C.
 * **Editable Preset Lists:** You can type your preferred threshold options directly in the app (e.g. `30, 45, 60, 80, 90`) to dynamically populate the menu bar dropdown menu.
 
 ---
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 `SMCAMDProcessor` is distributed as two separate kernel extensions (Kexts):
 1. **`AMDRyzenCPUPowerManagement.kext`**: The core power management and hardware monitoring driver. This kext is **required** to use **AMD Power Gadget**.
@@ -76,7 +76,7 @@ This kext requires the [AMD Vanilla kernel patches](https://github.com/AMD-OSX/A
 
 ---
 
-## ⚙️ Advanced Features
+## Advanced Features
 
 ### P-State Editor (Safe Mode Guard)
 Includes a modern protection toggle in the Advanced speed shift panel. Controls are locked and rendered translucent (`opacity(0.4)`) until safety is unlocked, preventing accidental hardware setting changes.
@@ -86,10 +86,10 @@ Features a redesigned AppKit fan speed view that supports dynamic width scaling 
 
 ---
 
-## 🛡️ Safety & Security
+## Safety & Security
 All telemetry queries are performed directly through safe reads on Zen SMN registers (`0x00059800`) mimicking the Linux kernel `k10temp` and FreeBSD `amdtemp` standards. No unsafe MSR registers are written, ensuring full hardware protection and accurate reporting.
 
-## 📝 Credits & Legacy Contributors
+## Credits & Legacy Contributors
 * **trulyspinach** for the original framework and kext base.
 * **aluveitie** for improvements and macOS Sequoia/Tahoe adaptations.
 * **mauricelos**, **Lorys89**, **mbarbierato** for SMC SuperIO chip drivers.
@@ -107,7 +107,7 @@ This project would not be possible without the extensive research, development, 
 
 ---
 
-## 🤝 Release v2.1.1 Contributors & Testers
+## Release v2.1.1 Contributors & Testers
 
 Special thanks to the AMD-OSX Discord community members who helped test, report bugs, and refine this release:
 * **Kackvogel 4K**: For extensive testing on the Ryzen 9 9950X3D under Cinebench workload, verifying lower idle temperatures, and reporting layout localization issues.
