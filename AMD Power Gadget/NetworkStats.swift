@@ -35,12 +35,12 @@ class NetworkStats {
         // No background processes to clean up
     }
     
-    func startNettop() {
-        // Kept for backward compatibility with AppDelegate/TelemetryModel
+    func start() {
+        // No-op: network statistics are sampled on-demand via update()
     }
-    
-    func stopNettop() {
-        // Kept for backward compatibility with AppDelegate/TelemetryModel
+
+    func stop() {
+        // No-op: no background threads to tear down
     }
     
     func update() -> NetworkSnapshot? {

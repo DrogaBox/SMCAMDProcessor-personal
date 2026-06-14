@@ -134,8 +134,10 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
 //                provider->write_msr(0xC0010296, val | (1 << 22) | (1 << 14) | (1 << 6));
 
                 uint64_t hwConfig;
-                if(!provider->read_msr(kMSR_HWCR, &hwConfig))
-                    panic("AMDCPUSupport::startWorkLoop: wtf?");
+                if(!provider->read_msr(kMSR_HWCR, &hwConfig)) {
+                    IOLog("AMDCPUSupport::startWorkLoop: failed to read kMSR_HWCR, skipping init.\n");
+                    return;
+                }
 
                 hwConfig |= (1 << 30);
                 provider->write_msr(kMSR_HWCR, hwConfig);
@@ -154,8 +156,10 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
 
                 //Init performance frequency counter.
                 uint64_t APERF, MPERF;
-                if(!provider->read_msr(kMSR_APERF, &APERF) || !provider->read_msr(kMSR_MPERF, &MPERF))
-                    panic("AMDCPUSupport::startWorkLoop: wtf?");
+                if(!provider->read_msr(kMSR_APERF, &APERF) || !provider->read_msr(kMSR_MPERF, &MPERF)) {
+                    IOLog("AMDCPUSupport::startWorkLoop: failed to read APERF/MPERF, skipping core init.\n");
+                    return;
+                }
 
                 provider->lastAPERF_perCore[physical] = APERF;
                 provider->lastMPERF_perCore[physical] = MPERF;
@@ -308,16 +312,23 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     //   Family 19h models 60-7Fh: offset 0x308 (Zen 4)
     //   Family 1Ah models 40-4Fh: offset 0x308 (Zen 5 Granite Ridge)
     if (cpuFamily == 0x1A) {
+        // Zen 5 (Granite Ridge, etc.)
         ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
     } else if (cpuFamily == 0x19 && cpuModel >= 0x60 && cpuModel <= 0x7F) {
+        // Family 19h models 60-7Fh: Zen 4 desktop (Raphael)
+        ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
+    } else if (cpuFamily == 0x19 && cpuModel >= 0x10 && cpuModel <= 0x1F) {
+        // Family 19h models 10-1Fh: Zen 4 HEDT / Threadripper PRO 7000 WX series
         ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
     } else {
+        // Family 17h all models (Zen 1/1+/2) and Family 19h models 00-0Fh/40-5Fh (Zen 3/3+)
         ccdOffset = kZEN_CCD_OFFSET_LEGACY;
     }
     IOLog("AMDCPUSupport::start CCD temperature offset: 0x%X\n", ccdOffset);
     
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    cpuCacheL1_perCore = (cpuid_ecx >> 24) + (cpuid_ecx >> 24);
+    // L1-D size in bits [31:24] of ECX, L1-I size in bits [31:24] of EDX (CPUID 0x80000005)
+    cpuCacheL1_perCore = (cpuid_ecx >> 24) + (cpuid_edx >> 24);
     
     
     CPUInfo::getCpuid(0x80000006, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
@@ -757,7 +768,10 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
     uint64_t ctsc = rdtsc64();
 
     uint64_t msr_value_buf = 0;
-    read_msr(kMSR_PKG_ENERGY_STAT, &msr_value_buf);
+    if (!read_msr(kMSR_PKG_ENERGY_STAT, &msr_value_buf)) {
+        IOLog("AMDCPUSupport::updatePackageEnergy: failed to read MSR 0xC001029B\n");
+        return;
+    }
 
     uint32_t energyValue = (uint32_t)(msr_value_buf & 0xffffffff);
 
@@ -770,7 +784,7 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
 
 
     lastUpdateEnergyValue = energyValue;
-    pwrLastTSC = rdtsc64();
+    pwrLastTSC = ctsc;  // Use the timestamp captured at the start of this function to avoid drift
 }
 
 void AMDRyzenCPUPowerManagement::dumpPstate(){

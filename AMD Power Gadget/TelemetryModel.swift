@@ -33,32 +33,52 @@ struct PStateRow: Identifiable {
     var cpuVid: UInt32
     var cpuDfsId: UInt32
     var cpuFid: UInt32
+    var isZen5: Bool = false
 
+    /// Computed frequency in MHz, using the correct formula for the CPU architecture.
     var computedSpeedMHz: Float {
-        guard cpuDfsId > 0 else { return 0 }
-        return Float(cpuFid) / Float(cpuDfsId) * 200.0
+        if isZen5 {
+            // Zen 5 (Family 1Ah): frequency = CpuFid * 5 MHz, no divisor
+            return Float(cpuFid) * 5.0
+        } else {
+            guard cpuDfsId > 0 else { return 0 }
+            return Float(cpuFid) / Float(cpuDfsId) * 200.0
+        }
     }
 
+    /// Encodes the row back into the raw 64-bit MSR register value.
     var rawValue: UInt64 {
         var r: UInt64 = 0
         r |= UInt64(enabled)  << 63
-        r |= (UInt64(iddDiv)    & 0x3)  << 30
-        r |= (UInt64(iddValue)  & 0xff) << 22
-        r |= (UInt64(cpuVid)    & 0xff) << 14
-        r |= (UInt64(cpuDfsId)  & 0x1f) << 8
-        r |=  UInt64(cpuFid)    & 0xff
+        r |= (UInt64(iddDiv)   & 0x3)  << 30
+        r |= (UInt64(iddValue) & 0xff) << 22
+        r |= (UInt64(cpuVid)   & 0xff) << 14
+        if isZen5 {
+            // Zen 5: CpuFid occupies bits 0-11 (12 bits), no CpuDfsId field
+            r |= UInt64(cpuFid) & 0xfff
+        } else {
+            r |= (UInt64(cpuDfsId) & 0x1f) << 8
+            r |=  UInt64(cpuFid)   & 0xff
+        }
         return r
     }
 
-    static func from(raw: UInt64, index: Int) -> PStateRow {
-        PStateRow(
+    /// Decodes a raw 64-bit MSR value into a PStateRow.
+    /// - Parameters:
+    ///   - raw: The raw UInt64 register value.
+    ///   - index: The P-state index (0–7).
+    ///   - cpuFamily: The CPU family from CPUID (e.g. 0x17, 0x19, 0x1A).
+    static func from(raw: UInt64, index: Int, cpuFamily: UInt64 = 0) -> PStateRow {
+        let zen5 = cpuFamily >= 0x1A
+        return PStateRow(
             id:       index,
             enabled:  UInt32(raw >> 63),
             iddDiv:   UInt32((raw >> 30) & 0x3),
             iddValue: UInt32((raw >> 22) & 0xff),
             cpuVid:   UInt32((raw >> 14) & 0xff),
-            cpuDfsId: UInt32((raw >>  8) & 0x1f),
-            cpuFid:   UInt32( raw        & 0xff)
+            cpuDfsId: zen5 ? 1 : UInt32((raw >> 8) & 0x1f),
+            cpuFid:   zen5 ? UInt32(raw & 0xfff) : UInt32(raw & 0xff),
+            isZen5:   zen5
         )
     }
 }
@@ -162,10 +182,9 @@ final class TelemetryModel: ObservableObject {
     private var numFans = 0
     private var fanNames: [String] = []
 
-    // Inst Retired accumulation (like original Power Tool)
+    // Inst Retired accumulation (like original Power Tool) — resets display every ~1 second
     private var instAccumulated: UInt64 = 0
-    private var instSampleCount: Int = 0
-    private var instUpdateInterval: Double { RefreshRateConfig.shared.interval }
+    private var instElapsedTime: Double = 0.0
 
     init() {
         buildSystemInfo()
@@ -289,13 +308,13 @@ final class TelemetryModel: ObservableObject {
         let instDelta = ProcessorModel.shared.getInstructionDelta()
         let instSum = instDelta.reduce(0, +)
         instAccumulated += instSum
-        instSampleCount += 1
+        instElapsedTime += RefreshRateConfig.shared.interval
 
-        // Every second, update the display value and reset
-        if instSampleCount >= Int(instUpdateInterval) {
+        // Update display every ~1 second regardless of polling interval
+        if instElapsedTime >= 1.0 {
             instRetiredFormatted = formatInstRetired(instAccumulated)
             instAccumulated = 0
-            instSampleCount = 0
+            instElapsedTime = 0.0
         }
 
         var newCores: [CoreSnapshot] = []
@@ -398,7 +417,8 @@ final class TelemetryModel: ObservableObject {
 
     func loadPStateRows() {
         let raw = ProcessorModel.shared.getPStateDef()
-        pStateRows = raw.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset) }
+        let family = ProcessorModel.shared.cpuidBasic.first ?? 0
+        pStateRows = raw.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset, cpuFamily: family) }
         pStateEditorDirty = false
     }
 

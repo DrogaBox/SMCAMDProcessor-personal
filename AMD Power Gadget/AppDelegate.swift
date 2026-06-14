@@ -128,7 +128,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
-        NetworkStats.shared.stopNettop()
+        NetworkStats.shared.stop()
         ProcessorModel.shared.closeDriver()
     }
 
@@ -170,7 +170,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 print("SMAppService failed to update status: \(error)")
             }
         } else {
-            // Fallback para sistemas operativos heredados
+            // Fallback for legacy macOS versions below 13.0
             SMLoginItemSetEnabled("wtf.spinach.APGLaunchHelper" as CFString, enabled)
         }
     }

@@ -20,10 +20,11 @@ class RefreshRateConfig: ObservableObject {
     }
 
     init() {
-        interval = max(0.1, min(5.0, ud.double(forKey: "refresh_interval")))
         if ud.object(forKey: "refresh_interval") == nil {
             interval = 0.7
             ud.set(0.7, forKey: "refresh_interval")
+        } else {
+            interval = max(0.1, min(5.0, ud.double(forKey: "refresh_interval")))
         }
     }
 }
