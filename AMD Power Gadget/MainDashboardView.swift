@@ -1569,7 +1569,7 @@ struct MenuBarPreview: View {
                 // Fan Column
                 if cfg.showFanRPM {
                     HStack(spacing: 2) {
-                        Text("F\(cfg.fanIndex + 1)")
+                        Text("F\nA\nN")
                             .font(.system(size: 7.2, weight: .regular, design: .monospaced))
                             .lineSpacing(-3)
                             .multilineTextAlignment(.center)
@@ -1586,7 +1586,7 @@ struct MenuBarPreview: View {
                 // Memory Column
                 if cfg.showMemory {
                     HStack(spacing: 2) {
-                        Text("MEM")
+                        Text("M\nE\nM")
                             .font(.system(size: 7.2, weight: .regular, design: .monospaced))
                             .lineSpacing(-3)
                             .multilineTextAlignment(.center)
