@@ -372,17 +372,13 @@ class StatusbarController: NSObject, NSMenuDelegate {
 
         // Listen for config changes
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(restartTimer), name: .init("AppActiveWindowsChanged"), object: nil)
     }
 
     @objc func restartTimer() {
         updateTimer?.invalidate()
-        let isWindowActive = AppDelegate.haveActiveWindows()
         let baseInterval = RefreshRateConfig.shared.interval
-        // If the main window is closed, throttle updates to 3.0 seconds to save CPU cycles!
-        let actualInterval = isWindowActive ? baseInterval : max(baseInterval, 3.0)
         
-        updateTimer = Timer.scheduledTimer(withTimeInterval: actualInterval, repeats: true, block: { [weak self] _ in
+        updateTimer = Timer.scheduledTimer(withTimeInterval: baseInterval, repeats: true, block: { [weak self] _ in
             self?.update()
         })
     }
