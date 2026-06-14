@@ -78,8 +78,10 @@
 "Rosa" = "Rosa";
 "Turquesa" = "Turquesa";
 
-"Colores Dinámicos (Solo Temp)" = "Colores Dinámicos (Solo Temp)";
-"Color de Flechas de Red" = "Color de Flechas de Red";
+"Dynamic Colors (Temp Only)" = "Colores Dinámicos (Solo Temp)";
+"Temp Alert Color" = "Color de Alerta de Temp";
+"Temp Alert Limit" = "Límite de Temp de Alerta";
+"Network Arrows Color" = "Color de Flechas de Red";
 "Exit" = "Salir";
 "AMD Power Gadget" = "AMD Power Gadget";
 "AMD Power Tool" = "AMD Power Tool";

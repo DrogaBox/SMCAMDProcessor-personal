@@ -364,12 +364,23 @@ class StatusbarController: NSObject, NSMenuDelegate {
 
         addMenuItems()
 
-        updateTimer = Timer.scheduledTimer(withTimeInterval: RefreshRateConfig.shared.interval, repeats: true, block: { _ in
-            self.update()
-        })
+        restartTimer()
 
         // Listen for config changes
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(restartTimer), name: .init("AppActiveWindowsChanged"), object: nil)
+    }
+
+    @objc func restartTimer() {
+        updateTimer?.invalidate()
+        let isWindowActive = AppDelegate.haveActiveWindows()
+        let baseInterval = RefreshRateConfig.shared.interval
+        // If the main window is closed, throttle updates to 3.0 seconds to save CPU cycles!
+        let actualInterval = isWindowActive ? baseInterval : max(baseInterval, 3.0)
+        
+        updateTimer = Timer.scheduledTimer(withTimeInterval: actualInterval, repeats: true, block: { [weak self] _ in
+            self?.update()
+        })
     }
 
     @objc func updateLength() {
@@ -536,14 +547,14 @@ class StatusbarController: NSObject, NSMenuDelegate {
         
         m.addItem(NSMenuItem.separator())
         
-        // Colores Dinámicos (Solo Temp)
-        let alertsItem = NSMenuItem(title: NSLocalizedString("Colores Dinámicos (Solo Temp)", comment: ""), action: #selector(toggleColorAlerts(_:)), keyEquivalent: "")
+        // Dynamic Colors (Temp Only)
+        let alertsItem = NSMenuItem(title: NSLocalizedString("Dynamic Colors (Temp Only)", comment: ""), action: #selector(toggleColorAlerts(_:)), keyEquivalent: "")
         alertsItem.target = self
         alertsItem.state = MenuBarConfig.shared.enableColorAlerts ? .on : .off
         m.addItem(alertsItem)
 
         let tempColorSubmenu = NSMenu()
-        let colorsList = ["Verde", "Azul", "Naranja", "Rojo", "Morado", "Rosa", "Turquesa"]
+        let colorsList = ["Green", "Blue", "Orange", "Red", "Purple", "Pink", "Teal"]
         for (idx, colorName) in colorsList.enumerated() {
             let localizedColor = NSLocalizedString(colorName, comment: "")
             let colorItem = NSMenuItem(title: localizedColor, action: #selector(changeTempColor(_:)), keyEquivalent: "")
@@ -552,7 +563,7 @@ class StatusbarController: NSObject, NSMenuDelegate {
             colorItem.state = (MenuBarConfig.shared.tempColorIdx == idx) ? .on : .off
             tempColorSubmenu.addItem(colorItem)
         }
-        let tempColorMenuItem = NSMenuItem(title: NSLocalizedString("Color de Alerta de Temp", comment: ""), action: nil, keyEquivalent: "")
+        let tempColorMenuItem = NSMenuItem(title: NSLocalizedString("Temp Alert Color", comment: ""), action: nil, keyEquivalent: "")
         tempColorMenuItem.submenu = tempColorSubmenu
         m.addItem(tempColorMenuItem)
 
@@ -573,14 +584,14 @@ class StatusbarController: NSObject, NSMenuDelegate {
             limitItem.state = (currentLimit == limit) ? .on : .off
             tempLimitSubmenu.addItem(limitItem)
         }
-        let tempLimitMenuItem = NSMenuItem(title: NSLocalizedString("Límite de Temp de Alerta", comment: ""), action: nil, keyEquivalent: "")
+        let tempLimitMenuItem = NSMenuItem(title: NSLocalizedString("Temp Alert Limit", comment: ""), action: nil, keyEquivalent: "")
         tempLimitMenuItem.submenu = tempLimitSubmenu
         m.addItem(tempLimitMenuItem)
         
         m.addItem(NSMenuItem.separator())
         
         let colorSubmenu = NSMenu()
-        let colors = ["Verde", "Azul", "Naranja", "Rojo", "Morado", "Rosa", "Turquesa"]
+        let colors = ["Green", "Blue", "Orange", "Red", "Purple", "Pink", "Teal"]
         for (idx, colorName) in colors.enumerated() {
             let localizedColor = NSLocalizedString(colorName, comment: "")
             let colorItem = NSMenuItem(title: localizedColor, action: #selector(changeNetColor(_:)), keyEquivalent: "")
@@ -589,7 +600,7 @@ class StatusbarController: NSObject, NSMenuDelegate {
             colorItem.state = (MenuBarConfig.shared.netColorIdx == idx) ? .on : .off
             colorSubmenu.addItem(colorItem)
         }
-        let colorMenuItem = NSMenuItem(title: NSLocalizedString("Color de Flechas de Red", comment: ""), action: nil, keyEquivalent: "")
+        let colorMenuItem = NSMenuItem(title: NSLocalizedString("Network Arrows Color", comment: ""), action: nil, keyEquivalent: "")
         colorMenuItem.submenu = colorSubmenu
         m.addItem(colorMenuItem)
         

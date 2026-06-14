@@ -409,7 +409,7 @@ class ProcessorModel {
 
     func getHPCpus() -> Int{
         let o = kernelGetUInt64(count: 1, selector: 17)
-        return Int(o[0])
+        return o.count > 0 ? Int(o[0]) : 0
     }
 
     func setPState(state : Int) {
@@ -516,7 +516,7 @@ class ProcessorModel {
 
     func getPPM() -> Bool {
         let o = kernelGetUInt64(count: 2, selector: 13)
-        return o[0] == 0 ? false : true
+        return o.count > 0 && o[0] != 0
     }
 
     func setPPM(enabled : Bool){
@@ -533,7 +533,7 @@ class ProcessorModel {
 
     func getLPM() -> Bool {
         let o = kernelGetUInt64(count: 1, selector: 18)
-        return o[0] == 0 ? false : true
+        return o.count > 0 && o[0] != 0
     }
 
     func setLPM(enabled : Bool){
@@ -550,7 +550,7 @@ class ProcessorModel {
 
     func getInstructionDelta() -> [UInt64]{
         let o = kernelGetUInt64(count: 1, selector: 5)
-        return [o[0]]
+        return o.count > 0 ? [o[0]] : [0]
     }
 
     func setPState(def : [UInt64]) -> Int{
