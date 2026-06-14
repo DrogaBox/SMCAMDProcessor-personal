@@ -137,7 +137,7 @@ fileprivate class StatusbarView: NSView {
             let cpuColor: NSColor = .labelColor
             
             if cfg.showMaxFreqOnly {
-                drawCompactSingle(label: "CPU", val: "\(maxFr)G", color: cpuColor, x: x)
+                drawCompactSingle(label: "C\nP\nU", val: "\(maxFr)G", color: cpuColor, x: x)
                 x += 46
             } else {
                 drawCompactDoubleColored(label: "C\nP\nU", up: "\(maxFr)Ghz", upColor: cpuColor, down: "\(avgFr)Ghz", downColor: .labelColor, x: x)
@@ -192,10 +192,9 @@ fileprivate class StatusbarView: NSView {
         // FAN column
         if cfg.showFanRPM {
             let fan = fanRPM > 0 ? String(fanRPM) : "—"
-            let fanLabel = "F" + String(cfg.fanIndex + 1)
             let fanColor: NSColor = .labelColor
             
-            drawCompactDoubleColored(label: fanLabel, up: fan, upColor: fanColor, down: "RPM", downColor: .labelColor, x: x)
+            drawCompactDoubleColored(label: "F\nA\nN", up: fan, upColor: fanColor, down: "RPM", downColor: .labelColor, x: x)
             x += 54
         }
 
@@ -204,7 +203,7 @@ fileprivate class StatusbarView: NSView {
             let used = String(format: "%.1fG", memoryUsed)
             let memColor: NSColor = .labelColor
             
-            drawCompactDoubleColored(label: "MEM", up: used, upColor: memColor, down: totalMemory, downColor: .labelColor, x: x)
+            drawCompactDoubleColored(label: "M\nE\nM", up: used, upColor: memColor, down: totalMemory, downColor: .labelColor, x: x)
             x += 54
         }
 
