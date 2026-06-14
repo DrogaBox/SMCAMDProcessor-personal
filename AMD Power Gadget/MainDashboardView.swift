@@ -219,10 +219,7 @@ private struct InfoRow: View {
             Spacer()
             Text(value).font(.system(size: 12, weight: .semibold, design: .monospaced)).foregroundColor(.tahoeText).multilineTextAlignment(.trailing)
         }
-        .padding(.vertical, 8).padding(.horizontal, 14)
-        .background(Color.tahoeCard)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
-        .cornerRadius(8)
+        .padding(.vertical, 4)
     }
 }
 
@@ -607,13 +604,21 @@ struct TelemetryContentView: View {
                 }
 
                 SectionTitle("Current Values")
-                InfoRow(label: "CPU Model",       value: model.sysInfo.cpuBrand)
-                InfoRow(label: "Avg Frequency",   value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
-                InfoRow(label: "Max Frequency",   value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
-                InfoRow(label: "CPU Temperature", value: String(format: "%.2f °C",  model.cpuTempC))
-                InfoRow(label: "Package Power",   value: String(format: "%.2f W",   model.cpuWatts))
-                InfoRow(label: "GPU Temperature", value: String(format: "%.2f °C",  model.gpuTempC))
-                InfoRow(label: "GPU Power",       value: String(format: "%.2f W",   model.gpuPowerW))
+                TahoeCard {
+                    InfoRow(label: "CPU Model",       value: model.sysInfo.cpuBrand)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Avg Frequency",   value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Max Frequency",   value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "CPU Temperature", value: String(format: "%.2f °C",  model.cpuTempC))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Package Power",   value: String(format: "%.2f W",   model.cpuWatts))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Temperature", value: String(format: "%.2f °C",  model.gpuTempC))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Power",       value: String(format: "%.2f W",   model.gpuPowerW))
+                }
             }
             .padding(18)
         }
@@ -1210,11 +1215,15 @@ struct ProfilesContentView: View {
                     }
                 }
                 SectionTitle("Active Profile")
-                if stepLabels.indices.contains(model.selectedSpeedStep) {
-                    InfoRow(label: "Profile", value: stepLabels[model.selectedSpeedStep].replacingOccurrences(of: "\n", with: " — "))
+                TahoeCard {
+                    if stepLabels.indices.contains(model.selectedSpeedStep) {
+                        InfoRow(label: "Profile", value: stepLabels[model.selectedSpeedStep].replacingOccurrences(of: "\n", with: " — "))
+                        Divider().background(Color.tahoeCardBorder)
+                    }
+                    InfoRow(label: "Avg Frequency", value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Max Frequency", value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
                 }
-                InfoRow(label: "Avg Frequency", value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
-                InfoRow(label: "Max Frequency", value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
             }
             .padding(18)
         }
@@ -1877,21 +1886,40 @@ struct SystemInfoContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SectionTitle("Processor")
-                InfoRow(label: "CPU Model",      value: model.sysInfo.cpuBrand)
-                InfoRow(label: "Family",          value: model.sysInfo.cpuFamily)
-                InfoRow(label: "Model ID",        value: model.sysInfo.cpuModel)
-                InfoRow(label: "Physical Cores",  value: "\(model.sysInfo.physicalCores)")
-                InfoRow(label: "Logical Cores",   value: "\(model.sysInfo.logicalCores)")
-                InfoRow(label: "L1 Cache (Total)",value: "\(model.sysInfo.l1KB) KB")
-                InfoRow(label: "L2 Cache (Total)",value: "\(model.sysInfo.l2MB) MB")
-                InfoRow(label: "L3 Cache (Shared)",value: "\(model.sysInfo.l3MB) MB")
+                TahoeCard {
+                    InfoRow(label: "CPU Model",      value: model.sysInfo.cpuBrand)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Family",          value: model.sysInfo.cpuFamily)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Model ID",        value: model.sysInfo.cpuModel)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Physical Cores",  value: "\(model.sysInfo.physicalCores)")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Logical Cores",   value: "\(model.sysInfo.logicalCores)")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "L1 Cache (Total)",value: "\(model.sysInfo.l1KB) KB")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "L2 Cache (Total)",value: "\(model.sysInfo.l2MB) MB")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "L3 Cache (Shared)",value: "\(model.sysInfo.l3MB) MB")
+                }
 
                 Divider().background(Color.tahoeCardBorder)
                 SectionTitle("Platform")
-                if !model.sysInfo.boardName.isEmpty {
-                    InfoRow(label: "Motherboard", value: model.sysInfo.boardName)
-                    InfoRow(label: "Manufacturer", value: model.sysInfo.boardVendor)
-                } else {
+                TahoeCard {
+                    if !model.sysInfo.boardName.isEmpty {
+                        InfoRow(label: "Motherboard", value: model.sysInfo.boardName)
+                        Divider().background(Color.tahoeCardBorder)
+                        InfoRow(label: "Manufacturer", value: model.sysInfo.boardVendor)
+                        Divider().background(Color.tahoeCardBorder)
+                    }
+                    InfoRow(label: "Graphics", value: model.sysInfo.gpuModel.isEmpty ? "Unknown" : model.sysInfo.gpuModel)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Memory",   value: "\(model.sysInfo.ramGB) GB")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Storage",  value: "\(model.sysInfo.storageGB) GB")
+                }
+                if model.sysInfo.boardName.isEmpty {
                     TahoeCard(accent: Color.tahoeAccentOrange.opacity(0.3)) {
                         HStack(spacing: 10) {
                             Image(systemName: "exclamationmark.triangle").foregroundColor(.tahoeAccentOrange)
@@ -1902,15 +1930,16 @@ struct SystemInfoContentView: View {
                         }
                     }
                 }
-                InfoRow(label: "Graphics", value: model.sysInfo.gpuModel.isEmpty ? "Unknown" : model.sysInfo.gpuModel)
-                InfoRow(label: "Memory",   value: "\(model.sysInfo.ramGB) GB")
-                InfoRow(label: "Storage",  value: "\(model.sysInfo.storageGB) GB")
 
                 Divider().background(Color.tahoeCardBorder)
                 SectionTitle("Software")
-                InfoRow(label: "macOS Version",   value: model.sysInfo.macOSVersion)
-                InfoRow(label: "Kext Version",    value: model.sysInfo.kextVersion)
-                InfoRow(label: "CPU Supported",   value: model.sysInfo.kextSupported ? "Yes ✅" : "Not yet")
+                TahoeCard {
+                    InfoRow(label: "macOS Version",   value: model.sysInfo.macOSVersion)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Kext Version",    value: model.sysInfo.kextVersion)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "CPU Supported",   value: model.sysInfo.kextSupported ? "Yes ✅" : "Not yet")
+                }
 
                 Divider().background(Color.tahoeCardBorder)
                 SectionTitle("Links")
