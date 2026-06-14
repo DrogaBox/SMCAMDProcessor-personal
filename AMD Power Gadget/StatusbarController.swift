@@ -337,6 +337,11 @@ class StatusbarController: NSObject, NSMenuDelegate {
     private var smcReady = false
     private var numFans = 0
 
+    private var peakTemp: Float = 0
+    private var peakPower: Float = 0
+    private var peakFreq: Float = 0
+    private var peakFan: UInt64 = 0
+
     override init() {
         super.init()
 
@@ -415,6 +420,10 @@ class StatusbarController: NSObject, NSMenuDelegate {
         let meanFre = Float(frequencies.reduce(0, +) / Float(frequencies.count))
         let maxFre = Float(frequencies.max()!)
 
+        if temperature > peakTemp { peakTemp = temperature }
+        if power > peakPower { peakPower = power }
+        if maxFre > peakFreq { peakFreq = maxFre }
+
         let now = Date()
         if now.timeIntervalSince(lastGPUReadTime) >= gpuCacheInterval {
             let rawGPUTemp = ProcessorModel.shared.getGPUTemp()
@@ -438,7 +447,9 @@ class StatusbarController: NSObject, NSMenuDelegate {
         if smcReady {
             if numFans > 0 {
                 let rpms = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 93)
-                view?.fanRPM = (fanIdx < rpms.count) ? rpms[fanIdx] : 0
+                let currentFan = (fanIdx < rpms.count) ? rpms[fanIdx] : 0
+                view?.fanRPM = currentFan
+                if currentFan > peakFan { peakFan = currentFan }
             } else {
                 view?.fanRPM = 0
             }
@@ -530,6 +541,14 @@ class StatusbarController: NSObject, NSMenuDelegate {
         }
     }
 
+    @objc func resetPeaks() {
+        peakTemp = 0
+        peakPower = 0
+        peakFreq = 0
+        peakFan = 0
+        update()
+    }
+
     private func addMenuItems() {
         if menu == nil {
             menu = NSMenu()
@@ -544,6 +563,50 @@ class StatusbarController: NSObject, NSMenuDelegate {
         item = NSMenuItem(title: NSLocalizedString("SMC Fans", comment: ""), action: #selector(fans), keyEquivalent: ""); item.target = self
         m.addItem(item)
         
+        m.addItem(NSMenuItem.separator())
+
+        // Session Peaks submenu
+        let peaksMenu = NSMenu()
+        
+        var displayPeakTemp = peakTemp
+        var unitStr = "°C"
+        if MenuBarConfig.shared.useFahrenheit {
+            displayPeakTemp = peakTemp * 9.0 / 5.0 + 32.0
+            unitStr = "°F"
+        }
+        
+        let tempStr = String(format: "Peak Temp: %.1f\(unitStr)", displayPeakTemp)
+        let tempItem = NSMenuItem(title: tempStr, action: nil, keyEquivalent: "")
+        tempItem.isEnabled = false
+        peaksMenu.addItem(tempItem)
+
+        let pwrStr = String(format: "Peak Power: %.1f W", peakPower)
+        let pwrItem = NSMenuItem(title: pwrStr, action: nil, keyEquivalent: "")
+        pwrItem.isEnabled = false
+        peaksMenu.addItem(pwrItem)
+
+        let freqStr = String(format: "Peak Freq: %.2f GHz", peakFreq * 0.001)
+        let freqItem = NSMenuItem(title: freqStr, action: nil, keyEquivalent: "")
+        freqItem.isEnabled = false
+        peaksMenu.addItem(freqItem)
+
+        if numFans > 0 && peakFan > 0 {
+            let fanStr = String(format: "Peak Fan: %d RPM", peakFan)
+            let fanItem = NSMenuItem(title: fanStr, action: nil, keyEquivalent: "")
+            fanItem.isEnabled = false
+            peaksMenu.addItem(fanItem)
+        }
+
+        peaksMenu.addItem(NSMenuItem.separator())
+
+        let resetPeaksItem = NSMenuItem(title: NSLocalizedString("Reset Peaks", comment: ""), action: #selector(resetPeaks), keyEquivalent: "")
+        resetPeaksItem.target = self
+        peaksMenu.addItem(resetPeaksItem)
+
+        let peaksMenuItem = NSMenuItem(title: NSLocalizedString("Session Peaks", comment: ""), action: nil, keyEquivalent: "")
+        peaksMenuItem.submenu = peaksMenu
+        m.addItem(peaksMenuItem)
+
         m.addItem(NSMenuItem.separator())
         
         // Dynamic Colors (Temp Only)

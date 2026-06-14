@@ -116,3 +116,7 @@
 "Avg: %.2f Ghz, Max: %.2f Ghz" = "Prom.: %.2f GHz, Máx.: %.2f GHz";
 "%.2f °C" = "%.2f °C";
 "%.2f Watt" = "%.2f W";
+
+/* Session Peaks */
+"Session Peaks" = "Picos de la Sesión";
+"Reset Peaks" = "Restablecer Picos";
