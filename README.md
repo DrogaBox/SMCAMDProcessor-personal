@@ -44,8 +44,8 @@ Full compatibility with all AMD Zen architectures supported by the **AMD Vanilla
 * **Full-Bleed AMD Ryzen "SMC" AppIcon:** Designed a 3D-modeled, full-bleed AMD Ryzen Zen architecture processor icon in high resolution, displaying the acronym **"SMC"** with bold typography and elegant drop shadows.
 * **Interactive Menu Bar Preview (`MenuBarPreview`):** Added a real-time status bar layout preview inside the Settings panel that updates instantly as you customize columns, Fahrenheit conversion, or alert colors.
 * **Multi-Style Network Charts:** A three-mode interactive graph in the Dashboard featuring:
-  * *Barras (Bidireccional)*: A dense, responsive upload/download monitor in the style of *Little Snitch*.
-  * *Curvas (Superpuestas)*: Suavizada Catmull-Rom curves with translucent gradients.
+  * *Bars (Bidirectional)*: A dense, responsive upload/download monitor in the style of *Little Snitch*.
+  * *Curves (Overlaid)*: Smoothed Catmull-Rom curves with translucent gradients.
   * *Total*: Combined bandwidth tracking with a horizontal dashed `RuleMark` displaying your dynamic average download speed.
 
 ### 🛠️ Configurable Alert Colors & Presets
