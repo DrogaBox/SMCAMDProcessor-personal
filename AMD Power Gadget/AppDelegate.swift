@@ -29,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         let options: [NSApplication.AboutPanelOptionKey: Any] = [
             .credits: attributedString,
-            .applicationVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.1",
+            .applicationVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.3",
             .version: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         ]
         NSApp.orderFrontStandardAboutPanel(options: options)

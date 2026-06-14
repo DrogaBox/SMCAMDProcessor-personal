@@ -29,6 +29,11 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
         data = ProcessorModel.shared.getPStateDef().map({value2Dict(v: $0)})
     }
 
+    var isZen5: Bool {
+        let id = ProcessorModel.shared.cpuidBasic
+        return id.count > 0 && id[0] >= 0x1A
+    }
+
     func value2Dict(v : UInt64) -> [String: UInt32]{
         var r = [String: UInt32]()
 
@@ -36,9 +41,14 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
         r["IddDiv"] = UInt32((v >> 30) & 0x3)
         r["IddValue"] = UInt32((v >> 22) & 0xff)
         r["CpuVid"] = UInt32((v >> 14) & 0xff)
-        r["CpuDfsId"] = UInt32((v >> 8) & 0x1f)
-        r["CpuFid"] = UInt32(v & 0xff)
-
+        
+        if isZen5 {
+            r["CpuDfsId"] = 1
+            r["CpuFid"] = UInt32(v & 0xfff)
+        } else {
+            r["CpuDfsId"] = UInt32((v >> 8) & 0x1f)
+            r["CpuFid"] = UInt32(v & 0xff)
+        }
 
         return r
     }
@@ -50,20 +60,34 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
         r |= (UInt64(d["IddDiv"]!) & 0x3) << 30
         r |= (UInt64(d["IddValue"]!) & 0xff) << 22
         r |= (UInt64(d["CpuVid"]!) & 0xff) << 14
-        r |= (UInt64(d["CpuDfsId"]!) & 0x1f) << 8
-        r |= UInt64(d["CpuFid"]!) & 0xff
+        
+        if isZen5 {
+            r |= UInt64(d["CpuFid"]!) & 0xfff
+        } else {
+            r |= (UInt64(d["CpuDfsId"]!) & 0x1f) << 8
+            r |= UInt64(d["CpuFid"]!) & 0xff
+        }
 
         return r
     }
 
     func dict2Speed(v : [String: UInt32]) -> Float{
-        return Float(v["CpuFid"]!) / Float(v["CpuDfsId"]!) * 200.0
+        if isZen5 {
+            return Float(v["CpuFid"]!) * 5.0
+        } else {
+            return Float(v["CpuFid"]!) / Float(v["CpuDfsId"]!) * 200.0
+        }
     }
 
     func speed2Dict(v : [String: UInt32], speed : UInt32) -> [String: UInt32] {
         var nd = v
-        let targetFid = Float(speed) / 200.0 * Float(v["CpuDfsId"]!)
-        nd["CpuFid"] = UInt32(targetFid)
+        if isZen5 {
+            let targetFid = Float(speed) / 5.0
+            nd["CpuFid"] = UInt32(targetFid)
+        } else {
+            let targetFid = Float(speed) / 200.0 * Float(v["CpuDfsId"]!)
+            nd["CpuFid"] = UInt32(targetFid)
+        }
 
         return nd
     }
@@ -92,6 +116,13 @@ class PStateEditorViewController: NSViewController, NSTableViewDelegate, NSTable
 
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
         return 24
+    }
+
+    func tableView(_ tableView: NSTableView, shouldEdit tableColumn: NSTableColumn?, row: Int) -> Bool {
+        if isZen5 && tableColumn?.identifier.rawValue == "CpuDfsId" {
+            return false
+        }
+        return true
     }
 
     func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
