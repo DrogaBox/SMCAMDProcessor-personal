@@ -550,7 +550,10 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
     
     uint64_t msr_value_buf = 0;
     bool err = !read_msr(kMSR_HARDWARE_PSTATE_STATUS, &msr_value_buf);
-    if(err) panic("AMDCPUSupport::updateClockSpeed: fucked up");
+    if (err) {
+        IOLog("AMDCPUSupport::updateClockSpeed failed to read MSR 0xC0010293\n");
+        return;
+    }
     
     //Convert register value to clock speed.
     uint32_t eax = (uint32_t)(msr_value_buf & 0xffffffff);
@@ -630,8 +633,10 @@ void AMDRyzenCPUPowerManagement::calculateEffectiveFrequency(uint8_t physical){
 void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
     uint64_t insCount;
     
-    if(!read_msr(kMSR_PERF_IRPC, &insCount))
-        panic("AMDCPUSupport::updateInstructionDelta: fucked up");
+    if(!read_msr(kMSR_PERF_IRPC, &insCount)) {
+        IOLog("AMDCPUSupport::updateInstructionDelta failed to read MSR 0xC00000E9\n");
+        return;
+    }
     
     
     //Skip if overflowed
@@ -665,8 +670,10 @@ void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
     if(!cpbSupported) return;
     
     uint64_t hwConfig;
-    if(!read_msr(kMSR_HWCR, &hwConfig))
-        panic("AMDCPUSupport::setCPBState: wtf?");
+    if(!read_msr(kMSR_HWCR, &hwConfig)) {
+        IOLog("AMDCPUSupport::setCPBState failed to read MSR 0xC0010015\n");
+        return;
+    }
     
     if(enabled){
         hwConfig &= ~(1 << 25);
@@ -686,8 +693,10 @@ void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
 
 bool AMDRyzenCPUPowerManagement::getCPBState(){
     uint64_t hwConfig;
-    if(!read_msr(kMSR_HWCR, &hwConfig))
-        panic("AMDCPUSupport::start: wtf?");
+    if(!read_msr(kMSR_HWCR, &hwConfig)) {
+        IOLog("AMDCPUSupport::getCPBState failed to read MSR 0xC0010015\n");
+        return false;
+    }
     
     return !((hwConfig >> 25) & 0x1);
 }
@@ -770,7 +779,10 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
     for (uint32_t i = 0; i < kMSR_PSTATE_LEN; i++) {
         uint64_t msr_value_buf = 0;
         bool err = !read_msr(kMSR_PSTATE_0 + i, &msr_value_buf);
-        if(err) panic("AMDCPUSupport::dumpPstate: fucked up");
+        if (err) {
+            IOLog("AMDCPUSupport::dumpPstate failed to read MSR 0xC0010064\n");
+            continue;
+        }
         
         uint32_t eax = (uint32_t)(msr_value_buf & 0xffffffff);
         
