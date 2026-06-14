@@ -104,3 +104,14 @@ This project would not be possible without the extensive research, development, 
 * **CorpGhost**: Valued forum contributor, widely recognized for motherboard patching, ACPI solutions, and helping users resolve complex configuration issues.
 * **Royal**: Discord server moderator and helper, for maintaining the community platform and providing essential support to Ryzentosh users.
 * **The AMD-OSX Community**: All the forum moderators, Discord staff, developers, and active testers who contribute their time and feedback to keep the Ryzentosh ecosystem active and stable.
+
+---
+
+## 🤝 Release v2.1.1 Contributors & Testers
+
+Special thanks to the AMD-OSX Discord community members who helped test, report bugs, and refine this release:
+* **Kackvogel 4K**: For extensive testing on the Ryzen 9 9950X3D under Cinebench workload, verifying lower idle temperatures, and reporting layout localization issues.
+* **Can**: For testing the Ryzen 7 9850X3D and identifying the 10GHz+ CPU frequency reporting overflow.
+* **MacOSx11**: For identifying and reporting the SMC/fan driver initialization crash on unsupported motherboards.
+* **royal**: For the feedback highlighting the correct Xcode native i18n structure to ensure clean English baseline fallbacks.
+

@@ -221,7 +221,10 @@ final class TelemetryModel: ObservableObject {
         guard initRes.count > 0 && initRes[0] == 1 else { return }
         smcDriverLoaded = true
 
-        numFans = Int(ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91)[0])
+        let fansRes = ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91)
+        guard fansRes.count > 0 else { return }
+        numFans = Int(fansRes[0])
+        
         fanNames.removeAll()
         for i in 0..<numFans {
             fanNames.append(ProcessorModel.shared.kernelGetString(selector: 92, args: [UInt64(i)]))

@@ -555,15 +555,22 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
     //Convert register value to clock speed.
     uint32_t eax = (uint32_t)(msr_value_buf & 0xffffffff);
     
-    // MSRC001_0293
-    // CurHwPstate [24:22]
-    // CurCpuVid [21:14]
-    // CurCpuDfsId [13:8]
-    // CurCpuFid [7:0]
-    float curCpuDfsId = (float)((eax >> 8) & 0x3f);
-    float curCpuFid = (float)(eax & 0xff);
-    
-    float clock = curCpuFid / curCpuDfsId * 200.0f;
+    float clock;
+    if (cpuFamily >= 0x1A) {
+        // Family 1Ah onward (Zen 5) uses 12-bit CpuFid and no CpuDfsId.
+        // Frequency is CpuFid * 5 MHz.
+        float curCpuFid = (float)(eax & 0xfff);
+        clock = curCpuFid * 5.0f;
+    } else {
+        // MSRC001_0293
+        // CurHwPstate [24:22]
+        // CurCpuVid [21:14]
+        // CurCpuDfsId [13:8]
+        // CurCpuFid [7:0]
+        float curCpuDfsId = (float)((eax >> 8) & 0x3f);
+        float curCpuFid = (float)(eax & 0xff);
+        clock = curCpuFid / curCpuDfsId * 200.0f;
+    }
     
 //    PStateCur_perCore[physical] = curHwPstate;
     effFreq_perCore[physical] = clock;
@@ -767,13 +774,19 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
         
         uint32_t eax = (uint32_t)(msr_value_buf & 0xffffffff);
         
-        // CpuVid [21:14]
-        // CpuDfsId [13:8]
-        // CpuFid [7:0]
-        int curCpuDfsId = (int)((eax >> 8) & 0x3f);
-        int curCpuFid = (int)(eax & 0xff);
-        
-        float clock = (float)((float)curCpuFid / (float)curCpuDfsId * 200.0);
+        float clock;
+        if (cpuFamily >= 0x1A) {
+            // Family 1Ah (Zen 5) uses 12-bit CpuFid.
+            int curCpuFid = (int)(eax & 0xfff);
+            clock = (float)(curCpuFid * 5.0);
+        } else {
+            // CpuVid [21:14]
+            // CpuDfsId [13:8]
+            // CpuFid [7:0]
+            int curCpuDfsId = (int)((eax >> 8) & 0x3f);
+            int curCpuFid = (int)(eax & 0xff);
+            clock = (float)((float)curCpuFid / (float)curCpuDfsId * 200.0);
+        }
         
         PStateDef_perCore[i] = msr_value_buf;
         PStateDefClock_perCore[i] = clock;
@@ -800,10 +813,16 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
         for (uint32_t i = 0; i < kMSR_PSTATE_LEN; i++) {
             uint64_t def = v[i];
             
-            uint64_t curCpuDfsId = ((def >> 8) & 0x3f);
-            uint64_t curCpuFid = (def & 0xff);
-            if(!def || !curCpuDfsId || !curCpuFid)
-                continue;
+            if (provider->cpuFamily >= 0x1A) {
+                uint64_t curCpuFid = (def & 0xfff);
+                if (!def || !curCpuFid)
+                    continue;
+            } else {
+                uint64_t curCpuDfsId = ((def >> 8) & 0x3f);
+                uint64_t curCpuFid = (def & 0xff);
+                if (!def || !curCpuDfsId || !curCpuFid)
+                    continue;
+            }
             
             provider->write_msr(provider->kMSR_PSTATE_0 + i, def);
             

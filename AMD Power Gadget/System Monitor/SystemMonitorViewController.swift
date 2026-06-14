@@ -42,7 +42,7 @@ class SystemMonitorViewController: NSViewController, NSTableViewDelegate, NSTabl
         
         //init smc
         let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
-        if initRes[0] != 1{
+        if initRes.count < 2 || initRes[0] != 1 {
             
             let alert = NSAlert()
             alert.messageText = "Could not found driver for your SMC."
@@ -58,17 +58,26 @@ class SystemMonitorViewController: NSViewController, NSTableViewDelegate, NSTabl
             
         } else {driverLoaded = true}
         
-        ProcessorModel.shared.fetchSMCChipSupport(chipIntel: Int(initRes[1]), working: initRes[0] == 1)
+        let chipIntelVal = initRes.count >= 2 ? Int(initRes[1]) : 0
+        let isWorking = initRes.count >= 2 && initRes[0] == 1
+        ProcessorModel.shared.fetchSMCChipSupport(chipIntel: chipIntelVal, working: isWorking)
         
         chipIntelLabel.stringValue =
             String(format: "Chip ID: %X, Revision: %X, \(driverLoaded ? "Connected" : "Not yet supported")",
-                    initRes[1] >> 8, initRes[1] & 0xff)
+                    chipIntelVal >> 8, chipIntelVal & 0xff)
         
         if driverLoaded {
-            numFans = Int(ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91)[0])
+            let fansRes = ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91)
+            if fansRes.count > 0 {
+                numFans = Int(fansRes[0])
+            } else {
+                numFans = 0
+            }
             
-            for i in 0...numFans-1 {
-                fanNames.append(ProcessorModel.shared.kernelGetString(selector: 92, args: [UInt64(i)]))
+            if numFans > 0 {
+                for i in 0...numFans-1 {
+                    fanNames.append(ProcessorModel.shared.kernelGetString(selector: 92, args: [UInt64(i)]))
+                }
             }
             
             fanRpms = [UInt64](repeating: 0, count: numFans)

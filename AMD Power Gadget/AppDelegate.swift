@@ -44,7 +44,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     static func updateDockIcon() {
-        NSApplication.shared.setActivationPolicy(haveActiveWindows() ? .regular : .accessory)
+        let active = haveActiveWindows()
+        NSApplication.shared.setActivationPolicy(active ? .regular : .accessory)
+        NotificationCenter.default.post(name: .init("AppActiveWindowsChanged"), object: active)
     }
 
     @IBAction func changeAppearance(_ sender: Any) {

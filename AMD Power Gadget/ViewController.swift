@@ -56,6 +56,9 @@ class ViewController: NSViewController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
 
+        window.isOpaque = false
+        window.backgroundColor = .clear
+
         // Make window resizable in all directions
         var style = window.styleMask
         style.insert(.resizable)
