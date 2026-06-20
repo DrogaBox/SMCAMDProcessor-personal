@@ -250,6 +250,8 @@ void AMDRyzenCPUPowerManagement::stopWorkLoop() {
 
 void AMDRyzenCPUPowerManagement::resumeWorkLoop() {
     workLoop->enableAllEventSources();
+    if (timerEvent_main) timerEvent_main->setTimeoutMS(1);
+    if (timerEvent_tempe) timerEvent_tempe->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
 }
 
 bool AMDRyzenCPUPowerManagement::start(IOService *provider){

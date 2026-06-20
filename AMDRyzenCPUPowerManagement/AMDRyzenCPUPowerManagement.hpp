@@ -119,7 +119,7 @@ public:
      */
     static constexpr uint32_t kZEN_CCD_OFFSET_LEGACY = 0x154;
     static constexpr uint32_t kZEN_CCD_OFFSET_ZEN4_5 = 0x308;
-    static constexpr uint8_t  kMAX_CCD_COUNT = 8;
+    static constexpr uint8_t  kMAX_CCD_COUNT = 16;
     static constexpr uint32_t kZEN_CCD_TEMP_VALID_BIT = (1 << 11);
     static constexpr uint32_t kZEN_CCD_TEMP_MASK = 0x7FF;
     
