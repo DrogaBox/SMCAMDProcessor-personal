@@ -287,20 +287,20 @@ final class TelemetryModel: ObservableObject {
             }
             info.metalVersion = "\(ver) (\(device.name))"
         } else {
-            info.metalVersion = "No Soportado"
+            info.metalVersion = "Not Supported"
         }
 
         // VDA Decoders Detection (VideoToolbox)
         let h264 = VTIsHardwareDecodeSupported(kCMVideoCodecType_H264)
         let hevc = VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)
         if h264 && hevc {
-            info.vdaAcceleration = "H.264 & HEVC Activos"
+            info.vdaAcceleration = "H.264 & HEVC Active"
         } else if h264 {
-            info.vdaAcceleration = "H.264 Activo (HEVC Inactivo)"
+            info.vdaAcceleration = "H.264 Active (HEVC Inactive)"
         } else if hevc {
-            info.vdaAcceleration = "HEVC Activo (H.264 Inactivo)"
+            info.vdaAcceleration = "HEVC Active (H.264 Inactive)"
         } else {
-            info.vdaAcceleration = "Inactivo / No Soportado"
+            info.vdaAcceleration = "Inactive / Not Supported"
         }
 
         sysInfo = info
