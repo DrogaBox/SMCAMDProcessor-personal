@@ -35,7 +35,11 @@
 "Color de Alerta de Temp" = "Color de Alerta de Temp";
 "Color de Flechas" = "Color de Flechas";
 "Additional telemetry for the menu bar." = "Telemetría adicional para la barra de menú.";
-"GPU data is shown inside Temp and Power columns when enabled." = "Los datos del GPU se muestran en las columnas de Temp y Power si se activa.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "Los datos del GPU se muestran en las columnas de Temp, Power, Memoria y Ventiladores si se activa.";
+"Show GPU VRAM" = "Mostrar VRAM de GPU";
+"G:X.XG in Memory column" = "G:X.XG en columna de Memoria";
+"Show GPU Fan Speed" = "Mostrar RPM de Ventilador de GPU";
+"G:XXXX in Fan column" = "G:XXXX en columna de Ventiladores";
 
 "No fans detected." = "No se detectaron ventiladores.";
 "SMC driver not available" = "Controlador SMC no disponible";
@@ -81,6 +85,7 @@
 "Dynamic Colors (Temp Only)" = "Colores Dinámicos (Solo Temp)";
 "Temp Alert Color" = "Color de Alerta de Temp";
 "Temp Alert Limit" = "Límite de Temp de Alerta";
+"Network" = "Network";
 "Network Arrows Color" = "Color de Flechas de Red";
 "Exit" = "Salir";
 "AMD Power Gadget" = "AMD Power Gadget";

@@ -674,4 +674,39 @@ class ProcessorModel {
     func getGPUPower() -> Float {
         return getIOAcceleratorStat(key: "Total Power(W)")
     }
+
+    func getGPUUtilization() -> Float {
+        return getIOAcceleratorStat(key: "Device Utilization %")
+    }
+
+    func getGPUVramUsed() -> Float {
+        return getIOAcceleratorStat(key: "inUseVidMemoryBytes")
+    }
+
+    func getGPUFanRPM() -> Float {
+        return getIOAcceleratorStat(key: "Fan Speed(RPM)")
+    }
+
+    func getCCDTemperatures() -> [Float] {
+        var scalerOut: UInt64 = 0
+        var outputCount: UInt32 = 1
+        let maxCCDs = 8
+        var outputStr: [Float] = [Float](repeating: 0.0, count: maxCCDs)
+        var outputStrCount: Int = MemoryLayout<Float>.size * maxCCDs
+        
+        let res = IOConnectCallMethod(connect, 20, nil, 0, nil, 0,
+                                      &scalerOut, &outputCount,
+                                      &outputStr, &outputStrCount)
+                                      
+        if res != KERN_SUCCESS {
+            return []
+        }
+        
+        let actualCCDCount = Int(scalerOut)
+        if actualCCDCount <= 0 {
+            return []
+        }
+        
+        return Array(outputStr[0..<min(actualCCDCount, maxCCDs)])
+    }
 }

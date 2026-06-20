@@ -421,6 +421,22 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             break;
         }
+            
+        //Get CCD temperatures
+        case 20: {
+            uint32_t ccdCount = fProvider->ccdCount;
+            arguments->scalarOutputCount = 1;
+            arguments->scalarOutput[0] = ccdCount;
+            
+            arguments->structureOutputSize = ccdCount * sizeof(float);
+            float *dataOut = (float*) arguments->structureOutput;
+            
+            for(uint32_t i = 0; i < ccdCount; i++){
+                dataOut[i] = fProvider->ccdTemperatures[i];
+            }
+            
+            break;
+        }
         
         //Try load SMC driver
         case 90: {

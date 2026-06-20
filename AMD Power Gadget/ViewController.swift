@@ -36,7 +36,7 @@ class ViewController: NSViewController, NSWindowDelegate {
         super.viewDidLoad()
 
         // Build the ViewModel and embed SwiftUI dashboard
-        let model = TelemetryModel()
+        let model = TelemetryModel.shared
         telemetryModel = model
 
         let dashboardView = MainDashboardView(model: model)

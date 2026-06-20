@@ -35,7 +35,11 @@
 "Color de Alerta de Temp" = "Alert Temp Color";
 "Color de Flechas" = "Arrows Color";
 "Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp and Power columns when enabled." = "GPU data is shown inside Temp and Power columns when enabled.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
+"Show GPU VRAM" = "Show GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG in Memory column";
+"Show GPU Fan Speed" = "Show GPU Fan Speed";
+"G:XXXX in Fan column" = "G:XXXX in Fan column";
 
 "No fans detected." = "No fans detected.";
 "SMC driver not available" = "SMC driver not available";
@@ -81,6 +85,7 @@
 "Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
 "Temp Alert Color" = "Temp Alert Color";
 "Temp Alert Limit" = "Temp Alert Limit";
+"Network" = "Network";
 "Network Arrows Color" = "Network Arrows Color";
 "Exit" = "Exit";
 "AMD Power Gadget" = "AMD Power Gadget";

@@ -1658,8 +1658,13 @@ struct MenuBarPreview: View {
                             .foregroundColor(.white.opacity(0.8))
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("2100").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                            Text("RPM").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                            if cfg.showGPU && cfg.showGPUfan {
+                                Text("C:2100").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text("G:1200").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                            } else {
+                                Text("2100").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text("RPM").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                            }
                         }
                     }
                     .frame(width: 56, alignment: .leading)
@@ -1675,8 +1680,13 @@ struct MenuBarPreview: View {
                             .foregroundColor(.white.opacity(0.8))
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("11,5G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                            Text("32G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                            if cfg.showGPU && cfg.showGPUvram {
+                                Text("S:11,5G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text("G:2,4G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                            } else {
+                                Text("11,5G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text("32G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                            }
                         }
                     }
                     .frame(width: 56, alignment: .leading)
@@ -1831,7 +1841,7 @@ struct MenuBarConfigView: View {
 
                 Divider().background(Color.tahoeCardBorder)
                 SectionTitle("GPU Items")
-                Text("GPU data is shown inside Temp and Power columns when enabled.")
+                Text("GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.")
                     .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
 
                 ToggleRow(label: "Show GPU Temp", detail: "G:XX°C in Temp column", isOn: .init(
@@ -1840,6 +1850,14 @@ struct MenuBarConfigView: View {
 
                 ToggleRow(label: "Show GPU Power", detail: "G:XXW in Power column", isOn: .init(
                     get: { cfg.showGPUpwr }, set: { cfg.showGPUpwr = $0; notify() }
+                ), accent: .tahoeAccentPurple) { _ in }
+
+                ToggleRow(label: "Show GPU VRAM", detail: "G:X.XG in Memory column", isOn: .init(
+                    get: { cfg.showGPUvram }, set: { cfg.showGPUvram = $0; notify() }
+                ), accent: .tahoeAccentPurple) { _ in }
+
+                ToggleRow(label: "Show GPU Fan Speed", detail: "G:XXXX in Fan column", isOn: .init(
+                    get: { cfg.showGPUfan }, set: { cfg.showGPUfan = $0; notify() }
                 ), accent: .tahoeAccentPurple) { _ in }
 
                 Divider().background(Color.tahoeCardBorder)
@@ -2284,7 +2302,8 @@ struct MenuBarPopoverView: View {
                                     currentVal: String(format: "%.0f%%%@", model.cpuLoadAvg, cpuTempStr),
                                     color: Color(red: 0.93, green: 0.11, blue: 0.14),
                                     data: model.history,
-                                    value: { $0.cpuTempC }
+                                    value: { $0.cpuTempC },
+                                    filterZeros: true
                                 )
                             }
                         } else if ring == "ram" && cfg.popoverShowRAM {
@@ -2325,7 +2344,8 @@ struct MenuBarPopoverView: View {
                                     currentVal: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
                                     color: .purple,
                                     data: model.history,
-                                    value: { $0.gpuTempC }
+                                    value: { $0.gpuTempC },
+                                    filterZeros: true
                                 )
                             }
                         }
@@ -2372,7 +2392,7 @@ struct MenuBarPopoverView: View {
                                 .font(.system(size: 9))
                                 .foregroundColor(.green)
                                 .frame(width: 14)
-                            Text("Red")
+                            Text("Network")
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.9))
                             Spacer()
@@ -2869,9 +2889,17 @@ struct MiniSparkline: View {
     let color: Color
     let data: [TelemetryPoint]
     let value: (TelemetryPoint) -> Double
+    var filterZeros: Bool = false
+    
+    private var filteredData: [TelemetryPoint] {
+        if filterZeros {
+            return data.filter { value($0) > 0 }
+        }
+        return data
+    }
     
     private var yMin: Double {
-        let vals = data.map(value)
+        let vals = filteredData.map(value)
         let mn = vals.min() ?? 0
         let mx = vals.max() ?? 100
         let diff = mx - mn
@@ -2880,7 +2908,7 @@ struct MiniSparkline: View {
         return center - span * 0.6
     }
     private var yMax: Double {
-        let vals = data.map(value)
+        let vals = filteredData.map(value)
         let mn = vals.min() ?? 0
         let mx = vals.max() ?? 100
         let diff = mx - mn
@@ -2901,8 +2929,8 @@ struct MiniSparkline: View {
             }
             .frame(width: 75, alignment: .leading)
             
-            if data.count > 1 {
-                let indexedData = Array(data.enumerated())
+            if filteredData.count > 1 {
+                let indexedData = Array(filteredData.enumerated())
                 Chart(indexedData, id: \.offset) { index, pt in
                     AreaMark(
                         x: .value("Index", Double(index)),
@@ -2920,7 +2948,7 @@ struct MiniSparkline: View {
                     .interpolationMethod(.catmullRom)
                 }
                 .chartYScale(domain: yMin...yMax)
-                .chartXScale(domain: 0...Double(data.count - 1))
+                .chartXScale(domain: 0...Double(filteredData.count - 1))
                 .chartXAxis(.hidden)
                 .chartYAxis(.hidden)
                 .frame(height: 24)

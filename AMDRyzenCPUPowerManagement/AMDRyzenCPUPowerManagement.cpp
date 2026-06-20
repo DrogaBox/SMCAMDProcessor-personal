@@ -223,6 +223,10 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
         provider->tempSamples[next_samp] = t;
         provider->tempNextSample = (next_samp + 1) % HF_TEMP_SAMPLE_LEN;
         
+        for (uint8_t i = 0; i < provider->ccdCount; i++) {
+            provider->ccdTemperatures[i] = provider->getCCDTemp(i);
+        }
+        
         sender->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
     });
     
