@@ -59,6 +59,7 @@ private enum DashboardTab: String, CaseIterable, Identifiable {
     case profiles   = "Profiles"
     case advanced   = "Advanced"
     case menuBar    = "Menu Bar"
+    case popover    = "Popover Menu"
     case systemInfo = "System Info"
 
     var icon: String {
@@ -69,6 +70,7 @@ private enum DashboardTab: String, CaseIterable, Identifiable {
         case .profiles:   return "slider.horizontal.3"
         case .advanced:   return "gearshape.2"
         case .menuBar:    return "menubar.rectangle"
+        case .popover:    return "macwindow.badge.plus"
         case .systemInfo: return "info.circle"
         }
     }
@@ -115,6 +117,7 @@ struct MainDashboardView: View {
         case .profiles:   ProfilesContentView(model: model)
         case .advanced:   AdvancedContentView(model: model)
         case .menuBar:    MenuBarConfigView(model: model)
+        case .popover:    PopoverConfigView(model: model)
         case .systemInfo: SystemInfoContentView(model: model)
         }
     }
@@ -283,7 +286,7 @@ private struct ToggleRow: View {
             Toggle("", isOn: $isOn)
                 .toggleStyle(SwitchToggleStyle(tint: accent))
                 .labelsHidden()
-                .onChange(of: isOn) { _, newValue in onChange(newValue) }
+                .onChange(of: isOn) { newValue in onChange(newValue) }
         }
         .padding(.vertical, 8).padding(.horizontal, 14)
         .background(Color.tahoeCard)
@@ -621,9 +624,21 @@ struct TelemetryContentView: View {
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "Package Power",   value: String(format: "%.2f W",   model.cpuWatts))
                     Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Model",       value: model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Metal Version",   value: model.sysInfo.metalVersion)
+                    Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "GPU Temperature", value: String(format: "%.2f °C",  model.gpuTempC))
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "GPU Power",       value: String(format: "%.2f W",   model.gpuPowerW))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Fan Speed",   value: model.gpuFanRPM > 0 ? String(format: "%.0f RPM", model.gpuFanRPM) : "0 RPM (Zero RPM Mode)")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU VRAM Used",   value: String(format: "%.2f GB",  model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Utilization", value: String(format: "%.1f %%",  model.gpuLoadPct))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "VDA Decoder",     value: model.sysInfo.vdaAcceleration)
                 }
             }
             .padding(18)
@@ -1128,9 +1143,11 @@ struct FanControlContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if !model.smcDriverLoaded { SMCNotAvailableView() }
-                else if model.fans.isEmpty { Text("No fans detected.").foregroundColor(.tahoeSubtext).frame(maxWidth: .infinity).padding(32) }
-                else {
+                if !model.smcDriverLoaded {
+                    SMCNotAvailableView()
+                } else if model.fans.isEmpty {
+                    Text("No fans detected.").foregroundColor(.tahoeSubtext).frame(maxWidth: .infinity).padding(32)
+                } else {
                     SectionTitle("SMC Fan Control")
                     ForEach(model.fans) { fan in FanControlCard(fan: fan, model: model) }
                     HStack(spacing: 10) {
@@ -1138,11 +1155,61 @@ struct FanControlContentView: View {
                         TahoeButton(label: "Max Speed", icon: "wind", accent: .tahoeAccentOrange) { model.setAllFansTakeOff() }
                     }
                 }
+                
+                Divider().background(Color.tahoeCardBorder)
+                
+                GPUFanControlGuideView()
             }
             .padding(18)
         }
     }
 }
+
+private struct GPUFanControlGuideView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle("GPU Fan Control (Zero RPM / Curves)")
+            TahoeCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.tahoeAccentCyan)
+                            .font(.system(size: 16))
+                        Text("macOS Hardware Limitation")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.tahoeText)
+                    }
+                    Text("Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.")
+                        .font(.system(size: 11.5))
+                        .foregroundColor(.tahoeSubtext)
+                        .lineSpacing(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Text("Standard Hackintosh Solution:")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.tahoeText)
+                        .padding(.top, 4)
+                    Text("The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.")
+                        .font(.system(size: 11.5))
+                        .foregroundColor(.tahoeSubtext)
+                        .lineSpacing(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    HStack(spacing: 10) {
+                        TahoeButton(label: "Open SPPT Guide", icon: "safari", accent: .tahoeAccentCyan) {
+                            NSWorkspace.shared.open(URL(string: "https://github.com/perez987/6600XT-on-macOS-with-softPowerPlayTable")!)
+                        }
+                        TahoeButton(label: "MorePowerTool", icon: "arrow.down.circle", accent: .tahoeAccentOrange) {
+                            NSWorkspace.shared.open(URL(string: "https://www.igorslab.de/en/red-bios-editor-and-morepowertool-adjust-and-optimize-your-radeon-rx-5700-xt-and-radeon-vii-bios-instructions-and-downloads/")!)
+                        }
+                    }
+                    .padding(.top, 6)
+                }
+            }
+        }
+    }
+}
+
 
 private struct SMCNotAvailableView: View {
     var body: some View {
@@ -1189,7 +1256,7 @@ private struct FanControlCard: View {
             }
         }
         .onAppear { sliderValue = Double(fan.throttle) }
-        .onChange(of: fan.throttle) { _, newVal in sliderValue = Double(newVal) }
+        .onChange(of: fan.throttle) { newVal in sliderValue = Double(newVal) }
     }
 }
 
@@ -1457,7 +1524,7 @@ private struct HexCell: View {
         .foregroundColor(isEditing ? .tahoeAccentCyan : .tahoeText)
         .multilineTextAlignment(.center).frame(maxWidth: .infinity)
         .onAppear { editText = String(format: "%X", value) }
-        .onChange(of: value) { _, newVal in editText = String(format: "%X", newVal) }
+        .onChange(of: value) { newVal in editText = String(format: "%X", newVal) }
     }
 }
 
@@ -1483,7 +1550,7 @@ struct TempThresholdField: View {
             .onAppear {
                 text = "\(value)"
             }
-            .onChange(of: value) { _, newValue in
+            .onChange(of: value) { newValue in
                 text = "\(newValue)"
             }
             
@@ -1665,6 +1732,7 @@ struct MenuBarConfigView: View {
     @ObservedObject var model: TelemetryModel
     @State private var cfg = MenuBarConfig.shared
     @State private var needsRestart = false
+    @State private var refreshToggle = false
 
     var body: some View {
         ScrollView {
@@ -1842,6 +1910,8 @@ struct MenuBarConfigView: View {
                     .cornerRadius(8)
                 }
 
+
+
                 if needsRestart {
                     TahoeCard(accent: Color.tahoeAccentOrange.opacity(0.3)) {
                         HStack(spacing: 10) {
@@ -1860,6 +1930,7 @@ struct MenuBarConfigView: View {
                         .foregroundColor(.tahoeSubtext)
                     
                     MenuBarPreview(cfg: cfg)
+                        .id(refreshToggle)
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity)
                         .background(
@@ -1878,10 +1949,13 @@ struct MenuBarConfigView: View {
         }
     }
 
-    private func notify() {
+    private func notify(widthChanged: Bool = true) {
         cfg = MenuBarConfig()
+        refreshToggle.toggle()
         NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
-        needsRestart = true
+        if widthChanged {
+            needsRestart = true
+        }
     }
 }
 
@@ -1978,4 +2052,886 @@ class RefreshRateConfig: ObservableObject {
     }
 }
 
+}
+
+// MARK: - Menu Bar Popover View
+struct MenuBarPopoverView: View {
+    @ObservedObject var model: TelemetryModel = TelemetryModel.shared
+    
+    private var cfg: MenuBarConfig { MenuBarConfig.shared }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            // Header Section
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "cpu")
+                        .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))
+                        .font(.system(size: 13, weight: .bold))
+                    Text("AMD Power Gadget")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                Spacer()
+                Text("v\(model.sysInfo.kextVersion)")
+                    .font(.system(size: 9, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+
+            // Dynamic Ordered Resource Widgets
+            let rings = cfg.popoverRingOrder.split(separator: ",").map(String.init)
+            
+            // 1. Render Rings Row (Horizontal HStack) if any are style == 0
+            let showRingsRow = rings.contains(where: { ring in
+                if ring == "cpu" && cfg.popoverShowCPU && cfg.popoverCPUStyle == 0 { return true }
+                if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 0 { return true }
+                if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 0 { return true }
+                if ring == "gpu" && cfg.popoverShowGPURing && cfg.popoverGPUStyle == 0 { return true }
+                return false
+            })
+            
+            if showRingsRow {
+                Divider().background(Color.white.opacity(0.1))
+                
+                HStack(spacing: 14) {
+                    ForEach(rings, id: \.self) { ring in
+                        if ring == "cpu" && cfg.popoverShowCPU && cfg.popoverCPUStyle == 0 {
+                            // CPU Ring
+                            VStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .frame(width: 46, height: 46)
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.cpuLoadAvg / 100.0))))
+                                        .stroke(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color(red: 0.93, green: 0.11, blue: 0.14), Color(red: 1.0, green: 0.4, blue: 0.4)]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            style: StrokeStyle(lineWidth: 4.5, lineCap: .round)
+                                        )
+                                        .rotationEffect(Angle(degrees: -90))
+                                        .frame(width: 46, height: 46)
+                                    
+                                    VStack(spacing: 0) {
+                                        Text(String(format: "%.0f%%", model.cpuLoadAvg))
+                                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.white)
+                                        if cfg.popoverRingShowTemp {
+                                            Text(String(format: "%.0f°", model.cpuTempC))
+                                                .font(.system(size: 7.5, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.7))
+                                        }
+                                    }
+                                }
+                                if cfg.popoverRingShowLabels {
+                                    Text("CPU")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
+                        } else if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 0 {
+                            // RAM Ring
+                            VStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .frame(width: 46, height: 46)
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.ramUsagePct / 100.0))))
+                                        .stroke(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            style: StrokeStyle(lineWidth: 4.5, lineCap: .round)
+                                        )
+                                        .rotationEffect(Angle(degrees: -90))
+                                        .frame(width: 46, height: 46)
+                                    
+                                    VStack(spacing: 0) {
+                                        Text(String(format: "%.0f%%", model.ramUsagePct))
+                                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.white)
+                                        if cfg.popoverRingShowTemp {
+                                            let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+                                            Text(String(format: "%.0fG", usedGB))
+                                                .font(.system(size: 7.5, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.7))
+                                        }
+                                    }
+                                }
+                                if cfg.popoverRingShowLabels {
+                                    Text("RAM")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
+                        } else if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 0 {
+                            // Disk Ring
+                            VStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .frame(width: 46, height: 46)
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.diskUsagePct / 100.0))))
+                                        .stroke(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color.blue, Color.cyan]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            style: StrokeStyle(lineWidth: 4.5, lineCap: .round)
+                                        )
+                                        .rotationEffect(Angle(degrees: -90))
+                                        .frame(width: 46, height: 46)
+                                    
+                                    VStack(spacing: 0) {
+                                        Text(String(format: "%.0f%%", model.diskUsagePct))
+                                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.white)
+                                        if cfg.popoverRingShowTemp {
+                                            Text("SSD")
+                                                .font(.system(size: 7.5, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.7))
+                                        }
+                                    }
+                                }
+                                if cfg.popoverRingShowLabels {
+                                    Text("DISK")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
+                        } else if ring == "gpu" && cfg.popoverShowGPURing && cfg.popoverGPUStyle == 0 {
+                            // GPU Ring
+                            VStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .frame(width: 46, height: 46)
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.gpuLoadPct / 100.0))))
+                                        .stroke(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color.purple, Color(red: 0.5, green: 0.3, blue: 0.9)]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            style: StrokeStyle(lineWidth: 4.5, lineCap: .round)
+                                        )
+                                        .rotationEffect(Angle(degrees: -90))
+                                        .frame(width: 46, height: 46)
+                                    
+                                    VStack(spacing: 0) {
+                                        Text(String(format: "%.0f%%", model.gpuLoadPct))
+                                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.white)
+                                        if cfg.popoverRingShowTemp {
+                                            Text(String(format: "%.0f°", model.gpuTempC))
+                                                .font(.system(size: 7.5, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.7))
+                                        }
+                                    }
+                                }
+                                if cfg.popoverRingShowLabels {
+                                    Text("GPU")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            
+            // 2. Render Vertical List for Bars and Sparklines (style > 0)
+            // 2. Render Vertical List for Bars and Sparklines (style > 0 or sparkline enabled)
+            let showLinearOrGraphs = rings.contains(where: { ring in
+                if ring == "cpu" && cfg.popoverShowCPU && (cfg.popoverCPUStyle == 1 || cfg.popoverShowCPUSparkline) { return true }
+                if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 1 { return true }
+                if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 1 { return true }
+                if ring == "gpu" && cfg.popoverShowGPURing && (cfg.popoverGPUStyle == 1 || cfg.popoverShowGPUSparkline) { return true }
+                return false
+            })
+            
+            if showLinearOrGraphs {
+                Divider().background(Color.white.opacity(0.1))
+                
+                VStack(spacing: 10) {
+                    ForEach(rings, id: \.self) { ring in
+                        if ring == "cpu" && cfg.popoverShowCPU {
+                            if cfg.popoverCPUStyle == 1 {
+                                let cpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.cpuTempC) : ""
+                                LinearProgressBar(
+                                    label: "CPU",
+                                    pct: model.cpuLoadAvg,
+                                    detailText: String(format: "%.0f%%%@", model.cpuLoadAvg, cpuTempStr),
+                                    color: Color(red: 0.93, green: 0.11, blue: 0.14)
+                                )
+                            }
+                            if cfg.popoverShowCPUSparkline {
+                                let cpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.cpuTempC) : ""
+                                MiniSparkline(
+                                    label: "CPU Temp",
+                                    currentVal: String(format: "%.0f%%%@", model.cpuLoadAvg, cpuTempStr),
+                                    color: Color(red: 0.93, green: 0.11, blue: 0.14),
+                                    data: model.history,
+                                    value: { $0.cpuTempC }
+                                )
+                            }
+                        } else if ring == "ram" && cfg.popoverShowRAM {
+                            if cfg.popoverRAMStyle == 1 {
+                                let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+                                let ramStr = cfg.popoverRingShowTemp ? String(format: " • %.1fG", usedGB) : ""
+                                LinearProgressBar(
+                                    label: "RAM",
+                                    pct: model.ramUsagePct,
+                                    detailText: String(format: "%.0f%%%@", model.ramUsagePct, ramStr),
+                                    color: .orange
+                                )
+                            }
+                        } else if ring == "disk" && cfg.popoverShowDisk {
+                            if cfg.popoverDiskStyle == 1 {
+                                let diskStr = cfg.popoverRingShowTemp ? " • SSD" : ""
+                                LinearProgressBar(
+                                    label: "DISK",
+                                    pct: model.diskUsagePct,
+                                    detailText: String(format: "%.0f%%%@", model.diskUsagePct, diskStr),
+                                    color: .blue
+                                )
+                            }
+                        } else if ring == "gpu" && cfg.popoverShowGPURing {
+                            if cfg.popoverGPUStyle == 1 {
+                                let gpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.gpuTempC) : ""
+                                LinearProgressBar(
+                                    label: "GPU",
+                                    pct: model.gpuLoadPct,
+                                    detailText: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
+                                    color: .purple
+                                )
+                            }
+                            if cfg.popoverShowGPUSparkline {
+                                let gpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.gpuTempC) : ""
+                                MiniSparkline(
+                                    label: "GPU Temp",
+                                    currentVal: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
+                                    color: .purple,
+                                    data: model.history,
+                                    value: { $0.gpuTempC }
+                                )
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            // GPU & Network Stats
+            if cfg.popoverShowGPU || cfg.popoverShowNetwork {
+                Divider().background(Color.white.opacity(0.1))
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    if cfg.popoverShowGPU {
+                        // GPU Row
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 10))
+                                .foregroundColor(.purple)
+                                .frame(width: 14)
+                            Text(model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.9))
+                                .fixedSize(horizontal: true, vertical: false)
+                            Spacer()
+                            if model.gpuTempC > 0 {
+                                let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
+                                let fanRPMStr = model.gpuFanRPM > 0 ? String(format: " • %.0f RPM", model.gpuFanRPM) : ""
+                                Text(String(format: "%.0f°C • %.0fW • %.2fG%@", model.gpuTempC, model.gpuPowerW, vramGB, fanRPMStr))
+                                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.8))
+                            } else {
+                                Text("Inactivo")
+                                    .font(.system(size: 9.5, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                        }
+                    }
+
+                    if cfg.popoverShowNetwork {
+                        // Network Row
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.system(size: 9))
+                                .foregroundColor(.green)
+                                .frame(width: 14)
+                            Text("Red")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.9))
+                            Spacer()
+                            Text(String(format: "↓ %.1f M  ↑ %.1f M", model.netDownloadMBps, model.netUploadMBps))
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        
+                        if cfg.popoverShowNetSparkline {
+                            MiniSparkline(
+                                label: "Net Speed",
+                                currentVal: String(format: "%.1f M/s", model.netDownloadMBps + model.netUploadMBps),
+                                color: .green,
+                                data: model.history,
+                                value: { $0.netDownloadMBps + $0.netUploadMBps }
+                            )
+                            .padding(.top, 2)
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+            }
+
+            // Top Processes List
+            if cfg.popoverShowProcesses {
+                Divider().background(Color.white.opacity(0.1))
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Procesos principales")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundColor(.white.opacity(0.5))
+                        Spacer()
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 8))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                    .padding(.bottom, 2)
+
+                    if model.topProcesses.isEmpty {
+                        HStack {
+                            Spacer()
+                            Text("Cargando...")
+                                .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.4))
+                                .padding(.vertical, 4)
+                            Spacer()
+                        }
+                    } else {
+                        ForEach(model.topProcesses) { proc in
+                            HStack {
+                                Text(proc.name)
+                                    .font(.system(size: 9.5, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.85))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                Spacer()
+                                Text(String(format: "%.1f%%", proc.cpuUsage))
+                                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                    .foregroundColor(proc.cpuUsage > 50 ? Color(red: 0.93, green: 0.11, blue: 0.14) : .white.opacity(0.7))
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 95)
+            }
+
+            Divider().background(Color.white.opacity(0.1))
+
+            // Action Buttons
+            HStack(spacing: 8) {
+                Button(action: {
+                    NSApp.activate(ignoringOtherApps: true)
+                    ViewController.launch(forceFocus: true)
+                    NotificationCenter.default.post(name: .init("CloseMenuBarPopover"), object: nil)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chart.xyaxis.line")
+                            .font(.system(size: 9.5))
+                        Text("Abrir panel")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(5)
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                Button(action: {
+                    exit(0)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "power")
+                            .font(.system(size: 9.5))
+                        Text("Salir")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .background(Color(red: 0.93, green: 0.11, blue: 0.14).opacity(0.08))
+                    .cornerRadius(5)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
+        }
+        .frame(minWidth: 240, maxWidth: 340)
+        .background(Color.clear)
+    }
+}
+
+// MARK: - Popover Config Tab
+struct PopoverConfigView: View {
+    @ObservedObject var model: TelemetryModel
+    @State private var cfg = MenuBarConfig.shared
+    @State private var items: [RingOrderItem] = []
+
+    struct RingOrderItem: Identifiable, Equatable {
+        let id: String
+        let name: String
+        let color: Color
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                SectionTitle("Popover General Settings")
+                Text("Customize the behavior and visibility of the menu bar popover.")
+                    .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+
+                ToggleRow(label: "Enable Popover Menu", detail: "Left-click shows interactive popover instead of classic menu", isOn: .init(
+                    get: { cfg.enablePopover }, set: { cfg.enablePopover = $0; notify(widthChanged: false) }
+                ), accent: .tahoeAccentCyan) { _ in }
+
+                if cfg.enablePopover {
+                    Divider().background(Color.tahoeCardBorder)
+                    
+                    SectionTitle("Widget Reordering")
+                    Text("Arrange the order in which resource widgets appear. Click arrows to swap position.")
+                        .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(items) { item in
+                            let index = items.firstIndex(where: { $0.id == item.id }) ?? 0
+                            HStack {
+                                Circle().fill(item.color).frame(width: 8, height: 8)
+                                Text(item.name)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                Button(action: { moveUp(index: index) }) {
+                                    Image(systemName: "arrow.up")
+                                        .font(.system(size: 10, weight: .bold))
+                                }
+                                .disabled(index == 0)
+                                .buttonStyle(PlainButtonStyle())
+                                .foregroundColor(index == 0 ? .gray.opacity(0.3) : .tahoeAccentCyan)
+                                .frame(width: 24, height: 24)
+                                .background(Color.white.opacity(0.04))
+                                .cornerRadius(4)
+                                
+                                Button(action: { moveDown(index: index) }) {
+                                    Image(systemName: "arrow.down")
+                                        .font(.system(size: 10, weight: .bold))
+                                }
+                                .disabled(index == items.count - 1)
+                                .buttonStyle(PlainButtonStyle())
+                                .foregroundColor(index == items.count - 1 ? .gray.opacity(0.3) : .tahoeAccentCyan)
+                                .frame(width: 24, height: 24)
+                                .background(Color.white.opacity(0.04))
+                                .cornerRadius(4)
+                            }
+                            .padding(.vertical, 6).padding(.horizontal, 12)
+                            .background(Color.tahoeCard)
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+                            .cornerRadius(8)
+                        }
+                    }
+
+                    Divider().background(Color.tahoeCardBorder)
+
+                    SectionTitle("Widget Selection & Display Style")
+                    Text("Select which metrics are shown and choose their visualization style.")
+                        .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+
+                    VStack(spacing: 12) {
+                        // CPU style selection
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Toggle("", isOn: .init(
+                                    get: { cfg.popoverShowCPU },
+                                    set: { cfg.popoverShowCPU = $0; notify(widthChanged: false) }
+                                ))
+                                .labelsHidden()
+                                Text("CPU Tracker")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                if cfg.popoverShowCPU {
+                                    Picker("Style", selection: .init(
+                                        get: { cfg.popoverCPUStyle },
+                                        set: { cfg.popoverCPUStyle = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Circular Ring").tag(0)
+                                        Text("Progress Bar").tag(1)
+                                    }
+                                    .pickerStyle(.menu)
+                                    .frame(width: 140)
+                                }
+                            }
+                            Text("Tracks CPU utilization average and core temperature.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.tahoeSubtext)
+                            if cfg.popoverShowCPU {
+                                Divider().background(Color.white.opacity(0.1)).padding(.vertical, 2)
+                                Toggle(isOn: .init(
+                                    get: { cfg.popoverShowCPUSparkline },
+                                    set: { cfg.popoverShowCPUSparkline = $0; notify(widthChanged: false) }
+                                )) {
+                                    Text("Show Temperature Sparkline Graph below")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(.tahoeText)
+                                }
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
+                            }
+                        }
+                        .padding(12)
+                        .background(Color.tahoeCard)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+
+                        // RAM style selection
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Toggle("", isOn: .init(
+                                    get: { cfg.popoverShowRAM },
+                                    set: { cfg.popoverShowRAM = $0; notify(widthChanged: false) }
+                                ))
+                                .labelsHidden()
+                                Text("RAM Tracker")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                if cfg.popoverShowRAM {
+                                    Picker("Style", selection: .init(
+                                        get: { cfg.popoverRAMStyle },
+                                        set: { cfg.popoverRAMStyle = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Circular Ring").tag(0)
+                                        Text("Progress Bar").tag(1)
+                                    }
+                                    .pickerStyle(.menu)
+                                    .frame(width: 140)
+                                }
+                            }
+                            Text("Tracks active memory usage and pressure.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.tahoeSubtext)
+                        }
+                        .padding(12)
+                        .background(Color.tahoeCard)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+
+                        // Disk style selection
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Toggle("", isOn: .init(
+                                    get: { cfg.popoverShowDisk },
+                                    set: { cfg.popoverShowDisk = $0; notify(widthChanged: false) }
+                                ))
+                                .labelsHidden()
+                                Text("Disk Tracker")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                if cfg.popoverShowDisk {
+                                    Picker("Style", selection: .init(
+                                        get: { cfg.popoverDiskStyle },
+                                        set: { cfg.popoverDiskStyle = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Circular Ring").tag(0)
+                                        Text("Progress Bar").tag(1)
+                                    }
+                                    .pickerStyle(.menu)
+                                    .frame(width: 140)
+                                }
+                            }
+                            Text("Tracks primary storage capacity usage.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.tahoeSubtext)
+                        }
+                        .padding(12)
+                        .background(Color.tahoeCard)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+
+                        // GPU style selection
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Toggle("", isOn: .init(
+                                    get: { cfg.popoverShowGPURing },
+                                    set: { cfg.popoverShowGPURing = $0; notify(widthChanged: false) }
+                                ))
+                                .labelsHidden()
+                                Text("GPU Tracker")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                if cfg.popoverShowGPURing {
+                                    Picker("Style", selection: .init(
+                                        get: { cfg.popoverGPUStyle },
+                                        set: { cfg.popoverGPUStyle = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Circular Ring").tag(0)
+                                        Text("Progress Bar").tag(1)
+                                    }
+                                    .pickerStyle(.menu)
+                                    .frame(width: 140)
+                                }
+                            }
+                            Text("Tracks graphics utilization and temperature.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.tahoeSubtext)
+                            if cfg.popoverShowGPURing {
+                                Divider().background(Color.white.opacity(0.1)).padding(.vertical, 2)
+                                Toggle(isOn: .init(
+                                    get: { cfg.popoverShowGPUSparkline },
+                                    set: { cfg.popoverShowGPUSparkline = $0; notify(widthChanged: false) }
+                                )) {
+                                    Text("Show Temperature Sparkline Graph below")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(.tahoeText)
+                                }
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentPurple))
+                            }
+                        }
+                        .padding(12)
+                        .background(Color.tahoeCard)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+                    }
+
+                    Divider().background(Color.tahoeCardBorder)
+
+                    SectionTitle("Style Options")
+                    Text("Configure labels and layout details for widgets inside the popover.")
+                        .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+
+                    ToggleRow(label: "Show Ring Labels", detail: "Display text labels below rings (CPU, RAM, etc.)", isOn: .init(
+                        get: { cfg.popoverRingShowLabels }, set: { cfg.popoverRingShowLabels = $0; notify(widthChanged: false) }
+                    ), accent: .tahoeAccentCyan) { _ in }
+
+                    ToggleRow(label: "Show Ring Details", detail: "Display temperatures/GB usage inside rings", isOn: .init(
+                        get: { cfg.popoverRingShowTemp }, set: { cfg.popoverRingShowTemp = $0; notify(widthChanged: false) }
+                    ), accent: .tahoeAccentOrange) { _ in }
+
+                    Divider().background(Color.tahoeCardBorder)
+
+                    SectionTitle("Other Popover Widgets")
+                    Text("Enable additional stats columns inside the popover.")
+                        .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+
+                    ToggleRow(label: "Show GPU Row", detail: "Display detailed text row with GPU model, temp, and power", isOn: .init(
+                        get: { cfg.popoverShowGPU }, set: { cfg.popoverShowGPU = $0; notify(widthChanged: false) }
+                    ), accent: .tahoeAccentPurple) { _ in }
+
+                    ToggleRow(label: "Show Network Row", detail: "Display live upload/download speed stats", isOn: .init(
+                        get: { cfg.popoverShowNetwork }, set: { cfg.popoverShowNetwork = $0; notify(widthChanged: false) }
+                    ), accent: .tahoeAccentGreen) { _ in }
+
+                    if cfg.popoverShowNetwork {
+                        Toggle(isOn: .init(
+                            get: { cfg.popoverShowNetSparkline },
+                            set: { cfg.popoverShowNetSparkline = $0; notify(widthChanged: false) }
+                        )) {
+                            Text("Show Network Speed Sparkline Graph below")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.tahoeText)
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentGreen))
+                        .padding(.leading, 12).padding(.bottom, 6)
+                    }
+
+                    ToggleRow(label: "Show Top Processes", detail: "Display top 5 CPU-intensive processes list", isOn: .init(
+                        get: { cfg.popoverShowProcesses }, set: { cfg.popoverShowProcesses = $0; notify(widthChanged: false) }
+                    ), accent: .tahoeAccentRed) { _ in }
+                }
+            }
+            .padding(18)
+        }
+        .onAppear {
+            loadOrder()
+        }
+    }
+
+    private func loadOrder() {
+        let orderStr = cfg.popoverRingOrder
+        let keys = orderStr.split(separator: ",").map(String.init)
+        
+        var loadedItems: [RingOrderItem] = []
+        for key in keys {
+            if key == "cpu" { loadedItems.append(RingOrderItem(id: "cpu", name: "CPU Tracker", color: .tahoeAccentCyan)) }
+            if key == "ram" { loadedItems.append(RingOrderItem(id: "ram", name: "RAM Tracker", color: .tahoeAccentOrange)) }
+            if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
+            if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
+        }
+        
+        let allKeys = ["cpu", "ram", "disk", "gpu"]
+        for key in allKeys {
+            if !loadedItems.contains(where: { $0.id == key }) {
+                if key == "cpu" { loadedItems.append(RingOrderItem(id: "cpu", name: "CPU Tracker", color: .tahoeAccentCyan)) }
+                if key == "ram" { loadedItems.append(RingOrderItem(id: "ram", name: "RAM Tracker", color: .tahoeAccentOrange)) }
+                if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
+                if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
+            }
+        }
+        self.items = loadedItems
+    }
+
+    private func saveOrder() {
+        let orderStr = items.map { $0.id }.joined(separator: ",")
+        cfg.popoverRingOrder = orderStr
+        notify(widthChanged: false)
+    }
+
+    private func moveUp(index: Int) {
+        guard index > 0 else { return }
+        items.swapAt(index, index - 1)
+        saveOrder()
+    }
+
+    private func moveDown(index: Int) {
+        guard index < items.count - 1 else { return }
+        items.swapAt(index, index + 1)
+        saveOrder()
+    }
+
+    private func notify(widthChanged: Bool = true) {
+        cfg = MenuBarConfig()
+        NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
+    }
+}
+
+// MARK: - Popover Linear Progress Bar Widget
+struct LinearProgressBar: View {
+    let label: String
+    let pct: Double
+    let detailText: String
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(label)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+                Spacer()
+                Text(detailText)
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.06))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(
+                            LinearGradient(
+                                colors: [color, color.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geo.size.width * CGFloat(min(1.0, max(0.0, pct / 100.0))), height: 6)
+                }
+            }
+            .frame(height: 6)
+        }
+        .padding(.horizontal, 12)
+    }
+}
+
+// MARK: - Popover Mini Sparkline Widget
+struct MiniSparkline: View {
+    let label: String
+    let currentVal: String
+    let color: Color
+    let data: [TelemetryPoint]
+    let value: (TelemetryPoint) -> Double
+    
+    private var yMin: Double {
+        let vals = data.map(value)
+        let mn = vals.min() ?? 0
+        let mx = vals.max() ?? 100
+        let diff = mx - mn
+        let span = max(10.0, diff)
+        let center = (mx + mn) / 2.0
+        return center - span * 0.6
+    }
+    private var yMax: Double {
+        let vals = data.map(value)
+        let mn = vals.min() ?? 0
+        let mx = vals.max() ?? 100
+        let diff = mx - mn
+        let span = max(10.0, diff)
+        let center = (mx + mn) / 2.0
+        return center + span * 0.6
+    }
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+                Text(currentVal)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 75, alignment: .leading)
+            
+            if data.count > 1 {
+                let indexedData = Array(data.enumerated())
+                Chart(indexedData, id: \.offset) { index, pt in
+                    AreaMark(
+                        x: .value("Index", Double(index)),
+                        y: .value(label, value(pt))
+                    )
+                    .foregroundStyle(LinearGradient(colors: [color.opacity(0.18), color.opacity(0.0)], startPoint: .top, endPoint: .bottom))
+                    .interpolationMethod(.catmullRom)
+                    
+                    LineMark(
+                        x: .value("Index", Double(index)),
+                        y: .value(label, value(pt))
+                    )
+                    .foregroundStyle(color)
+                    .lineStyle(StrokeStyle(lineWidth: 1.5))
+                    .interpolationMethod(.catmullRom)
+                }
+                .chartYScale(domain: yMin...yMax)
+                .chartXScale(domain: 0...Double(data.count - 1))
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .frame(height: 24)
+            } else {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white.opacity(0.03))
+                    .frame(height: 24)
+                    .overlay(Text("Loading...").font(.system(size: 8)).foregroundColor(.white.opacity(0.3)))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+    }
 }
