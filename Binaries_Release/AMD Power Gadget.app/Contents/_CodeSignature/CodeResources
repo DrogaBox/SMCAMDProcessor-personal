@@ -14,27 +14,27 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerGadget.nib</key>
 		<data>
-		bwX7DjTZKtLYi+eITX2XmoWIm4s=
+		kaA16DXYve3LzNYwMpGRCgnhRN0=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerTool.nib</key>
 		<data>
-		gSgdZQiQQKtvxhwzks4RRLrtGY0=
+		PWGxhvRfZ3bbYqV6O9zvJfpo4zc=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<data>
-		V3SbEa9dHE93vBcsK8/7l3oYQDY=
+		WBfA7SF7m8xOhxlMpLHrLmlAsYI=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<data>
-		dDbcQdvI2FLaKnskS7rnpgCjVHU=
+		JLxJ7LZOz8JXHfXCv/NPr+jKq6Y=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/NSViewController-arI-oH-4xY.nib</key>
 		<data>
-		evZyCySTG8qJTogVvkLWjQJl3sQ=
+		3sZIyC33EH7S5DXypNt9DgPxQ/s=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/SystemMonitor.nib</key>
 		<data>
-		zi06I3KBwyQUQ5HID5siVZ3MiiU=
+		ijRBjGKpx5+dvUsmR+WaOEYAXJw=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
 		<data>
@@ -42,7 +42,7 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/arI-oH-4xY-view-eyH-ab-osV.nib</key>
 		<data>
-		+rCSzlVTGNO1WpSKpGm/eG3PoDg=
+		VoOxqgp/lauIsYO34TXjgIqsagc=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/jl0-3p-cPP-view-HZ9-Dt-1W1.nib</key>
 		<data>
@@ -50,7 +50,7 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/rDh-aT-nig-view-ObA-RG-Hkx.nib</key>
 		<data>
-		vKIRWNEI9QY7B6rn3VHwESnZbRs=
+		57cleX/giFxTv2Uq9v4mTMurVME=
 		</data>
 		<key>Resources/SF-Pro-Rounded-Medium.otf</key>
 		<data>
@@ -108,42 +108,42 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			o5gG+dBzROMnyeM7GC1R/xcPdj5b/mRHtqxOjlEaIZ8=
+			gxzN9Ov6ROzkU8zmAK0v4rdF4d4rb1KGubfi5tZqZ/c=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerTool.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			iIocp9tZ4jYvmqN9xg1S5wGWLnsx+TqbZff5wowyTyA=
+			AfJOI26CPPPXfOFTdkYedOqsNZnf+a2WRIgop0a997E=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			sq8NV+cRMe7bKjPA2bYVH+ChrxuuNKa9Sghzq/cGlhQ=
+			tsjBpowzp/ygTMKDD+pSeQ2EhhRlYfCub4qdlQzAwm0=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Sa7nyV/RgtJbscHV27QdCFbcJa+bojWw8c2lD7L+bZU=
+			TkKkSrOOcditZUS2ik/0RItZs4sPK4YwM0odQOM8L78=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/NSViewController-arI-oH-4xY.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			WiGpvOKZSyUn0xQyG8HcKsDVzgt24wcru9cEL5iEc0w=
+			AD5gk78AfVTbpcxDnQAKHdBvjvpoPFpz1fFuvqvjqgQ=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/SystemMonitor.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Rcf6lVEGm3KYTwsvjbJOyiJ6UksQcqFrUwmK5CBlXHc=
+			8cZtXiK8YNUnoKx+fmVSP5HgOz3uvOpr9oIA4aT/5Qo=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
@@ -157,7 +157,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			+5D4od0b01acFhrrjWWz6txMXYBkLah/7jFsinFScWE=
+			zN0tm4jUiCy8Y2MgfQUbizSeIpnFFmpBsqpzjWeMLAg=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/jl0-3p-cPP-view-HZ9-Dt-1W1.nib</key>
@@ -171,7 +171,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			tDZZXYjl95x1Ejgs2mT/UzE2TfIMX9aRY2w5/MIWppI=
+			0RaMJoyr/fMGnVRkc2qgTwgUTPl10XcrdfKZWrS2J+0=
 			</data>
 		</dict>
 		<key>Resources/SF-Pro-Rounded-Medium.otf</key>
