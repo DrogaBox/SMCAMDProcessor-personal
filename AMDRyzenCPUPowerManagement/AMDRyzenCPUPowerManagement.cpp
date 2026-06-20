@@ -364,9 +364,15 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
-    // Check CPPC support: CPUID Fn8000_0008 register EBX bit 27
-    CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    cppcSupported = (cpuid_ebx >> 27) & 0x1;
+    // Check CPPC support: try to read MSR 0xC00102B0 first.
+    // If it succeeds and returns a non-zero value, CPPC is supported and active.
+    uint64_t cppcVal = 0;
+    if (read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal) && cppcVal != 0) {
+        cppcSupported = true;
+    } else {
+        CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
+        cppcSupported = (cpuid_ebx >> 27) & 0x1;
+    }
     IOLog("AMDCPUSupport::start CPPC supported: %d\n", cppcSupported);
 
     
