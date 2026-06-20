@@ -1107,7 +1107,11 @@ private struct CoreCell: View {
         return Color.tahoeAccentGreen
     }
     private var labelText: String {
-        core.isLogical ? "T\(core.id + 1)" : "C\(core.id + 1)"
+        let base = core.isLogical ? "T\(core.id + 1)" : "C\(core.id + 1)"
+        if let score = core.cppcScore, score > 0 {
+            return "\(base) [\(score)]"
+        }
+        return base
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

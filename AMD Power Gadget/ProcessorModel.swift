@@ -709,4 +709,37 @@ class ProcessorModel {
         
         return Array(outputStr[0..<min(actualCCDCount, maxCCDs)])
     }
+
+    func getCPPCScore() -> (supported: Bool, scores: [UInt8]) {
+        var scalerOut: UInt64 = 0
+        var outputCount: UInt32 = 1
+        let maxLogicalCores = 64
+        var outputStr: [UInt8] = [UInt8](repeating: 0, count: maxLogicalCores)
+        var outputStrCount: Int = MemoryLayout<UInt8>.size * maxLogicalCores
+        
+        let res = IOConnectCallMethod(connect, 21, nil, 0, nil, 0,
+                                      &scalerOut, &outputCount,
+                                      &outputStr, &outputStrCount)
+                                      
+        if res != KERN_SUCCESS {
+            return (false, [])
+        }
+        
+        let supported = scalerOut == 1
+        return (supported, Array(outputStr[0..<maxLogicalCores]))
+    }
+
+    func getCStateAddress() -> UInt64 {
+        var scalerOut: UInt64 = 0
+        var outputCount: UInt32 = 1
+        
+        let res = IOConnectCallMethod(connect, 22, nil, 0, nil, 0,
+                                      &scalerOut, &outputCount,
+                                      nil, nil)
+                                      
+        if res != KERN_SUCCESS {
+            return 0
+        }
+        return scalerOut
+    }
 }

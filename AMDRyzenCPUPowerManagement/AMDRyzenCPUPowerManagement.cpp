@@ -1,5 +1,8 @@
 #include "AMDRyzenCPUPowerManagement.hpp"
 #include <string.h>
+#include <IOKit/IOPlatformExpert.h>
+#include <libkern/c++/OSString.h>
+#include <libkern/c++/OSData.h>
 
 OSDefineMetaClassAndStructors(AMDRyzenCPUPowerManagement, IOService);
 
@@ -149,6 +152,14 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                 if(pmRyzen_cpu_is_master(cpu_num))
                     provider->dumpPstate();
 
+                // Query CPPC core ranking per logical core if supported
+                if (provider->cppcSupported && cpu_num < CPUInfo::MaxCpus) {
+                    uint64_t cppcCap = 0;
+                    if (provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap)) {
+                        provider->cppcHighestPerf_perCore[cpu_num] = (cppcCap >> 24) & 0xFF;
+                    }
+                }
+
 
                 if(!pmRyzen_cpu_primary_in_core(cpu_num)) return;
                 uint8_t physical = pmRyzen_cpu_phys_num(cpu_num);
@@ -165,6 +176,12 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                 provider->lastMPERF_perCore[physical] = MPERF;
 
             }, provider);
+            
+            uint64_t cstateAddr = 0;
+            if (provider->read_msr(kMSR_CSTATE_ADDR, &cstateAddr)) {
+                provider->cstateAddrConfig = cstateAddr;
+                IOLog("AMDCPUSupport::startWorkLoop: C-State address configuration: 0x%llX\n", cstateAddr);
+            }
             
             //Make all cores P0 state by default.
             provider->PStateCtl = 0;
@@ -347,6 +364,11 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
+    // Check CPPC support: CPUID Fn8000_0008 register EBX bit 27
+    CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
+    cppcSupported = (cpuid_ebx >> 27) & 0x1;
+    IOLog("AMDCPUSupport::start CPPC supported: %d\n", cppcSupported);
+
     
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     IOLog("AMDCPUSupport::start CPUID MWait: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
@@ -522,14 +544,57 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
     uint32_t att = 0;
     uint64_t sizee = BASEBOARD_STRING_MAX;
     uint64_t efistat;
+    
     efistat = efiRT->getVariable(OC_OEM_VENDOR_VARIABLE_NAME, &EfiRuntimeServices::LiluVendorGuid,
                                  &att, &sizee, boardVender);
     
     sizee = BASEBOARD_STRING_MAX;
-    efistat = efiRT->getVariable(OC_OEM_BOARD_VARIABLE_NAME, &EfiRuntimeServices::LiluVendorGuid,
-                                 &att, &sizee, boardName);
-    boardInfoValid = efistat == EFI_SUCCESS;
-    IOLog("MB: %s %s\n", boardName, boardVender);
+    uint64_t efistat2 = efiRT->getVariable(OC_OEM_BOARD_VARIABLE_NAME, &EfiRuntimeServices::LiluVendorGuid,
+                                  &att, &sizee, boardName);
+                                  
+    if (efistat == EFI_SUCCESS && efistat2 == EFI_SUCCESS) {
+        boardInfoValid = true;
+    } else {
+        // Fallback: Query IOPlatformExpertDevice properties
+        IOPlatformExpert *platform = getPlatform();
+        if (platform) {
+            OSObject *mfgObj = platform->getProperty("manufacturer");
+            OSObject *modelObj = platform->getProperty("model");
+            
+            if (mfgObj) {
+                if (OSString *str = OSDynamicCast(OSString, mfgObj)) {
+                    strncpy(boardVender, str->getCStringNoCopy(), BASEBOARD_STRING_MAX - 1);
+                    boardVender[BASEBOARD_STRING_MAX - 1] = '\0';
+                } else if (OSData *data = OSDynamicCast(OSData, mfgObj)) {
+                    size_t len = data->getLength();
+                    size_t copyLen = (len < BASEBOARD_STRING_MAX - 1) ? len : (BASEBOARD_STRING_MAX - 1);
+                    memcpy(boardVender, data->getBytesNoCopy(), copyLen);
+                    boardVender[copyLen] = '\0';
+                }
+            } else {
+                strncpy(boardVender, "Unknown Vendor", BASEBOARD_STRING_MAX - 1);
+            }
+            
+            if (modelObj) {
+                if (OSString *str = OSDynamicCast(OSString, modelObj)) {
+                    strncpy(boardName, str->getCStringNoCopy(), BASEBOARD_STRING_MAX - 1);
+                    boardName[BASEBOARD_STRING_MAX - 1] = '\0';
+                } else if (OSData *data = OSDynamicCast(OSData, modelObj)) {
+                    size_t len = data->getLength();
+                    size_t copyLen = (len < BASEBOARD_STRING_MAX - 1) ? len : (BASEBOARD_STRING_MAX - 1);
+                    memcpy(boardName, data->getBytesNoCopy(), copyLen);
+                    boardName[copyLen] = '\0';
+                }
+            } else {
+                strncpy(boardName, "Unknown Platform", BASEBOARD_STRING_MAX - 1);
+            }
+            boardInfoValid = true;
+        } else {
+            boardInfoValid = false;
+        }
+    }
+    
+    IOLog("MB: %s %s (Valid: %d)\n", boardName, boardVender, boardInfoValid);
 }
 
 bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
