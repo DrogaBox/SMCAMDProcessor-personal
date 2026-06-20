@@ -1816,19 +1816,19 @@ struct MenuBarConfigView: View {
 
                 if cfg.showNetwork {
                     HStack {
-                        Text("Color de Flechas").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                        Text("Arrow Color").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
                         Spacer()
                         Picker("", selection: .init(
                             get: { cfg.netColorIdx },
                             set: { cfg.netColorIdx = $0; notify() }
                         )) {
-                            Text("Verde").tag(0)
-                            Text("Azul").tag(1)
-                            Text("Naranja").tag(2)
-                            Text("Rojo").tag(3)
-                            Text("Morado").tag(4)
-                            Text("Rosa").tag(5)
-                            Text("Turquesa").tag(6)
+                            Text("Green").tag(0)
+                            Text("Blue").tag(1)
+                            Text("Orange").tag(2)
+                            Text("Red").tag(3)
+                            Text("Purple").tag(4)
+                            Text("Pink").tag(5)
+                            Text("Teal").tag(6)
                         }
                         .pickerStyle(.menu)
                         .frame(width: 150)
@@ -1871,19 +1871,19 @@ struct MenuBarConfigView: View {
 
                 if cfg.enableColorAlerts {
                     HStack {
-                        Text("Color de Alerta de Temp").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                        Text("Temp Alert Color").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
                         Spacer()
                         Picker("", selection: .init(
                             get: { cfg.tempColorIdx },
                             set: { cfg.tempColorIdx = $0; notify() }
                         )) {
-                            Text("Verde").tag(0)
-                            Text("Azul").tag(1)
-                            Text("Naranja").tag(2)
-                            Text("Rojo").tag(3)
-                            Text("Morado").tag(4)
-                            Text("Rosa").tag(5)
-                            Text("Turquesa").tag(6)
+                            Text("Green").tag(0)
+                            Text("Blue").tag(1)
+                            Text("Orange").tag(2)
+                            Text("Red").tag(3)
+                            Text("Purple").tag(4)
+                            Text("Pink").tag(5)
+                            Text("Teal").tag(6)
                         }
                         .pickerStyle(.menu)
                         .frame(width: 150)
@@ -1943,7 +1943,7 @@ struct MenuBarConfigView: View {
                 SectionTitle("Preview")
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Vista previa de la Barra de Menús:")
+                    Text("Menu Bar Preview:")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.tahoeSubtext)
                     
@@ -1957,7 +1957,7 @@ struct MenuBarConfigView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
                         )
                     
-                    Text("Ancho estimado: \(Int(cfg.totalWidth))pt")
+                    Text("Estimated Width: \(Int(cfg.totalWidth))pt")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.tahoeSubtext)
                 }
@@ -2050,27 +2050,8 @@ struct SystemInfoContentView: View {
             .padding(18)
         }
     }
-// MARK: - Refresh Rate Config
-class RefreshRateConfig: ObservableObject {
-    static let shared = RefreshRateConfig()
-    private let ud = UserDefaults.standard
-
-    @Published var interval: Double = 1.0 {
-        didSet {
-            ud.set(interval, forKey: "refresh_interval")
-        }
-    }
-
-    init() {
-        interval = max(0.1, min(5.0, ud.double(forKey: "refresh_interval")))
-        if ud.object(forKey: "refresh_interval") == nil {
-            interval = 0.7
-            ud.set(0.7, forKey: "refresh_interval")
-        }
-    }
 }
 
-}
 
 // MARK: - Menu Bar Popover View
 struct MenuBarPopoverView: View {
@@ -2299,7 +2280,7 @@ struct MenuBarPopoverView: View {
                                 let cpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.cpuTempC) : ""
                                 MiniSparkline(
                                     label: "CPU Temp",
-                                    currentVal: String(format: "%.0f%%%@", model.cpuLoadAvg, cpuTempStr),
+                                    currentVal: String(format: "%.0f°C", model.cpuTempC),
                                     color: Color(red: 0.93, green: 0.11, blue: 0.14),
                                     data: model.history,
                                     value: { $0.cpuTempC },
@@ -2338,15 +2319,15 @@ struct MenuBarPopoverView: View {
                                 )
                             }
                             if cfg.popoverShowGPUSparkline {
-                                let gpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.gpuTempC) : ""
                                 MiniSparkline(
                                     label: "GPU Temp",
-                                    currentVal: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
+                                    currentVal: String(format: "%.0f°C", model.gpuTempC),
                                     color: .purple,
                                     data: model.history,
                                     value: { $0.gpuTempC },
                                     filterZeros: true
                                 )
+                                .padding(.top, 2)
                             }
                         }
                     }
@@ -2378,7 +2359,7 @@ struct MenuBarPopoverView: View {
                                     .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.white.opacity(0.8))
                             } else {
-                                Text("Inactivo")
+                                Text("Inactive")
                                     .font(.system(size: 9.5, weight: .semibold))
                                     .foregroundColor(.white.opacity(0.4))
                             }
@@ -2422,7 +2403,7 @@ struct MenuBarPopoverView: View {
                 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Procesos principales")
+                        Text("Top Processes")
                             .font(.system(size: 9.5, weight: .bold))
                             .foregroundColor(.white.opacity(0.5))
                         Spacer()
@@ -2435,7 +2416,7 @@ struct MenuBarPopoverView: View {
                     if model.topProcesses.isEmpty {
                         HStack {
                             Spacer()
-                            Text("Cargando...")
+                            Text("Loading...")
                                 .font(.system(size: 9.5, weight: .medium, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.4))
                                 .padding(.vertical, 4)
@@ -2473,7 +2454,7 @@ struct MenuBarPopoverView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "chart.xyaxis.line")
                             .font(.system(size: 9.5))
-                        Text("Abrir panel")
+                        Text("Open Dashboard")
                             .font(.system(size: 10, weight: .bold))
                     }
                     .foregroundColor(.white)
@@ -2490,7 +2471,7 @@ struct MenuBarPopoverView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "power")
                             .font(.system(size: 9.5))
-                        Text("Salir")
+                        Text("Quit")
                             .font(.system(size: 10, weight: .bold))
                     }
                     .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))

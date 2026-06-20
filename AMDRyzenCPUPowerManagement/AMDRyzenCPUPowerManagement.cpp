@@ -370,8 +370,10 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     
     uint64_t rapl = 0;
-    if(!read_msr(kMSR_RAPL_PWR_UNIT, &rapl))
-        panic("AMDCPUSupport: unable to read power unit\n");
+    if(!read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
+        IOLog("AMDCPUSupport::start: failed to read kMSR_RAPL_PWR_UNIT, aborting start.\n");
+        return false;
+    }
     
     pwrTimeUnit = pow((double)0.5, (double)((rapl >> 16) & 0xf));
     pwrEnergyUnit = pow((double)0.5, (double)((rapl >> 8) & 0x1f));

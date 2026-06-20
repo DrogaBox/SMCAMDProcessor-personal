@@ -494,6 +494,8 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let numberOfCores = ProcessorModel.shared.getNumOfCore()
         let outputStr: [Float] = ProcessorModel.shared.getMetric(forced: false)
 
+        guard outputStr.count > numberOfCores + 2 else { return }
+
         let power = outputStr[0]
         let temperature = outputStr[1]
         var frequencies: [Float] = []
@@ -502,7 +504,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         }
 
         let meanFre = Float(frequencies.reduce(0, +) / Float(frequencies.count))
-        let maxFre = Float(frequencies.max()!)
+        let maxFre = frequencies.max() ?? 0
 
         if temperature > peakTemp { peakTemp = temperature }
         if power > peakPower { peakPower = power }
