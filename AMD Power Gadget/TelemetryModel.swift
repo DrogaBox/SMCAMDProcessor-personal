@@ -7,6 +7,11 @@
 
 import SwiftUI
 import Combine
+import Foundation
+import Darwin
+import Metal
+import VideoToolbox
+import CoreMedia
 
 // MARK: - Data Structures
 
@@ -114,6 +119,8 @@ struct SystemInfo {
     var macOSVersion: String = ""
     var kextVersion: String = ""
     var kextSupported: Bool = false
+    var metalVersion: String = ""
+    var vdaAcceleration: String = ""
 }
 
 // MARK: - Chart Size Config
@@ -142,10 +149,18 @@ struct ChartSizeConfig {
     }
 }
 
+// MARK: - ProcessInfoRow
+struct ProcessInfoRow: Identifiable {
+    let id: Int32
+    var name: String
+    var cpuUsage: Float
+}
+
 // MARK: - TelemetryModel
 
 @MainActor
 final class TelemetryModel: ObservableObject {
+    static let shared = TelemetryModel()
 
     @Published var cpuFreqAvgGHz: Double = 0
     @Published var cpuFreqMaxGHz: Double = 0
@@ -153,9 +168,17 @@ final class TelemetryModel: ObservableObject {
     @Published var cpuWatts: Double = 0
     @Published var gpuTempC: Double = 0
     @Published var gpuPowerW: Double = 0
+    @Published var gpuLoadPct: Double = 0
+    @Published var gpuVramUsedBytes: Double = 0
+    @Published var gpuFanRPM: Double = 0
+    @Published var ccdTemperatures: [Float] = []
     @Published var instRetiredFormatted: String = "0"
     @Published var netUploadMBps: Double = 0
     @Published var netDownloadMBps: Double = 0
+    @Published var cpuLoadAvg: Double = 0
+    @Published var ramUsagePct: Double = 0
+    @Published var diskUsagePct: Double = 0
+    @Published var topProcesses: [ProcessInfoRow] = []
 
     @Published var cores: [CoreSnapshot] = []
     @Published var fans: [FanSnapshot] = []
@@ -178,6 +201,23 @@ final class TelemetryModel: ObservableObject {
     private var timer: AnyCancellable?
     private let startTime: Double = Date.timeIntervalSinceReferenceDate
     private let maxHistoryPoints = 120
+
+    private var activeWindows = false
+    private var popoverVisible = false
+
+    func setPopoverVisible(_ visible: Bool) {
+        popoverVisible = visible
+        updateTimerState()
+    }
+
+    private func updateTimerState() {
+        if activeWindows || popoverVisible {
+            restartTimer()
+        } else {
+            timer?.cancel()
+            timer = nil
+        }
+    }
 
     private var numFans = 0
     private var fanNames: [String] = []
@@ -233,6 +273,36 @@ final class TelemetryModel: ObservableObject {
             info.storageGB = rsGB / 1024
         }
 
+        // Metal & Hardware Acceleration Detection
+        if let device = MTLCreateSystemDefaultDevice() {
+            var ver = "Metal 1"
+            if #available(macOS 13.0, *) {
+                if device.supportsFamily(.metal3) {
+                    ver = "Metal 3"
+                } else if device.supportsFamily(.apple7) || device.supportsFamily(.common3) {
+                    ver = "Metal 2"
+                }
+            } else {
+                ver = "Metal 2"
+            }
+            info.metalVersion = "\(ver) (\(device.name))"
+        } else {
+            info.metalVersion = "No Soportado"
+        }
+
+        // VDA Decoders Detection (VideoToolbox)
+        let h264 = VTIsHardwareDecodeSupported(kCMVideoCodecType_H264)
+        let hevc = VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC)
+        if h264 && hevc {
+            info.vdaAcceleration = "H.264 & HEVC Activos"
+        } else if h264 {
+            info.vdaAcceleration = "H.264 Activo (HEVC Inactivo)"
+        } else if hevc {
+            info.vdaAcceleration = "HEVC Activo (H.264 Inactivo)"
+        } else {
+            info.vdaAcceleration = "Inactivo / No Soportado"
+        }
+
         sysInfo = info
     }
 
@@ -265,12 +335,8 @@ final class TelemetryModel: ObservableObject {
 
     @objc private func handleActiveWindowsChanged(_ notification: Notification) {
         if let active = notification.object as? Bool {
-            if active {
-                restartTimer()
-            } else {
-                timer?.cancel()
-                timer = nil
-            }
+            activeWindows = active
+            updateTimerState()
         }
     }
 
@@ -301,8 +367,15 @@ final class TelemetryModel: ObservableObject {
 
         let rawGPUTemp = ProcessorModel.shared.getGPUTemp()
         let rawGPUPower = ProcessorModel.shared.getGPUPower()
+        let rawGPULoad = ProcessorModel.shared.getGPUUtilization()
+        let rawGPUVram = ProcessorModel.shared.getGPUVramUsed()
+        let rawGPUFan = ProcessorModel.shared.getGPUFanRPM()
         gpuTempC = Double(rawGPUTemp)
         gpuPowerW = Double(rawGPUPower)
+        gpuLoadPct = Double(rawGPULoad)
+        gpuVramUsedBytes = Double(rawGPUVram)
+        gpuFanRPM = Double(rawGPUFan)
+        ccdTemperatures = ProcessorModel.shared.getCCDTemperatures()
 
         // Inst Retired: read from getInstructionDelta() like original Power Tool
         let instDelta = ProcessorModel.shared.getInstructionDelta()
@@ -331,6 +404,20 @@ final class TelemetryModel: ObservableObject {
             ))
         }
         cores = newCores
+        
+        let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
+        cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
+        ramUsagePct = getRAMUsagePct()
+        diskUsagePct = getDiskUsagePct()
+        
+        if popoverVisible {
+            Task.detached(priority: .background) {
+                let list = self.fetchTopProcesses()
+                await MainActor.run {
+                    self.topProcesses = list
+                }
+            }
+        }
 
         var netUp: Double = 0
         var netDown: Double = 0
@@ -466,5 +553,80 @@ final class TelemetryModel: ObservableObject {
         guard let arr = NSArray(contentsOf: url) as? [UInt64] else { return }
         pStateRows = arr.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset) }
         pStateEditorDirty = true
+    }
+
+    // MARK: - Resource Metrics Helpers
+
+    nonisolated private func getRAMUsagePct() -> Double {
+        var stats = vm_statistics64()
+        var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
+        let kerr = withUnsafeMutablePointer(to: &stats) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+            }
+        }
+        if kerr == KERN_SUCCESS {
+            var pageSize: vm_size_t = 0
+            host_page_size(mach_host_self(), &pageSize)
+            let active = Double(stats.active_count) * Double(pageSize)
+            let wire = Double(stats.wire_count) * Double(pageSize)
+            let compressed = Double(stats.compressor_page_count) * Double(pageSize)
+            let used = active + wire + compressed
+            let total = Double(ProcessInfo.processInfo.physicalMemory)
+            return (used / total) * 100.0
+        }
+        return 0.0
+    }
+
+    nonisolated private func getDiskUsagePct() -> Double {
+        do {
+            let attrs = try FileManager.default.attributesOfFileSystem(forPath: "/")
+            if let totalSize = attrs[.systemSize] as? NSNumber,
+               let freeSize = attrs[.systemFreeSize] as? NSNumber {
+                let total = totalSize.doubleValue
+                let free = freeSize.doubleValue
+                let used = total - free
+                return (used / total) * 100.0
+            }
+        } catch {}
+        return 0.0
+    }
+
+    nonisolated private func fetchTopProcesses() -> [ProcessInfoRow] {
+        let task = Process()
+        task.launchPath = "/bin/ps"
+        task.arguments = ["-A", "-r", "-o", "pid,%cpu,comm", "-c"]
+        
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                var list: [ProcessInfoRow] = []
+                let lines = output.components(separatedBy: .newlines)
+                for line in lines.dropFirst() {
+                    let parts = line.split(separator: " ", omittingEmptySubsequences: true)
+                    if parts.count >= 3 {
+                        if let pid = Int32(parts[0]) {
+                            let cpuStr = parts[1].replacingOccurrences(of: ",", with: ".")
+                            if let cpu = Float(cpuStr) {
+                                let name = parts[2...].joined(separator: " ")
+                                let cleanName = name.replacingOccurrences(of: ".app/Contents/MacOS/", with: "")
+                                                    .components(separatedBy: "/").last ?? name
+                                list.append(ProcessInfoRow(id: pid, name: cleanName, cpuUsage: cpu))
+                                if list.count >= 5 {
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+                return list
+            }
+        } catch {}
+        return []
     }
 }

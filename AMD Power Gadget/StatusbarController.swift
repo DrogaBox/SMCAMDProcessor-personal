@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 // MARK: - Refresh Rate Config
 class RefreshRateConfig: ObservableObject {
@@ -39,6 +40,8 @@ struct MenuBarConfig {
     var showGPU:    Bool { get { ud.bool(forKey: "mb_showGPU")    } set { ud.set(newValue, forKey: "mb_showGPU")    } }
     var showGPUtemp:Bool { get { ud.bool(forKey: "mb_showGPUtemp")} set { ud.set(newValue, forKey: "mb_showGPUtemp")} }
     var showGPUpwr: Bool { get { ud.bool(forKey: "mb_showGPUpwr") } set { ud.set(newValue, forKey: "mb_showGPUpwr") } }
+    var showGPUvram:Bool { get { ud.bool(forKey: "mb_showGPUvram")} set { ud.set(newValue, forKey: "mb_showGPUvram")} }
+    var showGPUfan: Bool { get { ud.bool(forKey: "mb_showGPUfan") } set { ud.set(newValue, forKey: "mb_showGPUfan") } }
 
     var showFanRPM:  Bool { get { ud.bool(forKey: "mb_showFanRPM") } set { ud.set(newValue, forKey: "mb_showFanRPM") } }
     var fanIndex:    Int  { get { ud.integer(forKey: "mb_fanIdx")   } set { ud.set(newValue, forKey: "mb_fanIdx")   } }
@@ -54,6 +57,26 @@ struct MenuBarConfig {
     var tempThreshold: Int { get { ud.integer(forKey: "mb_tempThreshold") } set { ud.set(newValue, forKey: "mb_tempThreshold") } }
     var tempColorIdx:  Int { get { ud.integer(forKey: "mb_tempColorIdx")  } set { ud.set(newValue, forKey: "mb_tempColorIdx")  } }
     var tempPresetList: String { get { ud.string(forKey: "mb_tempPresetList") ?? "30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95" } set { ud.set(newValue, forKey: "mb_tempPresetList") } }
+    var enablePopover: Bool { get { ud.bool(forKey: "mb_enablePopover") } set { ud.set(newValue, forKey: "mb_enablePopover") } }
+
+    var popoverShowCPU:       Bool { get { ud.bool(forKey: "pop_showCPU")       } set { ud.set(newValue, forKey: "pop_showCPU")       } }
+    var popoverShowRAM:       Bool { get { ud.bool(forKey: "pop_showRAM")       } set { ud.set(newValue, forKey: "pop_showRAM")       } }
+    var popoverShowDisk:      Bool { get { ud.bool(forKey: "pop_showDisk")      } set { ud.set(newValue, forKey: "pop_showDisk")      } }
+    var popoverShowGPU:       Bool { get { ud.bool(forKey: "pop_showGPU")       } set { ud.set(newValue, forKey: "pop_showGPU")       } }
+    var popoverShowGPURing:   Bool { get { ud.bool(forKey: "pop_showGPURing")   } set { ud.set(newValue, forKey: "pop_showGPURing")   } }
+    var popoverShowNetwork:   Bool { get { ud.bool(forKey: "pop_showNetwork")   } set { ud.set(newValue, forKey: "pop_showNetwork")   } }
+    var popoverShowProcesses: Bool { get { ud.bool(forKey: "pop_showProcesses") } set { ud.set(newValue, forKey: "pop_showProcesses") } }
+    var popoverRingShowLabels:Bool { get { ud.bool(forKey: "pop_ringShowLabels") } set { ud.set(newValue, forKey: "pop_ringShowLabels") } }
+    var popoverRingShowTemp:  Bool { get { ud.bool(forKey: "pop_ringShowTemp")   } set { ud.set(newValue, forKey: "pop_ringShowTemp")   } }
+    var popoverCPUStyle:  Int { get { ud.integer(forKey: "pop_cpuStyle")  } set { ud.set(newValue, forKey: "pop_cpuStyle")  } }
+    var popoverRAMStyle:  Int { get { ud.integer(forKey: "pop_ramStyle")  } set { ud.set(newValue, forKey: "pop_ramStyle")  } }
+    var popoverDiskStyle: Int { get { ud.integer(forKey: "pop_diskStyle") } set { ud.set(newValue, forKey: "pop_diskStyle") } }
+    var popoverGPUStyle:  Int { get { ud.integer(forKey: "pop_gpuStyle")  } set { ud.set(newValue, forKey: "pop_gpuStyle")  } }
+    var popoverRingOrder: String { get { ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,disk,gpu" } set { ud.set(newValue, forKey: "pop_ringOrder") } }
+
+    var popoverShowCPUSparkline: Bool { get { ud.bool(forKey: "pop_showCPUSparkline") } set { ud.set(newValue, forKey: "pop_showCPUSparkline") } }
+    var popoverShowGPUSparkline: Bool { get { ud.bool(forKey: "pop_showGPUSparkline") } set { ud.set(newValue, forKey: "pop_showGPUSparkline") } }
+    var popoverShowNetSparkline: Bool { get { ud.bool(forKey: "pop_showNetSparkline") } set { ud.set(newValue, forKey: "pop_showNetSparkline") } }
 
     private let ud = UserDefaults.standard
 
@@ -64,6 +87,8 @@ struct MenuBarConfig {
         if ud.object(forKey: "mb_showGPU")     == nil { ud.set(true,  forKey: "mb_showGPU")     }
         if ud.object(forKey: "mb_showGPUtemp") == nil { ud.set(true,  forKey: "mb_showGPUtemp") }
         if ud.object(forKey: "mb_showGPUpwr")  == nil { ud.set(true,  forKey: "mb_showGPUpwr")  }
+        if ud.object(forKey: "mb_showGPUvram") == nil { ud.set(false, forKey: "mb_showGPUvram") }
+        if ud.object(forKey: "mb_showGPUfan")  == nil { ud.set(false, forKey: "mb_showGPUfan")  }
         if ud.object(forKey: "mb_showFanRPM")  == nil { ud.set(false, forKey: "mb_showFanRPM")  }
         if ud.object(forKey: "mb_fanIdx")      == nil { ud.set(0,     forKey: "mb_fanIdx")      }
         if ud.object(forKey: "mb_showMem")     == nil { ud.set(false, forKey: "mb_showMem")     }
@@ -77,6 +102,43 @@ struct MenuBarConfig {
         if ud.object(forKey: "mb_tempThreshold") == nil { ud.set(80, forKey: "mb_tempThreshold") }
         if ud.object(forKey: "mb_tempColorIdx")  == nil { ud.set(3,  forKey: "mb_tempColorIdx")  } // Default is Red
         if ud.object(forKey: "mb_tempPresetList") == nil { ud.set("30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95", forKey: "mb_tempPresetList") }
+        if ud.object(forKey: "mb_enablePopover") == nil { ud.set(true, forKey: "mb_enablePopover") }
+        
+        if ud.object(forKey: "pop_showCPU")       == nil { ud.set(true, forKey: "pop_showCPU")       }
+        if ud.object(forKey: "pop_showRAM")       == nil { ud.set(true, forKey: "pop_showRAM")       }
+        if ud.object(forKey: "pop_showDisk")      == nil { ud.set(true, forKey: "pop_showDisk")      }
+        if ud.object(forKey: "pop_showGPU")       == nil { ud.set(true, forKey: "pop_showGPU")       }
+        if ud.object(forKey: "pop_showGPURing")   == nil { ud.set(true, forKey: "pop_showGPURing")   }
+        if ud.object(forKey: "pop_showNetwork")   == nil { ud.set(true, forKey: "pop_showNetwork")   }
+        if ud.object(forKey: "pop_showProcesses") == nil { ud.set(true, forKey: "pop_showProcesses") }
+        if ud.object(forKey: "pop_ringShowLabels") == nil { ud.set(true, forKey: "pop_ringShowLabels") }
+        if ud.object(forKey: "pop_ringShowTemp")   == nil { ud.set(true, forKey: "pop_ringShowTemp")   }
+        if ud.object(forKey: "pop_cpuStyle")  == nil { ud.set(0, forKey: "pop_cpuStyle")  }
+        if ud.object(forKey: "pop_ramStyle")  == nil { ud.set(0, forKey: "pop_ramStyle")  }
+        if ud.object(forKey: "pop_diskStyle") == nil { ud.set(0, forKey: "pop_diskStyle") }
+        if ud.object(forKey: "pop_gpuStyle")  == nil { ud.set(0, forKey: "pop_gpuStyle")  }
+
+        if ud.object(forKey: "pop_showCPUSparkline") == nil {
+            let style = ud.integer(forKey: "pop_cpuStyle")
+            if style == 2 {
+                ud.set(true, forKey: "pop_showCPUSparkline")
+                ud.set(0, forKey: "pop_cpuStyle")
+            } else {
+                ud.set(false, forKey: "pop_showCPUSparkline")
+            }
+        }
+        if ud.object(forKey: "pop_showGPUSparkline") == nil {
+            let style = ud.integer(forKey: "pop_gpuStyle")
+            if style == 2 {
+                ud.set(true, forKey: "pop_showGPUSparkline")
+                ud.set(0, forKey: "pop_gpuStyle")
+            } else {
+                ud.set(false, forKey: "pop_showGPUSparkline")
+            }
+        }
+        if ud.object(forKey: "pop_showNetSparkline") == nil {
+            ud.set(false, forKey: "pop_showNetSparkline")
+        }
     }
 
     var totalWidth: CGFloat {
@@ -99,6 +161,8 @@ fileprivate class StatusbarView: NSView {
     var pwr: Float = 0
     var gpuTemp: Float = 0
     var gpuPwr: Float = 0
+    var gpuFanRPM: Float = 0
+    var gpuVram: Double = 0
     var fanRPM: UInt64 = 0
     var memoryUsed: Float = 0
     var totalMemory: String = "0G"
@@ -195,7 +259,12 @@ fileprivate class StatusbarView: NSView {
             let fan = fanRPM > 0 ? String(fanRPM) : "—"
             let fanColor: NSColor = .labelColor
             
-            drawCompactDoubleColored(label: "F\nA\nN", up: fan, upColor: fanColor, down: "RPM", downColor: .labelColor, x: x)
+            if cfg.showGPU && cfg.showGPUfan {
+                let gFanStr = gpuFanRPM > 0 ? String(format: "G:%.0f", gpuFanRPM) : "G:—"
+                drawCompactDoubleColored(label: "F\nA\nN", up: "C:\(fan)", upColor: fanColor, down: gFanStr, downColor: .labelColor, x: x)
+            } else {
+                drawCompactDoubleColored(label: "F\nA\nN", up: fan, upColor: fanColor, down: "RPM", downColor: .labelColor, x: x)
+            }
             x += 54
         }
 
@@ -204,7 +273,13 @@ fileprivate class StatusbarView: NSView {
             let used = String(format: "%.1fG", memoryUsed)
             let memColor: NSColor = .labelColor
             
-            drawCompactDoubleColored(label: "M\nE\nM", up: used, upColor: memColor, down: totalMemory, downColor: .labelColor, x: x)
+            if cfg.showGPU && cfg.showGPUvram {
+                let vramGB = gpuVram / (1024.0 * 1024.0 * 1024.0)
+                let vramStr = String(format: "G:%.1fG", vramGB)
+                drawCompactDoubleColored(label: "M\nE\nM", up: "S:\(used)", upColor: memColor, down: vramStr, downColor: .labelColor, x: x)
+            } else {
+                drawCompactDoubleColored(label: "M\nE\nM", up: used, upColor: memColor, down: totalMemory, downColor: .labelColor, x: x)
+            }
             x += 54
         }
 
@@ -327,13 +402,15 @@ fileprivate class StatusbarView: NSView {
     }
 }
 
-class StatusbarController: NSObject, NSMenuDelegate {
+@MainActor
+class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
     var statusItem: NSStatusItem!
     fileprivate var view: StatusbarView!
 
     var updateTimer: Timer?
     var menu: NSMenu?
+    private var popover: NSPopover!
 
     private var smcReady = false
     private var numFans = 0
@@ -364,6 +441,13 @@ class StatusbarController: NSObject, NSMenuDelegate {
         statusItem.button?.action = #selector(itemClicked)
         statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
+        // Setup NSPopover with MenuBarPopoverView
+        popover = NSPopover()
+        popover.behavior = .transient
+        popover.appearance = NSAppearance(named: .vibrantDark)
+        popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView())
+        popover.delegate = self
+
         updateLength()
         view.frame = statusItem.button!.bounds
 
@@ -373,6 +457,7 @@ class StatusbarController: NSObject, NSMenuDelegate {
 
         // Listen for config changes
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: .init("CloseMenuBarPopover"), object: nil)
     }
 
     @objc func restartTimer() {
@@ -400,6 +485,8 @@ class StatusbarController: NSObject, NSMenuDelegate {
     // MARK: - Cached GPU readings (3s cache)
     private var cachedGPUTemp: Float = 0
     private var cachedGPUPower: Float = 0
+    private var cachedGPUVram: Float = 0
+    private var cachedGPUFanRPM: Float = 0
     private var lastGPUReadTime: Date = Date.distantPast
     private let gpuCacheInterval: TimeInterval = 3.0
 
@@ -425,8 +512,12 @@ class StatusbarController: NSObject, NSMenuDelegate {
         if now.timeIntervalSince(lastGPUReadTime) >= gpuCacheInterval {
             let rawGPUTemp = ProcessorModel.shared.getGPUTemp()
             let rawGPUPower = ProcessorModel.shared.getGPUPower()
+            let rawGPUVram = ProcessorModel.shared.getGPUVramUsed()
+            let rawGPUFan = ProcessorModel.shared.getGPUFanRPM()
             if rawGPUTemp > 0 { cachedGPUTemp = rawGPUTemp }
             if rawGPUPower > 0 { cachedGPUPower = rawGPUPower }
+            cachedGPUVram = rawGPUVram
+            cachedGPUFanRPM = rawGPUFan
             lastGPUReadTime = now
         }
 
@@ -436,6 +527,8 @@ class StatusbarController: NSObject, NSMenuDelegate {
         view?.pwr = power
         view?.gpuTemp = cachedGPUTemp
         view?.gpuPwr = cachedGPUPower
+        view?.gpuVram = Double(cachedGPUVram)
+        view?.gpuFanRPM = cachedGPUFanRPM
 
         // Extra items
         // Fan: read from AMDRyzenCPUPowerManagement kext
@@ -477,8 +570,61 @@ class StatusbarController: NSObject, NSMenuDelegate {
         guard let event = NSApp.currentEvent else { return }
         switch event.type {
         case .leftMouseUp:
-            NSApp.activate(ignoringOtherApps: true)
-            ViewController.launch(forceFocus: true)
+            if let button = statusItem.button {
+                if MenuBarConfig.shared.enablePopover {
+                    if popover.isShown {
+                        closePopover()
+                    } else {
+                        let clickLocation = button.convert(event.locationInWindow, from: nil)
+                        let w = MenuBarConfig.shared.totalWidth
+                        let clampedX = max(5, min(w - 5, clickLocation.x))
+                        
+                        // Physical bottom of the button inside bounds (keep within bounds to prevent AppKit from discarding the rect):
+                        // If flipped: bottom is y = bounds.height - 1, edge is .maxY
+                        // If not flipped: bottom is y = 0, edge is .minY
+                        let bottomY = button.isFlipped ? (button.bounds.height - 1) : 0
+                        let edge: NSRectEdge = button.isFlipped ? .maxY : .minY
+                        let rect = NSRect(x: clampedX - 5, y: bottomY, width: 10, height: 1)
+                        
+                        popover.show(relativeTo: rect, of: button, preferredEdge: edge)
+                        
+                        // Force the popover window to align perfectly below the status bar button in screen coordinates
+                        if let popoverWindow = popover.contentViewController?.view.window,
+                           let buttonWindow = button.window {
+                            let rectInWindow = button.convert(button.bounds, to: nil)
+                            let buttonRectInScreen = buttonWindow.convertToScreen(rectInWindow)
+                            var popoverFrame = popoverWindow.frame
+                            
+                            // Set vertical position exactly 2pt below the status bar button
+                            popoverFrame.origin.y = buttonRectInScreen.origin.y - popoverFrame.height - 2
+                            
+                            // Center horizontally relative to the button
+                            let buttonCenterX = buttonRectInScreen.origin.x + buttonRectInScreen.width / 2
+                            popoverFrame.origin.x = buttonCenterX - popoverFrame.width / 2
+                            
+                            // Clamp horizontally to the screen's visible frame (multi-monitor safe)
+                            if let screen = buttonWindow.screen {
+                                let screenFrame = screen.visibleFrame
+                                let minX = screenFrame.origin.x + 8
+                                let maxX = screenFrame.origin.x + screenFrame.width - popoverFrame.width - 8
+                                popoverFrame.origin.x = max(minX, min(maxX, popoverFrame.origin.x))
+                            }
+                            
+                            popoverWindow.setFrame(popoverFrame, display: true, animate: false)
+                        }
+                        
+                        TelemetryModel.shared.setPopoverVisible(true)
+                        popover.contentViewController?.view.window?.makeKey()
+                    }
+                } else {
+                    // Fallback to showing the classic dropdown menu
+                    if let m = menu {
+                        m.delegate = self
+                        statusItem.menu = m
+                        statusItem.button?.performClick(nil)
+                    }
+                }
+            }
         case .rightMouseUp:
             if let m = menu {
                 m.delegate = self
@@ -487,6 +633,17 @@ class StatusbarController: NSObject, NSMenuDelegate {
             }
         default: break
         }
+    }
+
+    @objc func closePopover() {
+        if popover.isShown {
+            popover.close()
+            TelemetryModel.shared.setPopoverVisible(false)
+        }
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        TelemetryModel.shared.setPopoverVisible(false)
     }
 
     func menuDidClose(_ menu: NSMenu) {
@@ -664,8 +821,24 @@ class StatusbarController: NSObject, NSMenuDelegate {
         m.addItem(colorMenuItem)
         
         m.addItem(NSMenuItem.separator())
+        
+        let popoverItem = NSMenuItem(title: NSLocalizedString("Use Popover Menu", comment: ""), action: #selector(togglePopover(_:)), keyEquivalent: "")
+        popoverItem.target = self
+        popoverItem.state = MenuBarConfig.shared.enablePopover ? .on : .off
+        m.addItem(popoverItem)
+        
+        m.addItem(NSMenuItem.separator())
         item = NSMenuItem(title: NSLocalizedString("Exit", comment: ""), action: #selector(exitApp), keyEquivalent: ""); item.target = self
         m.addItem(item)
+    }
+
+    @objc func togglePopover(_ sender: NSMenuItem) {
+        MenuBarConfig.shared.enablePopover = !MenuBarConfig.shared.enablePopover
+        sender.state = MenuBarConfig.shared.enablePopover ? .on : .off
+        if !MenuBarConfig.shared.enablePopover && popover.isShown {
+            closePopover()
+        }
+        NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
     }
 
 

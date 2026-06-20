@@ -8,6 +8,7 @@
 import Cocoa
 import ServiceManagement
 
+@MainActor
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
 
