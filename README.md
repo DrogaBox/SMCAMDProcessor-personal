@@ -120,8 +120,19 @@ This project would not be possible without the extensive research, development, 
 
 ---
 
-## Release v2.1.1 Contributors & Testers
+## Release v2.1.4 Features & Contributors
 
+Version **2.1.4** brings the most comprehensive modernization yet, featuring a complete SwiftUI status bar NSPopover, extended GPU telemetry (VRAM, Power, and Fan speed), multi-CCD temperature monitoring for Zen 5, localization fixes, and Xcode target optimizations.
+
+### Key Improvements in v2.1.4:
+* **SwiftUI NSPopover Menu:** Replaced the legacy text-based status bar menu with a modern, translucent popover panel featuring circular progress rings, linear bars, real-time sparklines, and a list of top CPU-consuming processes.
+* **Extended GPU Telemetry:** Added support for GPU VRAM usage, power (W), and fan speed (RPM) telemetry with dual-row rendering for FAN and MEM columns in the Menu Bar.
+* **Multi-CCD Temperature Tracking:** Integrated UserClient selector 20 to read active CCD counts and individual CCD temperatures for Zen 4 and Zen 5 processors.
+* **Bug Fixes & Stability:** Fixed out-of-bounds guards in the status bar update loops, eliminated duplicate configurations, removed legacy panics from C++ drivers, and resolved scroll resets.
+* **Clean Localization:** Fully translated popover and menu elements to English with appropriate localizable files for Spanish interfaces.
+* **macOS 13.0 Ventura Support:** Lowered the deployment target to 13.0 to support Ventura through Sequoia and Tahoe.
+
+### Special Thanks to Contributors & Testers:
 Special thanks to the AMD-OSX Discord community members who helped test, report bugs, and refine this release:
 * **Kackvogel 4K**: For extensive testing on the Ryzen 9 9950X3D under Cinebench workload, verifying lower idle temperatures, and reporting layout localization issues.
 * **Can**: For testing the Ryzen 7 9850X3D and identifying the 10GHz+ CPU frequency reporting overflow.

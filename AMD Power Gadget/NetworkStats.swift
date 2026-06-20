@@ -80,7 +80,11 @@ class NetworkStats {
                                 var nameBuffer = [CChar](repeating: 0, count: 16) // 16 is IF_NAMESIZE
                                 if if_indextoname(index, &nameBuffer) != nil {
                                     let ifName = String(cString: nameBuffer)
-                                    isPhysical = ifName.hasPrefix("en")
+                                    // Include Ethernet (en0/en1...), bridged (bridge0), bonded (bond0)
+                                    // Exclude loopback (lo0), tunnel (utun, llw, ipsec, awdl, gif, stf)
+                                    isPhysical = ifName.hasPrefix("en") ||
+                                                 ifName.hasPrefix("bridge") ||
+                                                 ifName.hasPrefix("bond")
                                 } else {
                                     isPhysical = false
                                 }
@@ -114,13 +118,14 @@ class NetworkStats {
             let interval = now.timeIntervalSince(lastCheck)
             guard interval > 0.05 else { return currentSnapshot }
             
+            // Allow delta even if last was 0 (first real reading after baseline)
             var bytesInDelta: UInt64 = 0
             var bytesOutDelta: UInt64 = 0
             
-            if lastBytesIn > 0 && bytesIn >= lastBytesIn {
+            if bytesIn >= lastBytesIn {
                 bytesInDelta = bytesIn - lastBytesIn
             }
-            if lastBytesOut > 0 && bytesOut >= lastBytesOut {
+            if bytesOut >= lastBytesOut {
                 bytesOutDelta = bytesOut - lastBytesOut
             }
             
@@ -130,8 +135,9 @@ class NetworkStats {
             var downloadSpeed = rawDownload
             var uploadSpeed = rawUpload
             
+            // Clamp noise-floor near zero
             if downloadSpeed < 0.0000009 { downloadSpeed = 0 }
-            if uploadSpeed < 0.0000009 { uploadSpeed = 0 }
+            if uploadSpeed  < 0.0000009 { uploadSpeed  = 0 }
             
             currentSnapshot = NetworkSnapshot(
                 timestamp: now,
