@@ -690,7 +690,7 @@ class ProcessorModel {
     func getCCDTemperatures() -> [Float] {
         var scalerOut: UInt64 = 0
         var outputCount: UInt32 = 1
-        let maxCCDs = 8
+        let maxCCDs = 16
         var outputStr: [Float] = [Float](repeating: 0.0, count: maxCCDs)
         var outputStrCount: Int = MemoryLayout<Float>.size * maxCCDs
         
