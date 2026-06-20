@@ -2059,6 +2059,23 @@ struct MenuBarPopoverView: View {
     
     private var cfg: MenuBarConfig { MenuBarConfig.shared }
 
+    private func formatSpeed(_ mbps: Double) -> String {
+        let absMbps = abs(mbps)
+        let bytesPerSec = absMbps * 1024.0 * 1024.0
+        if bytesPerSec >= 1024.0 * 1024.0 {
+            let val = bytesPerSec / (1024.0 * 1024.0)
+            return String(format: "%.1f MB/s", locale: Locale.current, val)
+        } else if bytesPerSec >= 1024.0 {
+            let val = bytesPerSec / 1024.0
+            return String(format: "%.1f KB/s", locale: Locale.current, val)
+        } else if bytesPerSec >= 1.0 {
+            let val = bytesPerSec / 1024.0
+            return String(format: "%.2f KB/s", locale: Locale.current, val)
+        } else {
+            return "0 KB/s"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             // Header Section
@@ -2377,7 +2394,7 @@ struct MenuBarPopoverView: View {
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(.white.opacity(0.9))
                             Spacer()
-                            Text(String(format: "↓ %.1f M  ↑ %.1f M", model.netDownloadMBps, model.netUploadMBps))
+                            Text("↓ \(formatSpeed(model.netDownloadMBps))  ↑ \(formatSpeed(model.netUploadMBps))")
                                 .font(.system(size: 9, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.8))
                         }
@@ -2385,7 +2402,7 @@ struct MenuBarPopoverView: View {
                         if cfg.popoverShowNetSparkline {
                             MiniSparkline(
                                 label: "Net Speed",
-                                currentVal: String(format: "%.1f M/s", model.netDownloadMBps + model.netUploadMBps),
+                                currentVal: formatSpeed(model.netDownloadMBps + model.netUploadMBps),
                                 color: .green,
                                 data: model.history,
                                 value: { $0.netDownloadMBps + $0.netUploadMBps }
