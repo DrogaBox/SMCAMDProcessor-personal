@@ -438,6 +438,31 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
+        // Get CPPC Highest Performance values per logical core
+        case 21: {
+            uint32_t numLogicalCores = fProvider->totalNumberOfLogicalCores;
+
+            arguments->scalarOutputCount = 1;
+            arguments->scalarOutput[0] = fProvider->cppcSupported ? 1 : 0;
+            
+            arguments->structureOutputSize = numLogicalCores * sizeof(uint8_t);
+            uint8_t *dataOut = (uint8_t*) arguments->structureOutput;
+
+            for(uint32_t i = 0; i < numLogicalCores; i++){
+                dataOut[i] = fProvider->cppcHighestPerf_perCore[i];
+            }
+            
+            break;
+        }
+
+        // Get C-State address configuration
+        case 22: {
+            arguments->scalarOutputCount = 1;
+            arguments->scalarOutput[0] = fProvider->cstateAddrConfig;
+            
+            break;
+        }
+        
         //Try load SMC driver
         case 90: {
             

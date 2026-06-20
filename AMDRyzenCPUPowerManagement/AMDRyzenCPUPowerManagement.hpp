@@ -138,6 +138,7 @@ public:
     static constexpr uint32_t kMSR_PERF_CTR_0 = 0xC0010004;
     static constexpr uint32_t kMSR_PERF_IRPC = 0xC00000E9;
     static constexpr uint32_t kMSR_CSTATE_ADDR = 0xC0010073;
+    static constexpr uint32_t kMSR_AMD_CPPC_CAP1 = 0xC00102B0;
     
     
 //    static constexpr uint32_t EF = 0x88;
@@ -196,6 +197,10 @@ public:
     
     uint32_t totalNumberOfPhysicalCores;
     uint32_t totalNumberOfLogicalCores;
+    
+    bool cppcSupported {false};
+    uint8_t cppcHighestPerf_perCore[CPUInfo::MaxCpus] {};
+    uint64_t cstateAddrConfig {0};
     
     uint8_t cpuFamily;
     uint8_t cpuModel;

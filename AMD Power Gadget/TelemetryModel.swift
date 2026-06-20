@@ -20,6 +20,7 @@ struct CoreSnapshot: Identifiable {
     var freqMHz: Float
     var loadPct: Float
     var isLogical: Bool
+    var cppcScore: UInt8? = nil
 }
 
 struct FanSnapshot: Identifiable {
@@ -192,6 +193,10 @@ final class TelemetryModel: ObservableObject {
     @Published var ppmEnabled: Bool = false
     @Published var lpmEnabled: Bool = false
 
+    @Published var cppcSupported: Bool = false
+    @Published var cppcScores: [UInt8] = []
+    @Published var cstateAddress: UInt64 = 0
+
     @Published var pStateRows: [PStateRow] = []
     @Published var pStateEditorDirty: Bool = false
 
@@ -311,6 +316,12 @@ final class TelemetryModel: ObservableObject {
         guard initRes.count > 0 && initRes[0] == 1 else { return }
         smcDriverLoaded = true
 
+        let cppcRes = ProcessorModel.shared.getCPPCScore()
+        cppcSupported = cppcRes.supported
+        cppcScores = cppcRes.scores
+        
+        cstateAddress = ProcessorModel.shared.getCStateAddress()
+
         let fansRes = ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91)
         guard fansRes.count > 0 else { return }
         numFans = Int(fansRes[0])
@@ -396,11 +407,13 @@ final class TelemetryModel: ObservableObject {
             let freq = freqsMHz[physicalIdx]
             let load = (loadIndex.count > logicalIdx) ? loadIndex[logicalIdx] * 100.0 : 0.0
             let isLogical = logicalIdx >= numPhysicalCores
+            let cppcVal = (cppcSupported && cppcScores.count > logicalIdx) ? cppcScores[logicalIdx] : nil
             newCores.append(CoreSnapshot(
                 id: logicalIdx,
                 freqMHz: freq,
                 loadPct: Float(load),
-                isLogical: isLogical
+                isLogical: isLogical,
+                cppcScore: cppcVal
             ))
         }
         cores = newCores

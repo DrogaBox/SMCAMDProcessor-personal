@@ -158,14 +158,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applyStartAtLogin(enabled: Bool) {
         if #available(macOS 13.0, *) {
-            let service = SMAppService.loginItem(identifier: "wtf.spinach.APGLaunchHelper")
+            let service = SMAppService.mainApp
             do {
                 if enabled {
                     try service.register()
-                    print("SMAppService: Registered wtf.spinach.APGLaunchHelper successfully")
+                    print("SMAppService: Registered main app successfully")
                 } else {
                     try service.unregister()
-                    print("SMAppService: Unregistered wtf.spinach.APGLaunchHelper successfully")
+                    print("SMAppService: Unregistered main app successfully")
                 }
             } catch {
                 print("SMAppService failed to update status: \(error)")
