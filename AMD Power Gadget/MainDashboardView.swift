@@ -2924,6 +2924,7 @@ struct MiniSparkline: View {
                 .chartXAxis(.hidden)
                 .chartYAxis(.hidden)
                 .frame(height: 24)
+                .clipped()
             } else {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color.white.opacity(0.03))
