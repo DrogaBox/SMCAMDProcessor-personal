@@ -43,7 +43,7 @@
 	<key>LSBackgroundOnly</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
-	<string>14.0</string>
+	<string>13.0</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2021-2026 Droga. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
