@@ -120,3 +120,13 @@
 /* Session Peaks */
 "Session Peaks" = "Session Peaks";
 "Reset Peaks" = "Reset Peaks";
+
+/* GPU Fan Control */
+"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
+"macOS Hardware Limitation" = "macOS Hardware Limitation";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
+"Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
+"Open SPPT Guide" = "Open SPPT Guide";
+"MorePowerTool" = "MorePowerTool";
+
