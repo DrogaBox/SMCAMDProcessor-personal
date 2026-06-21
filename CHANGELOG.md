@@ -316,7 +316,7 @@ Implemented native autonomous power management controls and security audits:
 
 ## 32. Xcode Version Correction and Acknowledgments to AMD-OSX (v3.2.0)
 * **Consistent Versioning**: Updated project metadata, marketing versions, and plists to version `3.2.0`.
-* **AMD-OSX Acknowledgments**: Added credits acknowledging the AMD-OSX community in the application "About" panel.
+
 * **Final Release**: Successfully completed GitHub Action builds for version `3.2.0`.
 
 ---
