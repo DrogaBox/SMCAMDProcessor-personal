@@ -25,6 +25,17 @@ struct CoreSnapshot: Identifiable {
     var cppcScoreEstimated: Bool = false
 }
 
+/// A physical core with its CPPC or estimated silicon quality ranking
+struct RankedPhysicalCore: Identifiable {
+    let id: Int            // 1-based physical core number
+    let score: UInt8       // 0-255 quality score (CPPC or estimated)
+    let rank: Int          // 1-based rank (1 = best)
+    let isEstimated: Bool  // true if derived from max observed freq, not CPPC MSR
+    
+    var rankText: String { "\(rank)." }
+    var scoreText: String { (isEstimated ? "~" : "") + String(score) }
+}
+
 struct FanSnapshot: Identifiable {
     let id: Int
     var name: String
@@ -198,6 +209,7 @@ final class TelemetryModel: ObservableObject {
     @Published var cppcSupported: Bool = false
     @Published var cppcScores: [UInt8] = []
     @Published var cppcScoresEstimated: Bool = false
+    @Published var rankedPhysicalCores: [RankedPhysicalCore] = []
     @Published var cstateAddress: UInt64 = 0
     private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
@@ -387,6 +399,7 @@ final class TelemetryModel: ObservableObject {
         cppcScores = cppcRes.scores
         cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
         print("DEBUG: CPPC Supported = \(cppcSupported), Scores = \(cppcScores), Estimated = \(cppcScoresEstimated)")
+        updateRankedPhysicalCores()
         
         cstateAddress = ProcessorModel.shared.getCStateAddress()
 
@@ -488,6 +501,7 @@ final class TelemetryModel: ObservableObject {
                     estimatedScores[logicalIdx] = UInt8(round((freq / maxFreqOverall) * 255.0))
                 }
                 self.cppcScores = estimatedScores
+                self.updateRankedPhysicalCores()
             }
         }
 
@@ -890,6 +904,37 @@ final class TelemetryModel: ObservableObject {
         
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
+    }
+    
+    // MARK: - Physical Core Ranking
+    
+    /// Recomputes rankedPhysicalCores from CPPC scores or max-observed frequencies.
+    /// Called after cppcScores are set (initSMC) and after each estimated score update (tick).
+    func updateRankedPhysicalCores() {
+        let numPhysical = sysInfo.physicalCores
+        guard numPhysical > 0 else { return }
+        
+        let cppcHasReal = cppcSupported && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
+        var list: [RankedPhysicalCore] = []
+        
+        for physIdx in 0..<numPhysical {
+            let score: UInt8
+            if cppcHasReal && cppcScores.count > physIdx {
+                score = cppcScores[physIdx]
+            } else {
+                // Fallback: best freq seen across both SMT threads of this physical core
+                let t0 = physIdx
+                let t1 = physIdx + numPhysical
+                let f0 = maxObservedFreq_perCore[t0] ?? 0
+                let f1 = maxObservedFreq_perCore[t1] ?? 0
+                score = UInt8(min(255, Int((max(f0, f1) / 6000.0) * 255.0)))
+            }
+            list.append(RankedPhysicalCore(id: physIdx + 1, score: score, rank: 0, isEstimated: !cppcHasReal))
+        }
+        let sorted = list.sorted { $0.score != $1.score ? $0.score > $1.score : $0.id < $1.id }
+        rankedPhysicalCores = sorted.enumerated().map {
+            RankedPhysicalCore(id: $1.id, score: $1.score, rank: $0 + 1, isEstimated: $1.isEstimated)
+        }
     }
 }
 
