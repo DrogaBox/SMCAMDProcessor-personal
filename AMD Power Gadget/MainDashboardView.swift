@@ -51,7 +51,7 @@ private extension Color {
     static let tahoeSidebarActive = Color(red: 0.12, green: 0.15, blue: 0.24)
 }
 
-private enum DashboardTab: String, CaseIterable, Identifiable {
+enum DashboardTab: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     case dashboard  = "Dashboard"
     case telemetry  = "Telemetry"
@@ -78,11 +78,10 @@ private enum DashboardTab: String, CaseIterable, Identifiable {
 
 struct MainDashboardView: View {
     @ObservedObject var model: TelemetryModel
-    @State private var selectedTab: DashboardTab = .dashboard
 
     var body: some View {
         HStack(spacing: 0) {
-            SidebarView(selectedTab: $selectedTab, model: model)
+            SidebarView(selectedTab: $model.selectedTab, model: model)
                 .frame(width: 188)
             Divider().background(Color.tahoeCardBorder)
             ZStack {
@@ -110,7 +109,7 @@ struct MainDashboardView: View {
 
     @ViewBuilder
     private var contentForTab: some View {
-        switch selectedTab {
+        switch model.selectedTab {
         case .dashboard:  DashboardContentView(model: model)
         case .telemetry:  TelemetryContentView(model: model)
         case .fanControl: FanControlContentView(model: model)

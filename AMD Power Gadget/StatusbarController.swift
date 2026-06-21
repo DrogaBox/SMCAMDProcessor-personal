@@ -656,9 +656,20 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         addMenuItems()
     }
 
-    @objc func gadget() { ViewController.launch(forceFocus: true) }
-    @objc func tool()  { PowerToolViewController.launch(forceFocus: true) }
-    @objc func fans()  { SystemMonitorViewController.launch(forceFocus: true) }
+    @objc func gadget() {
+        ViewController.launch(forceFocus: true)
+    }
+    
+    @objc func tool() {
+        ViewController.launch(forceFocus: true)
+        TelemetryModel.shared.selectedTab = .advanced
+    }
+    
+    @objc func fans() {
+        ViewController.launch(forceFocus: true)
+        TelemetryModel.shared.selectedTab = .fanControl
+    }
+    
     @objc func exitApp() { exit(0) }
 
     @objc func changeNetColor(_ sender: NSMenuItem) {
