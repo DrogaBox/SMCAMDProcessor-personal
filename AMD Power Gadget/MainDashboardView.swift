@@ -612,6 +612,35 @@ struct TelemetryContentView: View {
                     }
                 }
 
+                SectionTitle("Current Values")
+                TahoeCard {
+                    InfoRow(label: "CPU Model",       value: model.sysInfo.cpuBrand)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Avg Frequency",   value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Max Frequency",   value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "CPU Temperature", value: String(format: "%.2f °C",  model.cpuTempC))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Package Power",   value: String(format: "%.2f W",   model.cpuWatts))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Model",       value: model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "Metal Version",   value: model.sysInfo.metalVersion)
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Temperature", value: String(format: "%.2f °C",  model.gpuTempC))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Power",       value: String(format: "%.2f W",   model.gpuPowerW))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Fan Speed",   value: model.gpuFanRPM > 0 ? String(format: "%.0f RPM", model.gpuFanRPM) : "0 RPM (Zero RPM Mode)")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU VRAM Used",   value: String(format: "%.2f GB",  model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "GPU Utilization", value: String(format: "%.1f %%",  model.gpuLoadPct))
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "VDA Decoder",     value: model.sysInfo.vdaAcceleration)
+                }
+
                 SectionTitle("Diagnostics & CSV Logging")
                 TahoeCard(accent: Color.tahoeAccentGreen.opacity(0.15)) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -664,35 +693,6 @@ struct TelemetryContentView: View {
                             }
                         }
                     }
-                }
-
-                SectionTitle("Current Values")
-                TahoeCard {
-                    InfoRow(label: "CPU Model",       value: model.sysInfo.cpuBrand)
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "Avg Frequency",   value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "Max Frequency",   value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "CPU Temperature", value: String(format: "%.2f °C",  model.cpuTempC))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "Package Power",   value: String(format: "%.2f W",   model.cpuWatts))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "GPU Model",       value: model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "Metal Version",   value: model.sysInfo.metalVersion)
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "GPU Temperature", value: String(format: "%.2f °C",  model.gpuTempC))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "GPU Power",       value: String(format: "%.2f W",   model.gpuPowerW))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "GPU Fan Speed",   value: model.gpuFanRPM > 0 ? String(format: "%.0f RPM", model.gpuFanRPM) : "0 RPM (Zero RPM Mode)")
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "GPU VRAM Used",   value: String(format: "%.2f GB",  model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "GPU Utilization", value: String(format: "%.1f %%",  model.gpuLoadPct))
-                    Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "VDA Decoder",     value: model.sysInfo.vdaAcceleration)
                 }
             }
             .padding(18)
@@ -2055,8 +2055,41 @@ struct TempThresholdField: View {
     }
 }
 
+struct VerticalLabelView: View {
+    let text: String
+    var body: some View {
+        let chars = Array(text.map { String($0) })
+        VStack(spacing: -1.5) {
+            ForEach(0..<chars.count, id: \.self) { idx in
+                Text(chars[idx])
+                    .font(.system(size: 7.2, weight: .regular, design: .monospaced))
+            }
+        }
+        .frame(width: 7)
+        .foregroundColor(.white.opacity(0.8))
+    }
+}
+
 struct MenuBarPreview: View {
     let cfg: MenuBarConfig
+    @ObservedObject var model: TelemetryModel = TelemetryModel.shared
+    
+    private func formatSpeed(_ mbps: Double) -> String {
+        let absMbps = abs(mbps)
+        let bytesPerSec = absMbps * 1024.0 * 1024.0
+        if bytesPerSec >= 1024.0 * 1024.0 {
+            let val = bytesPerSec / (1024.0 * 1024.0)
+            return String(format: "%.1f MB/s", locale: Locale.current, val)
+        } else if bytesPerSec >= 1024.0 {
+            let val = bytesPerSec / 1024.0
+            return String(format: "%.1f KB/s", locale: Locale.current, val)
+        } else if bytesPerSec >= 1.0 {
+            let val = bytesPerSec / 1024.0
+            return String(format: "%.2f KB/s", locale: Locale.current, val)
+        } else {
+            return "0 KB/s"
+        }
+    }
     
     var body: some View {
         HStack(spacing: 0) {
@@ -2064,20 +2097,19 @@ struct MenuBarPreview: View {
                 // CPU Column
                 if cfg.showCPU {
                     HStack(spacing: 2) {
-                        Text("C\nP\nU")
-                            .font(.system(size: 7.2, weight: .regular, design: .monospaced))
-                            .lineSpacing(-3)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white.opacity(0.8))
+                        VerticalLabelView(text: "CPU")
+                        
+                        let maxFr = String(format: "%.1f", model.cpuFreqMaxGHz)
+                        let avgFr = String(format: "%.1f", model.cpuFreqAvgGHz)
                         
                         if cfg.showMaxFreqOnly {
-                            Text("4.9G")
+                            Text("\(maxFr)G")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.white)
                         } else {
                             VStack(alignment: .leading, spacing: 0) {
-                                Text("4.9Ghz").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                                Text("3.6Ghz").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                Text("\(maxFr)Ghz").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text("\(avgFr)Ghz").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             }
                         }
                     }
@@ -2086,32 +2118,31 @@ struct MenuBarPreview: View {
                 
                 // Temp Column
                 if cfg.showTemp {
-                    let tempVal = 82
-                    let isAlert = cfg.enableColorAlerts && tempVal >= cfg.tempThreshold
+                    let tempVal = model.cpuTempC
+                    let cTemp = cfg.useFahrenheit ? (tempVal * 9.0 / 5.0 + 32.0) : tempVal
+                    let isAlert = cfg.enableColorAlerts && tempVal >= Double(cfg.tempThreshold)
                     let tempColor = isAlert ? getSwiftUIColor(index: cfg.tempColorIdx) : Color.white
                     
                     HStack(spacing: 2) {
-                        Text("T\nM\nP")
-                            .font(.system(size: 7.2, weight: .regular, design: .monospaced))
-                            .lineSpacing(-3)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white.opacity(0.8))
+                        VerticalLabelView(text: "TMP")
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("C:\(tempVal)\(cfg.useFahrenheit ? "F" : "º")")
+                            Text(String(format: "C:%.0f\(cfg.useFahrenheit ? "F" : "º")", cTemp))
                                 .font(.system(size: 9, weight: .semibold))
                                 .foregroundColor(tempColor)
                             
                             if cfg.showGPU && cfg.showGPUtemp {
-                                let gpuIsAlert = cfg.enableColorAlerts && 45 >= cfg.tempThreshold
+                                let gpuTemp = model.gpuTempC
+                                let gTemp = cfg.useFahrenheit ? (gpuTemp * 9.0 / 5.0 + 32.0) : gpuTemp
+                                let gpuIsAlert = cfg.enableColorAlerts && gpuTemp >= Double(cfg.tempThreshold)
                                 let gpuColor = gpuIsAlert ? getSwiftUIColor(index: cfg.tempColorIdx) : Color.white
-                                Text("G:45\(cfg.useFahrenheit ? "F" : "º")")
+                                Text(String(format: "G:%.0f\(cfg.useFahrenheit ? "F" : "º")", gTemp))
                                     .font(.system(size: 9, weight: .semibold))
                                     .foregroundColor(gpuColor)
                             } else {
                                 Text("—")
-                                        .font(.system(size: 9, weight: .semibold))
-                                        .foregroundColor(.white.opacity(0.7))
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.7))
                             }
                         }
                     }
@@ -2120,17 +2151,16 @@ struct MenuBarPreview: View {
                 
                 // Power Column
                 if cfg.showPower {
+                    let cPwr = String(format: "C:%.0fW", model.cpuWatts)
+                    let gPwr = cfg.showGPU && cfg.showGPUpwr ? String(format: "G:%.0fW", model.gpuPowerW) : ""
+                    
                     HStack(spacing: 2) {
-                        Text("P\nW\nR")
-                            .font(.system(size: 7.2, weight: .regular, design: .monospaced))
-                            .lineSpacing(-3)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white.opacity(0.8))
+                        VerticalLabelView(text: "PWR")
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("C:85W").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                            if cfg.showGPU && cfg.showGPUpwr {
-                                Text("G:25W").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                            Text(cPwr).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                            if !gPwr.isEmpty {
+                                Text(gPwr).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                             } else {
                                 Text("—").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             }
@@ -2141,19 +2171,19 @@ struct MenuBarPreview: View {
                 
                 // Fan Column
                 if cfg.showFanRPM {
+                    let fanVal = model.fans.first?.rpm ?? 0
+                    let fan = fanVal > 0 ? String(fanVal) : "—"
+                    
                     HStack(spacing: 2) {
-                        Text("F\nA\nN")
-                            .font(.system(size: 7.2, weight: .regular, design: .monospaced))
-                            .lineSpacing(-3)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white.opacity(0.8))
+                        VerticalLabelView(text: "FAN")
                         
                         VStack(alignment: .leading, spacing: 0) {
                             if cfg.showGPU && cfg.showGPUfan {
-                                Text("C:2100").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                                Text("G:1200").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                let gFanStr = model.gpuFanRPM > 0 ? String(format: "G:%.0f", model.gpuFanRPM) : "G:—"
+                                Text("C:\(fan)").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text(gFanStr).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                             } else {
-                                Text("2100").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text(fan).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                                 Text("RPM").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             }
                         }
@@ -2163,20 +2193,22 @@ struct MenuBarPreview: View {
                 
                 // Memory Column
                 if cfg.showMemory {
+                    let memoryUsed = Double(model.sysInfo.ramGB) * model.ramUsagePct / 100.0
+                    let used = String(format: "%.1fG", memoryUsed)
+                    let totalMem = "\(model.sysInfo.ramGB)G"
+                    
                     HStack(spacing: 2) {
-                        Text("M\nE\nM")
-                            .font(.system(size: 7.2, weight: .regular, design: .monospaced))
-                            .lineSpacing(-3)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white.opacity(0.8))
+                        VerticalLabelView(text: "MEM")
                         
                         VStack(alignment: .leading, spacing: 0) {
                             if cfg.showGPU && cfg.showGPUvram {
-                                Text("S:11,5G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                                Text("G:2,4G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
+                                let vramStr = String(format: "G:%.1fG", vramGB)
+                                Text("S:\(used)").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text(vramStr).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                             } else {
-                                Text("11,5G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
-                                Text("32G").font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
+                                Text(used).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text(totalMem).font(.system(size: 9, weight: .semibold)).foregroundColor(.white.opacity(0.7))
                             }
                         }
                     }
@@ -2187,20 +2219,16 @@ struct MenuBarPreview: View {
                 if cfg.showNetwork {
                     let arrowColor = getSwiftUIColor(index: cfg.netColorIdx)
                     HStack(spacing: 2) {
-                        Text("N\nE\nT")
-                            .font(.system(size: 7.2, weight: .regular, design: .monospaced))
-                            .lineSpacing(-3)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white.opacity(0.8))
+                        VerticalLabelView(text: "NET")
                         
                         VStack(alignment: .leading, spacing: 0) {
                             HStack(spacing: 1) {
                                 Text("↑").font(.system(size: 9, weight: .bold)).foregroundColor(arrowColor)
-                                Text("0,0 KB/s").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text(formatSpeed(model.netUploadMBps)).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                             }
                             HStack(spacing: 1) {
                                 Text("↓").font(.system(size: 9, weight: .bold)).foregroundColor(arrowColor)
-                                Text("1,4 KB/s").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
+                                Text(formatSpeed(model.netDownloadMBps)).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                             }
                         }
                     }
@@ -2438,7 +2466,7 @@ struct MenuBarConfigView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.tahoeSubtext)
                     
-                    MenuBarPreview(cfg: cfg)
+                    MenuBarPreview(cfg: cfg, model: model)
                         .id(refreshToggle)
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity)
