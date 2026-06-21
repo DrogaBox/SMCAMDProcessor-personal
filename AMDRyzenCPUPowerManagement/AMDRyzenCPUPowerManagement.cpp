@@ -159,7 +159,8 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                     bool msrSuccess = provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap);
                     IOLog("AMDCPUSupport::startWorkLoop Core %d CPPC MSR read: %d, value: 0x%llX\n", cpu_num, msrSuccess, cppcCap);
                     if (msrSuccess) {
-                        provider->cppcHighestPerf_perCore[cpu_num] = (cppcCap >> 24) & 0xFF;
+                        // AMD PPR states bits 7:0 are HighestPerformance. The original code incorrectly read 31:24 (LowestPerformance)
+                        provider->cppcHighestPerf_perCore[cpu_num] = cppcCap & 0xFF;
                     }
                 }
 
