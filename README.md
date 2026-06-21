@@ -151,3 +151,8 @@ Special thanks to the AMD-OSX Discord community members who helped test, report 
 * **MacOSx11**: For identifying and reporting the SMC/fan driver initialization crash on unsupported motherboards.
 * **royal**: For the feedback highlighting the correct Xcode native i18n structure to ensure clean English baseline fallbacks.
 
+---
+
+For a detailed, step-by-step development log and walkthrough of all implemented stages, check out [CHANGELOG.md](CHANGELOG.md).
+
+
