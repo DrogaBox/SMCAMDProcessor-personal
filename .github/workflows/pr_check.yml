@@ -18,6 +18,20 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
 
+      - name: Download Lilu & VirtualSMC dependencies
+        run: |
+          LILU_URL=$(curl -sL https://api.github.com/repos/acidanthera/Lilu/releases/latest | grep "browser_download_url" | grep -i "release.zip" | cut -d '"' -f 4)
+          curl -L -o Lilu.zip "$LILU_URL"
+          unzip -q Lilu.zip -d Lilu_extracted
+          mv Lilu_extracted/Lilu.kext .
+          rm -rf Lilu.zip Lilu_extracted
+
+          SMC_URL=$(curl -sL https://api.github.com/repos/acidanthera/VirtualSMC/releases/latest | grep "browser_download_url" | grep -i "release.zip" | cut -d '"' -f 4)
+          curl -L -o VirtualSMC.zip "$SMC_URL"
+          unzip -q VirtualSMC.zip -d SMC_extracted
+          mv SMC_extracted/Kexts/VirtualSMC.kext .
+          rm -rf VirtualSMC.zip SMC_extracted
+
       - name: Build AMDRyzenCPUPowerManagement.kext
         run: |
           xcodebuild \
