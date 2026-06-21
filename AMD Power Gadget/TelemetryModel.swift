@@ -12,6 +12,7 @@ import Darwin
 import Metal
 import VideoToolbox
 import CoreMedia
+import UserNotifications
 
 // MARK: - Data Structures
 
@@ -203,6 +204,57 @@ final class TelemetryModel: ObservableObject {
     @Published var pStateRows: [PStateRow] = []
     @Published var pStateEditorDirty: Bool = false
 
+    // CSV logging properties
+    @Published var isLoggingEnabled: Bool = false {
+        didSet {
+            UserDefaults.standard.set(isLoggingEnabled, forKey: "isLoggingEnabled")
+            if isLoggingEnabled {
+                startLoggingSession()
+            } else {
+                stopLoggingSession()
+            }
+        }
+    }
+    @Published var logFilePath: String = "" {
+        didSet {
+            UserDefaults.standard.set(logFilePath, forKey: "logFilePath")
+            if isLoggingEnabled {
+                stopLoggingSession()
+                startLoggingSession()
+            }
+        }
+    }
+    private let logger = CSVLogger()
+
+    // Notifications properties
+    @Published var notificationsEnabled: Bool = false {
+        didSet {
+            UserDefaults.standard.set(notificationsEnabled, forKey: "notificationsEnabled")
+            if notificationsEnabled {
+                requestNotificationPermission()
+            }
+        }
+    }
+    @Published var tempAlertThreshold: Int = 90 {
+        didSet {
+            UserDefaults.standard.set(tempAlertThreshold, forKey: "tempAlertThreshold")
+        }
+    }
+    @Published var powerAlertThreshold: Int = 142 {
+        didSet {
+            UserDefaults.standard.set(powerAlertThreshold, forKey: "powerAlertThreshold")
+        }
+    }
+    @Published var powerAlertDuration: Int = 10 {
+        didSet {
+            UserDefaults.standard.set(powerAlertDuration, forKey: "powerAlertDuration")
+        }
+    }
+
+    private var lastTempAlertTime: Date?
+    private var lastPowerAlertTime: Date?
+    private var powerViolationStartTime: Date?
+
     @Published var smcDriverLoaded: Bool = false
     @Published var sysInfo: SystemInfo = SystemInfo()
 
@@ -238,6 +290,17 @@ final class TelemetryModel: ObservableObject {
         buildSystemInfo()
         speedStepClocks = ProcessorModel.shared.getVaildPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
+
+        // Load settings from UserDefaults
+        self.isLoggingEnabled = false // Keep logging off on startup for safety/disk space
+        self.logFilePath = UserDefaults.standard.string(forKey: "logFilePath") ?? ""
+        self.notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
+        self.tempAlertThreshold = UserDefaults.standard.integer(forKey: "tempAlertThreshold")
+        if self.tempAlertThreshold == 0 { self.tempAlertThreshold = 90 }
+        self.powerAlertThreshold = UserDefaults.standard.integer(forKey: "powerAlertThreshold")
+        if self.powerAlertThreshold == 0 { self.powerAlertThreshold = 142 }
+        self.powerAlertDuration = UserDefaults.standard.integer(forKey: "powerAlertDuration")
+        if self.powerAlertDuration == 0 { self.powerAlertDuration = 10 }
 
         initSMC()
         loadPStateRows()
@@ -495,6 +558,49 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
+        // Background CSV logging
+        writeTelemetryToLogFile(point: point)
+        
+        // System alerts notifications check
+        if notificationsEnabled {
+            let now = Date()
+            
+            // 1. Temperature Alerts
+            if cpuTempC >= Double(tempAlertThreshold) {
+                let shouldAlert = lastTempAlertTime == nil || now.timeIntervalSince(lastTempAlertTime!) >= 60.0
+                if shouldAlert {
+                    lastTempAlertTime = now
+                    sendNotification(
+                        title: NSLocalizedString("CPU Temperature Alert", comment: ""),
+                        body: String(format: NSLocalizedString("CPU temperature has reached %.1f°C!", comment: ""), cpuTempC),
+                        identifier: "tempAlert"
+                    )
+                }
+            }
+            
+            // 2. Power PPT Alerts
+            if cpuWatts >= Double(powerAlertThreshold) {
+                if let startTime = powerViolationStartTime {
+                    let elapsed = now.timeIntervalSince(startTime)
+                    if elapsed >= Double(powerAlertDuration) {
+                        let shouldAlert = lastPowerAlertTime == nil || now.timeIntervalSince(lastPowerAlertTime!) >= 60.0
+                        if shouldAlert {
+                            lastPowerAlertTime = now
+                            sendNotification(
+                                title: NSLocalizedString("CPU Power Alert", comment: ""),
+                                body: String(format: NSLocalizedString("CPU power has been at %.1fW (above limit of %dW) for over %d seconds!", comment: ""), cpuWatts, powerAlertThreshold, powerAlertDuration),
+                                identifier: "powerAlert"
+                            )
+                        }
+                    }
+                } else {
+                    powerViolationStartTime = now
+                }
+            } else {
+                powerViolationStartTime = nil
+            }
+        }
+
         speedStepClocks  = ProcessorModel.shared.getVaildPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
         loadCPUControls()
@@ -670,5 +776,121 @@ final class TelemetryModel: ObservableObject {
             }
         } catch {}
         return []
+    }
+
+    // MARK: - Diagnostics, CSV Logging and Alerts Helpers
+
+    private func startLoggingSession() {
+        logger.start(path: logFilePath)
+    }
+    
+    private func stopLoggingSession() {
+        logger.stop()
+    }
+
+    private func writeTelemetryToLogFile(point: TelemetryPoint) {
+        guard isLoggingEnabled else { return }
+        
+        let dateString = ISO8601DateFormatter().string(from: Date())
+        let line = String(format: "%@,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%.2f,%.0f,%.3f,%.1f\n",
+                          dateString,
+                          point.time,
+                          point.cpuFreqGHz,
+                          point.cpuFreqMaxGHz,
+                          point.cpuTempC,
+                          point.cpuWatts,
+                          point.gpuTempC,
+                          point.gpuWatts,
+                          gpuFanRPM,
+                          gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0),
+                          gpuLoadPct)
+        
+        logger.write(line: line)
+    }
+
+    func exportHistoryToCSV(url: URL) {
+        var csvText = "Relative Time (s),CPU Freq Avg (GHz),CPU Freq Max (GHz),CPU Temp (°C),CPU Power (W),GPU Temp (°C),GPU Power (W),GPU Fan (RPM),GPU VRAM (GB),GPU Load (%)\n"
+        
+        for point in history {
+            csvText += String(format: "%.3f,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%.0f,%.3f,%.1f\n",
+                              point.time,
+                              point.cpuFreqGHz,
+                              point.cpuFreqMaxGHz,
+                              point.cpuTempC,
+                              point.cpuWatts,
+                              point.gpuTempC,
+                              point.gpuWatts,
+                              gpuFanRPM,
+                              gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0),
+                              gpuLoadPct)
+        }
+        
+        try? csvText.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            DispatchQueue.main.async {
+                self.notificationsEnabled = granted
+                if !granted {
+                    UserDefaults.standard.set(false, forKey: "notificationsEnabled")
+                }
+            }
+        }
+    }
+
+    private func sendNotification(title: String, body: String, identifier: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+}
+
+// MARK: - CSV Logger Helper Class (Thread-safe & nonisolated to bypass actor deinit constraints)
+private class CSVLogger {
+    private var fileHandle: FileHandle?
+    private let queue = DispatchQueue(label: "wtf.spinach.CSVLogger", qos: .background)
+    
+    func start(path: String) {
+        queue.async {
+            guard !path.isEmpty else { return }
+            let fileURL = URL(fileURLWithPath: path)
+            
+            // Create file if it doesn't exist
+            if !FileManager.default.fileExists(atPath: fileURL.path) {
+                let header = "Timestamp,Relative Time (s),CPU Freq Avg (GHz),CPU Freq Max (GHz),CPU Temp (°C),CPU Power (W),GPU Temp (°C),GPU Power (W),GPU Fan (RPM),GPU VRAM (GB),GPU Load (%)\n"
+                try? header.write(to: fileURL, atomically: true, encoding: .utf8)
+            }
+            
+            self.fileHandle?.closeFile()
+            self.fileHandle = try? FileHandle(forWritingTo: fileURL)
+            self.fileHandle?.seekToEndOfFile()
+        }
+    }
+    
+    func stop() {
+        queue.async {
+            self.fileHandle?.closeFile()
+            self.fileHandle = nil
+        }
+    }
+    
+    func write(line: String) {
+        queue.async {
+            if let data = line.data(using: .utf8) {
+                self.fileHandle?.write(data)
+            }
+        }
+    }
+    
+    deinit {
+        let handle = fileHandle
+        queue.sync {
+            handle?.closeFile()
+        }
     }
 }

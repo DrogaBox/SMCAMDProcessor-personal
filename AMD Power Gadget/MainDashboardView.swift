@@ -585,6 +585,60 @@ struct TelemetryContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                SectionTitle("Diagnostics & CSV Logging")
+                TahoeCard(accent: Color.tahoeAccentGreen.opacity(0.15)) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Export Telemetry History").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Export the history of samples currently in memory to a CSV file").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            TahoeButton(label: "Export CSV", icon: "square.and.arrow.up", accent: .tahoeAccentGreen) {
+                                let op = NSSavePanel()
+                                op.allowedContentTypes = [.init(filenameExtension: "csv") ?? .data]
+                                if op.runModal() == .OK, let url = op.url {
+                                    model.exportHistoryToCSV(url: url)
+                                }
+                            }
+                        }
+                        
+                        Divider().background(Color.tahoeCardBorder)
+                        
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Continuous Background Logging").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Continuously write telemetry samples to a CSV file in the background").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $model.isLoggingEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentGreen)).labelsHidden()
+                        }
+                        
+                        if model.isLoggingEnabled || !model.logFilePath.isEmpty {
+                            Divider().background(Color.tahoeCardBorder)
+                            
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Log File Location").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Text(model.logFilePath.isEmpty ? "No location selected" : model.logFilePath)
+                                        .font(.system(size: 9, design: .monospaced))
+                                        .foregroundColor(model.logFilePath.isEmpty ? .tahoeAccentOrange : .tahoeSubtext)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                                TahoeButton(label: "Select File...", icon: "folder", accent: .tahoeAccentGreen) {
+                                    let op = NSSavePanel()
+                                    op.allowedContentTypes = [.init(filenameExtension: "csv") ?? .data]
+                                    if op.runModal() == .OK, let url = op.url {
+                                        model.logFilePath = url.path
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 SectionTitle("CPU Frequency & Demand")
                 ResizableChart(chartId: "tele_bar", small: 100, medium: 140, large: 200) { height in
                     PowerToolBarChart(model: model, height: height)
@@ -1421,6 +1475,92 @@ struct AdvancedContentView: View {
                             Text("0.1s").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
                             Spacer()
                             Text("5.0s").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                        }
+                    }
+                }
+
+                Divider().background(Color.tahoeCardBorder)
+                SectionTitle("System Alert Notifications")
+                Text("Receive native macOS alerts when the CPU exceeds configured thermal or power limits.")
+                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                TahoeCard(accent: Color.tahoeAccentRed.opacity(0.15)) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Enable System Alerts").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Requests permission and enables hardware limit warnings").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $model.notificationsEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentRed)).labelsHidden()
+                        }
+                        
+                        if model.notificationsEnabled {
+                            Divider().background(Color.tahoeCardBorder)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Temperature Warning Threshold").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Spacer()
+                                    Text("\(model.tempAlertThreshold) °C")
+                                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.tahoeAccentRed)
+                                }
+                                Slider(value: Binding(
+                                    get: { Double(model.tempAlertThreshold) },
+                                    set: { model.tempAlertThreshold = Int($0) }
+                                ), in: 60...100, step: 1)
+                                .tint(Color.tahoeAccentRed)
+                                HStack {
+                                    Text("60°C").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Text("100°C").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                                }
+                            }
+                            
+                            Divider().background(Color.tahoeCardBorder)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Power Warning Threshold (PPT)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Spacer()
+                                    Text("\(model.powerAlertThreshold) W")
+                                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.tahoeAccentRed)
+                                }
+                                Slider(value: Binding(
+                                    get: { Double(model.powerAlertThreshold) },
+                                    set: { model.powerAlertThreshold = Int($0) }
+                                ), in: 45...250, step: 5)
+                                .tint(Color.tahoeAccentRed)
+                                HStack {
+                                    Text("45W").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Text("250W").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                                }
+                            }
+                            
+                            Divider().background(Color.tahoeCardBorder)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("Sustained Duration").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Spacer()
+                                    Text("\(model.powerAlertDuration) seconds")
+                                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.tahoeAccentRed)
+                                }
+                                Slider(value: Binding(
+                                    get: { Double(model.powerAlertDuration) },
+                                    set: { model.powerAlertDuration = Int($0) }
+                                ), in: 1...60, step: 1)
+                                .tint(Color.tahoeAccentRed)
+                                HStack {
+                                    Text("1s").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Text("60s").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                                }
+                            }
                         }
                     }
                 }
