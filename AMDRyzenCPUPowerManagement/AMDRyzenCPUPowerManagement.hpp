@@ -140,7 +140,9 @@ public:
     static constexpr uint32_t kMSR_CSTATE_ADDR = 0xC0010073;
     static constexpr uint32_t kMSR_AMD_CPPC_CAP1 = 0xC00102B0;
     static constexpr uint32_t kMSR_AMD_CPPC_ENABLE = 0xC00102B1;
-    
+    static constexpr uint32_t kMSR_AMD_CPPC_CAP2 = 0xC00102B2;
+    static constexpr uint32_t kMSR_AMD_CPPC_REQ = 0xC00102B3;
+    static constexpr uint32_t kMSR_AMD_CPPC_STATUS = 0xC00102B4;
     
 //    static constexpr uint32_t EF = 0x88;
     
@@ -168,6 +170,7 @@ public:
     void calculateEffectiveFrequency(uint8_t physical);
     void updateInstructionDelta(uint8_t physical);
     void applyPowerControl();
+    void applyEPPControl();
     
     void setCPBState(bool enabled);
     bool getCPBState();
@@ -200,6 +203,8 @@ public:
     uint32_t totalNumberOfLogicalCores;
     
     bool cppcSupported {false};
+    bool cppcActiveMode {false};
+    uint8_t cppcEPPValue {0x3F};
     uint8_t cppcHighestPerf_perCore[CPUInfo::MaxCpus] {};
     uint64_t cstateAddrConfig {0};
     

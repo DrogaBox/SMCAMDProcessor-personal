@@ -469,6 +469,37 @@ class ProcessorModel {
         return PStateCur
     }
 
+    func getCPPCActiveMode() -> (active: Bool, epp: UInt8) {
+        var output: [UInt64] = [0, 0]
+        var outputCount: UInt32 = 2
+        let res = IOConnectCallMethod(connect, 23, nil, 0, nil, 0, &output, &outputCount, nil, nil)
+        if res != KERN_SUCCESS {
+            print(String(cString: mach_error_string(res)))
+            return (false, 0x3F)
+        }
+        return (output[0] == 1, UInt8(output[1]))
+    }
+
+    func setCPPCActiveMode(active: Bool) -> Bool {
+        var input: [UInt64] = [active ? 1 : 0]
+        let res = IOConnectCallMethod(connect, 24, &input, 1, nil, 0, nil, nil, nil, nil)
+        if res != KERN_SUCCESS {
+            print(String(cString: mach_error_string(res)))
+            return false
+        }
+        return true
+    }
+
+    func setCPPCEPPValue(epp: UInt8) -> Bool {
+        var input: [UInt64] = [UInt64(epp)]
+        let res = IOConnectCallMethod(connect, 25, &input, 1, nil, 0, nil, nil, nil, nil)
+        if res != KERN_SUCCESS {
+            print(String(cString: mach_error_string(res)))
+            return false
+        }
+        return true
+    }
+
     func getPStateDef() -> [UInt64]{
         return PStateDef
     }

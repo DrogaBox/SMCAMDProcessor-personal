@@ -161,6 +161,17 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                     if (msrSuccess) {
                         // AMD PPR states bits 7:0 are HighestPerformance. The original code incorrectly read 31:24 (LowestPerformance)
                         provider->cppcHighestPerf_perCore[cpu_num] = cppcCap & 0xFF;
+                        
+                        if (provider->cppcActiveMode) {
+                            uint8_t highestPerf = cppcCap & 0xFF;
+                            uint8_t lowestPerf = (cppcCap >> 24) & 0xFF;
+                            uint64_t reqVal = 0;
+                            reqVal |= (uint64_t)lowestPerf;
+                            reqVal |= ((uint64_t)highestPerf) << 8;
+                            reqVal |= 0ULL << 16; // Desired = 0 (autonomous)
+                            reqVal |= ((uint64_t)provider->cppcEPPValue) << 24;
+                            provider->write_msr(kMSR_AMD_CPPC_REQ, reqVal);
+                        }
                     }
                 }
 
@@ -388,8 +399,9 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     // Force CPPC supported to true to test reading on all cores for diagnostics
     cppcSupported = true;
+    cppcActiveMode = checkKernelArgument("-amdcppcactive");
     
-    IOLog("AMDCPUSupport::start CPPC forced supported: %d\n", cppcSupported);
+    IOLog("AMDCPUSupport::start CPPC forced supported: %d, Active Mode: %d\n", cppcSupported, cppcActiveMode);
 
     
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
@@ -766,9 +778,37 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
 }
 
 void AMDRyzenCPUPowerManagement::applyPowerControl(){
+    if (cppcActiveMode) {
+        IOLog("AMDCPUSupport::applyPowerControl ignored since CPPC Active Mode is active\n");
+        return;
+    }
     mp_rendezvous(nullptr, [](void *obj) {
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
         provider->write_msr(kMSR_PSTATE_CTL, (uint64_t)(provider->PStateCtl & 0x7));
+    }, nullptr, this);
+}
+
+void AMDRyzenCPUPowerManagement::applyEPPControl() {
+    if (!cppcSupported) return;
+    
+    mp_rendezvous(nullptr, [](void *obj) {
+        auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
+        uint32_t cpu_num = cpu_number();
+        
+        uint64_t cppcCap = 0;
+        if (provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap)) {
+            uint8_t highestPerf = cppcCap & 0xFF;
+            uint8_t lowestPerf = (cppcCap >> 24) & 0xFF;
+            
+            uint64_t reqVal = 0;
+            reqVal |= (uint64_t)lowestPerf;
+            reqVal |= ((uint64_t)highestPerf) << 8;
+            reqVal |= 0ULL << 16; // Desired Performance = 0 (autonomous)
+            reqVal |= ((uint64_t)provider->cppcEPPValue) << 24;
+            
+            provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
+            provider->write_msr(kMSR_AMD_CPPC_REQ, reqVal);
+        }
     }, nullptr, this);
 }
 
