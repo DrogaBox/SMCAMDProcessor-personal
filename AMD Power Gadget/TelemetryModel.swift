@@ -199,7 +199,7 @@ final class TelemetryModel: ObservableObject {
     @Published var cppcScores: [UInt8] = []
     @Published var cppcScoresEstimated: Bool = false
     @Published var cstateAddress: UInt64 = 0
-    private var maxObservedFreq_perCore: [Int: Float] = [:]
+    private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
     @Published var pStateRows: [PStateRow] = []
     @Published var pStateEditorDirty: Bool = false
