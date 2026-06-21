@@ -629,7 +629,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.2.0;
+				CURRENT_PROJECT_VERSION = 2.3.0;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/Lilu.kext/Contents/Resources",
 					"${PROJECT_DIR}/VirtualSMC.kext/Contents/Resources",
@@ -642,7 +642,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.2.0;
+				MARKETING_VERSION = 2.3.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
 				MODULE_VERSION = 2.0.0;
 				OTHER_CFLAGS = "";
@@ -658,7 +658,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.2.0;
+				CURRENT_PROJECT_VERSION = 2.3.0;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/Lilu.kext/Contents/Resources",
 					"${PROJECT_DIR}/VirtualSMC.kext/Contents/Resources",
@@ -671,7 +671,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.2.0;
+				MARKETING_VERSION = 2.3.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
 				MODULE_VERSION = 2.0.0;
 				OTHER_CFLAGS = "";
@@ -688,7 +688,7 @@
 				CODE_SIGN_ENTITLEMENTS = "AMD Power Gadget/AMD_Power_Gadget.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.2.0;
+				CURRENT_PROJECT_VERSION = 2.3.0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -700,7 +700,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.2.0;
+				MARKETING_VERSION = 2.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMD-Power-Gadget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -716,7 +716,7 @@
 				CODE_SIGN_ENTITLEMENTS = "AMD Power Gadget/AMD_Power_Gadget.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.2.0;
+				CURRENT_PROJECT_VERSION = 2.3.0;
 				GCC_PREPROCESSOR_DEFINITIONS = "VERSION_STRING=$(CURRENT_PROJECT_VERSION)";
 				INFOPLIST_FILE = "AMD Power Gadget/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -724,7 +724,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.2.0;
+				MARKETING_VERSION = 2.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMD-Power-Gadget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -849,7 +849,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.2.0;
+				CURRENT_PROJECT_VERSION = 2.3.0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -867,7 +867,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.2.0;
+				MARKETING_VERSION = 2.3.0;
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
@@ -900,7 +900,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.2.0;
+				CURRENT_PROJECT_VERSION = 2.3.0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PRODUCT_NAME=$(PRODUCT_NAME)",
 					"MODULE_VERSION=$(MODULE_VERSION)",
@@ -916,7 +916,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.2.0;
+				MARKETING_VERSION = 2.3.0;
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;

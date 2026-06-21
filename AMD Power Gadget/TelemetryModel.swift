@@ -319,6 +319,7 @@ final class TelemetryModel: ObservableObject {
         let cppcRes = ProcessorModel.shared.getCPPCScore()
         cppcSupported = cppcRes.supported
         cppcScores = cppcRes.scores
+        print("DEBUG: CPPC Supported = \(cppcSupported), Scores = \(cppcScores)")
         
         cstateAddress = ProcessorModel.shared.getCStateAddress()
 
