@@ -443,9 +443,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             uint32_t numLogicalCores = fProvider->totalNumberOfLogicalCores;
 
             arguments->scalarOutputCount = 1;
-            uint64_t rawCap = 0;
-            fProvider->read_msr(AMDRyzenCPUPowerManagement::kMSR_AMD_CPPC_CAP1, &rawCap);
-            arguments->scalarOutput[0] = rawCap;
+            arguments->scalarOutput[0] = fProvider->cppcSupported ? 1 : 0;
             arguments->structureOutputSize = numLogicalCores * sizeof(uint8_t);
             
             for(int i = 0; i < numLogicalCores; i++) {
