@@ -1,0 +1,46 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  compile-check:
+    name: Verify all targets compile
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+
+      - name: Build AMDRyzenCPUPowerManagement.kext
+        run: |
+          xcodebuild \
+            -workspace SMCAMDProcessor.xcodeproj/project.xcworkspace \
+            -scheme AMDRyzenCPUPowerManagement \
+            -configuration Release \
+            SYMROOT="$PWD/build" \
+            build | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED"
+
+      - name: Build SMCAMDProcessor.kext
+        run: |
+          xcodebuild \
+            -workspace SMCAMDProcessor.xcodeproj/project.xcworkspace \
+            -scheme SMCAMDProcessor \
+            -configuration Release \
+            SYMROOT="$PWD/build" \
+            build | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED"
+
+      - name: Build AMD Power Gadget.app
+        run: |
+          xcodebuild \
+            -workspace SMCAMDProcessor.xcodeproj/project.xcworkspace \
+            -scheme "AMD Power Gadget" \
+            -configuration Release \
+            SYMROOT="$PWD/build" \
+            build | grep -E "error:|BUILD SUCCEEDED|BUILD FAILED"

@@ -1,0 +1,67 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build all targets
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+
+      - name: Build AMDRyzenCPUPowerManagement.kext
+        run: |
+          xcodebuild \
+            -workspace SMCAMDProcessor.xcodeproj/project.xcworkspace \
+            -scheme AMDRyzenCPUPowerManagement \
+            -configuration Release \
+            SYMROOT="$PWD/build" \
+            clean build
+
+      - name: Build SMCAMDProcessor.kext
+        run: |
+          xcodebuild \
+            -workspace SMCAMDProcessor.xcodeproj/project.xcworkspace \
+            -scheme SMCAMDProcessor \
+            -configuration Release \
+            SYMROOT="$PWD/build" \
+            build
+
+      - name: Build AMD Power Gadget.app
+        run: |
+          xcodebuild \
+            -workspace SMCAMDProcessor.xcodeproj/project.xcworkspace \
+            -scheme "AMD Power Gadget" \
+            -configuration Release \
+            SYMROOT="$PWD/build" \
+            build
+
+      - name: Package binaries
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          mkdir -p "Binaries_Release/$TAG"
+          cp -R "build/Release/AMDRyzenCPUPowerManagement.kext" "Binaries_Release/$TAG/"
+          cp -R "build/Release/SMCAMDProcessor.kext"             "Binaries_Release/$TAG/"
+          cp -R "build/Release/AMD Power Gadget.app"             "Binaries_Release/$TAG/"
+          zip -r "Binaries_Release_${TAG}.zip" "Binaries_Release/$TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "${{ github.ref_name }}"
+          generate_release_notes: true
+          files: |
+            Binaries_Release_${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
