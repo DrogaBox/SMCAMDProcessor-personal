@@ -1,362 +1,320 @@
-# Resumen de Cambios (Walkthrough v2.1.4+)
+# Change Summary (Walkthrough v2.1.4+)
 
-Se han implementado y verificado las siguientes mejoras correspondientes a la telemetría del GPU, soporte de visualización y estabilidad de la compilación de Xcode:
-
----
-
-## 🏎️ 1. Throttling Dinámico de Refresh Rate (Ahorro de Recursos)
-Para cumplir con el requerimiento de consumo mínimo de recursos (siendo una app de monitoreo):
-* **[AppDelegate.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/AppDelegate.swift#L44-L49)**: Se añadió un observador nativo (`AppActiveWindowsChanged`) que se dispara cuando cambia el estado de visibilidad de las ventanas de la aplicación (Dashboard, Power Tool o Fan Controller).
-* **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift#L364-L380)**: Escucha la notificación `AppActiveWindowsChanged`. Si el usuario no tiene ninguna ventana abierta (solo corre la barra de menú en segundo plano), la tasa de refresco disminuye automáticamente a **3.0 segundos**. Si abre el Dashboard, vuelve instantáneamente al intervalo en tiempo real configurado (ej. **0.5 segundos**).
-  * *Resultado*: Reducción masiva del consumo de CPU de fondo en estado inactivo en más de un **83%**.
+The following improvements regarding GPU telemetry, display support, and Xcode build stability have been implemented and verified:
 
 ---
 
-## 📈 2. Corrección de Frecuencia en Zen 5 (Family 1Ah)
-En los procesadores de la Family 1Ah (Zen 5), los P-states ya no utilizan el divisor `CpuDfsId`, y el campo del multiplicador `CpuFid` se expande a **12 bits**. La frecuencia se calcula como `CpuFid * 5`.
-* **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp#L555-L572)**: Modificada `updateClockSpeed` para decodificar la frecuencia usando `(eax & 0xfff) * 5.0f` si `cpuFamily >= 0x1A`.
-* **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp#L774-L790)**: Corregida `dumpPstate` para mapear el multiplicador a 12 bits en Zen 5.
-* **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp#L806-L820)**: Modificada la validación en `writePstate` para evitar descartar P-states válidos en Zen 5 debido a la ausencia del campo `CpuDfsId`.
+## 1. Dynamic Refresh Rate Throttling (Resource Saving)
+To meet the requirement for minimal resource consumption (as a monitoring application):
+* **AppDelegate.swift**: Added a native observer (`AppActiveWindowsChanged`) triggered when the visibility state of application windows (Dashboard, Power Tool, or Fan Controller) changes.
+* **StatusbarController.swift**: Listens for the `AppActiveWindowsChanged` notification. If no application windows are open (running only as a menu bar extra in the background), the refresh rate automatically decreases to **3.0 seconds**. If the Dashboard is opened, it instantly restores the configured real-time interval (e.g., **0.5 seconds**).
+  * *Result*: Massive background CPU usage reduction of over **83%** in the idle state.
 
 ---
 
-## 🛡️ 3. Prevención de Crashes y Estabilidad (Swift)
-Añadidas protecciones contra accesos fuera de rango (Index out of range) cuando la aplicación intenta conectarse al driver o al kext de SMC y estos retornan arrays vacíos.
-* **[ViewController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/ViewController.swift#L56-L63)**: Configurado `window.isOpaque = false` y `window.backgroundColor = .clear` en `viewWillAppear()`. Esto elimina los artefactos visuales y estelas al mover o redimensionar la UI traslúcida.
-* **[ProcessorModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/ProcessorModel.swift#L410-L415)**: Añadida validación de conteo en `getHPCpus()`, `getPPM()`, `getLPM()`, y `getInstructionDelta()`.
-* **[TelemetryModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/TelemetryModel.swift#L224-L230)**: Protegido el método `initSMC()` al recuperar el conteo de ventiladores (selector 91).
-* **[SystemMonitorViewController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/System%20Monitor/SystemMonitorViewController.swift#L40-L75)**: Añadidas protecciones contra arrays vacíos en la inicialización de ventiladores y SMC en `viewDidLoad()`.
+## 2. Zen 5 Frequency Correction (Family 1Ah)
+On Family 1Ah (Zen 5) processors, P-states no longer use the `CpuDfsId` divisor, and the `CpuFid` multiplier field is expanded to **12 bits**. The frequency is calculated as `CpuFid * 5`.
+* **AMDRyzenCPUPowerManagement.cpp**: Modified `updateClockSpeed` to decode the frequency using `(eax & 0xfff) * 5.0f` if `cpuFamily >= 0x1A`.
+* **AMDRyzenCPUPowerManagement.cpp**: Corrected `dumpPstate` to map the multiplier to 12 bits on Zen 5.
+* **AMDRyzenCPUPowerManagement.cpp**: Modified the validation in `writePstate` to prevent discarding valid P-states on Zen 5 due to the absence of the `CpuDfsId` field.
 
 ---
 
-## 🌍 4. Localización y Mappings Xcode Nativos (i18n)
-Migradas las claves del menú de la barra de estado en el código a inglés nativo para seguir las directivas i18n de Xcode.
-* **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift#L539-L594)**: Migradas las claves de español a inglés (ej. `"Dynamic Colors (Temp Only)"`, `"Temp Alert Color"`, etc.) y convertidos los arrays de colores al inglés para permitir traducción automática.
-* **[en.lproj/Localizable.strings](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/en.lproj/Localizable.strings)**: Agregadas las nuevas claves en inglés.
-* **[es.lproj/Localizable.strings](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/es.lproj/Localizable.strings)**: Actualizadas las traducciones correspondientes de las nuevas claves de inglés a español.
+## 3. Crash Prevention and Stability (Swift)
+Added protections against out-of-bounds array access when the application attempts to connect to the driver or the SMC kext and they return empty arrays.
+* **ViewController.swift**: Configured `window.isOpaque = false` and `window.backgroundColor = .clear` in `viewWillAppear()`. This eliminates visual artifacts and trailing trails when moving or resizing the translucent UI.
+* **ProcessorModel.swift**: Added validation checks for count in `getHPCpus()`, `getPPM()`, `getLPM()`, and `getInstructionDelta()`.
+* **TelemetryModel.swift**: Protected the `initSMC()` method when retrieving the fan count (selector 91).
+* **SystemMonitorViewController.swift**: Added empty array checks during the initialization of fans and SMC in `viewDidLoad()`.
 
 ---
 
-## 🤝 5. Agradecimientos en README y Version Bump
-* **[README.md](file:///Users/droga/Desktop/SMCAMDProcessor/README.md#L104-L115)**: Añadida una sección de contribuciones para la versión 2.1.1 agradeciendo formalmente a **Kackvogel 4K**, **Can**, **MacOSx11** y **royal** por sus testeos e ideas en Discord.
-* **Version Bump**: Incrementada la versión del proyecto de `2.1.0` a `2.1.1` en la configuración interna de Xcode y los archivos `Info.plist`.
+## 4. Localization and Native Xcode Mappings (i18n)
+Migrated menu keys of the status bar in the code to native English to follow Xcode i18n guidelines.
+* **StatusbarController.swift**: Migrated keys from Spanish to English (e.g., `"Dynamic Colors (Temp Only)"`, `"Temp Alert Color"`, etc.) and converted color arrays to English to enable localization.
+* **en.lproj/Localizable.strings**: Added the new keys in English.
+* **es.lproj/Localizable.strings**: Updated the corresponding translations of the new keys from English to Spanish.
 
 ---
 
-## 🏷️ 6. Corrección de Etiquetas Verticales en el Menu Bar
-Se corrigió un problema visual donde las etiquetas verticales de algunas columnas (como Fan y Memoria) no se mostraban (quedaban transparentes/recortadas) debido a que intentaban dibujarse horizontalmente en una caja de texto muy estrecha (7pt de ancho).
-* **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift#L137-L209)**: Se estructuraron las etiquetas para CPU (modo compacto simple), Fan y Memoria agregando saltos de línea para que se dibujen verticalmente (`"C\nP\nU"`, `"F\nA\nN"`, `"M\nE\nM"`).
-* **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift#L1569-L1590)**: Se actualizaron los correspondientes textos de vista previa en SwiftUI en los ajustes del panel.
-* **Git Deploy**: Todo se confirmó (`git commit`) y se subió (`git push`) de forma limpia a `master`.
+## 5. Acknowledgments in README and Version Bump
+* **README.md**: Added a contribution section for version 2.1.1, formally thanking **Kackvogel 4K**, **Can**, **MacOSx11**, and **royal** for their testing and ideas in Discord.
+* **Version Bump**: Incremented the project version from `2.1.0` to `2.1.1` in the internal Xcode configuration and `Info.plist` files.
 
 ---
 
-## 🚀 7. Nueva Función: Menú de Picos de la Sesión (Session Peaks)
-Se implementó una nueva funcionalidad sumamente útil para monitorear el rendimiento máximo alcanzado durante una sesión de uso (ej. al jugar o renderizar en segundo plano) sin necesidad de tener el panel principal abierto:
-* **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift#L542-L586)**: Registra los valores máximos históricos en segundo plano (`peakTemp`, `peakPower`, `peakFreq`, `peakFan`) sin consumo de CPU.
-* **Menú Desplegable:** Al hacer clic derecho en la barra de menús, se presenta un nuevo submenú llamado **Session Peaks** (Picos de la Sesión) que muestra:
-  * **Peak Temp:** Temperatura máxima alcanzada (soporta Fahrenheit si está activado).
-  * **Peak Power:** Potencia máxima del CPU en Watts.
-  * **Peak Freq:** Frecuencia máxima en GHz.
-  * **Peak Fan:** Velocidad máxima del ventilador en RPM.
-  * **Reset Peaks:** Opción para reiniciar los valores a cero.
-* **Localización (i18n):** Se tradujo a español e inglés en `Localizable.strings`.
+## 6. Menu Bar Vertical Label Fix
+Corrected a visual issue where vertical labels for certain columns (such as Fan and Memory) were not displayed (cut off or transparent) because they were drawn horizontally in a very narrow text box (7pt wide).
+* **StatusbarController.swift**: Structured the labels for CPU (simple compact mode), Fan, and Memory by adding line breaks to draw them vertically (`"C\nP\nU"`, `"F\nA\nN"`, `"M\nE\nM"`).
+* **MainDashboardView.swift**: Updated the corresponding preview texts in SwiftUI within the panel settings.
 
 ---
 
-## 🎨 8. Rediseño de la UI: Agrupación de Filas de Información (InfoRows)
-Se rediseñó la interfaz visual de la aplicación para eliminar la fragmentación estética que causaba que cada fila de datos tuviera su propia cápsula/globo independiente.
-* **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift#L214-L227)**: Se modificó `InfoRow` para que actúe como un elemento de fila limpio y sin bordes ni fondo propios (`padding` vertical de 4pt).
-* **Agrupación en Tarjetas:** Se agruparon las filas de las siguientes secciones envolviéndolas en contenedores `TahoeCard` únicos con divisores (`Divider`) entre ellas:
-  * **Current Values (Panel de Control):** Agrupa en un solo globo las 7 filas de telemetría en tiempo real (CPU Model, Avg/Max Freq, Temp, CPU/GPU Power, etc.).
-  * **Active Profile (Perfiles):** Agrupa el perfil seleccionado y las frecuencias en una sola tarjeta.
-  * **Processor (Información de Sistema):** Agrupa las 8 filas de especificaciones del procesador (modelo, familia, núcleos, cachés, etc.) en un solo globo.
-  * **Platform (Información de Sistema):** Agrupa la placa madre, fabricante, gráficos, RAM y almacenamiento en una única tarjeta cohesiva.
-  * **Software (Información de Sistema):** Agrupa la versión de macOS, del Kext y la compatibilidad en un solo globo.
-* **Resultado:** Un diseño de UI mucho más limpio, ordenado, premium y en línea con las pautas estéticas modernas de macOS.
+## 7. New Feature: Session Peaks Menu
+Implemented a new feature to monitor the peak performance reached during a session (e.g., during gaming or background rendering) without needing to keep the main dashboard open:
+* **StatusbarController.swift**: Records historical peak values in the background (`peakTemp`, `peakPower`, `peakFreq`, `peakFan`) with minimal CPU overhead.
+* **Dropdown Menu**: Clicking the menu bar icon presents a **Session Peaks** submenu showing:
+  * **Peak Temp**: Maximum temperature reached (supports Fahrenheit if enabled).
+  * **Peak Power**: Maximum CPU power in Watts.
+  * **Peak Freq**: Maximum frequency in GHz.
+  * **Peak Fan**: Maximum fan speed in RPM.
+  * **Reset Peaks**: Option to reset peak values to zero.
+* **Localization (i18n)**: Translated to Spanish and English in `Localizable.strings`.
 
 ---
 
-## ⚡ 9. Reversión de Throttling del Polling Rate (Barra de Menús) y Pausa de Telemetría (App)
-* **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift#L371-L384)**: A petición del usuario, se removió el comportamiento de ralentizar el intervalo de actualización de la barra de menús. La barra de menús ahora actualiza constantemente a la velocidad exacta configurada (ej. 0.7 segundos) bajo cualquier circunstancia.
-* **[TelemetryModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/TelemetryModel.swift#L178-L255)**: Para mantener el máximo ahorro de recursos que gustaba de la versión previa, se programó la clase del sensor principal (`TelemetryModel`) para que escuche la notificación `AppActiveWindowsChanged`. 
-  * Si los paneles principales de la app están cerrados (sólo corre el Menu Bar), el timer de la telemetría del panel se **pausa por completo** (`timer = nil`).
-  * Si se abre cualquier panel, el timer se **reanuda instantáneamente** al intervalo correcto para graficar.
-* **Git Deploy**: Estos cambios específicos de la aplicación (`StatusbarController.swift` y `TelemetryModel.swift`) fueron confirmados y subidos exitosamente a `master`.
+## 8. UI Redesign: Information Row Grouping (InfoRows)
+Redesigned the application's visual interface to eliminate the aesthetic fragmentation caused by each data row having its own independent capsule/bubble.
+* **MainDashboardView.swift**: Modified `InfoRow` to act as a clean, borderless, and backgroundless row element (4pt vertical padding).
+* **Grouping into Cards**: Grouped rows from the following sections by wrapping them in single `TahoeCard` containers with dividers between them:
+  * **Current Values (Control Panel)**: Groups the 7 real-time telemetry rows (CPU Model, Avg/Max Freq, Temp, CPU/GPU Power, etc.) into a single card.
+  * **Active Profile (Profiles)**: Groups the selected profile and frequencies into a single card.
+  * **Processor (System Information)**: Groups the 8 processor specification rows (model, family, cores, cache, etc.) into a single card.
+  * **Platform (System Information)**: Groups motherboard, manufacturer, graphics, RAM, and storage into a single cohesive card.
+  * **Software (System Information)**: Groups macOS version, Kext version, and compatibility status into a single card.
+* **Result**: A much cleaner, organized, and premium UI design aligned with modern macOS aesthetic guidelines.
 
 ---
 
-## 🛡️ 10. Mejoras de Estabilidad en los Kexts (Locales únicamente - NO subidas a Git)
-Para evitar riesgos en tu sistema cargando extensiones de kernel modificadas sin antes validarlas, las siguientes mejoras de estabilidad se realizaron a nivel de código y se compilaron **de manera puramente local** (no han sido agregadas ni empujadas a tu repositorio remoto de Git):
-* **Remoción de Panics Peligrosos:** En macOS, si una lectura o escritura de un registro MSR (Model-Specific Register) en el procesador falla momentáneamente, es una muy mala práctica colgar todo el sistema operativo con un Kernel Panic.
-* **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp#L550-L775)**: Se eliminaron 5 llamadas críticas a `panic()` en las rutinas clave de MSR:
-  * `updateClockSpeed` (MSR `0xC0010293` - Estado del P-State)
-  * `updateInstructionDelta` (MSR `0xC00000E9` - Contador de instrucciones)
-  * `setCPBState` (MSR `0xC0010015` - Activación/desactivación de CPB)
-  * `getCPBState` (MSR `0xC0010015` - Estado de CPB)
-  * `dumpPstate` (MSRs `0xC0010064` a `0xC001006B` - Definiciones de P-States)
-* **Manejo de Errores Seguro:** Si alguna de estas lecturas falla, la función ahora escribe un reporte seguro al log del kernel (`IOLog`) y retorna (`return` o `continue` para omitir ese tick/pstate) de manera limpia y transparente sin colgar tu computadora.
+## 9. Reversion of Menu Bar Polling Rate Throttling and Telemetry Pause (App)
+* **StatusbarController.swift**: Removed the behavior that slowed down the menu bar update interval when windows were closed. The menu bar now updates consistently at the exact configured rate (e.g., 0.7 seconds) under all circumstances.
+* **TelemetryModel.swift**: To maintain the resource savings from the previous version, the main sensor class (`TelemetryModel`) was configured to listen for the `AppActiveWindowsChanged` notification.
+  * If the main application panels are closed (running only the Menu Bar), the telemetry timer for the main panel is paused completely (`timer = nil`).
+  * If any panel is opened, the timer resumes instantly at the correct graphing interval.
 
 ---
 
-## 🔗 11. Enlaces del Repositorio de Git en la Aplicación
-* **Panel About (Acerca de)**: Se implementó el método `orderFrontStandardAboutPanel(_:)` de manera personalizada en `AppDelegate.swift` para que al hacer clic en "About AMD Power Gadget", la ventana nativa de macOS contenga un enlace directo y clickeable a tu repositorio personal.
-* **Pie del Dashboard (Sidebar)**: Se modificó la etiqueta de version en el panel lateral de `MainDashboardView.swift` para que sea un enlace interactivo. Ahora, al hacer clic sobre el texto de versión (v2.1.3 · macOS Tahoe), se abrirá automáticamente el navegador web apuntando a tu repositorio Git.
+## 10. Kext Stability Improvements
+To prevent kernel panics and ensure driver stability:
+* **Removal of Critical Panics**: Replaced dangerous `panic()` calls with safe error logging and recovery. If a Model-Specific Register (MSR) read or write fails, the driver logs a message via `IOLog` and returns or continues cleanly.
+* **AMDRyzenCPUPowerManagement.cpp**: Removed critical `panic()` calls in:
+  * `updateClockSpeed` (MSR `0xC0010293` - P-State Status)
+  * `updateInstructionDelta` (MSR `0xC00000E9` - Instruction Counter)
+  * `setCPBState` (MSR `0xC0010015` - CPB Toggle)
+  * `getCPBState` (MSR `0xC0010015` - CPB Status)
+  * `dumpPstate` (MSRs `0xC0010064` to `0xC001006B` - P-State Definitions)
+* **Safe Error Handling**: Failures in these registers are now handled by writing a safe warning to the kernel log (`IOLog`) and continuing execution cleanly without interrupting the operating system.
 
 ---
 
-## 🛠️ 12. Soporte Zen 5 en el Editor de P-States (v2.1.3)
-* **Detección Dinámica**: El editor ahora lee de manera dinámica la familia de CPU a través de CPUID básica para determinar las reglas de decodificación y codificación.
-* **Fórmula Adaptada**: Si detecta un procesador Zen 5 (Family 1Ah), realiza el mapeo de `CpuFid` en 12 bits y calcula la velocidad a `CpuFid * 5.0 MHz`, omitiendo el divisor de frecuencia (`CpuDfsId`).
-* **Protección de Columna**: Se bloquea la edición del campo `CpuDfsId` en la tabla para procesadores Zen 5, ya que dicho divisor no se utiliza físicamente en esta arquitectura.
-
+## 11. Repository Links in the Application
+* **About Panel**: Customized the `orderFrontStandardAboutPanel(_:)` method in `AppDelegate.swift` so that clicking "About AMD Power Gadget" displays a direct, clickable link to the repository.
+* **Dashboard Footer (Sidebar)**: Modified the version label in the sidebar of `MainDashboardView.swift` to be an interactive link. Clicking the version text (v2.1.3 · macOS Tahoe) opens the repository in a web browser.
 
 ---
 
-## 📝 14. Documentación Detallada de Zen 5 en README.md (v2.1.3)
-* **Actualización del README.md**: Se expandió el archivo de documentación principal para detallar de manera clara y en inglés técnico toda la arquitectura de soporte implementada para los procesadores de la familia Zen 5 (Family 1Ah):
-  * Explicación detallada del multiplicador de 12 bits (`CpuFid`) y la fórmula de frecuencia directa `CpuFid * 5.0 MHz`.
-  * La sincronización automática de estas reglas de decodificación y encodado entre los Kexts (`AMDRyzenCPUPowerManagement`) y la aplicación GUI (`AMD Power Gadget`).
-  * Detalles sobre la infraestructura de depuración: uso de compilaciones `Debug`, requisito del flag `-amdpdbg` en `boot-args` de OpenCore, y comandos para consultar logs a través del macOS Unified Logging system (`log show`) esquivando la rápida saturación de `dmesg`.
-  * Explicación de la mitigación de Kernel Panics a través del manejo seguro de errores de lectura/escritura de registros MSR críticos.
-* **Confirmación Git**: Los cambios en `README.md` fueron confirmados y subidos exitosamente a la rama principal de Git de forma totalmente limpia.
+## 12. Zen 5 Support in the P-State Editor (v2.1.3)
+* **Dynamic Detection**: The editor dynamically reads the CPU family via basic CPUID to determine the correct decoding and encoding rules.
+* **Adapted Formula**: If a Zen 5 (Family 1Ah) processor is detected, it maps `CpuFid` to 12 bits and calculates frequency as `CpuFid * 5.0 MHz`, omitting the frequency divisor (`CpuDfsId`).
+* **Column Protection**: Disables editing of the `CpuDfsId` field in the table for Zen 5 processors since this divisor is not physically used in this architecture.
 
 ---
 
-## 📅 15. Fase 1: Telemetría de Temperatura por CCD (v2.1.4 - Fase 1 Completada)
-Se implementaron los cambios de backend para dar soporte a la medición de temperaturas individuales por CCD (Core Complex Die) en procesadores AMD multinúcleo de manera estable y segura contra condiciones de carrera:
-*   **Lectura en Segundo Plano (Kext C++)**:
-    *   **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp)**: Se integró la actualización del arreglo `ccdTemperatures` en el hilo de temporización en segundo plano (`timerEvent_tempe`) junto con la temperatura general del empaque. Esto evita colisiones y condiciones de carrera en el bus PCI al leer los registros de configuración compartidos.
-*   **Exposición en UserClient (Kext C++)**:
-    *   **[AMDRyzenCPUPMUserClient.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPMUserClient.cpp)**: Se añadió el selector `case 20` para exponer la cantidad de CCDs activos (`ccdCount`) y el arreglo de temperaturas a la capa del usuario.
-*   **Capa Swift (App)**:
-    *   **[ProcessorModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/ProcessorModel.swift)**: Se implementó la función `getCCDTemperatures()` que invoca al selector 20 a través de IOKit.
-    *   **[TelemetryModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/TelemetryModel.swift)**: Se añadió la propiedad reactiva `@Published var ccdTemperatures: [Float]` y se configuró su asignación periódica dentro de la rutina de muestreo principal `sample()`.
+## 14. Detailed Zen 5 Documentation in README.md (v2.1.3)
+* **README.md Updates**: Expanded the main documentation file to detail the architecture and implementation details for Zen 5 (Family 1Ah) processors:
+  * Detailed explanation of the 12-bit multiplier (`CpuFid`) and the direct frequency formula `CpuFid * 5.0 MHz`.
+  * Synchronization of decoding and encoding rules between the Kexts (`AMDRyzenCPUPowerManagement`) and the GUI application (`AMD Power Gadget`).
+  * Debugging infrastructure details: usage of Debug builds, the `-amdpdbg` boot argument in OpenCore, and querying logs using the macOS Unified Logging system (`log show`) to prevent `dmesg` buffer saturation.
+  * Mitigation of Kernel Panics via safe error handling of critical MSR registers.
 
 ---
 
-## 📅 16. Fase 2: Integración de NSPopover y Estructura SwiftUI (v2.1.4 - Fase 2 Completada)
-Se implementó el reemplazo del menú tradicional de la barra de estado por un `NSPopover` interactivo con SwiftUI:
-*   **Contenedor NSPopover (App)**:
-    *   **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift)**: Se eliminó el lanzamiento del panel principal al hacer clic izquierdo en el menú de la barra de menús. En su lugar, se configuró un `NSPopover` con comportamiento `.transient` (se cierra al hacer clic fuera) y estilo vibrante traslúcido oscuro.
-    *   Se adoptó el protocolo `NSPopoverDelegate` para reaccionar al cierre del popover y apagar la telemetría en segundo plano para conservar recursos de CPU.
-*   **Aislamiento de Hilos (App)**:
-    *   Se declararon `@MainActor` las clases `AppDelegate` y `StatusbarController` para asegurar que las llamadas entre los controladores gráficos y el modelo de telemetría (`TelemetryModel.shared`) se ejecuten de manera segura en el hilo principal de macOS, resolviendo errores de concurrencia del compilador de Swift.
-*   **Estructura Visual SwiftUI (App)**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift)**: Se implementó la vista `MenuBarPopoverView` como un componente dentro del archivo de vistas principales. Esta vista dibuja la cabecera de la aplicación, tres anillos de progreso (CPU, RAM, Disco), filas informativas para GPU y Red, y botones de acción rápida ("Abrir panel" y "Salir").
+## 15. Phase 1: CCD Temperature Telemetry (v2.1.4)
+Implemented backend changes to support individual Core Complex Die (CCD) temperature monitoring on AMD multi-die processors:
+* **Background Reading (Kext C++)**:
+  * **AMDRyzenCPUPowerManagement.cpp**: Integrated `ccdTemperatures` array updates into the background timer thread (`timerEvent_tempe`) along with the overall package temperature. This avoids PCI bus collisions and race conditions when reading shared configuration registers.
+* **UserClient Exposure (Kext C++)**:
+  * **AMDRyzenCPUPMUserClient.cpp**: Added selector `case 20` to expose the active CCD count (`ccdCount`) and temperature array to user space.
+* **Swift Layer (App)**:
+  * **ProcessorModel.swift**: Implemented `getCCDTemperatures()` to invoke selector 20 via IOKit.
+  * **TelemetryModel.swift**: Added the reactive `@Published var ccdTemperatures: [Float]` property and configured its periodic updates in the main `sample()` routine.
 
 ---
 
-## 📅 17. Fase 3: Widgets de Popover, SF Symbols y Procesos Principales (v2.1.4 - Fase 3 Completada)
-Se completó la implementación y el diseño premium del popover de la barra de estado con datos del sistema y telemetría en tiempo real:
-*   **Métricas del Sistema Dinámicas (App)**:
-    *   **[TelemetryModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/TelemetryModel.swift)**: Añadidas propiedades reactivas para el promedio de carga del CPU (`cpuLoadAvg`), porcentaje de uso de RAM (`ramUsagePct`), y porcentaje de uso del disco principal (`diskUsagePct`).
-    *   Implementados métodos seguros en segundo plano para leer estadísticas del sistema (Mach Virtual Memory `vm_statistics64` para RAM, atributos de sistema de archivos para Disco).
-*   **Consulta de Procesos en Segundo Plano**:
-    *   Integrado un hilo secundario (`Task.detached`) que ejecuta de forma optimizada y asíncrona `/bin/ps` para obtener los 5 procesos que consumen más CPU en el sistema, mostrando su nombre limpio y porcentaje de uso real. Se ejecuta únicamente cuando el popover está visible para no generar sobrecarga innecesaria.
-*   **Diseño Premium con SwiftUI**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift)**: Rediseñado por completo `MenuBarPopoverView` vinculando los anillos circulares a las métricas reales del CPU, RAM y Disco con gradientes de color AMD Crimson y sombras de profundidad.
-    *   Vinculados los indicadores de velocidad de red (descarga/subida) y temperatura/wattage del procesador gráfico (GPU).
-    *   Se integraron íconos limpios con SF Symbols y botones estilizados uniformemente.
+## 16. Phase 2: NSPopover Integration and SwiftUI Structure (v2.1.4)
+Replaced the traditional status bar menu with an interactive SwiftUI `NSPopover`:
+* **NSPopover Container (App)**:
+  * **StatusbarController.swift**: Replaced the behavior of launching the main window on left-click with showing an `NSPopover` using `.transient` behavior (auto-closes when clicking outside) and a translucent dark style.
+  * Adopted the `NSPopoverDelegate` protocol to pause background telemetry updates when the popover is closed to conserve CPU resources.
+* **Thread Safety (App)**:
+  * Marked `AppDelegate` and `StatusbarController` with `@MainActor` to ensure UI calls and telemetry model interactions occur safely on the main thread, resolving concurrency compilation issues.
+* **SwiftUI Layout (App)**:
+  * **MainDashboardView.swift**: Implemented `MenuBarPopoverView` inside the main views file. This view draws the application header, three progress rings (CPU, RAM, Disk), data rows for GPU and Network, and quick action buttons ("Open Panel" and "Quit").
 
 ---
 
-## 📅 18. Fase 3.5: Personalización de Popover, GPU Ring y Correcciones Críticas (v2.1.4 - Fase 3.5 Completada)
-Se implementaron opciones avanzadas de personalización para el popover, se integró el anillo de utilización de la GPU y se resolvieron bugs de usabilidad críticos:
-*   **Anillo de Telemetría de la GPU (App)**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift#L2062-L2162)**: Se añadió un cuarto anillo de progreso circular interactivo en `MenuBarPopoverView` dedicado al procesador gráfico (GPU), mostrando su porcentaje de utilización (`model.gpuLoadPct`) con un gradiente morado/índigo y su temperatura interna (`model.gpuTempC`).
-*   **Opciones de Visualización de Anillos (App)**:
-    *   Implementados interruptores para ocultar/mostrar las etiquetas inferiores de los anillos ("Show Ring Labels") y los detalles interiores de temperatura/uso ("Show Ring Details").
-    *   Se adaptó el espaciado dinámico a `spacing: 14` para que los 4 anillos quepan de manera perfectamente balanceada y profesional.
-*   **Reorganización de Ajustes (i18n & UX)**:
-    *   Se extrajeron todas las opciones del popover de la pestaña "Styles & Themes" y se agruparon en una sección dedicada exclusiva llamada **Popover Customization**.
-    *   Se añadieron toggles de control para cada anillo (CPU, RAM, Disco, GPU) y fila de datos, logrando una interfaz limpia y estructurada.
-*   **Resolución de Salto de Scroll (Bugfix)**:
-    *   Se removió el modificador `.id(refreshToggle)` que recreaba por completo la vista del `ScrollView` (provocando que el scroll regresara abruptamente al tope al presionar cualquier botón).
-    *   Se reubicó el identificador `.id(refreshToggle)` únicamente en la vista `MenuBarPreview`, manteniendo la persistencia y suavidad de navegación en la pestaña de ajustes.
+## 17. Phase 3: Popover Widgets, SF Symbols, and Top Processes (v2.1.4)
+Completed the status bar popover design with real-time telemetry and system diagnostics:
+* **Dynamic System Metrics (App)**:
+  * **TelemetryModel.swift**: Added reactive properties for CPU load average (`cpuLoadAvg`), RAM utilization percentage (`ramUsagePct`), and main disk utilization percentage (`diskUsagePct`).
+  * Implemented safe background queries for system stats (Mach Virtual Memory `vm_statistics64` for RAM, file system attributes for Disk).
+* **Top Processes Telemetry**:
+  * Integrated an optimized, asynchronous background helper (`Task.detached`) running `/bin/ps` to fetch the top 5 CPU-consuming processes. This runs only when the popover is visible to avoid unnecessary overhead.
+* **SwiftUI Design**:
+  * **MainDashboardView.swift**: Redesigned `MenuBarPopoverView` linking progress rings to actual CPU, RAM, and Disk metrics using Crimson gradients and depth shadows.
+  * Linked network speed indicators (upload/download) and GPU stats (temperature/power).
+  * Incorporated clean SF Symbols and styled buttons.
 
 ---
 
-## 📅 19. Fase 3.6: Apartado de Configuración de Popover Independiente, Reordenamiento Dinámico y Gráficos Avanzados (v2.1.4 - Fase 3.6 Completada)
-A petición del usuario, se migró y enriqueció toda la configuración del popover fuera del menú de la barra de menús principal, introduciendo nuevas opciones de diseño:
-*   **Apartado de Configuración Exclusivo (App)**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift#L2384-L2450)**: Se añadió el caso de navegación `.popover` ("Popover Menu") en el enum de pestañas del panel de control principal, con su propio ícono y ruteo a `PopoverConfigView`.
-    *   Se eliminó la configuración de popover que estaba previamente en `MenuBarConfigView` para mantener los dos apartados separados.
-*   **Reordenamiento Dinámico de Recursos (App)**:
-    *   Implementada una interfaz en `PopoverConfigView` que permite al usuario mover los módulos (CPU, RAM, Disco, GPU) hacia arriba y abajo en la jerarquía mediante botones interactivos, persistiendo su posición en `UserDefaults` a través de una lista separada por comas (`popoverRingOrder`).
-    *   `MenuBarPopoverView` recorre dinámicamente este orden al renderizar los widgets.
-*   **Nuevos Tipos de Gráficas de Telemetría (App)**:
-    *   **Circular Rings (Style 0)**: Dibuja los indicadores tradicionales de anillo agrupados en una fila `HStack` (solo para recursos configurados con estilo Ring).
-    *   **Linear Progress Bars (Style 1)**: Dibuja barras de progreso lineales que abarcan el ancho completo para CPU, RAM, Disco y GPU.
-    *   **Real-time Sparklines (Style 2)**: Dibuja mini gráficas de líneas y áreas en tiempo real (utilizando Swift Charts `Chart`, `AreaMark` y `LineMark`) para monitorear la tendencia histórica de temperatura de CPU y GPU dentro del popover.
+## 18. Phase 3.5: Popover Customization, GPU Ring, and Critical Fixes (v2.1.4)
+Implemented advanced customization options for the popover, integrated a GPU utilization ring, and resolved usability issues:
+* **GPU Telemetry Ring (App)**:
+  * **MainDashboardView.swift**: Added a fourth circular progress ring in `MenuBarPopoverView` dedicated to the GPU, displaying utilization percentage (`model.gpuLoadPct`) with a purple/indigo gradient and GPU temperature (`model.gpuTempC`).
+* **Progress Ring Customization**:
+  * Implemented toggles to hide or show ring labels ("Show Ring Labels") and inner details ("Show Ring Details").
+  * Adjusted spacing to `14` for layout balance.
+* **Settings Reorganization**:
+  * Extracted popover options from "Styles & Themes" into a dedicated **Popover Customization** section.
+  * Added individual toggles for CPU, RAM, Disk, and GPU rings and rows.
+* **Scroll Offset Reset Fix**:
+  * Removed the `.id(refreshToggle)` modifier that fully recreated the `ScrollView` (which caused the scroll position to jump to the top when toggles were clicked).
+  * Relocated `.id(refreshToggle)` to the `MenuBarPreview` view, ensuring smooth settings panel navigation.
 
 ---
 
-## 📅 20. Fase 4: Telemetría Extendida de GPU en Barra de Menú y Corrección de Caídas de Sparkline (v2.1.4 - Completada)
-Se expandieron las capacidades de telemetría del chip gráfico (GPU) e integraron protecciones de interfaz:
-*   **Telemetría GPU en la Barra de Menú (App)**:
-    *   **[StatusbarController.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/StatusbarController.swift)**: Se agregaron las propiedades de configuración `showGPUvram` y `showGPUfan`. Se agregaron los valores de caché para GPU VRAM y velocidad del ventilador (RPM).
-    *   Si se activa `showGPUfan` y `showGPU`, la columna de ventiladores (**FAN**) cambia dinámicamente para mostrar el ventilador del CPU arriba (`C:XXXX`) y el del GPU abajo (`G:XXXX`).
-    *   Si se activa `showGPUvram` y `showGPU`, la columna de memoria (**MEM**) muestra la memoria del sistema arriba (`S:X.XG`) y la VRAM del GPU abajo (`G:X.XG`).
-*   **Vista Previa y Ajustes (App)**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift)**: Se añadieron dos nuevos toggles ("Show GPU VRAM" y "Show GPU Fan Speed") en la sección de opciones de GPU. Se adaptó la vista previa `MenuBarPreview` para renderizar el formato dual.
-*   **Corrección de Caídas a Cero en Sparklines (App)**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift)**: Se agregó la propiedad `filterZeros` en `MiniSparkline` (configurada como `true` para CPU Temp y GPU Temp). Esto filtra los valores de telemetría iguales a `0.0` (por ejemplo, cuando el GPU entra en modo Zero RPM o suspensión), previniendo que la gráfica sufra picos abruptos hacia abajo y el eje Y se desalinee/comprima.
-*   **Información de Control del Ventilador (App)**:
-    *   Se añadió un panel explicativo `GPUFanControlGuideView` en la pestaña de ventiladores, detallando que la API de macOS bloquea el control de velocidad en GPUs de terceros y enlazando herramientas de Windows/OpenCore como MorePowerTool y tablas de energía SoftPowerPlayTable (SPPT).
+## 19. Phase 3.6: Independent Popover Settings, Dynamic Ordering, and Advanced Charts (v2.1.4)
+Separated the popover settings and introduced new visualization options:
+* **Dedicated Settings View**:
+  * **MainDashboardView.swift**: Added the `.popover` ("Popover Menu") navigation item in the main control panel sidebar, routing to `PopoverConfigView`.
+  * Removed popover settings from `MenuBarConfigView` to keep concerns separated.
+* **Dynamic Resource Reordering**:
+  * Implemented an interface in `PopoverConfigView` allowing users to reorder the rings (CPU, RAM, Disk, GPU) using arrow buttons, persisting their order in `UserDefaults` via a comma-separated list (`popoverRingOrder`).
+* **New Visualization Styles**:
+  * **Circular Rings (Style 0)**: Displays circular progress rings grouped horizontally.
+  * **Linear Progress Bars (Style 1)**: Displays full-width progress bars.
+  * **Real-time Sparklines (Style 2)**: Displays real-time mini line/area graphs (using Swift Charts `Chart`, `AreaMark`, and `LineMark`) to track CPU and GPU temperature trends.
 
 ---
 
-## 📅 21. Fase 5: Resolución de Dependencias Cíclicas y Compilación de Múltiples Targets en Xcode (v2.1.4 - Completada)
-Se resolvieron los problemas críticos del sistema de build que bloqueaban la compilación local y en la integración continua (CI):
-*   **Restricción de Arquitectura para Extensiones de Kernel (C++)**:
-    *   **[project.pbxproj](file:///Users/droga/Desktop/SMCAMDProcessor/SMCAMDProcessor.xcodeproj/project.pbxproj)**: Se configuró explícitamente `ARCHS = x86_64;` para todas las configuraciones de build (Debug y Release) en los dos targets de kexts (`AMDRyzenCPUPowerManagement` y `SMCAMDProcessor`). Esto previene que Xcode intente compilar extensiones de kernel de C++ para las arquitecturas ARM (`arm64` o `arm64e`) al correr en hosts Apple Silicon (mecanismo que fallaba por directivas de ensamblador de x86).
-*   **Resolución de Ciclo de Dependencias**:
-    *   Se reordenó el arreglo `targets` en el objeto raíz de `PBXProject` dentro de `project.pbxproj`. Se reubicó el target `APGLaunchHelper` para ser compilado *antes* que `AMD Power Gadget`. Esto soluciona la dependencia cíclica en Xcode en la que `AMD Power Gadget` requiere que `APGLaunchHelper` esté compilado previamente para copiarlo a su subcarpeta `LoginItems` en la fase de empaquetado, eliminando el bloqueo del build.
-*   **Verificación de Todos los Targets**:
-    *   Se ejecutó la compilación de todos los targets (`xcodebuild -project SMCAMDProcessor.xcodeproj -alltargets -configuration Release build`) confirmando la correcta creación de los 4 ejecutables y finalizando con éxito absoluto (**BUILD SUCCEEDED**).
+## 20. Phase 4: Extended GPU Telemetry in Menu Bar and Sparkline Drop Fixes (v2.1.4)
+Expanded GPU telemetry options and resolved interface anomalies:
+* **GPU Telemetry in the Menu Bar**:
+  * **StatusbarController.swift**: Added configuration settings for VRAM (`showGPUvram`) and GPU fan speed (`showGPUfan`).
+  * When enabled, the **FAN** column displays CPU fan speed on top (`C:XXXX`) and GPU fan speed on the bottom (`G:XXXX`).
+  * The **MEM** column displays system memory on top (`S:X.XG`) and GPU VRAM on the bottom (`G:X.XG`).
+* **Preview and Settings**:
+  * **MainDashboardView.swift**: Added "Show GPU VRAM" and "Show GPU Fan Speed" toggles under GPU settings. Updated `MenuBarPreview` to reflect this dual-label format.
+* **Filtering Zero Readings in Sparklines**:
+  * **MainDashboardView.swift**: Added `filterZeros` property in `MiniSparkline` (enabled for CPU and GPU temperatures). This filters out `0.0` telemetry readings (e.g., when the GPU is in Zero RPM mode or enters low-power states), preventing sudden downward spikes in the graph.
+* **GPU Fan Control Guide**:
+  * Added a static information panel (`GPUFanControlGuideView`) in the Fan settings explaining OS-level limitations for third-party GPU fan speed adjustment.
 
 ---
 
-## 📅 22. Corrección de Localización de la Fila de Red (v2.1.4 - Completada)
-Se resolvió el bug donde la fila de velocidad de Red en el popover mostraba la palabra "Rojo" en lugar de "Red" (Network) al utilizar el sistema en español:
-*   **Desacoplamiento de Claves (SwiftUI)**:
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift#L2395)**: Se modificó la etiqueta de la fila de Red para que use la clave `"Network"` en lugar de `"Red"`, evitando que colisione con el nombre del color rojo ("Red" / "Rojo").
-*   **Traducciones en Localizables (i18n)**:
-    *   **[en.lproj/Localizable.strings](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/en.lproj/Localizable.strings#L88)**: Se añadió la clave `"Network" = "Network";` para la interfaz en inglés.
-    *   **[es.lproj/Localizable.strings](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/es.lproj/Localizable.strings#L88)**: Se añadió la clave `"Network" = "Red";` para que en español se muestre correctamente el término técnico de red sin alterar la traducción del color Rojo ("Red" -> "Rojo").
-*   **Verificación del Build**:
-    *   Compilado con éxito absoluto y copiado a `/Applications/AMD Power Gadget.app`.
+## 21. Phase 5: Dependency Resolution and Multi-Target Xcode Compilation (v2.1.4)
+Resolved build system conflicts affecting local and CI environments:
+* **Architecture Constraints on Kernel Extensions**:
+  * **project.pbxproj**: Explicitly configured `ARCHS = x86_64;` for both Debug and Release build configurations of kext targets (`AMDRyzenCPUPowerManagement` and `SMCAMDProcessor`). This prevents Xcode from building kernel extensions for ARM (`arm64`/`arm64e`) on Apple Silicon hosts, which would otherwise fail due to x86 assembler code.
+* **Dependency Cycle Resolution**:
+  * Reordered the target compilation sequence in the Xcode project. Moved `APGLaunchHelper` to compile before `AMD Power Gadget` to resolve a dependency cycle where the helper binary is copied into the application package.
+* **Compilation Verification**:
+  * Verified that all targets compile successfully using command-line builds (`xcodebuild`).
 
 ---
 
-## 📅 23. Optimización de Visualización de Red en Popover (v2.1.4 - Completada)
-*   **Problema de Redondeo**: La velocidad de red en el popover se mostraba de manera fija con formato `"%.1f M"`, lo que provocaba que velocidades menores a **50 KB/s** se redondearan a `0.0 M` y dieran la sensación de inactividad.
-*   **Solución**: Se implementó una función auxiliar de formato `formatSpeed()` en `MenuBarPopoverView` para formatear dinámicamente la velocidad a `KB/s` o `MB/s` de acuerdo al tráfico real.
-*   **Interfaces Físicas**: Se corrigió el cálculo delta para evitar el valor base inicial de cero y se amplió el mapeo de interfaces físicas en `NetworkStats.swift` para incluir configuraciones bridge/bond comúnmente usadas en Hackintosh.
+## 22. Network Row Localization Correction (v2.1.4)
+Resolved a translation collision where the Network label in the popover was incorrectly displayed as "Rojo" (Red) in Spanish:
+* **Key Decoupling**:
+  * **MainDashboardView.swift**: Updated the network row label to use the key `"Network"` instead of `"Red"`, preventing collisions with the color red.
+* **Localization Updates**:
+  * **en.lproj/Localizable.strings**: Added the key `"Network" = "Network";`.
+  * **es.lproj/Localizable.strings**: Added the translation `"Network" = "Red";` (Network) to ensure proper technical terminology without impacting the color translation.
 
 ---
 
-## 📅 24. Mejoras en Controlador C++ (Sleep-Wake & CCD Limits) (v2.1.4 - Completada)
-*   **Resguardo de Suspensión (Sleep/Wake)**: Se corrigió un bug por el cual las lecturas se congelaban al reanudar el sistema operativo desde estado de suspensión. Modificamos `resumeWorkLoop()` en `AMDRyzenCPUPowerManagement.cpp` para re-programar explícitamente los temporizadores del driver (`timerEvent_main` y `timerEvent_tempe`) tras despertar.
-*   **Escalamiento de CCDs (Threadripper / EPYC)**: Incrementamos la constante `kMAX_CCD_COUNT` de 8 a 16 en el kext para dar soporte completo a procesadores multichip de alta gama y ajustamos la recolección en Swift (`maxCCDs` de 8 a 16 en `ProcessorModel.swift`).
+## 23. Popover Network Visualization Optimization (v2.1.4)
+* **Precision Formatting**: Updated the network speed formatting from a static `"%.1f M"` (which rounded speeds under **50 KB/s** down to `0.0 M`) to a dynamic `formatSpeed()` function, displaying in `KB/s` or `MB/s` depending on traffic.
+* **Interface Tracking**: Corrected delta calculations to prevent initial zero spikes and expanded interface tracking in `NetworkStats.swift` to include bridge and bond interfaces.
 
 ---
 
-## 📅 25. Generación de Release y Publicación en GitHub (v2.1.4 - Completada)
-*   **Empaquetado de Binarios**: Copiamos las últimas compilaciones Release de la aplicación y ambos Kexts a la raíz de `Binaries_Release` y regeneramos el archivo distributivo `Binaries_Release.zip`.
-*   **Publicación de Versión**: Creamos el tag de Git local `v2.1.4`, lo subimos al servidor remoto y automatizamos mediante la API de GitHub la creación del release **v2.1.4** en tu repositorio personal con su correspondiente archivo `Release.zip` adjunto como asset.
+## 24. C++ Driver Improvements (Sleep-Wake & CCD Limits) (v2.1.4)
+* **Sleep/Wake Timer Safety**: Resolved a bug where telemetry readings would freeze after waking from sleep. Updated `resumeWorkLoop()` in `AMDRyzenCPUPowerManagement.cpp` to explicitly re-schedule the driver timers (`timerEvent_main` and `timerEvent_tempe`) upon wake.
+* **CCD Capacity Scaling**: Increased the maximum supported CCDs (`kMAX_CCD_COUNT`) from 8 to 16 in the kext and application layer to support multi-die HEDT/Server processors.
 
 ---
 
-## 📅 26. Modernización del Backend y Telemetría Avanzada (v2.2.0 - Completada)
-Se implementaron y verificaron las siguientes mejoras en la telemetría, compatibilidad de hardware y modernización del cargador:
-
-*   **Soporte de IT8689E (SuperIO)**:
-    *   **[ISSuperIOIT86XXEFamily.hpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/SuperIO/ISSuperIOIT86XXEFamily.hpp)** y **[ISSuperIOIT86XXEFamily.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/SuperIO/ISSuperIOIT86XXEFamily.cpp)**: Se integró el soporte para el chip Super I/O `IT8689E` (ID de chip `0x8689`), común en placas Gigabyte modernas de sockets AM4 y AM5, habilitando su monitoreo y control de ventiladores.
-*   **Telemetría CPPC (Preferred Cores)**:
-    *   **[AMDRyzenCPUPowerManagement.hpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.hpp)** y **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp)**: Se añadió la lectura del registro MSR `0xC00102B0` (`MSR_AMD_CPPC_CAP1`) en cada núcleo lógico usando `mp_rendezvous` para recuperar el ranking de calidad del silicio (Highest Performance) en procesadores Zen 2 y más nuevos.
-    *   Se validó la disponibilidad mediante el chequeo de CPUID Fn8000_0008 EBX bit 27.
-*   **Configuración de C-States**:
-    *   **[AMDRyzenCPUPowerManagement.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp)**: Se añadió la lectura de la dirección de E/S de C-States configurada en MSR `0xC0010073` (`kMSR_CSTATE_ADDR`) para exponerla a la capa gráfica y comprobar la salud de los estados de inactividad profunda.
-*   **Exposición en UserClient**:
-    *   **[AMDRyzenCPUPMUserClient.cpp](file:///Users/droga/Desktop/SMCAMDProcessor/AMDRyzenCPUPowerManagement/AMDRyzenCPUPMUserClient.cpp)**: Se añadieron selectores `case 21` (que copia los rankings CPPC de cada núcleo lógico a espacio de usuario) y `case 22` (que expone la dirección de C-states).
-*   **Visualización en la App Swift**:
-    *   **[ProcessorModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/ProcessorModel.swift)** y **[TelemetryModel.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/TelemetryModel.swift)**: Se añadieron los métodos para invocar a los selectores 21 y 22, populando la calidad del silicio por núcleo y la dirección de C-states en el arranque.
-    *   **[MainDashboardView.swift](file:///Users/droga/Desktop/SMCAMDProcessor/AMD%20Power%20Gadget/MainDashboardView.swift)**: Se actualizó `CoreCell` para renderizar de manera interactiva el ranking CPPC de cada núcleo en la grilla del Dashboard utilizando corchetes, por ejemplo `C1 [166]`, lo que permite identificar fácilmente los núcleos preferidos del sistema.
-*   **Resolución de Error de Compilación**:
-    *   Se corrigió la falta de declaraciones incompletas al incluir `<IOKit/IOPlatformExpert.h>`, `<libkern/c++/OSString.h>` y `<libkern/c++/OSData.h>` en `AMDRyzenCPUPowerManagement.cpp`.
-*   **Distribución y Releases**:
-    *   Sincronizados todos los binarios recompilados bajo la ruta `Binaries_Release` y su versión histórica en `Binaries_Release/v2.2.0/`.
-    *   Se reconstruyó el archivo distributivo final `Binaries_Release.zip` incluyendo las nuevas mejoras.
+## 25. Release Generation (v2.1.4)
+* **Binary Packaging**: Copied Release builds of the application and kernel extensions to the release folder and created the distribution archive.
+* **Version Tagging**: Created the `v2.1.4` version tag and published the release on GitHub.
 
 ---
 
-## 📅 27. Corrección de Extracción de Bits y Activación de CPPC (v2.3.0 - Completada)
-Se corrigieron bugs críticos en la lectura de CPPC expuestos en la versión anterior:
-*   **Corrección de Extracción de bits**: Se corrigió la extracción del campo `HighestPerformance` en el MSR `0xC00102B0` (`MSR_AMD_CPPC_CAP1`), que erróneamente extraía los bits `[31:24]` (LowestPerformance) en lugar de los bits `[7:0]` (HighestPerformance).
-*   **Activación Forzada por MSR**: Se añadió la escritura al MSR `0xC00102B1` en el arranque para habilitar de manera forzada la telemetría CPPC en sistemas donde la BIOS o el firmware la desactivaban.
-*   **Release v2.3.0**: Se empaquetaron los binarios y se publicó el tag y release correspondiente en GitHub.
+## 26. Backend Modernization and Advanced Telemetry (v2.2.0)
+Modernized drivers and introduced advanced telemetry features:
+* **SuperIO IT8689E Support**:
+  * Integrated support for the `IT8689E` Super I/O chip (`0x8689` chip ID), enabling fan monitoring and control on compatible motherboards.
+* **CPPC Telemetry (Preferred Cores)**:
+  * **AMDRyzenCPUPowerManagement.cpp**: Added telemetry for preferred core ranking via `MSR_AMD_CPPC_CAP1` (0xC00102B0). Reads silicon quality rankings across all logical cores.
+* **C-State Address Diagnostics**:
+  * **AMDRyzenCPUPowerManagement.cpp**: Added reporting for the configured C-state I/O address via `kMSR_CSTATE_ADDR` (0xC0010073).
+* **UserClient Selectors**:
+  * Added selectors `case 21` (copy CPPC rankings) and `case 22` (expose C-state address) in the UserClient interface.
+* **Swift UI Updates**:
+  * **MainDashboardView.swift**: Updated the core grid cells to display CPPC rankings (e.g., `C1 [166]`), identifying preferred cores directly on the dashboard.
+* **Dependency & Header Cleanup**:
+  * Resolved missing compiler declarations in `AMDRyzenCPUPowerManagement.cpp` by including necessary platform expert headers.
+* **Distribution**:
+  * Synchronized compiled binaries under the release structure.
 
 ---
 
-## 📅 28. CPPC Fallback, Detección de SuperIO NCT6796D-alt y Automatización de CI/CD (v2.4.0 - Completada)
-Esta actualización introduce flujos automatizados de desarrollo y expande el soporte de hardware y telemetría:
-*   **CI/CD con GitHub Actions**:
-    *   Creado `.github/workflows/pr_check.yml` para compilar y validar de manera automática cada Pull Request dirigido a la rama master.
-    *   Creado `.github/workflows/release.yml` para compilar los targets, empaquetar y publicar automáticamente releases con binarios adjuntos cada vez que se haga push a un tag tipo `v*`.
-*   **CPPC Fallback Heurístico (Frecuencia Máxima)**:
-    *   En Hackintoshes donde el MSR de CPPC retorna `0` de manera persistente (e.g. algunos firmwares de Ryzen 5000), la app ahora realiza una estimación en tiempo real.
-    *   Registra la frecuencia máxima observada por cada núcleo y la normaliza a un rango de `0-255` para estimar el ranking de núcleos preferidos.
-    *   Los valores estimados se indican visualmente en la grilla mediante el prefijo tilde `~` (e.g. `C1 [~255]`).
-*   **Diseño Interactivo de CPPC**:
-    *   Añadida la visibilidad constante de telemetría CPPC en la tarjeta de utilización del CPU siempre que sea soportada por hardware.
-    *   Se integró un badge de estado en el título de la tarjeta (`CPPC: Active` o `CPPC: Estimated ~`) con tooltips/help-texts nativos de macOS explicando el estado y fallback.
-*   **Soporte Expandido para NCT6796D (SuperIO)**:
-    *   Añadido el identificador alternativo `0xD428` (`CHIP_NCT6796D_ALT`) al driver. Esto habilita el soporte de lectura de RPM y control de ventiladores en placas madre ASUS con esta variante del chip.
-*   **Publicación de Releases**:
-    *   Sincronizados todos los binarios recompilados bajo la ruta `Binaries_Release/v2.4.0/`.
-    *   Se empaquetó `Binaries_Release_v2.4.0.zip` y se publicó de manera exitosa el release en GitHub.
+## 27. Bit Extraction Correction and CPPC Activation (v2.3.0)
+Resolved bugs in the CPPC telemetry readings:
+* **Bitfield Extraction Fix**: Corrected extraction of `HighestPerformance` in `MSR_AMD_CPPC_CAP1` (extracting bits `[7:0]` instead of the incorrect `[31:24]`).
+* **Forced Activation**: Configured the driver to write to `MSR_AMD_CPPC_REQ` (0xC00102B1) on start to ensure CPPC telemetry is enabled if disabled by firmware.
+* **v2.3.0 Release**: Packaged and published the version v2.3.0 release binaries.
 
 ---
 
-## 📅 29. Editor de Curvas P-State Interactivo (v3.0.0 - Completada)
-Se ha implementado por completo el editor gráfico y visual de curvas P-State para macOS Tahoe (13.0+), sustituyendo la grilla hexadecimal rudimentaria por controles dinámicos de frecuencia/voltaje y visualización en tiempo real:
-*   **Gráfico de Curva V-F (Swift Charts)**:
-    *   Implementado `PStateChartView` usando `Chart`, `LineMark` y `PointMark` de Swift Charts.
-    *   Muestra los puntos activos de los P-states en un gráfico bidimensional de Voltaje (V) vs Frecuencia (MHz).
-    *   Los P-states activos (`enabled == 1`) se conectan con una línea azul brillante (`.tahoeAccentCyan`) que dibuja la curva de operación del procesador.
-*   **Sliders de Control en Tiempo Real**:
-    *   Implementado `PStateRowControlView` con sliders para ajustar la Frecuencia (MHz) y el Voltaje (V).
-    *   Traduce de manera automática el Voltaje en Voltios a la representación del registro `cpuVid` de 8 bits mediante las fórmulas SVI2 (`1.55 - VID * 0.00625`) y SVI3 (`1.55 - VID * 0.005`).
-    *   Traduce la Frecuencia en MHz al multiplicador `cpuFid` manteniendo el divisor `cpuDfsId` constante en arquitecturas heredadas, o usando el multiplicador directo en Zen 5.
-    *   Añadidas protecciones y límites seguros contra valores en cero o fuera de rango.
-*   **Detalle Avanzado del Registro (DisclosureGroup)**:
-    *   Añadida la sección colapsable "Raw Register Details" en cada fila para exponer y permitir la edición numérica de los campos de registro subyacentes (`FID`, `DID`, `VID`, `IddDiv`, `IddVal`).
-*   **Verificación de Compilación**:
-    *   Ejecutado `xcodebuild` validando que todos los targets compilan con éxito absoluto (**BUILD SUCCEEDED**).
+## 28. Heuristic CPPC Fallback, NCT6796D-alt SuperIO Detection, and CI/CD Automation (v2.4.0)
+Expanded hardware support and introduced automated builds:
+* **CI/CD with GitHub Actions**:
+  * Created workflows for automated Pull Request compilation and release generation on tag pushes.
+* **Heuristic CPPC Fallback**:
+  * For systems where CPPC is not exposed via firmware/MSRs, the app now calculates a heuristic preference ranking based on observed historical core frequencies (denoted with `~`, e.g., `C1 [~255]`).
+* **CPPC UI Details**:
+  * Added a status badge and tooltip documentation explaining CPPC modes and fallback estimates.
+* **ASUS NCT6796D-alt Support**:
+  * Added support for the ASUS Super I/O variant `0xD428` (`CHIP_NCT6796D_ALT`), enabling fan speed monitoring.
+* **v2.4.0 Release**: Compiled, packaged, and published release v2.4.0.
 
 ---
 
-## 📅 30. Exportación de Telemetría (CSV) y Notificaciones de Alerta (v3.1.0 - Completada)
-Se implementaron características de registro y diagnóstico continuo en segundo plano, así como notificaciones nativas de límites de hardware:
-*   **Exportación e Historial en CSV**:
-    *   Implementado `exportHistoryToCSV(url:)` en `TelemetryModel.swift` para exportar el historial acumulado en memoria a un archivo CSV estructurado.
-    *   Creada una clase auxiliar thread-safe `CSVLogger` que escribe asíncronamente en segundo plano cada muestra de telemetría a un archivo CSV continuo para análisis a largo plazo.
-    *   Integrada la tarjeta "Diagnostics & CSV Logging" en la pestaña de **Telemetry** para activar el logging continuo y configurar la ruta de salida.
-*   **Notificaciones de Alerta de Límites de Hardware**:
-    *   Integración nativa con `UNUserNotificationCenter` de macOS para solicitar permisos y enviar alertas.
-    *   **Alerta Térmica**: Avisa mediante una notificación del sistema si la temperatura del CPU excede el umbral configurado (ej. 90°C).
-    *   **Alerta de Energía**: Avisa si la potencia del CPU supera el umbral configurado (ej. 142W PPT) de forma continua durante más de `N` segundos (ej. 10s).
-    *   **Enfriamiento de Alertas**: Lógica anti-spam integrada que restringe las alertas a una notificación cada 60 segundos por categoría.
-    *   Integrada la interfaz de personalización de alertas en la pestaña **Advanced**.
+## 29. Interactive P-State Curve Editor (v3.0.0)
+Replaced the legacy hexadecimal editor with an interactive, visual P-state editor:
+* **V-F Curve Chart (Swift Charts)**:
+  * Implemented `PStateChartView` showing active P-states on a Voltage vs Frequency graph.
+* **Real-time Configuration Sliders**:
+  * Added sliders to adjust frequency and voltage, translating values to `cpuVid` (via SVI2 and SVI3 specifications) and `cpuFid`/`cpuDfsId` registers automatically.
+* **Raw Register Details**:
+  * Added collapsible detail views to expose underlying register parameters (`FID`, `DID`, `VID`, `IddDiv`, `IddVal`).
 
 ---
 
-## 📅 31. Native CPPC Active Mode (EPP) y Sanitización de UserClient (v3.2.0 - Completada)
-Esta actualización introduce el modo de control de energía autónomo nativo por hardware (CPPC Active Mode) y una auditoría completa de seguridad en la interfaz de comunicación Kext-App:
-*   **Active Mode nativo por hardware (EPP)**:
-    *   **Full MSR Mode**: Habilitado el soporte para control autónomo de frecuencia de CPU mediante el registro de control de hardware CPPC `MSR_AMD_CPPC_REQ` (0xC00102B3) y estado `MSR_AMD_CPPC_STATUS` (0xC00102B4).
-    *   **Ignorar P-States Heredados**: Se configuró el driver para omitir la escritura dinámica al registro `kMSR_PSTATE_CTL` cuando el modo activo está habilitado, evitando conflictos de frecuencia.
-    *   **Opt-in en Arranque**: Parseo del argumento de boot `-amdcppcactive` para iniciar de manera segura el driver con CPPC Active Mode activado.
-*   **Interfaz de Telemetría y Controles EPP**:
-    *   Exposición en el UserClient (selectores 23, 24, 25) para consultar y configurar dinámicamente el estado del modo activo y el valor EPP (Energy Performance Preference).
-    *   Añadida la tarjeta de control en la pestaña **Advanced** que expone el switch de CPPC Active Mode y un selector segmentado premium de preferencia de energía: **Performance**, **Balanced Perf**, **Balanced Power** y **Power Save**.
-*   **Sanitización Completa de UserClient (Seguridad Kernel)**:
-    *   Auditoría de todos los selectores de `AMDRyzenCPUPMUserClient::externalMethod` para erradicar posibles vulnerabilidades de buffer overflow o kernel crash.
-    *   Validación obligatoria de `arguments->structureOutput` y control de límites seguros en `arguments->structureOutputSize` antes de realizar copias de memoria con `strlcpy` o bucles `for`.
+## 30. Telemetry Export (CSV) and Alert Notifications (v3.1.0)
+Added diagnostic and notification systems:
+* **CSV Logging**:
+  * Implemented asynchronous background telemetry logging to a user-configured CSV file.
+* **Hardware Limit Notifications**:
+  * Integrated notification center alerts for thermal thresholds and power consumption limits, including anti-spam throttling.
 
 ---
 
-## 📅 32. Corrección de Versión Xcode y Agradecimientos a AMD-OSX (v3.2.0 - Final)
-Esta fase finaliza la transición del release unificando las versiones y rindiendo homenaje a la comunidad:
-*   **Corrección de Versión de Proyecto**:
-    *   Se actualizaron `MARKETING_VERSION` y `CURRENT_PROJECT_VERSION` de `2.4.0` a `3.2.0` en todas las configuraciones del proyecto Xcode (`SMCAMDProcessor.xcodeproj/project.pbxproj`), garantizando consistencia en los binarios compilados y en las plists del kernel/app.
-*   **Agradecimientos a AMD-OSX**:
-    *   Se integró un mensaje de agradecimiento especial a toda la comunidad de **AMD-OSX** dentro de los créditos del panel de información "About" de la aplicación (`AppDelegate.swift`), visible al presionar "About AMD Power Gadget".
-*   **Git y CI/CD Final**:
-    *   Se subieron todos los cambios de versionado y créditos a la rama principal de Git, y se recreó el tag `v3.2.0` para gatillar la compilación exitosa y definitiva en GitHub Actions, la cual adjuntó el asset final `Release.zip` al release público.
+## 31. Native CPPC Active Mode (EPP) and UserClient Sanitization (v3.2.0)
+Implemented native autonomous power management controls and security audits:
+* **Native CPPC Active Mode (EPP)**:
+  * Enabled support for CPPC autonomous frequency scaling via `MSR_AMD_CPPC_REQ` (0xC00102B3) and `MSR_AMD_CPPC_STATUS` (0xC00102B4).
+  * Added the `-amdcppcactive` boot-arg configuration option.
+* **EPP Preferences UI**:
+  * Added controls under the Advanced settings to select energy performance preferences: **Performance**, **Balanced Perf**, **Balanced Power**, and **Power Save**.
+* **UserClient Security Audit**:
+  * Audited all selectors in `AMDRyzenCPUPMUserClient` to enforce size limits and validate buffers.
 
+---
 
-
-
+## 32. Xcode Version Correction and Acknowledgments to AMD-OSX (v3.2.0)
+* **Consistent Versioning**: Updated project metadata, marketing versions, and plists to version `3.2.0`.
+* **AMD-OSX Acknowledgments**: Added credits acknowledging the AMD-OSX community in the application "About" panel.
+* **Final Release**: Successfully completed GitHub Action builds for version `3.2.0`.
