@@ -99,45 +99,17 @@ Para evitar riesgos en tu sistema cargando extensiones de kernel modificadas sin
 
 ---
 
-## 📦 Despliegue de Binarios v2.1.1 (Recompilado localmente)
-Los cambios y kexts actualizados se encuentran compilados y desplegados localmente en:
-* `/Applications/AMD Power Gadget.app`
-* `/Users/droga/Desktop/Binaries_Release/v2.1.1/AMD Power Gadget.app`
-* `/Users/droga/Desktop/Binaries_Release/v2.1.1/AMDRyzenCPUPowerManagement.kext` (Compilación local segura sin pánicos)
-* `/Users/droga/Desktop/Binaries_Release/v2.1.1/SMCAMDProcessor.kext` (Compilación local estable)
-
----
-
-## 🛠️ 11. Actualización de EFI (OpenCore)
-* **Ruta de Destino:** `/Volumes/EFI/EFI/OC/Kexts/`
-* **Acción realizada:** Se compilaron ambos kexts en la configuración **Debug** (`AMDRyzenCPUPowerManagement.kext` y `SMCAMDProcessor.kext`) para habilitar la generación de logs de Lilu/kext que de otra forma se descartan en las versiones Release. Luego se reemplazaron en la partición EFI.
-* **Kexts actualizados en EFI:**
-  * `AMDRyzenCPUPowerManagement.kext` (v2.1.1 - Debug build con mitigación de pánicos y soporte Zen 5)
-  * `SMCAMDProcessor.kext` (v2.1.1 - Debug build)
-* **Parámetros de Arranque (boot-args):**
-  * Se modificó `/Volumes/EFI/EFI/OC/config.plist` añadiendo `-amdpdbg` a la sección `boot-args`. Este argumento es necesario para activar `debugEnabled` dentro del kext.
-
----
-
-## 🔍 Monitoreo de Logs Post-Reinicio
-Una vez reiniciada la máquina, puedes obtener y monitorear los logs del kext de administración de energía ejecutando el siguiente comando en la Terminal:
-```bash
-log show --predicate 'sender == "wtf.spinach.AMDRyzenCPUPowerManagement"' --last 10m
-```
-
----
-
-## 🔗 12. Enlaces del Repositorio de Git en la Aplicación
+## 🔗 11. Enlaces del Repositorio de Git en la Aplicación
 * **Panel About (Acerca de)**: Se implementó el método `orderFrontStandardAboutPanel(_:)` de manera personalizada en `AppDelegate.swift` para que al hacer clic en "About AMD Power Gadget", la ventana nativa de macOS contenga un enlace directo y clickeable a tu repositorio personal.
 * **Pie del Dashboard (Sidebar)**: Se modificó la etiqueta de version en el panel lateral de `MainDashboardView.swift` para que sea un enlace interactivo. Ahora, al hacer clic sobre el texto de versión (v2.1.3 · macOS Tahoe), se abrirá automáticamente el navegador web apuntando a tu repositorio Git.
 
 ---
 
-## 🛠️ 13. Soporte Zen 5 en el Editor de P-States (v2.1.3)
+## 🛠️ 12. Soporte Zen 5 en el Editor de P-States (v2.1.3)
 * **Detección Dinámica**: El editor ahora lee de manera dinámica la familia de CPU a través de CPUID básica para determinar las reglas de decodificación y codificación.
 * **Fórmula Adaptada**: Si detecta un procesador Zen 5 (Family 1Ah), realiza el mapeo de `CpuFid` en 12 bits y calcula la velocidad a `CpuFid * 5.0 MHz`, omitiendo el divisor de frecuencia (`CpuDfsId`).
 * **Protección de Columna**: Se bloquea la edición del campo `CpuDfsId` en la tabla para procesadores Zen 5, ya que dicho divisor no se utiliza físicamente en esta arquitectura.
-* **Carga en EFI**: Los kexts reconstruidos con la versión 2.1.3 (incluyendo la compilación de depuración y las optimizaciones correspondientes) fueron sincronizados en `/Volumes/EFI/EFI/OC/Kexts/`.
+
 
 ---
 
@@ -376,18 +348,15 @@ Esta actualización introduce el modo de control de energía autónomo nativo po
 
 ---
 
-## 📅 32. Corrección de Versión Xcode, Despliegue en EFI y Agradecimientos a AMD-OSX (v3.2.0 - Final)
+## 📅 32. Corrección de Versión Xcode y Agradecimientos a AMD-OSX (v3.2.0 - Final)
 Esta fase finaliza la transición del release unificando las versiones y rindiendo homenaje a la comunidad:
 *   **Corrección de Versión de Proyecto**:
     *   Se actualizaron `MARKETING_VERSION` y `CURRENT_PROJECT_VERSION` de `2.4.0` a `3.2.0` en todas las configuraciones del proyecto Xcode (`SMCAMDProcessor.xcodeproj/project.pbxproj`), garantizando consistencia en los binarios compilados y en las plists del kernel/app.
 *   **Agradecimientos a AMD-OSX**:
     *   Se integró un mensaje de agradecimiento especial a toda la comunidad de **AMD-OSX** dentro de los créditos del panel de información "About" de la aplicación (`AppDelegate.swift`), visible al presionar "About AMD Power Gadget".
-*   **Despliegue Local y EFI Automático**:
-    *   Se compilaron localmente todas las schemes de lanzamiento en la versión definitiva `3.2.0`.
-    *   Se copiaron los kexts actualizados (`AMDRyzenCPUPowerManagement.kext` y `SMCAMDProcessor.kext`) a tu partición EFI montada (`/Volumes/EFI/EFI/OC/Kexts/`), y la aplicación definitiva a `/Applications/`.
-    *   Se empaquetó de nuevo todo el historial de versiones en `Binaries_Release.zip`.
 *   **Git y CI/CD Final**:
     *   Se subieron todos los cambios de versionado y créditos a la rama principal de Git, y se recreó el tag `v3.2.0` para gatillar la compilación exitosa y definitiva en GitHub Actions, la cual adjuntó el asset final `Release.zip` al release público.
+
 
 
 
