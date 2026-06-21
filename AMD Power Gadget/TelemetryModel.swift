@@ -780,8 +780,13 @@ final class TelemetryModel: ObservableObject {
 
     // MARK: - Diagnostics, CSV Logging and Alerts Helpers
 
+    private var csvDelimiter: String {
+        let decimal = Locale.current.decimalSeparator ?? "."
+        return decimal == "," ? ";" : ","
+    }
+
     private func startLoggingSession() {
-        logger.start(path: logFilePath)
+        logger.start(path: logFilePath, delimiter: csvDelimiter)
     }
     
     private func stopLoggingSession() {
@@ -791,8 +796,25 @@ final class TelemetryModel: ObservableObject {
     private func writeTelemetryToLogFile(point: TelemetryPoint) {
         guard isLoggingEnabled else { return }
         
+        let delim = csvDelimiter
+        let locale = Locale.current
         let dateString = ISO8601DateFormatter().string(from: Date())
-        let line = String(format: "%@,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%.2f,%.0f,%.3f,%.1f\n",
+        
+        let format = [
+            "%@", // Timestamp
+            "%.3f", // Relative Time (s)
+            "%.3f", // CPU Freq Avg (GHz)
+            "%.3f", // CPU Freq Max (GHz)
+            "%.2f", // CPU Temp (°C)
+            "%.2f", // CPU Power (W)
+            "%.2f", // GPU Temp (°C)
+            "%.2f", // GPU Power (W)
+            "%.0f", // GPU Fan (RPM)
+            "%.3f", // GPU VRAM (GB)
+            "%.1f"  // GPU Load (%)
+        ].joined(separator: delim) + "\n"
+        
+        let line = String(format: format, locale: locale,
                           dateString,
                           point.time,
                           point.cpuFreqGHz,
@@ -809,10 +831,31 @@ final class TelemetryModel: ObservableObject {
     }
 
     func exportHistoryToCSV(url: URL) {
-        var csvText = "Relative Time (s),CPU Freq Avg (GHz),CPU Freq Max (GHz),CPU Temp (°C),CPU Power (W),GPU Temp (°C),GPU Power (W),GPU Fan (RPM),GPU VRAM (GB),GPU Load (%)\n"
+        let delim = csvDelimiter
+        let locale = Locale.current
+        
+        let headers = [
+            "Relative Time (s)", "CPU Freq Avg (GHz)", "CPU Freq Max (GHz)",
+            "CPU Temp (°C)", "CPU Power (W)", "GPU Temp (°C)", "GPU Power (W)",
+            "GPU Fan (RPM)", "GPU VRAM (GB)", "GPU Load (%)"
+        ]
+        var csvText = headers.joined(separator: delim) + "\n"
+        
+        let format = [
+            "%.3f", // Relative Time (s)
+            "%.3f", // CPU Freq Avg (GHz)
+            "%.3f", // CPU Freq Max (GHz)
+            "%.2f", // CPU Temp (°C)
+            "%.2f", // CPU Power (W)
+            "%.2f", // GPU Temp (°C)
+            "%.2f", // GPU Power (W)
+            "%.0f", // GPU Fan (RPM)
+            "%.3f", // GPU VRAM (GB)
+            "%.1f"  // GPU Load (%)
+        ].joined(separator: delim) + "\n"
         
         for point in history {
-            csvText += String(format: "%.3f,%.3f,%.3f,%.3f,%.2f,%.2f,%.2f,%.0f,%.3f,%.1f\n",
+            csvText += String(format: format, locale: locale,
                               point.time,
                               point.cpuFreqGHz,
                               point.cpuFreqMaxGHz,
@@ -855,14 +898,19 @@ private class CSVLogger {
     private var fileHandle: FileHandle?
     private let queue = DispatchQueue(label: "wtf.spinach.CSVLogger", qos: .background)
     
-    func start(path: String) {
+    func start(path: String, delimiter: String) {
         queue.async {
             guard !path.isEmpty else { return }
             let fileURL = URL(fileURLWithPath: path)
             
             // Create file if it doesn't exist
             if !FileManager.default.fileExists(atPath: fileURL.path) {
-                let header = "Timestamp,Relative Time (s),CPU Freq Avg (GHz),CPU Freq Max (GHz),CPU Temp (°C),CPU Power (W),GPU Temp (°C),GPU Power (W),GPU Fan (RPM),GPU VRAM (GB),GPU Load (%)\n"
+                let headers = [
+                    "Timestamp", "Relative Time (s)", "CPU Freq Avg (GHz)", "CPU Freq Max (GHz)",
+                    "CPU Temp (°C)", "CPU Power (W)", "GPU Temp (°C)", "GPU Power (W)",
+                    "GPU Fan (RPM)", "GPU VRAM (GB)", "GPU Load (%)"
+                ]
+                let header = headers.joined(separator: delimiter) + "\n"
                 try? header.write(to: fileURL, atomically: true, encoding: .utf8)
             }
             
