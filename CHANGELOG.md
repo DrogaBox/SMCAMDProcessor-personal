@@ -318,3 +318,14 @@ Implemented native autonomous power management controls and security audits:
 * **Consistent Versioning**: Updated project metadata, marketing versions, and plists to version `3.2.0`.
 * **AMD-OSX Acknowledgments**: Added credits acknowledging the AMD-OSX community in the application "About" panel.
 * **Final Release**: Successfully completed GitHub Action builds for version `3.2.0`.
+
+---
+
+## 33. Telemetry Settings Reorganization
+* **Section Relocation**: Relocated the "Diagnostics & CSV Logging" card below the "Current Values" card in the Telemetry tab, establishing a cleaner layout where primary telemetry values are presented before background logging configuration.
+
+---
+
+## 34. Live Animated Menu Bar Preview
+* **Dynamic Binding**: Bound the static `MenuBarPreview` settings panel widget to the active `TelemetryModel.shared`. The preview now displays real-time, changing telemetry values matching the active menu bar status.
+* **Vertical Label Formatting**: Replaced newline-separated text labels (`Text("C\nP\nU")`) with a custom `VerticalLabelView` stack. This forces single-character vertical stacking and blocks SwiftUI from adding hyphens (`P-`, `M-`, `W-`) in narrow containers.
