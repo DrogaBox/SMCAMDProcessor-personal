@@ -1460,8 +1460,8 @@ struct AdvancedContentView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("CPPC Active Mode (EPP)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                                Text("Enables hardware-autonomous frequency scaling (like Linux/Windows)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                Text("Modo CPPC Activo (EPP)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Permite el escalado autónomo de frecuencia por hardware (estilo Linux/Windows)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
                             }
                             Spacer()
                             Toggle("", isOn: Binding(get: { model.cppcActiveMode }, set: { model.setCPPCActiveMode(active: $0) }))
@@ -1469,9 +1469,8 @@ struct AdvancedContentView: View {
                         }
                         
                         if model.cppcActiveMode {
-                            HStack {
-                                Text("Energy Preference (EPP)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
-                                Spacer()
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Preferencia de Energía (EPP)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
                                 Picker("", selection: Binding(get: {
                                     if model.cppcEPPValue <= 0x1F { return 0 }
                                     else if model.cppcEPPValue <= 0x5F { return 1 }
@@ -1481,13 +1480,13 @@ struct AdvancedContentView: View {
                                     let eppBytes: [UInt8] = [0x00, 0x3F, 0x7F, 0xFF]
                                     model.setCPPCEPPValue(epp: eppBytes[val])
                                 })) {
-                                    Text("Performance").tag(0)
-                                    Text("Balanced Perf").tag(1)
-                                    Text("Balanced Power").tag(2)
-                                    Text("Power Save").tag(3)
+                                    Text("Rendimiento").tag(0)
+                                    Text("Rendimiento Bal.").tag(1)
+                                    Text("Ahorro Bal.").tag(2)
+                                    Text("Ahorro Energía").tag(3)
                                 }
                                 .pickerStyle(.segmented)
-                                .frame(width: 320)
+                                .frame(maxWidth: .infinity)
                             }
                             .padding(.top, 4)
                         }
