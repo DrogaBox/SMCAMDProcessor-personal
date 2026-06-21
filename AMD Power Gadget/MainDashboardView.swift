@@ -1468,8 +1468,8 @@ private struct PStateChartView: View {
                 }
             }
             
-            // Plot each P-state point
-            ForEach(pStateRows) { row in
+            // Plot each P-state point (filter out unused/disabled slots with 0 MHz)
+            ForEach(pStateRows.filter { $0.computedSpeedMHz > 0 }) { row in
                 let volt = 1.55 - Double(row.cpuVid) * step
                 let speed = Double(row.computedSpeedMHz)
                 let isEnabled = row.enabled == 1
