@@ -21,14 +21,12 @@ jobs:
 
       - name: Download Lilu & VirtualSMC dependencies
         run: |
-          LILU_URL=$(curl -sL https://api.github.com/repos/acidanthera/Lilu/releases/latest | grep "browser_download_url" | grep -i "release.zip" | cut -d '"' -f 4)
-          curl -L -o Lilu.zip "$LILU_URL"
+          curl -L -o Lilu.zip "https://github.com/acidanthera/Lilu/releases/download/1.7.2/Lilu-1.7.2-RELEASE.zip"
           unzip -q Lilu.zip -d Lilu_extracted
           mv Lilu_extracted/Lilu.kext .
           rm -rf Lilu.zip Lilu_extracted
 
-          SMC_URL=$(curl -sL https://api.github.com/repos/acidanthera/VirtualSMC/releases/latest | grep "browser_download_url" | grep -i "release.zip" | cut -d '"' -f 4)
-          curl -L -o VirtualSMC.zip "$SMC_URL"
+          curl -L -o VirtualSMC.zip "https://github.com/acidanthera/VirtualSMC/releases/download/1.3.7/VirtualSMC-1.3.7-RELEASE.zip"
           unzip -q VirtualSMC.zip -d SMC_extracted
           mv SMC_extracted/Kexts/VirtualSMC.kext .
           rm -rf VirtualSMC.zip SMC_extracted
