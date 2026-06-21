@@ -2495,13 +2495,40 @@ private struct CPPCCoreGrid: View {
 struct SystemInfoContentView: View {
     @ObservedObject var model: TelemetryModel
     
+    // True if we have any non-zero CPPC data OR estimated freq data to show
+    private var hasCoreRankingData: Bool {
+        return model.sysInfo.physicalCores > 0
+    }
+    
+    private var isRankingEstimated: Bool {
+        // Estimated if cppcScores are all zero or CPPC is not supported
+        if !model.cppcSupported { return true }
+        return model.cppcScores.isEmpty || model.cppcScores.allSatisfy { $0 == 0 }
+    }
+    
     private var physicalCoresRanked: [PhysicalCoreCPPC] {
         let numPhysicalCores = model.sysInfo.physicalCores
         guard numPhysicalCores > 0 else { return [] }
         var list: [PhysicalCoreCPPC] = []
+        let cppcHasRealData = model.cppcSupported && !model.cppcScores.isEmpty && !model.cppcScores.allSatisfy { $0 == 0 }
         for physicalIdx in 0..<numPhysicalCores {
-            let score = (model.cppcScores.count > physicalIdx) ? model.cppcScores[physicalIdx] : 0
-            list.append(PhysicalCoreCPPC(id: physicalIdx + 1, score: score, isEstimated: model.cppcScoresEstimated, rank: 0))
+            var score: UInt8 = 0
+            if cppcHasRealData && model.cppcScores.count > physicalIdx {
+                // Use real CPPC Preferred Cores score
+                score = model.cppcScores[physicalIdx]
+            } else {
+                // Fallback: use max observed freq of logical cores mapped to this physical core
+                let logicalBase = physicalIdx * 2
+                var maxFreq: Float = 0
+                for li in [logicalBase, logicalBase + 1] {
+                    if let freq = model.maxObservedFreq_perCore[li] {
+                        if freq > maxFreq { maxFreq = freq }
+                    }
+                }
+                // Normalize to 0-255 scale based on max possible freq (6000 MHz)
+                score = UInt8(min(255, Int((maxFreq / 6000.0) * 255.0)))
+            }
+            list.append(PhysicalCoreCPPC(id: physicalIdx + 1, score: score, isEstimated: !cppcHasRealData, rank: 0))
         }
         let sorted = list.sorted {
             if $0.score != $1.score {
@@ -2538,9 +2565,9 @@ struct SystemInfoContentView: View {
                     InfoRow(label: "L3 Cache (Shared)",value: "\(model.sysInfo.l3MB) MB")
                 }
 
-                if model.cppcSupported && !physicalCoresRanked.isEmpty {
+                if hasCoreRankingData && !physicalCoresRanked.isEmpty {
                     Divider().background(Color.tahoeCardBorder)
-                    SectionTitle(model.cppcScoresEstimated ? "Estimated Core Rankings" : "CPPC Preferred Cores (Silicon Quality)")
+                    SectionTitle(isRankingEstimated ? "Core Rankings (Estimated by Freq)" : "CPPC Preferred Cores (Silicon Quality)")
                     CPPCCoreGrid(items: physicalCoresRanked)
                 }
 
