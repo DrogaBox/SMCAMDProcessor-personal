@@ -65,13 +65,13 @@
                                                 <action selector="gadget:" target="Voe-Tx-rLC" id="p4g-Jh-v70"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="AMD Power Tool" id="1UK-8n-QPP">
+                                        <menuItem title="Advanced" id="1UK-8n-QPP">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="tool:" target="Voe-Tx-rLC" id="sjF-VW-4Zj"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="SMC Fans" id="W4w-Lk-RxU">
+                                        <menuItem title="Fan Control" id="W4w-Lk-RxU">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="sysmonitor:" target="Voe-Tx-rLC" id="6cS-DC-RY2"/>
