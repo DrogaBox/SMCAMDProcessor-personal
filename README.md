@@ -97,6 +97,18 @@ Includes a modern protection toggle in the Advanced speed shift panel. Controls 
 ### Custom Fan Overrides (SMC Fans)
 Features a redesigned AppKit fan speed view that supports dynamic width scaling up to 300px to display full fan names (e.g., "CPU OPT Fan"), alongside custom-drawn sliders aligning track progress with the active accent color.
 
+### CPPC Active Mode & EPP (Hardware-Autonomous Power Management)
+Starting in version **3.2.0**, the kernel extension and GUI application support native **CPPC Active Mode (EPP)**, bringing modern hardware-autonomous frequency scaling (matching Windows 11 and Linux `amd_pstate_epp` drivers) to Zen 3 (Ryzen 5000) and newer processors:
+
+* **Hardware-Autonomous Scaling**: In legacy mode, macOS micro-manages clock frequencies by cycling through coarse, static P-states. In CPPC Active Mode, the driver disables legacy P-state overrides and delegates frequency control to the CPU's internal **System Management Unit (SMU)**. The SMU adjusts clock speeds and voltages dynamically in microsecond intervals based on load, thermal, and current metrics.
+* **Energy Performance Preference (EPP)**: Allows you to define your power profile preference directly in the hardware register `MSR_AMD_CPPC_REQ` (`0xC00102B3`):
+  * **Performance** (`EPP = 0x00`): Prioritizes maximum boost clock speeds and throughput.
+  * **Balanced Perf** (`EPP = 0x3F`): The default profile, offering a perfect balance of responsiveness and idle energy savings.
+  * **Balanced Power** (`EPP = 0x7F`): Reduces boosting aggressiveness for lower heat and noise.
+  * **Power Save** (`EPP = 0xFF`): Locks the CPU at low frequencies for maximum energy savings and cool operation.
+* **Boot Opt-In**: To enable CPPC Active Mode on startup, append the `-amdcppcactive` boot argument to your OpenCore `boot-args` in `config.plist`. You can then toggle CPPC Active Mode and change EPP profiles on-the-fly under the **Advanced** tab of the **AMD Power Gadget** application.
+* **Driver Communication Sanitization**: The UserClient communication layer (selectors 0–22, 90–94) has been audited and fully sanitized. Input parameter counts, output structure pointers, and array bounds are strictly verified before copying data to prevent buffer overflows or kernel panic stability issues.
+
 ---
 
 ## Safety & Security
