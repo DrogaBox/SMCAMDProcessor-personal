@@ -1444,16 +1444,86 @@ struct AdvancedContentView: View {
     }
 }
 
+private struct PStateChartView: View {
+    let pStateRows: [PStateRow]
+    let isZen5: Bool
+    
+    var body: some View {
+        let enabledRows = pStateRows.filter { $0.enabled == 1 }
+            .sorted(by: { $0.computedSpeedMHz < $1.computedSpeedMHz })
+            
+        let step = isZen5 ? 0.005 : 0.00625
+        
+        Chart {
+            // Plot the line connecting the enabled P-States to form the curve
+            if enabledRows.count >= 2 {
+                ForEach(enabledRows) { row in
+                    LineMark(
+                        x: .value("Voltage (V)", 1.55 - Double(row.cpuVid) * step),
+                        y: .value("Frequency (MHz)", Double(row.computedSpeedMHz))
+                    )
+                    .foregroundStyle(Color.tahoeAccentCyan)
+                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.monotone)
+                }
+            }
+            
+            // Plot each P-state point
+            ForEach(pStateRows) { row in
+                let volt = 1.55 - Double(row.cpuVid) * step
+                let speed = Double(row.computedSpeedMHz)
+                let isEnabled = row.enabled == 1
+                
+                PointMark(
+                    x: .value("Voltage (V)", volt),
+                    y: .value("Frequency (MHz)", speed)
+                )
+                .foregroundStyle(isEnabled ? Color.tahoeAccentCyan : Color.white.opacity(0.15))
+                .symbolSize(isEnabled ? 80 : 40)
+                .annotation(position: .top, alignment: .center) {
+                    Text("P\(row.id)")
+                        .font(.system(size: 9, weight: isEnabled ? .bold : .regular))
+                        .foregroundColor(isEnabled ? .tahoeText : .tahoeSubtext)
+                        .padding(2)
+                }
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: .automatic) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(Color.white.opacity(0.05))
+                AxisValueLabel {
+                    if let volt = value.as(Double.self) {
+                        Text(String(format: "%.3f V", volt))
+                            .font(.system(size: 8))
+                            .foregroundColor(.tahoeSubtext)
+                    }
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(values: .automatic) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(Color.white.opacity(0.05))
+                AxisValueLabel {
+                    if let speed = value.as(Double.self) {
+                        Text(String(format: "%.0f MHz", speed))
+                            .font(.system(size: 8))
+                            .foregroundColor(.tahoeSubtext)
+                    }
+                }
+            }
+        }
+    }
+}
+
 private struct PStateEditorView: View {
     @ObservedObject var model: TelemetryModel
     @State private var showApplyConfirm = false
     @State private var applyOK: Bool? = nil
     @State private var isUnlocked = false
-    private let columns = ["#", "En", "IddDiv", "IddValue", "CpuVid", "DfsId", "FID", "MHz"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Dangerous protection checkbox
+        VStack(alignment: .leading, spacing: 14) {
+            // Safety unlock toggle
             HStack(spacing: 10) {
                 Image(systemName: isUnlocked ? "lock.open.trianglebadge.exclamationmark.fill" : "lock.fill")
                     .foregroundColor(isUnlocked ? .tahoeAccentCyan : .tahoeAccentOrange)
@@ -1472,39 +1542,71 @@ private struct PStateEditorView: View {
                     .stroke(isUnlocked ? Color.tahoeAccentCyan.opacity(0.2) : Color.tahoeAccentOrange.opacity(0.2), lineWidth: 1)
             )
             
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 0) {
-                    ForEach(columns, id: \.self) { col in
-                        Text(col).font(.system(size: 10, weight: .bold)).foregroundColor(.tahoeSubtext).frame(maxWidth: .infinity)
-                    }
+            HStack(alignment: .top, spacing: 18) {
+                // Left side: Chart View
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("V-F Operating Curve")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.tahoeSubtext)
+                    
+                    PStateChartView(pStateRows: model.pStateRows, isZen5: model.pStateRows.first?.isZen5 ?? false)
+                        .frame(height: 280)
+                        .padding(12)
+                        .background(Color.tahoeBackground.opacity(0.4))
+                        .cornerRadius(10)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.tahoeCardBorder))
                 }
-                .padding(.horizontal, 12).padding(.vertical, 6).background(Color.tahoeBackground.opacity(0.5)).cornerRadius(8)
+                .frame(width: 320)
                 
-                ForEach($model.pStateRows) { $row in PStateRowView(row: $row, isDirty: $model.pStateEditorDirty) }
-                
-                HStack(spacing: 8) {
-                    TahoeButton(label: "Apply", icon: "checkmark.circle", accent: .tahoeAccentCyan) { showApplyConfirm = true }
-                    TahoeButton(label: "Revert", icon: "arrow.counterclockwise", accent: .tahoeAccentOrange) { model.loadPStateRows() }
-                    TahoeButton(label: "Import", icon: "square.and.arrow.down", accent: .tahoeAccentGreen) {
-                        let op = NSOpenPanel(); if op.runModal() == .OK, let url = op.url { model.importPStates(from: url) }
+                // Right side: Controls List
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("P-States Configuration")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.tahoeSubtext)
+                    
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach($model.pStateRows) { $row in
+                                PStateRowControlView(row: $row, isDirty: $model.pStateEditorDirty)
+                            }
+                        }
+                        .padding(.trailing, 4)
                     }
-                    TahoeButton(label: "Export", icon: "square.and.arrow.up", accent: .tahoeAccentPurple) {
-                        let op = NSSavePanel(); op.isExtensionHidden = false
-                        op.allowedContentTypes = [.init(filenameExtension: "pstate") ?? .data]
-                        if op.runModal() == .OK, let url = op.url { model.exportPStates(to: url) }
-                    }
-                }
-                
-                if let ok = applyOK {
-                    Text(ok ? "✅ P-States applied successfully." : "❌ Failed — check kext privileges (-amdpnopchk).")
-                        .font(.system(size: 11)).foregroundColor(ok ? .tahoeAccentGreen : .tahoeAccentRed)
+                    .frame(height: 280)
                 }
             }
             .opacity(isUnlocked ? 1.0 : 0.4)
             .disabled(!isUnlocked)
             .animation(.easeInOut(duration: 0.25), value: isUnlocked)
+            
+            // Actions
+            HStack(spacing: 8) {
+                TahoeButton(label: "Apply", icon: "checkmark.circle", accent: .tahoeAccentCyan) { showApplyConfirm = true }
+                    .disabled(!isUnlocked)
+                TahoeButton(label: "Revert", icon: "arrow.counterclockwise", accent: .tahoeAccentOrange) { model.loadPStateRows() }
+                    .disabled(!isUnlocked)
+                TahoeButton(label: "Import", icon: "square.and.arrow.down", accent: .tahoeAccentGreen) {
+                    let op = NSOpenPanel()
+                    op.allowedContentTypes = [.init(filenameExtension: "pstate") ?? .data]
+                    if op.runModal() == .OK, let url = op.url { model.importPStates(from: url) }
+                }
+                .disabled(!isUnlocked)
+                TahoeButton(label: "Export", icon: "square.and.arrow.up", accent: .tahoeAccentPurple) {
+                    let op = NSSavePanel()
+                    op.isExtensionHidden = false
+                    op.allowedContentTypes = [.init(filenameExtension: "pstate") ?? .data]
+                    if op.runModal() == .OK, let url = op.url { model.exportPStates(to: url) }
+                }
+                .disabled(!isUnlocked)
+            }
+            
+            if let ok = applyOK {
+                Text(ok ? "✅ P-States applied successfully." : "❌ Failed — check kext privileges (-amdpnopchk).")
+                    .font(.system(size: 11)).foregroundColor(ok ? .tahoeAccentGreen : .tahoeAccentRed)
+            }
         }
-        .padding(14).background(Color.tahoeCard.opacity(0.85))
+        .padding(14)
+        .background(Color.tahoeCard.opacity(0.85))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(model.pStateEditorDirty ? Color.tahoeAccentOrange.opacity(0.5) : Color.tahoeCardBorder))
         .cornerRadius(14)
         .confirmationDialog("Apply P-States?", isPresented: $showApplyConfirm, titleVisibility: .visible) {
@@ -1514,47 +1616,206 @@ private struct PStateEditorView: View {
     }
 }
 
-private struct PStateRowView: View {
-    @Binding var row: PStateRow; @Binding var isDirty: Bool
+private struct PStateRowControlView: View {
+    @Binding var row: PStateRow
+    @Binding var isDirty: Bool
+    @State private var isExpanded = false
+    
     var body: some View {
-        HStack(spacing: 0) {
-            Text("\(row.id)").font(.system(size: 10, design: .monospaced)).foregroundColor(.tahoeSubtext).frame(maxWidth: .infinity)
-            Button(action: { row.enabled = row.enabled == 1 ? 0 : 1; isDirty = true }) {
-                Image(systemName: row.enabled == 1 ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(row.enabled == 1 ? .tahoeAccentCyan : .tahoeSubtext).font(.system(size: 12))
+        let step = row.isZen5 ? 0.005 : 0.00625
+        let currentVoltage = 1.55 - Double(row.cpuVid) * step
+        let currentSpeed = Double(row.computedSpeedMHz)
+        
+        VStack(alignment: .leading, spacing: 6) {
+            // Header Row
+            HStack {
+                Text("P-State \(row.id)")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundColor(row.enabled == 1 ? .tahoeText : .tahoeSubtext)
+                
+                Spacer()
+                
+                Toggle(row.enabled == 1 ? "Active" : "Inactive", isOn: Binding(
+                    get: { row.enabled == 1 },
+                    set: { newValue in
+                        row.enabled = newValue ? 1 : 0
+                        if newValue {
+                            // Set safe defaults if the state was uninitialized/zero
+                            if row.cpuFid == 0 {
+                                if row.isZen5 {
+                                    row.cpuFid = 440 // 440 * 5 = 2200 MHz
+                                } else {
+                                    row.cpuFid = 88 // (88 / 8) * 200 = 2200 MHz
+                                    row.cpuDfsId = 8
+                                }
+                            }
+                            if row.cpuVid == 0 || row.cpuVid > 255 {
+                                row.cpuVid = 56 // 1.2V
+                            }
+                        }
+                        isDirty = true
+                    }
+                ))
+                .toggleStyle(.switch)
+                .scaleEffect(0.7)
+                .labelsHidden()
+                
+                Text(row.enabled == 1 ? "Active" : "Inactive")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(row.enabled == 1 ? .tahoeAccentCyan : .tahoeSubtext)
+                    .frame(width: 42, alignment: .trailing)
             }
-            .buttonStyle(.plain).frame(maxWidth: .infinity)
-            HexCell(value: $row.iddDiv, dirty: $isDirty)
-            HexCell(value: $row.iddValue, dirty: $isDirty)
-            HexCell(value: $row.cpuVid, dirty: $isDirty)
-            HexCell(value: $row.cpuDfsId, dirty: $isDirty)
-            HexCell(value: $row.cpuFid, dirty: $isDirty)
-            Text(row.cpuDfsId > 0 ? String(format: "%.0f", row.computedSpeedMHz) : "—")
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundColor(row.enabled == 1 ? .tahoeAccentCyan : .tahoeSubtext).frame(maxWidth: .infinity)
+            
+            if row.enabled == 1 {
+                VStack(spacing: 8) {
+                    // Frequency Control
+                    HStack(spacing: 10) {
+                        Text("Freq:")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.tahoeSubtext)
+                            .frame(width: 32, alignment: .leading)
+                        
+                        Slider(value: Binding(
+                            get: { max(800.0, min(6000.0, Double(row.computedSpeedMHz))) },
+                            set: { newValue in
+                                if row.isZen5 {
+                                    row.cpuFid = UInt32(max(0, min(4095, round(newValue / 5.0))))
+                                } else {
+                                    let dfs = row.cpuDfsId > 0 ? Double(row.cpuDfsId) : 8.0
+                                    row.cpuFid = UInt32(max(0, min(255, round((newValue / 200.0) * dfs))))
+                                }
+                                isDirty = true
+                            }
+                        ), in: 800...6000, step: 25)
+                        .tint(Color.tahoeAccentCyan)
+                        
+                        Text(String(format: "%.0f MHz", currentSpeed))
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundColor(.tahoeAccentCyan)
+                            .frame(width: 65, alignment: .trailing)
+                    }
+                    
+                    // Voltage Control
+                    HStack(spacing: 10) {
+                        Text("Volt:")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.tahoeSubtext)
+                            .frame(width: 32, alignment: .leading)
+                        
+                        Slider(value: Binding(
+                            get: { max(0.55, min(1.55, currentVoltage)) },
+                            set: { newValue in
+                                let rawVid = (1.55 - newValue) / step
+                                row.cpuVid = UInt32(max(0, min(255, round(rawVid))))
+                                isDirty = true
+                            }
+                        ), in: 0.55...1.55, step: step)
+                        .tint(Color.tahoeAccentOrange)
+                        
+                        Text(String(format: "%.4f V", currentVoltage))
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundColor(.tahoeAccentOrange)
+                            .frame(width: 65, alignment: .trailing)
+                    }
+                }
+                .padding(.vertical, 4)
+                
+                // Raw Details Disclosure Group
+                DisclosureGroup(isExpanded: $isExpanded) {
+                    VStack(spacing: 6) {
+                        HStack(spacing: 10) {
+                            RawField(label: "FID", value: Binding(
+                                get: { String(format: "%X", row.cpuFid) },
+                                set: { newValue in
+                                    if let v = UInt32(newValue, radix: 16) {
+                                        row.cpuFid = v
+                                        isDirty = true
+                                    }
+                                }
+                            ))
+                            
+                            if !row.isZen5 {
+                                RawField(label: "DID", value: Binding(
+                                    get: { String(format: "%X", row.cpuDfsId) },
+                                    set: { newValue in
+                                        if let v = UInt32(newValue, radix: 16) {
+                                            row.cpuDfsId = v
+                                            isDirty = true
+                                        }
+                                    }
+                                ))
+                            }
+                            
+                            RawField(label: "VID", value: Binding(
+                                get: { String(format: "%X", row.cpuVid) },
+                                set: { newValue in
+                                    if let v = UInt32(newValue, radix: 16) {
+                                        row.cpuVid = v
+                                        isDirty = true
+                                    }
+                                }
+                            ))
+                        }
+                        
+                        HStack(spacing: 10) {
+                            RawField(label: "IddDiv", value: Binding(
+                                get: { String(format: "%X", row.iddDiv) },
+                                set: { newValue in
+                                    if let v = UInt32(newValue, radix: 16) {
+                                        row.iddDiv = v
+                                        isDirty = true
+                                    }
+                                }
+                            ))
+                            
+                            RawField(label: "IddVal", value: Binding(
+                                get: { String(format: "%X", row.iddValue) },
+                                set: { newValue in
+                                    if let v = UInt32(newValue, radix: 16) {
+                                        row.iddValue = v
+                                        isDirty = true
+                                    }
+                                }
+                            ))
+                        }
+                    }
+                    .padding(.top, 4)
+                } label: {
+                    Text("Raw Register Details")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                }
+                .accentColor(.tahoeSubtext)
+            }
         }
-        .padding(.vertical, 6).padding(.horizontal, 12)
-        .background(row.enabled == 1 ? Color.tahoeAccentCyan.opacity(0.05) : Color.tahoeBackground.opacity(0.4))
-        .cornerRadius(6)
+        .padding(10)
+        .background(row.enabled == 1 ? Color.tahoeAccentCyan.opacity(0.04) : Color.tahoeBackground.opacity(0.2))
+        .cornerRadius(8)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(row.enabled == 1 ? Color.tahoeAccentCyan.opacity(0.15) : Color.tahoeCardBorder))
     }
 }
 
-private struct HexCell: View {
-    @Binding var value: UInt32; @Binding var dirty: Bool
-    @State private var editText = ""; @State private var isEditing = false
+private struct RawField: View {
+    let label: String
+    @Binding var value: String
+    
     var body: some View {
-        TextField("", text: $editText, onEditingChanged: { editing in
-            isEditing = editing
-            if !editing {
-                if let v = UInt32(editText, radix: 16) { value = v; dirty = true }
-                else { editText = String(format: "%X", value) }
-            }
-        })
-        .font(.system(size: 10, design: .monospaced))
-        .foregroundColor(isEditing ? .tahoeAccentCyan : .tahoeText)
-        .multilineTextAlignment(.center).frame(maxWidth: .infinity)
-        .onAppear { editText = String(format: "%X", value) }
-        .onChange(of: value) { newVal in editText = String(format: "%X", newVal) }
+        HStack(spacing: 4) {
+            Text("\(label):")
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundColor(.tahoeSubtext)
+            
+            TextField("", text: $value)
+                .textFieldStyle(.plain)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundColor(.tahoeText)
+                .multilineTextAlignment(.center)
+                .frame(width: 32)
+                .padding(.vertical, 2)
+                .background(Color.tahoeBackground.opacity(0.6))
+                .cornerRadius(4)
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.tahoeCardBorder))
+        }
     }
 }
 

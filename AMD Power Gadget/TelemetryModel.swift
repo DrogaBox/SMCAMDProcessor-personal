@@ -592,7 +592,8 @@ final class TelemetryModel: ObservableObject {
 
     func importPStates(from url: URL) {
         guard let arr = NSArray(contentsOf: url) as? [UInt64] else { return }
-        pStateRows = arr.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset) }
+        let family = ProcessorModel.shared.cpuidBasic.first ?? 0
+        pStateRows = arr.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset, cpuFamily: family) }
         pStateEditorDirty = true
     }
 
