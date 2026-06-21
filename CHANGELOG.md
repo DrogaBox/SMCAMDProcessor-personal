@@ -338,4 +338,6 @@ To modernize the application structure and consolidate features into the main Sw
 * **Storyboard Optimization**: Stripped all deprecated scenes and custom view references from `Base.lproj/Main.storyboard`, retaining only the primary window controller and main `ViewController` scene.
 * **Status Bar Menu Redirection**: Updated action selectors in `StatusbarController.swift` to launch `ViewController` and switch the active tab in `TelemetryModel.shared` to `.advanced` (for AMD Power Tool / P-States) and `.fanControl` (for SMC Fans) respectively.
 * **App Delegate Action Updates**: Modified handlers in `AppDelegate.swift` for main menu items to redirect `tool` and `sysmonitor` calls to the primary window controller with corresponding tab focus, and removed active reference tracking to deprecated view controllers.
+* **Interactive P-State Chart Filter**: Filtered out disabled/inactive P-states from the V-F Operating Curve chart in the P-State editor to display only active/enabled performance states.
+
 

@@ -1667,22 +1667,21 @@ private struct PStateChartView: View {
                 }
             }
             
-            // Plot each P-state point (filter out unused/disabled slots with 0 MHz)
-            ForEach(pStateRows.filter { $0.computedSpeedMHz > 0 }) { row in
+            // Plot each P-state point (only show active/enabled states)
+            ForEach(pStateRows.filter { $0.computedSpeedMHz > 0 && $0.enabled == 1 }) { row in
                 let volt = 1.55 - Double(row.cpuVid) * step
                 let speed = Double(row.computedSpeedMHz)
-                let isEnabled = row.enabled == 1
                 
                 PointMark(
                     x: .value("Voltage (V)", volt),
                     y: .value("Frequency (MHz)", speed)
                 )
-                .foregroundStyle(isEnabled ? Color.tahoeAccentCyan : Color.white.opacity(0.15))
-                .symbolSize(isEnabled ? 80 : 40)
+                .foregroundStyle(Color.tahoeAccentCyan)
+                .symbolSize(80)
                 .annotation(position: .top, alignment: .center) {
                     Text("P\(row.id)")
-                        .font(.system(size: 9, weight: isEnabled ? .bold : .regular))
-                        .foregroundColor(isEnabled ? .tahoeText : .tahoeSubtext)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.tahoeText)
                         .padding(2)
                 }
             }
