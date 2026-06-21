@@ -42,7 +42,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @IBAction func tool(_ sender: Any) {
-        PowerToolViewController.launch()
+        ViewController.launch()
+        TelemetryModel.shared.selectedTab = .advanced
     }
 
     static func launchGadget(){
@@ -53,8 +54,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !UserDefaults.standard.bool(forKey: "statusbarenabled") {return true}
 
         return ViewController.activeSelf != nil
-            || PowerToolViewController.activeSelf != nil
-            || SystemMonitorViewController.activeSelf != nil
     }
 
     static func updateDockIcon() {
@@ -76,7 +75,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @IBAction func sysmonitor(_ sender: Any) {
-        SystemMonitorViewController.launch()
+        ViewController.launch()
+        TelemetryModel.shared.selectedTab = .telemetry
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -136,7 +136,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applyAppearanceSwitch(translucency : Bool) {
         appearanceToggle.state = translucency ? .on : .off
         ViewController.activeSelf?.toggleTranslucency(enabled: translucency)
-        PowerToolViewController.activeSelf?.toggleTranslucency(enabled: translucency)
 
         UserDefaults.standard.set(translucency, forKey: "usetranslucency")
     }

@@ -329,3 +329,13 @@ Implemented native autonomous power management controls and security audits:
 ## 34. Live Animated Menu Bar Preview
 * **Dynamic Binding**: Bound the static `MenuBarPreview` settings panel widget to the active `TelemetryModel.shared`. The preview now displays real-time, changing telemetry values matching the active menu bar status.
 * **Vertical Label Formatting**: Replaced newline-separated text labels (`Text("C\nP\nU")`) with a custom `VerticalLabelView` stack. This forces single-character vertical stacking and blocks SwiftUI from adding hyphens (`P-`, `M-`, `W-`) in narrow containers.
+
+---
+
+## 35. Legacy AppKit Window Deprecation and Redirection (Option C)
+To modernize the application structure and consolidate features into the main SwiftUI interface:
+* **Legacy Code Cleanup**: Deleted old AppKit view controller classes (`PowerToolViewController.swift`, `PStateEditorViewController.swift`, `SystemMonitorViewController.swift`) and helper custom views (`CPUSpeedShiftView.swift`, `CPUPowerStepView.swift`, `CPUBarLayer.swift`). Removed their file references from `project.pbxproj`.
+* **Storyboard Optimization**: Stripped all deprecated scenes and custom view references from `Base.lproj/Main.storyboard`, retaining only the primary window controller and main `ViewController` scene.
+* **Status Bar Menu Redirection**: Updated action selectors in `StatusbarController.swift` to launch `ViewController` and switch the active tab in `TelemetryModel.shared` to `.advanced` (for AMD Power Tool / P-States) and `.fanControl` (for SMC Fans) respectively.
+* **App Delegate Action Updates**: Modified handlers in `AppDelegate.swift` for main menu items to redirect `tool` and `sysmonitor` calls to the primary window controller with corresponding tab focus, and removed active reference tracking to deprecated view controllers.
+

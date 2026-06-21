@@ -176,6 +176,7 @@ struct ProcessInfoRow: Identifiable {
 final class TelemetryModel: ObservableObject {
     static let shared = TelemetryModel()
 
+    @Published var selectedTab: DashboardTab = .dashboard
     @Published var cpuFreqAvgGHz: Double = 0
     @Published var cpuFreqMaxGHz: Double = 0
     @Published var cpuTempC: Double = 0
