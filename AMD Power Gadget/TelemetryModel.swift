@@ -495,20 +495,8 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        if cppcSupported && cppcScoresEstimated {
-            let maxFreqOverall = maxObservedFreq_perCore.values.max() ?? 1.0
-            if maxFreqOverall > 0 {
-                var estimatedScores = [UInt8](repeating: 0, count: numLogicalCores)
-                for logicalIdx in 0..<numLogicalCores {
-                    let freq = maxObservedFreq_perCore[logicalIdx] ?? 0.0
-                    estimatedScores[logicalIdx] = UInt8(round((freq / maxFreqOverall) * 255.0))
-                }
-                self.cppcScores = estimatedScores
-            }
-        }
-        
         // Always update ranked cores if frequencies changed and we're relying on them
-        let cppcHasReal = cppcSupported && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
+        let cppcHasReal = cppcSupported && !cppcScoresEstimated && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
         if freqUpdated && !cppcHasReal {
             self.updateRankedPhysicalCores()
         }
@@ -922,7 +910,8 @@ final class TelemetryModel: ObservableObject {
         let numPhysical = sysInfo.physicalCores
         guard numPhysical > 0 else { return }
         
-        let cppcHasReal = cppcSupported && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
+        let cppcHasReal = cppcSupported && !cppcScoresEstimated && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
+        let maxFreqOverall = maxObservedFreq_perCore.values.max() ?? 1.0
         var list: [RankedPhysicalCore] = []
         
         for physIdx in 0..<numPhysical {
@@ -930,12 +919,17 @@ final class TelemetryModel: ObservableObject {
             if cppcHasReal && cppcScores.count > physIdx {
                 score = cppcScores[physIdx]
             } else {
-                // Fallback: best freq seen across both SMT threads of this physical core
                 let t0 = physIdx
                 let t1 = physIdx + numPhysical
                 let f0 = maxObservedFreq_perCore[t0] ?? 0
                 let f1 = maxObservedFreq_perCore[t1] ?? 0
-                score = UInt8(min(255, Int((max(f0, f1) / 6000.0) * 255.0)))
+                let m = max(f0, f1)
+                
+                if maxFreqOverall > 0 && m > 0 {
+                    score = UInt8(min(255, Int(round((m / maxFreqOverall) * 255.0))))
+                } else {
+                    score = 0
+                }
             }
             list.append(RankedPhysicalCore(id: physIdx + 1, score: score, rank: 0, isEstimated: !cppcHasReal))
         }
