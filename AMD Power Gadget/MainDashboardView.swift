@@ -1196,8 +1196,11 @@ private struct CoreCell: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(labelText).font(.system(size: 8, weight: .medium))
+                Text(labelText)
+                    .font(.system(size: 8, weight: .medium))
                     .foregroundColor(core.isLogical ? Color.tahoeSubtext.opacity(0.7) : .tahoeSubtext)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Spacer()
                 Text(String(format: "%.0f%%", core.loadPct))
                     .font(.system(size: 10, weight: .bold, design: .rounded)).foregroundColor(loadColor)
@@ -2409,8 +2412,110 @@ struct MenuBarConfigView: View {
 }
 
 // MARK: - System Info Tab
+struct PhysicalCoreCPPC: Identifiable {
+    let id: Int
+    let score: UInt8
+    let isEstimated: Bool
+    var rank: Int = 0
+    
+    var rankText: String {
+        return "\(rank)."
+    }
+    
+    var scoreText: String {
+        return (isEstimated ? "~" : "") + String(score)
+    }
+}
+
+// Dedicated row view for CPPC grid to avoid Swift WMO type-checker timeouts inside generic TahoeCard closures
+private struct CPPCCoreGridRow: View {
+    let item: PhysicalCoreCPPC
+    
+    @ViewBuilder private var rankIcon: some View {
+        if item.rank == 1 {
+            Image(systemName: "crown.fill").foregroundColor(Color.tahoeAccentOrange)
+        } else if item.rank == 2 {
+            Image(systemName: "star.fill").foregroundColor(Color.tahoeAccentCyan)
+        } else if item.rank == 3 {
+            Image(systemName: "star.fill").foregroundColor(Color.white.opacity(0.5))
+        } else {
+            Image(systemName: "cpu").foregroundColor(Color.white.opacity(0.2))
+        }
+    }
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(item.rankText)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(Color.white.opacity(0.4))
+                .frame(width: 22, alignment: .trailing)
+            rankIcon
+            Text("Core \(item.id)")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(Color.white)
+            Spacer()
+            Text(item.scoreText)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundColor(item.score > 200 ? Color.tahoeAccentGreen : (item.score > 150 ? Color.tahoeAccentOrange : Color.tahoeSubtext))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.white.opacity(0.04))
+                .cornerRadius(4)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.02))
+        .cornerRadius(6)
+    }
+}
+
+private struct CPPCCoreGrid: View {
+    let items: [PhysicalCoreCPPC]
+    private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(items, id: \.id) { item in
+                    CPPCCoreGridRow(item: item)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.tahoeCard)
+                .background(RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.tahoeCardBorder, lineWidth: 1))
+        .cornerRadius(14)
+    }
+}
+
 struct SystemInfoContentView: View {
     @ObservedObject var model: TelemetryModel
+    
+    private var physicalCoresRanked: [PhysicalCoreCPPC] {
+        let numPhysicalCores = model.sysInfo.physicalCores
+        guard numPhysicalCores > 0 else { return [] }
+        var list: [PhysicalCoreCPPC] = []
+        for physicalIdx in 0..<numPhysicalCores {
+            let score = (model.cppcScores.count > physicalIdx) ? model.cppcScores[physicalIdx] : 0
+            list.append(PhysicalCoreCPPC(id: physicalIdx + 1, score: score, isEstimated: model.cppcScoresEstimated, rank: 0))
+        }
+        let sorted = list.sorted {
+            if $0.score != $1.score {
+                return $0.score > $1.score
+            }
+            return $0.id < $1.id
+        }
+        return sorted.enumerated().map { index, item in
+            var mutableItem = item
+            mutableItem.rank = index + 1
+            return mutableItem
+        }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -2431,6 +2536,12 @@ struct SystemInfoContentView: View {
                     InfoRow(label: "L2 Cache (Total)",value: "\(model.sysInfo.l2MB) MB")
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "L3 Cache (Shared)",value: "\(model.sysInfo.l3MB) MB")
+                }
+
+                if model.cppcSupported && !physicalCoresRanked.isEmpty {
+                    Divider().background(Color.tahoeCardBorder)
+                    SectionTitle(model.cppcScoresEstimated ? "Estimated Core Rankings" : "CPPC Preferred Cores (Silicon Quality)")
+                    CPPCCoreGrid(items: physicalCoresRanked)
                 }
 
                 Divider().background(Color.tahoeCardBorder)
