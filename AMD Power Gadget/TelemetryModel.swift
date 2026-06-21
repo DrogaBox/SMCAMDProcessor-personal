@@ -21,6 +21,7 @@ struct CoreSnapshot: Identifiable {
     var loadPct: Float
     var isLogical: Bool
     var cppcScore: UInt8? = nil
+    var cppcScoreEstimated: Bool = false
 }
 
 struct FanSnapshot: Identifiable {
@@ -195,7 +196,9 @@ final class TelemetryModel: ObservableObject {
 
     @Published var cppcSupported: Bool = false
     @Published var cppcScores: [UInt8] = []
+    @Published var cppcScoresEstimated: Bool = false
     @Published var cstateAddress: UInt64 = 0
+    private var maxObservedFreq_perCore: [Int: Float] = [:]
 
     @Published var pStateRows: [PStateRow] = []
     @Published var pStateEditorDirty: Bool = false
@@ -319,7 +322,8 @@ final class TelemetryModel: ObservableObject {
         let cppcRes = ProcessorModel.shared.getCPPCScore()
         cppcSupported = cppcRes.supported
         cppcScores = cppcRes.scores
-        print("DEBUG: CPPC Supported = \(cppcSupported), Scores = \(cppcScores)")
+        cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
+        print("DEBUG: CPPC Supported = \(cppcSupported), Scores = \(cppcScores), Estimated = \(cppcScoresEstimated)")
         
         cstateAddress = ProcessorModel.shared.getCStateAddress()
 
@@ -402,6 +406,28 @@ final class TelemetryModel: ObservableObject {
             instElapsedTime = 0.0
         }
 
+        // CPPC Fallback: update maximum observed frequencies
+        for logicalIdx in 0..<numLogicalCores {
+            let physicalIdx = logicalIdx % numPhysicalCores
+            let freq = freqsMHz[physicalIdx]
+            let currentMax = maxObservedFreq_perCore[logicalIdx] ?? 0.0
+            if freq > currentMax {
+                maxObservedFreq_perCore[logicalIdx] = freq
+            }
+        }
+
+        if cppcSupported && cppcScoresEstimated {
+            let maxFreqOverall = maxObservedFreq_perCore.values.max() ?? 1.0
+            if maxFreqOverall > 0 {
+                var estimatedScores = [UInt8](repeating: 0, count: numLogicalCores)
+                for logicalIdx in 0..<numLogicalCores {
+                    let freq = maxObservedFreq_perCore[logicalIdx] ?? 0.0
+                    estimatedScores[logicalIdx] = UInt8(round((freq / maxFreqOverall) * 255.0))
+                }
+                self.cppcScores = estimatedScores
+            }
+        }
+
         var newCores: [CoreSnapshot] = []
         for logicalIdx in 0..<numLogicalCores {
             let physicalIdx = logicalIdx % numPhysicalCores
@@ -414,7 +440,8 @@ final class TelemetryModel: ObservableObject {
                 freqMHz: freq,
                 loadPct: Float(load),
                 isLogical: isLogical,
-                cppcScore: cppcVal
+                cppcScore: cppcVal,
+                cppcScoreEstimated: cppcScoresEstimated
             ))
         }
         cores = newCores

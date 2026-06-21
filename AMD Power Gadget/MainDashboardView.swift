@@ -1091,7 +1091,32 @@ struct CoreGridCard: View {
 
     var body: some View {
         TahoeCard {
-            SectionTitle("Current Utilization — \(model.sysInfo.logicalCores) Threads (\(model.sysInfo.physicalCores) Cores)")
+            HStack(alignment: .center) {
+                SectionTitle("Current Utilization — \(model.sysInfo.logicalCores) Threads (\(model.sysInfo.physicalCores) Cores)")
+                if model.cppcSupported {
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(.tahoeAccentGreen)
+                        Text(model.cppcScoresEstimated ? "CPPC: Estimated" : "CPPC: Active")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentGreen)
+                        if model.cppcScoresEstimated {
+                            Text("~")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.tahoeAccentOrange)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(4)
+                    .help(model.cppcScoresEstimated ? "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." : "CPPC hardware rankings are active and loaded from the processor.")
+                }
+            }
+            .padding(.bottom, 4)
+
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(model.cores) { CoreCell(core: $0) }
             }
@@ -1109,7 +1134,8 @@ private struct CoreCell: View {
     private var labelText: String {
         let base = core.isLogical ? "T\(core.id + 1)" : "C\(core.id + 1)"
         if let score = core.cppcScore, score > 0 {
-            return "\(base) [\(score)]"
+            let prefix = core.cppcScoreEstimated ? "~" : ""
+            return "\(base) [\(prefix)\(score)]"
         }
         return base
     }
