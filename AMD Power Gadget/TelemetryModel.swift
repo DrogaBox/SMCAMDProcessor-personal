@@ -211,6 +211,8 @@ final class TelemetryModel: ObservableObject {
     @Published var cppcScoresEstimated: Bool = false
     @Published var rankedPhysicalCores: [RankedPhysicalCore] = []
     @Published var cstateAddress: UInt64 = 0
+    @Published var cppcActiveMode: Bool = false
+    @Published var cppcEPPValue: UInt8 = 0x3F
     private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
     @Published var pStateRows: [PStateRow] = []
@@ -637,6 +639,10 @@ final class TelemetryModel: ObservableObject {
         cpbEnabled   = cpb.count > 1 && cpb[1]
         ppmEnabled   = ProcessorModel.shared.getPPM()
         lpmEnabled   = ProcessorModel.shared.getLPM()
+        
+        let cppc = ProcessorModel.shared.getCPPCActiveMode()
+        cppcActiveMode = cppc.active
+        cppcEPPValue = cppc.epp
     }
 
     func setCPB(enabled: Bool) {
@@ -651,6 +657,16 @@ final class TelemetryModel: ObservableObject {
 
     func setLPM(enabled: Bool) {
         ProcessorModel.shared.setLPM(enabled: enabled)
+        loadCPUControls()
+    }
+
+    func setCPPCActiveMode(active: Bool) {
+        _ = ProcessorModel.shared.setCPPCActiveMode(active: active)
+        loadCPUControls()
+    }
+
+    func setCPPCEPPValue(epp: UInt8) {
+        _ = ProcessorModel.shared.setCPPCEPPValue(epp: epp)
         loadCPUControls()
     }
 

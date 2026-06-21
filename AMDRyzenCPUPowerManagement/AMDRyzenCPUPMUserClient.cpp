@@ -116,11 +116,18 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 0: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = (fProvider->kMSR_PSTATE_LEN) * sizeof(uint64_t);
+            uint32_t requiredSize = (fProvider->kMSR_PSTATE_LEN) * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
+            uint32_t copyCount = (maxLen / sizeof(uint64_t) < fProvider->kMSR_PSTATE_LEN) ? (maxLen / sizeof(uint64_t)) : fProvider->kMSR_PSTATE_LEN;
             
-            for(uint32_t i = 0; i < fProvider->kMSR_PSTATE_LEN; i++){
+            for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i] = fProvider->PStateDef_perCore[i];
             }
             
@@ -132,11 +139,18 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 1: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = (fProvider->kMSR_PSTATE_LEN) * sizeof(float);
+            uint32_t requiredSize = (fProvider->kMSR_PSTATE_LEN) * sizeof(float);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             float *dataOut = (float*) arguments->structureOutput;
+            uint32_t copyCount = (maxLen / sizeof(float) < fProvider->kMSR_PSTATE_LEN) ? (maxLen / sizeof(float)) : fProvider->kMSR_PSTATE_LEN;
             
-            for(uint32_t i = 0; i < fProvider->kMSR_PSTATE_LEN; i++){
+            for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i] = fProvider->PStateDefClock_perCore[i];
             }
             
@@ -144,17 +158,23 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         }
             
         case 2: {
-            
             uint32_t numPhyCores = fProvider->totalNumberOfPhysicalCores;
 
             arguments->scalarOutputCount = 1;
             arguments->scalarOutput[0] = numPhyCores;
             
-            arguments->structureOutputSize = numPhyCores * sizeof(float);
+            uint32_t requiredSize = numPhyCores * sizeof(float);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             float *dataOut = (float*) arguments->structureOutput;
+            uint32_t copyCount = (maxLen / sizeof(float) < numPhyCores) ? (maxLen / sizeof(float)) : numPhyCores;
 
-            for(uint32_t i = 0; i < numPhyCores; i++){
+            for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i] = fProvider->effFreq_perCore[i];
             }
             
@@ -164,10 +184,18 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 3: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = 1 * sizeof(float);
+            uint32_t requiredSize = 1 * sizeof(float);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
             
             float *dataOut = (float*) arguments->structureOutput;
-            dataOut[0] = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
+            if (maxLen >= sizeof(float)) {
+                dataOut[0] = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
+            }
             break;
         }
         
@@ -178,15 +206,35 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             arguments->scalarOutputCount = 1;
             arguments->scalarOutput[0] = numPhyCores;
             
-            arguments->structureOutputSize = (numPhyCores + 3) * sizeof(float);
+            uint32_t requiredSize = (numPhyCores + 3) * sizeof(float);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             float *dataOut = (float*) arguments->structureOutput;
             
-            dataOut[0] = (float)fProvider->uniPackageEnergy;
-            dataOut[1] = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
-            dataOut[2] = fProvider->PStateCtl;
+            if (maxLen >= sizeof(float)) {
+                dataOut[0] = (float)fProvider->uniPackageEnergy;
+            }
+            if (maxLen >= 2 * sizeof(float)) {
+                dataOut[1] = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
+            }
+            if (maxLen >= 3 * sizeof(float)) {
+                dataOut[2] = fProvider->PStateCtl;
+            }
             
-            for(uint32_t i = 0; i < numPhyCores; i++){
+            uint32_t copyCount = 0;
+            if (maxLen > 3 * sizeof(float)) {
+                copyCount = (maxLen - 3 * sizeof(float)) / sizeof(float);
+            }
+            if (copyCount > numPhyCores) {
+                copyCount = numPhyCores;
+            }
+            
+            for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i + 3] = fProvider->effFreq_perCore[i];
             }
             
@@ -197,14 +245,25 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 5: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = 1 * sizeof(uint64_t);
+            uint32_t requiredSize = 1 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            dataOut[0] = 0;
-            
-            for(uint32_t i = 0; i < fProvider->totalNumberOfLogicalCores; i++){
-                dataOut[0] += fProvider->instructionDelta_perCore[i];
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = 0;
+                uint32_t numLogCores = fProvider->totalNumberOfLogicalCores;
+                if (numLogCores > CPUInfo::MaxCpus) {
+                    numLogCores = CPUInfo::MaxCpus;
+                }
+                for(uint32_t i = 0; i < numLogCores; i++){
+                    dataOut[0] += fProvider->instructionDelta_perCore[i];
+                }
             }
             
             break;
@@ -214,15 +273,28 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 6: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = (fProvider->totalNumberOfPhysicalCores) * sizeof(float);
+            uint32_t requiredSize = (fProvider->totalNumberOfPhysicalCores) * sizeof(float);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             float *dataOut = (float*) arguments->structureOutput;
             
-            int lcpu_percore = fProvider->totalNumberOfLogicalCores / fProvider->totalNumberOfPhysicalCores;
+            int lcpu_percore = 1;
+            if (fProvider->totalNumberOfPhysicalCores > 0) {
+                lcpu_percore = fProvider->totalNumberOfLogicalCores / fProvider->totalNumberOfPhysicalCores;
+            }
+            if (lcpu_percore <= 0) {
+                lcpu_percore = 1;
+            }
             
-            for(uint32_t i = 0; i < fProvider->totalNumberOfPhysicalCores; i++){
+            uint32_t copyCount = (maxLen / sizeof(float) < fProvider->totalNumberOfPhysicalCores) ? (maxLen / sizeof(float)) : fProvider->totalNumberOfPhysicalCores;
+            
+            for(uint32_t i = 0; i < copyCount; i++){
                 float l = pmRyzen_avgload_pcpu(i * lcpu_percore);
-//                dataOut[i] = fProvider->loadIndex_PerCore[i];
                 dataOut[i] = l;
             }
             
@@ -234,18 +306,25 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 7: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = (8) * sizeof(uint64_t);
+            uint32_t requiredSize = (8) * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
 
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
+            uint32_t copyCount = (maxLen / sizeof(uint64_t) < 8) ? (maxLen / sizeof(uint64_t)) : 8;
             
-            dataOut[0] = (uint64_t)fProvider->cpuFamily;
-            dataOut[1] = (uint64_t)fProvider->cpuModel;
-            dataOut[2] = (uint64_t)fProvider->totalNumberOfPhysicalCores;
-            dataOut[3] = (uint64_t)fProvider->totalNumberOfLogicalCores;
-            dataOut[4] = (uint64_t)fProvider->cpuCacheL1_perCore;
-            dataOut[5] = (uint64_t)fProvider->cpuCacheL2_perCore;
-            dataOut[6] = (uint64_t)fProvider->cpuCacheL3;
-            dataOut[7] = (uint64_t)fProvider->cpuSupportedByCurrentVersion;
+            if (copyCount > 0) dataOut[0] = (uint64_t)fProvider->cpuFamily;
+            if (copyCount > 1) dataOut[1] = (uint64_t)fProvider->cpuModel;
+            if (copyCount > 2) dataOut[2] = (uint64_t)fProvider->totalNumberOfPhysicalCores;
+            if (copyCount > 3) dataOut[3] = (uint64_t)fProvider->totalNumberOfLogicalCores;
+            if (copyCount > 4) dataOut[4] = (uint64_t)fProvider->cpuCacheL1_perCore;
+            if (copyCount > 5) dataOut[5] = (uint64_t)fProvider->cpuCacheL2_perCore;
+            if (copyCount > 6) dataOut[6] = (uint64_t)fProvider->cpuCacheL3;
+            if (copyCount > 7) dataOut[7] = (uint64_t)fProvider->cpuSupportedByCurrentVersion;
             
             break;
         }
@@ -254,10 +333,17 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 8: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = sizeof(xStringify(MODULE_VERSION));
-            char *dataOut = (char*) arguments->structureOutput;
+            uint32_t requiredSize = sizeof(xStringify(MODULE_VERSION));
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
             
-            for(uint32_t i = 0; i < arguments->structureOutputSize; i++){
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
+            char *dataOut = (char*) arguments->structureOutput;
+            uint32_t copyLen = (maxLen < requiredSize) ? maxLen : requiredSize;
+            for (uint32_t i = 0; i < copyLen; i++) {
                 dataOut[i] = xStringify(MODULE_VERSION)[i];
             }
             
@@ -268,11 +354,19 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 9: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = 1 * sizeof(uint64_t);
+            uint32_t requiredSize = 1 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
 
-            dataOut[0] = fProvider->PStateCtl;
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = fProvider->PStateCtl;
+            }
             
             break;
         }
@@ -294,12 +388,22 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 11: {
             arguments->scalarOutputCount = 0;
             
-            arguments->structureOutputSize = 2 * sizeof(uint64_t);
+            uint32_t requiredSize = 2 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
 
-            dataOut[0] = (uint64_t)fProvider->cpbSupported;
-            dataOut[1] = (uint64_t)fProvider->getCPBState();
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = (uint64_t)fProvider->cpbSupported;
+            }
+            if (maxLen >= 2 * sizeof(uint64_t)) {
+                dataOut[1] = (uint64_t)fProvider->getCPBState();
+            }
             break;
         }
         
@@ -323,11 +427,19 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 13: {
             arguments->scalarOutputCount = 0;
                 
-            arguments->structureOutputSize = 1 * sizeof(uint64_t);
+            uint32_t requiredSize = 1 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
                 
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
 
-            dataOut[0] = (uint64_t)(fProvider->getPMPStateLimit() == 0 ? 0 : 1);
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = (uint64_t)(fProvider->getPMPStateLimit() == 0 ? 0 : 1);
+            }
             break;
         }
             
@@ -369,16 +481,22 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             arguments->scalarOutputCount = 1;
             arguments->scalarOutput[0] = fProvider->boardInfoValid ? 1 : 0;
             
-            arguments->structureOutputSize = 128;
-
-            char *dataOut = (char*) arguments->structureOutput;
+            uint32_t requiredSize = 128;
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
             
-            for(uint32_t i = 0; i < 64; i++){
-                dataOut[i] = fProvider->boardVender[i];
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
             }
             
-            for(uint32_t i = 0; i < 64; i++){
-                dataOut[i+64] = fProvider->boardName[i];
+            char *dataOut = (char*) arguments->structureOutput;
+            
+            for(uint32_t i = 0; i < requiredSize && i < maxLen; i++){
+                if (i < 64) {
+                    dataOut[i] = fProvider->boardVender[i];
+                } else {
+                    dataOut[i] = fProvider->boardName[i-64];
+                }
             }
             
             break;
@@ -387,11 +505,19 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 17: {
             arguments->scalarOutputCount = 0;
                 
-            arguments->structureOutputSize = 1 * sizeof(uint64_t);
+            uint32_t requiredSize = 1 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
                 
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
 
-            dataOut[0] = (uint64_t)(fProvider->getHPcpus());
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = (uint64_t)(fProvider->getHPcpus());
+            }
             break;
         }
         
@@ -399,11 +525,19 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 18: {
             arguments->scalarOutputCount = 0;
                 
-            arguments->structureOutputSize = 1 * sizeof(uint64_t);
+            uint32_t requiredSize = 1 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
                 
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
 
-            dataOut[0] = (uint64_t)(fProvider->getPMPStateLimit() == 2 ? 1 : 0);
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = (uint64_t)(fProvider->getPMPStateLimit() == 2 ? 1 : 0);
+            }
             break;
         }
             
@@ -428,10 +562,18 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             arguments->scalarOutputCount = 1;
             arguments->scalarOutput[0] = ccdCount;
             
-            arguments->structureOutputSize = ccdCount * sizeof(float);
+            uint32_t requiredSize = ccdCount * sizeof(float);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+
             float *dataOut = (float*) arguments->structureOutput;
+            uint32_t copyCount = (maxLen / sizeof(float) < ccdCount) ? (maxLen / sizeof(float)) : ccdCount;
             
-            for(uint32_t i = 0; i < ccdCount; i++){
+            for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i] = fProvider->ccdTemperatures[i];
             }
             
@@ -444,10 +586,20 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
 
             arguments->scalarOutputCount = 1;
             arguments->scalarOutput[0] = fProvider->cppcSupported ? 1 : 0;
-            arguments->structureOutputSize = numLogicalCores * sizeof(uint8_t);
             
-            for(int i = 0; i < numLogicalCores; i++) {
-                ((uint8_t*)arguments->structureOutput)[i] = fProvider->cppcHighestPerf_perCore[i];
+            uint32_t requiredSize = numLogicalCores * sizeof(uint8_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
+            uint8_t *dataOut = (uint8_t*) arguments->structureOutput;
+            uint32_t copyLen = (maxLen < requiredSize) ? maxLen : requiredSize;
+            
+            for(uint32_t i = 0; i < copyLen; i++) {
+                dataOut[i] = fProvider->cppcHighestPerf_perCore[i];
             }
             break;
         }
@@ -460,39 +612,101 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
+        // Get CPPC Active Mode status and current EPP value
+        case 23: {
+            arguments->scalarOutputCount = 2;
+            arguments->scalarOutput[0] = fProvider->cppcActiveMode ? 1 : 0;
+            arguments->scalarOutput[1] = fProvider->cppcEPPValue;
+            
+            break;
+        }
+        
+        // Set CPPC Active Mode status
+        case 24: {
+            if (!hasPrivilege())
+                return kIOReturnNotPrivileged;
+                
+            if (arguments->scalarInputCount != 1)
+                return kIOReturnBadArgument;
+                
+            fProvider->cppcActiveMode = (arguments->scalarInput[0] == 1);
+            if (fProvider->cppcActiveMode) {
+                fProvider->applyEPPControl();
+            }
+            
+            break;
+        }
+        
+        // Set CPPC EPP Value
+        case 25: {
+            if (!hasPrivilege())
+                return kIOReturnNotPrivileged;
+                
+            if (arguments->scalarInputCount != 1)
+                return kIOReturnBadArgument;
+                
+            fProvider->cppcEPPValue = (uint8_t)arguments->scalarInput[0];
+            if (fProvider->cppcActiveMode) {
+                fProvider->applyEPPControl();
+            }
+            
+            break;
+        }
+        
         //Try load SMC driver
         case 90: {
-            
             arguments->scalarOutputCount = 0;
-            arguments->structureOutputSize = 2 * sizeof(uint64_t);
+            uint32_t requiredSize = 2 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
             if(fProvider->superIO != nullptr){
-                dataOut[0] = (uint64_t)(1);
-                dataOut[1] = (uint64_t)(fProvider->savedSMCChipIntel);
+                if (maxLen >= sizeof(uint64_t)) {
+                    dataOut[0] = (uint64_t)(1);
+                }
+                if (maxLen >= 2 * sizeof(uint64_t)) {
+                    dataOut[1] = (uint64_t)(fProvider->savedSMCChipIntel);
+                }
                 break;
             }
             
             uint16_t ci = 0;
             bool found = fProvider->initSuperIO(&ci);
             
-            dataOut[0] = (uint64_t)(found ? 1 : 0);
-            dataOut[1] = (uint64_t)(ci);
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = (uint64_t)(found ? 1 : 0);
+            }
+            if (maxLen >= 2 * sizeof(uint64_t)) {
+                dataOut[1] = (uint64_t)(ci);
+            }
+            
             break;
         }
         
         //SMC load number of fans
         case 91: {
-            
             if(!fProvider->superIO)
                 return kIOReturnNoDevice;
 
+            uint32_t requiredSize = 1 * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
             
-            arguments->scalarOutputCount = 0;
-            arguments->structureOutputSize = 1 * sizeof(uint64_t);
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            dataOut[0] = (uint64_t)(fProvider->superIO->getNumberOfFans());
+            if (maxLen >= sizeof(uint64_t)) {
+                dataOut[0] = (uint64_t)(fProvider->superIO->getNumberOfFans());
+            }
             break;
         }
         
@@ -506,13 +720,23 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
                 
-            
             const char *str = fProvider->superIO->getReadableStringForFan((int)arguments->scalarInput[0]);
-            arguments->structureOutputSize = (uint32_t)strlen(str);
+            if (!str) {
+                str = "";
+            }
+            
+            uint32_t requiredSize = (uint32_t)strlen(str) + 1;
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize - 1; // standard behaviour returns size without null terminator
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
             
             char *dataOut = (char*) arguments->structureOutput;
-            strcpy(dataOut, str, strlen(str));
-            
+            if (maxLen > 0) {
+                strlcpy(dataOut, str, maxLen);
+            }
             
             break;
         }
@@ -522,12 +746,21 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(!fProvider->superIO)
                 return kIOReturnNoDevice;
             
-            arguments->scalarOutputCount = 0;
-            arguments->structureOutputSize = fProvider->superIO->getNumberOfFans() * sizeof(uint64_t);
+            uint32_t numFans = fProvider->superIO->getNumberOfFans();
+            uint32_t requiredSize = numFans * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
             fProvider->superIO->updateFanRPMS();
-            for (int i = 0; i < fProvider->superIO->getNumberOfFans(); i++) {
+            uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
+            
+            for (uint32_t i = 0; i < copyCount; i++) {
                 dataOut[i] = fProvider->superIO->getRPMForFan(i);
             }
             
@@ -539,12 +772,21 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(!fProvider->superIO)
                 return kIOReturnNoDevice;
             
-            arguments->scalarOutputCount = 0;
-            arguments->structureOutputSize = fProvider->superIO->getNumberOfFans() * sizeof(uint64_t);
+            uint32_t numFans = fProvider->superIO->getNumberOfFans();
+            uint32_t requiredSize = numFans * sizeof(uint64_t);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
             fProvider->superIO->updateFanControl();
-            for (int i = 0; i < fProvider->superIO->getNumberOfFans(); i++) {
+            uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
+            
+            for (uint32_t i = 0; i < copyCount; i++) {
                 dataOut[i] = fProvider->superIO->getFanThrottle(i) << 8 | (fProvider->superIO->getFanAutoControlMode(i) ? 1 : 0);
             }
             

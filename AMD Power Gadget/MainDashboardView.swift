@@ -1456,6 +1456,43 @@ struct AdvancedContentView: View {
                             .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentGreen)).labelsHidden()
                     }
                 }
+                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("CPPC Active Mode (EPP)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Enables hardware-autonomous frequency scaling (like Linux/Windows)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(get: { model.cppcActiveMode }, set: { model.setCPPCActiveMode(active: $0) }))
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
+                        }
+                        
+                        if model.cppcActiveMode {
+                            HStack {
+                                Text("Energy Preference (EPP)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
+                                Spacer()
+                                Picker("", selection: Binding(get: {
+                                    if model.cppcEPPValue <= 0x1F { return 0 }
+                                    else if model.cppcEPPValue <= 0x5F { return 1 }
+                                    else if model.cppcEPPValue <= 0x9F { return 2 }
+                                    else { return 3 }
+                                }, set: { val in
+                                    let eppBytes: [UInt8] = [0x00, 0x3F, 0x7F, 0xFF]
+                                    model.setCPPCEPPValue(epp: eppBytes[val])
+                                })) {
+                                    Text("Performance").tag(0)
+                                    Text("Balanced Perf").tag(1)
+                                    Text("Balanced Power").tag(2)
+                                    Text("Power Save").tag(3)
+                                }
+                                .pickerStyle(.segmented)
+                                .frame(width: 320)
+                            }
+                            .padding(.top, 4)
+                        }
+                    }
+                }
                 Divider().background(Color.tahoeCardBorder)
                 SectionTitle("Refresh Rate")
                 Text("Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.")
