@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBAction func orderFrontStandardAboutPanel(_ sender: Any) {
         let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!
-        let attributedString = NSMutableAttributedString(string: "GitHub Repository\n\nCopyright © 2020-2026 Droga. All rights reserved.")
+        let attributedString = NSMutableAttributedString(string: "GitHub Repository\n\nSpecial thanks to the AMD OS X community!\n\nCopyright © 2020-2026 Droga. All rights reserved.")
         attributedString.addAttribute(.link, value: url, range: NSRange(location: 0, length: 17))
         
         let options: [NSApplication.AboutPanelOptionKey: Any] = [

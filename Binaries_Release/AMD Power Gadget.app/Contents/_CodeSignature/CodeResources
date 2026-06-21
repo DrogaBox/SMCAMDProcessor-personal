@@ -14,27 +14,27 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerGadget.nib</key>
 		<data>
-		nzacnDAn8wnxGWqQrdWEedIbptI=
+		9qJ3QQFxjUBvRj0BOf+TrJQlcec=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerTool.nib</key>
 		<data>
-		fNUmKdp7wswl/PbRXTYfls9aiiM=
+		CnNtk0VOBTLoymlwjqPEDyuimgU=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<data>
-		9r7zO9iHbnJiJdwfrGYhSDvEmME=
+		X/Icdy5uao/F3UCOT5CZ7StngvY=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<data>
-		qUrTd6OREG+uhG6sGos46uj6SgY=
+		B9SgVUZW6El+O8hDuzib2/3ROP4=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/NSViewController-arI-oH-4xY.nib</key>
 		<data>
-		VkyLMrOCWIR1GHB+H9U5UPS60b8=
+		Tvybv5tRpIX4dVhoYcpix05nT0o=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/SystemMonitor.nib</key>
 		<data>
-		Q1DwDFVErNvtnxekbSizhp5+F9A=
+		g1nMW3+zX+ANOgpm+NNX+cGAXP8=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
 		<data>
@@ -42,15 +42,15 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/arI-oH-4xY-view-eyH-ab-osV.nib</key>
 		<data>
-		mUTmfkIhXr3znUuGoNaSlYqs3tU=
+		A9mgFQoZyX0iNmOoxnn2fZdeDhI=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/jl0-3p-cPP-view-HZ9-Dt-1W1.nib</key>
 		<data>
-		5Z/DMZMHyEI+XKcNcrbbV0MbYoQ=
+		a/QMTB9SA3V/a0dPJPwhKnaY+hI=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/rDh-aT-nig-view-ObA-RG-Hkx.nib</key>
 		<data>
-		uPdCiMYimD9hV+rgiFBq0qW0NV4=
+		6r0m1KjLS1g1h2Eg/9IiSc/aO7k=
 		</data>
 		<key>Resources/SF-Pro-Rounded-Medium.otf</key>
 		<data>
@@ -85,10 +85,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			dpCrJemldOK8Nf9Y6z6vK+UTxEw=
+			IitUodecYQCUfpg++4+4GTuQLdQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7690ab25e9a574e2bc35ff58eb3eaf2be513c44c"</string>
+			<string>cdhash H"222b54a1d79c6100947e983efb8fb8193b902dd4"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
@@ -108,42 +108,42 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			kQ3M03ugtLRX0VmmXmzecsxjbObqert2Ti/Pp8sLmzE=
+			KHWAgZ+b2mOiAvgmgMPRx31pBtnuzdmjquqM9U5Z+XY=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerTool.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			aGr2aplmeIA2ZbuDDIIJZWasRwGP2NGd7qDIHEnL3FE=
+			Xpyk0eAJE9XkKkzt1FZLReW6HsFJvqhHaScqXMFx+wg=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			tKxt3f+2TYh2kU4TkmLD+r+HYayLIS4xTQQUNQbOptY=
+			/WhZjhB4UhsgdpCbm36MpXeoifKnUikD4g4T9+3XOvw=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			LX89OCPjNMjy5s0xBFixikIcrueuI8xYlpLFMTbURYs=
+			LhwXH1c5wPVpy2RW+ibJx81g+Bfeghctm681keVsAjk=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/NSViewController-arI-oH-4xY.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			RQzY4RJ+5IjGjPORwDRqS3/7S+AEyMwcQ0jGqSBZzVo=
+			Y+MXSzDWH6qkfTPWTfAelETXEahU4K1ytv6Va1ugjSQ=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/SystemMonitor.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			tdUJK0u76OOBQpjIT8VgskUtujaQMCh7U9fLdgR/s4k=
+			ccv3QOtESJA31iPKJS6X6EqVL3iG6j0KmhAgCdzPK1A=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
@@ -157,21 +157,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			TiPbQ2DQ2IayGBhNOjQQ8QTbaR9+tXRX//2KebkK/Ag=
+			aBtEmcImnbhyC/+ycmx3X34uOTXKrg/SHTnNqnb47g8=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/jl0-3p-cPP-view-HZ9-Dt-1W1.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			4WdfgomR0lxEMRqXcnJPWDVGBRgN2MukD0sL4oNO1g4=
+			XI/6KQWnVlcg155bmJH87hmB6KL2rr1b9GkFz437fhY=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/rDh-aT-nig-view-ObA-RG-Hkx.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			YbJ+DwTvzoCWLUTvxi3rA5Byr3ldrggosgRVt0hSTzc=
+			TsMOpEMqTIqO//8XAqu9LnJa4cl7RMGBYhfdlgVb1ZA=
 			</data>
 		</dict>
 		<key>Resources/SF-Pro-Rounded-Medium.otf</key>
