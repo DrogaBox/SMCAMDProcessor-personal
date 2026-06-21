@@ -154,8 +154,11 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
 
                 // Query CPPC core ranking per logical core if supported
                 if (provider->cppcSupported && cpu_num < CPUInfo::MaxCpus) {
+                    provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
                     uint64_t cppcCap = 0;
-                    if (provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap)) {
+                    bool msrSuccess = provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap);
+                    IOLog("AMDCPUSupport::startWorkLoop Core %d CPPC MSR read: %d, value: 0x%llX\n", cpu_num, msrSuccess, cppcCap);
+                    if (msrSuccess) {
                         provider->cppcHighestPerf_perCore[cpu_num] = (cppcCap >> 24) & 0xFF;
                     }
                 }
@@ -365,15 +368,27 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
     // Check CPPC support: try to read MSR 0xC00102B0 first.
+    // Explicitly enable CPPC on this core first
+    write_msr(kMSR_AMD_CPPC_ENABLE, 1);
+    
     // If it succeeds and returns a non-zero value, CPPC is supported and active.
     uint64_t cppcVal = 0;
-    if (read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal) && cppcVal != 0) {
+    bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
+    
+    // Always log the result to see what the CPU actually reports for MSR 0xC00102B0
+    IOLog("AMDCPUSupport::start CPPC MSR 0xC00102B0 read success: %d, value: 0x%llX\n", msrSuccess, cppcVal);
+    
+    if (msrSuccess && cppcVal != 0) {
         cppcSupported = true;
     } else {
         CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
         cppcSupported = (cpuid_ebx >> 27) & 0x1;
     }
-    IOLog("AMDCPUSupport::start CPPC supported: %d\n", cppcSupported);
+    
+    // Force CPPC supported to true to test reading on all cores for diagnostics
+    cppcSupported = true;
+    
+    IOLog("AMDCPUSupport::start CPPC forced supported: %d\n", cppcSupported);
 
     
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);

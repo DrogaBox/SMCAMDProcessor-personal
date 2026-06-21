@@ -139,6 +139,7 @@ public:
     static constexpr uint32_t kMSR_PERF_IRPC = 0xC00000E9;
     static constexpr uint32_t kMSR_CSTATE_ADDR = 0xC0010073;
     static constexpr uint32_t kMSR_AMD_CPPC_CAP1 = 0xC00102B0;
+    static constexpr uint32_t kMSR_AMD_CPPC_ENABLE = 0xC00102B1;
     
     
 //    static constexpr uint32_t EF = 0x88;
