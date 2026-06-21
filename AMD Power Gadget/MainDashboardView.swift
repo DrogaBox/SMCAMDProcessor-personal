@@ -585,6 +585,33 @@ struct TelemetryContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                SectionTitle("CPU Frequency & Demand")
+                ResizableChart(chartId: "tele_bar", small: 100, medium: 140, large: 200) { height in
+                    PowerToolBarChart(model: model, height: height)
+                }
+
+                SectionTitle("Live Telemetry History")
+                ResizableChart(chartId: "tele_cputemp", small: 50, medium: 80, large: 120) { height in
+                    TahoeCard {
+                        SimpleLineChart(title: "CPU Temperature", unit: "°C", color: .tahoeAccentOrange, data: model.history, value: { $0.cpuTempC }, height: height)
+                    }
+                }
+                ResizableChart(chartId: "tele_gputemp", small: 50, medium: 80, large: 120) { height in
+                    TahoeCard {
+                        SimpleLineChart(title: "GPU Temperature", unit: "°C", color: Color(red: 0.8, green: 0.5, blue: 1.0), data: model.history, value: { $0.gpuTempC }, height: height)
+                    }
+                }
+                ResizableChart(chartId: "tele_cpupwr", small: 50, medium: 80, large: 120) { height in
+                    TahoeCard {
+                        SimpleLineChart(title: "CPU Package Power", unit: "W", color: .tahoeAccentGreen, data: model.history, value: { $0.cpuWatts }, height: height)
+                    }
+                }
+                ResizableChart(chartId: "tele_gpupwr", small: 50, medium: 80, large: 120) { height in
+                    TahoeCard {
+                        SimpleLineChart(title: "GPU Power", unit: "W", color: .tahoeAccentPurple, data: model.history, value: { $0.gpuWatts }, height: height)
+                    }
+                }
+
                 SectionTitle("Diagnostics & CSV Logging")
                 TahoeCard(accent: Color.tahoeAccentGreen.opacity(0.15)) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -636,33 +663,6 @@ struct TelemetryContentView: View {
                                 }
                             }
                         }
-                    }
-                }
-
-                SectionTitle("CPU Frequency & Demand")
-                ResizableChart(chartId: "tele_bar", small: 100, medium: 140, large: 200) { height in
-                    PowerToolBarChart(model: model, height: height)
-                }
-
-                SectionTitle("Live Telemetry History")
-                ResizableChart(chartId: "tele_cputemp", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "CPU Temperature", unit: "°C", color: .tahoeAccentOrange, data: model.history, value: { $0.cpuTempC }, height: height)
-                    }
-                }
-                ResizableChart(chartId: "tele_gputemp", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "GPU Temperature", unit: "°C", color: Color(red: 0.8, green: 0.5, blue: 1.0), data: model.history, value: { $0.gpuTempC }, height: height)
-                    }
-                }
-                ResizableChart(chartId: "tele_cpupwr", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "CPU Package Power", unit: "W", color: .tahoeAccentGreen, data: model.history, value: { $0.cpuWatts }, height: height)
-                    }
-                }
-                ResizableChart(chartId: "tele_gpupwr", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "GPU Power", unit: "W", color: .tahoeAccentPurple, data: model.history, value: { $0.gpuWatts }, height: height)
                     }
                 }
 
