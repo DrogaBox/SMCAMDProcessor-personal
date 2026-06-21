@@ -1366,20 +1366,75 @@ struct ProfilesContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                SectionTitle("CPU Speed Profiles")
-                Text("Select a profile to adjust the CPU operating range. Changes take effect immediately.")
-                    .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    ForEach(Array(stepLabels.enumerated()), id: \.offset) { i, label in
-                        SpeedStepCard(label: label, isActive: model.selectedSpeedStep == i) { model.setSpeedStep(i) }
+                SectionTitle("Power Management Mode")
+                
+                // 1. CPPC Mode Switch
+                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Native CPPC Active Mode (EPP)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                            Text("Enables autonomous hardware frequency scaling (recommended)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                        }
+                        Spacer()
+                        Toggle("", isOn: Binding(get: { model.cppcActiveMode }, set: { model.setCPPCActiveMode(active: $0) }))
+                            .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
                     }
                 }
-                SectionTitle("Active Profile")
-                TahoeCard {
-                    if stepLabels.indices.contains(model.selectedSpeedStep) {
-                        InfoRow(label: "Profile", value: stepLabels[model.selectedSpeedStep].replacingOccurrences(of: "\n", with: " — "))
-                        Divider().background(Color.tahoeCardBorder)
+                
+                if model.cppcActiveMode {
+                    // 2. CPPC EPP Picker
+                    SectionTitle("Energy Preference (EPP)")
+                    Text("Select a hardware autonomous profile. The CPU will scale frequency dynamically.")
+                        .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                    TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                        Picker("", selection: Binding(get: {
+                            if model.cppcEPPValue <= 0x1F { return 0 }
+                            else if model.cppcEPPValue <= 0x5F { return 1 }
+                            else if model.cppcEPPValue <= 0x9F { return 2 }
+                            else { return 3 }
+                                                }, set: { (val: Int) in
+                            let eppBytes: [UInt8] = [0x00, 0x3F, 0x7F, 0xFF]
+                            model.setCPPCEPPValue(epp: eppBytes[val])
+                        })) {
+                            Text("Performance").tag(0)
+                            Text("Balanced Perf").tag(1)
+                            Text("Balanced Power").tag(2)
+                            Text("Power Save").tag(3)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: .infinity)
                     }
+                } else {
+                    // 3. Legacy Speed Step Profiles
+                    SectionTitle("CPU Speed Profiles (Legacy)")
+                    Text("Select a manual P-State override profile. Frequencies will be restricted to the selected step.")
+                        .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        ForEach(Array(stepLabels.enumerated()), id: \.offset) { i, label in
+                            SpeedStepCard(label: label, isActive: model.selectedSpeedStep == i) { model.setSpeedStep(i) }
+                        }
+                    }
+                }
+                
+                SectionTitle("Active Profile Status")
+                TahoeCard {
+                    if model.cppcActiveMode {
+                        let eppLabels = ["Performance", "Balanced Perf", "Balanced Power", "Power Save"]
+                        let activeIdx: Int = {
+                            if model.cppcEPPValue <= 0x1F { return 0 }
+                            else if model.cppcEPPValue <= 0x5F { return 1 }
+                            else if model.cppcEPPValue <= 0x9F { return 2 }
+                            else { return 3 }
+                        }()
+                        InfoRow(label: "Mode", value: "Native CPPC (EPP)")
+                        Divider().background(Color.tahoeCardBorder)
+                        InfoRow(label: "EPP Profile", value: NSLocalizedString(eppLabels[activeIdx], comment: ""))
+                    } else if stepLabels.indices.contains(model.selectedSpeedStep) {
+                        InfoRow(label: "Mode", value: "Legacy P-States")
+                        Divider().background(Color.tahoeCardBorder)
+                        InfoRow(label: "Profile", value: stepLabels[model.selectedSpeedStep].replacingOccurrences(of: "\n", with: " — "))
+                    }
+                    Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "Avg Frequency", value: String(format: "%.3f GHz", model.cpuFreqAvgGHz))
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "Max Frequency", value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
@@ -1389,6 +1444,7 @@ struct ProfilesContentView: View {
         }
     }
 }
+
 
 private struct SpeedStepCard: View {
     let label: String; let isActive: Bool; let action: () -> Void
@@ -1456,42 +1512,7 @@ struct AdvancedContentView: View {
                             .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentGreen)).labelsHidden()
                     }
                 }
-                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Modo CPPC Activo (EPP)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                                Text("Permite el escalado autónomo de frecuencia por hardware (estilo Linux/Windows)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
-                            }
-                            Spacer()
-                            Toggle("", isOn: Binding(get: { model.cppcActiveMode }, set: { model.setCPPCActiveMode(active: $0) }))
-                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
-                        }
-                        
-                        if model.cppcActiveMode {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Preferencia de Energía (EPP)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
-                                Picker("", selection: Binding(get: {
-                                    if model.cppcEPPValue <= 0x1F { return 0 }
-                                    else if model.cppcEPPValue <= 0x5F { return 1 }
-                                    else if model.cppcEPPValue <= 0x9F { return 2 }
-                                    else { return 3 }
-                                }, set: { val in
-                                    let eppBytes: [UInt8] = [0x00, 0x3F, 0x7F, 0xFF]
-                                    model.setCPPCEPPValue(epp: eppBytes[val])
-                                })) {
-                                    Text("Rendimiento").tag(0)
-                                    Text("Rendimiento Bal.").tag(1)
-                                    Text("Ahorro Bal.").tag(2)
-                                    Text("Ahorro Energía").tag(3)
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(maxWidth: .infinity)
-                            }
-                            .padding(.top, 4)
-                        }
-                    }
-                }
+
                 Divider().background(Color.tahoeCardBorder)
                 SectionTitle("Refresh Rate")
                 Text("Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.")

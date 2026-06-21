@@ -135,3 +135,20 @@
 "Open SPPT Guide" = "Abrir Guía de SPPT";
 "MorePowerTool" = "MorePowerTool";
 
+/* CPPC & EPP */
+"Native CPPC Active Mode (EPP)" = "Modo CPPC Activo (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Permite el escalado autónomo de frecuencia por hardware (recomendado)";
+"Power Management Mode" = "Modo de Gestión de Energía";
+"Energy Preference (EPP)" = "Preferencia de Energía (EPP)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Seleccioná un perfil autónomo por hardware. El CPU escalará la frecuencia dinámicamente.";
+"Performance" = "Rendimiento";
+"Balanced Perf" = "Rendimiento Bal.";
+"Balanced Power" = "Ahorro Bal.";
+"Power Save" = "Ahorro Energía";
+"Active Profile Status" = "Estado del Perfil Activo";
+"CPU Speed Profiles (Legacy)" = "Perfiles de Velocidad de CPU (Legado)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Seleccioná un perfil manual de P-State. Las frecuencias se limitarán al paso seleccionado.";
+"Mode" = "Modo";
+"EPP Profile" = "Perfil EPP";
+
+
