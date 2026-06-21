@@ -76,7 +76,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBAction func sysmonitor(_ sender: Any) {
         ViewController.launch()
-        TelemetryModel.shared.selectedTab = .telemetry
+        TelemetryModel.shared.selectedTab = .fanControl
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {

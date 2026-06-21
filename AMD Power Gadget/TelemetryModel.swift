@@ -468,7 +468,14 @@ final class TelemetryModel: ObservableObject {
         let rawGPUFan = ProcessorModel.shared.getGPUFanRPM()
         gpuTempC = Double(rawGPUTemp)
         gpuPowerW = Double(rawGPUPower)
-        gpuLoadPct = Double(rawGPULoad)
+        
+        let targetGPULoad = Double(rawGPULoad)
+        if gpuLoadPct == 0 && targetGPULoad > 0 {
+            gpuLoadPct = targetGPULoad
+        } else {
+            gpuLoadPct = (gpuLoadPct * 0.8) + (targetGPULoad * 0.2) // EMA for smoothing
+        }
+
         gpuVramUsedBytes = Double(rawGPUVram)
         gpuFanRPM = Double(rawGPUFan)
         ccdTemperatures = ProcessorModel.shared.getCCDTemperatures()

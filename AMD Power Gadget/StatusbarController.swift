@@ -725,9 +725,9 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         guard let m = menu else { return }
         var item = NSMenuItem(title: NSLocalizedString("AMD Power Gadget", comment: ""), action: #selector(gadget), keyEquivalent: ""); item.target = self
         m.addItem(item)
-        item = NSMenuItem(title: NSLocalizedString("AMD Power Tool", comment: ""), action: #selector(tool), keyEquivalent: ""); item.target = self
+        item = NSMenuItem(title: NSLocalizedString("Advanced", comment: ""), action: #selector(tool), keyEquivalent: ""); item.target = self
         m.addItem(item)
-        item = NSMenuItem(title: NSLocalizedString("SMC Fans", comment: ""), action: #selector(fans), keyEquivalent: ""); item.target = self
+        item = NSMenuItem(title: NSLocalizedString("Fan Control", comment: ""), action: #selector(fans), keyEquivalent: ""); item.target = self
         m.addItem(item)
         
         m.addItem(NSMenuItem.separator())
