@@ -67,6 +67,7 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
             case CHIP_NCT6793D:
             case CHIP_NCT6795D:
             case CHIP_NCT6796D:
+            case CHIP_NCT6796D_ALT:
             case CHIP_NCT6796DR:
             case CHIP_NCT6797D:
             case CHIP_NCT6798D:
@@ -117,6 +118,7 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
         case CHIP_NCT6793D:
         case CHIP_NCT6795D:
         case CHIP_NCT6796D:
+        case CHIP_NCT6796D_ALT:
         case CHIP_NCT6796DR:
         case CHIP_NCT6797D:
         case CHIP_NCT6798D:
