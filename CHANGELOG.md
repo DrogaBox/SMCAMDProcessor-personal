@@ -340,4 +340,8 @@ To modernize the application structure and consolidate features into the main Sw
 * **App Delegate Action Updates**: Modified handlers in `AppDelegate.swift` for main menu items to redirect `tool` and `sysmonitor` calls to the primary window controller with corresponding tab focus, and removed active reference tracking to deprecated view controllers.
 * **Interactive P-State Chart Filter**: Filtered out disabled/inactive P-states from the V-F Operating Curve chart in the P-State editor to display only active/enabled performance states.
 
+---
 
+## 36. GPU Telemetry Smoothing and Menu Localization
+* **GPU Load EMA (Exponential Moving Average)**: Applied an EMA to the `gpuLoadPct` telemetry loop to prevent stuttering, erratic jumping, and dropping to 0 instantaneously. The UI now updates smoothly in real-time.
+* **Legacy Menu Localization**: Renamed the deprecated app and status bar menus "AMD Power Tool" and "SMC Fans" to "**Advanced**" and "**Fan Control**", properly routing to the new SwiftUI layout.
