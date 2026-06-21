@@ -300,6 +300,7 @@ final class TelemetryModel: ObservableObject {
 
     init() {
         buildSystemInfo()
+        updateRankedPhysicalCores() // Initialize ranking early (fallback mode)
         speedStepClocks = ProcessorModel.shared.getVaildPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
 
@@ -483,12 +484,14 @@ final class TelemetryModel: ObservableObject {
         }
 
         // CPPC Fallback: update maximum observed frequencies
+        var freqUpdated = false
         for logicalIdx in 0..<numLogicalCores {
             let physicalIdx = logicalIdx % numPhysicalCores
             let freq = freqsMHz[physicalIdx]
             let currentMax = maxObservedFreq_perCore[logicalIdx] ?? 0.0
             if freq > currentMax {
                 maxObservedFreq_perCore[logicalIdx] = freq
+                freqUpdated = true
             }
         }
 
@@ -501,8 +504,13 @@ final class TelemetryModel: ObservableObject {
                     estimatedScores[logicalIdx] = UInt8(round((freq / maxFreqOverall) * 255.0))
                 }
                 self.cppcScores = estimatedScores
-                self.updateRankedPhysicalCores()
             }
+        }
+        
+        // Always update ranked cores if frequencies changed and we're relying on them
+        let cppcHasReal = cppcSupported && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
+        if freqUpdated && !cppcHasReal {
+            self.updateRankedPhysicalCores()
         }
 
         var newCores: [CoreSnapshot] = []
