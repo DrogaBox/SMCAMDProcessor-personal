@@ -179,4 +179,12 @@
 
 "United" = "Combinado";
 "Show United Widget" = "Mostrar Widget Combinado";
+"Configure Combined Metrics" = "Configurar Métricas Combinadas";
+"Include CPU" = "Incluir CPU";
+"Include GPU" = "Incluir GPU";
+"Include RAM" = "Incluir Memoria (RAM)";
+"Include Disk" = "Incluir Disco";
+"Include Network" = "Incluir Red";
+"Include Fan" = "Incluir Ventiladores";
+
 

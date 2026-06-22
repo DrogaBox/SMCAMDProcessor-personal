@@ -179,4 +179,12 @@
 
 "United" = "United";
 "Show United Widget" = "Show United Widget";
+"Configure Combined Metrics" = "Configure Combined Metrics";
+"Include CPU" = "Include CPU";
+"Include GPU" = "Include GPU";
+"Include RAM" = "Include RAM";
+"Include Disk" = "Include Disk";
+"Include Network" = "Include Network";
+"Include Fan" = "Include Fan";
+
 

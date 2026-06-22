@@ -1015,6 +1015,42 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
             TelemetryModel.shared.updateTimerState() // Ensure timer runs if widgets are active
         }
     }
+    func defaultSizeFor(type: DesktopWidgetType, style: DesktopWidgetStyle) -> NSSize {
+        let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
+        let width: CGFloat
+        let height: CGFloat
+        
+        switch resolvedStyle {
+        case .classic:
+            if type == .united {
+                width = 180
+                height = 180
+            } else {
+                width = 160
+                height = 160
+            }
+        case .proMonitor:
+            if type == .united {
+                width = 336
+                height = 180
+            } else {
+                width = 336
+                height = 160
+            }
+        case .textList: // Stats Table
+            if type == .united {
+                width = 248
+                height = 180
+            } else {
+                width = 248
+                height = 160
+            }
+        case .coreMatrix: // CPU only
+            width = 248
+            height = 160
+        }
+        return NSSize(width: width, height: height)
+    }
     
     private func spawnWidget(type: DesktopWidgetType) {
         let widgetView = DesktopWidgetView(model: TelemetryModel.shared, manager: self, type: type)
@@ -1025,17 +1061,12 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         
         let styleRaw = UserDefaults.standard.string(forKey: "widget_style_v2_\(type.rawValue)") ?? DesktopWidgetStyle.classic.rawValue
         let style = DesktopWidgetStyle(rawValue: styleRaw) ?? .classic
-        let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
+        let defSize = defaultSizeFor(type: type, style: style)
         
-        let width: CGFloat
-        let height: CGFloat
-        if type == .united {
-            width = 180
-            height = 180
-        } else {
-            width = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
-            height = 160
-        }
+        let savedWKey = "widget_width_\(type.rawValue)"
+        let savedHKey = "widget_height_\(type.rawValue)"
+        let width = UserDefaults.standard.object(forKey: savedWKey) != nil ? CGFloat(UserDefaults.standard.double(forKey: savedWKey)) : defSize.width
+        let height = UserDefaults.standard.object(forKey: savedHKey) != nil ? CGFloat(UserDefaults.standard.double(forKey: savedHKey)) : defSize.height
         
         let savedXKey = "widget_x_\(type.rawValue)"
         let savedYKey = "widget_y_\(type.rawValue)"
@@ -1068,9 +1099,10 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
             windowRect = NSRect(x: x, y: y, width: width, height: height)
         }
         
+        let styleMask: NSWindow.StyleMask = isEditingWidgets ? [.borderless, .resizable] : [.borderless]
         let widgetWindow = NSWindow(
             contentRect: windowRect,
-            styleMask: [.borderless],
+            styleMask: styleMask,
             backing: .buffered,
             defer: false
         )
@@ -1090,9 +1122,11 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
     private func updateWindowModes() {
         for (_, window) in widgetWindows {
             if isEditingWidgets {
+                window.styleMask = [.borderless, .resizable]
                 window.level = .normal
                 window.ignoresMouseEvents = false
             } else {
+                window.styleMask = [.borderless]
                 // Places the widgets 1 level above the wallpaper to make them visible but behind standard apps and desktop icons
                 window.level = NSWindow.Level(Int(CGWindowLevelForKey(.desktopWindow)) + 1)
                 window.ignoresMouseEvents = true
@@ -1102,25 +1136,18 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
     
     func resizeWidget(type: DesktopWidgetType, style: DesktopWidgetStyle) {
         guard let window = widgetWindows[type] else { return }
-        let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
-        let width: CGFloat
-        let height: CGFloat
-        if type == .united {
-            width = 180
-            height = 180
-        } else {
-            width = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
-            height = 160
-        }
+        let size = defaultSizeFor(type: type, style: style)
         
         let oldFrame = window.frame
-        let newX = oldFrame.maxX - width
-        let newY = oldFrame.maxY - height
+        let newX = oldFrame.maxX - size.width
+        let newY = oldFrame.maxY - size.height
         
-        window.setFrame(NSRect(x: newX, y: newY, width: width, height: height), display: true, animate: true)
+        window.setFrame(NSRect(x: newX, y: newY, width: size.width, height: size.height), display: true, animate: true)
         
         UserDefaults.standard.set(Double(newX), forKey: "widget_x_\(type.rawValue)")
         UserDefaults.standard.set(Double(newY), forKey: "widget_y_\(type.rawValue)")
+        UserDefaults.standard.set(Double(size.width), forKey: "widget_width_\(type.rawValue)")
+        UserDefaults.standard.set(Double(size.height), forKey: "widget_height_\(type.rawValue)")
     }
     
     func snapWindow(_ window: NSWindow) {
@@ -1282,6 +1309,18 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
             }
         }
     }
+    
+    func windowDidResize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        for (type, win) in widgetWindows {
+            if win == window {
+                let size = window.frame.size
+                UserDefaults.standard.set(Double(size.width), forKey: "widget_width_\(type.rawValue)")
+                UserDefaults.standard.set(Double(size.height), forKey: "widget_height_\(type.rawValue)")
+                break
+            }
+        }
+    }
 }
 
 enum DesktopWidgetStyle: String, CaseIterable, Identifiable {
@@ -1330,6 +1369,115 @@ struct DesktopWidgetView: View {
     
     @AppStorage private var styleRaw: String
     @State private var isHovered = false
+    
+    @AppStorage("widget_united_show_cpu") private var unitedShowCpu = true
+    @AppStorage("widget_united_show_gpu") private var unitedShowGpu = true
+    @AppStorage("widget_united_show_ram") private var unitedShowRam = true
+    @AppStorage("widget_united_show_disk") private var unitedShowDisk = true
+    @AppStorage("widget_united_show_net") private var unitedShowNet = false
+    @AppStorage("widget_united_show_fan") private var unitedShowFan = false
+    
+    struct UnitedItem: Identifiable {
+        let id: String
+        let title: String
+        let progress: Double
+        let colors: [Color]
+        let valueString: String
+        let historyValue: (TelemetryPoint) -> Double
+        let type: DesktopWidgetType
+    }
+    
+    var activeUnitedItems: [UnitedItem] {
+        var items: [UnitedItem] = []
+        if unitedShowCpu {
+            items.append(UnitedItem(
+                id: "cpu",
+                title: "CPU",
+                progress: model.cpuLoadAvg / 100.0,
+                colors: [DesktopWidgetType.cpu.color1, DesktopWidgetType.cpu.color2],
+                valueString: String(format: "%.1f°C", model.cpuTempC),
+                historyValue: { $0.cpuLoad },
+                type: .cpu
+            ))
+        }
+        if unitedShowGpu {
+            items.append(UnitedItem(
+                id: "gpu",
+                title: "GPU",
+                progress: model.gpuLoadPct / 100.0,
+                colors: [DesktopWidgetType.gpu.color1, DesktopWidgetType.gpu.color2],
+                valueString: String(format: "%.1f°C", model.gpuTempC),
+                historyValue: { $0.gpuLoad },
+                type: .gpu
+            ))
+        }
+        if unitedShowRam {
+            items.append(UnitedItem(
+                id: "ram",
+                title: "RAM",
+                progress: model.ramUsagePct / 100.0,
+                colors: [DesktopWidgetType.ram.color1, DesktopWidgetType.ram.color2],
+                valueString: {
+                    let totalGB = Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0)
+                    let usedGB = (model.ramUsagePct / 100.0) * totalGB
+                    return String(format: "%.1f GB", usedGB)
+                }(),
+                historyValue: { $0.ramUsagePct },
+                type: .ram
+            ))
+        }
+        if unitedShowDisk {
+            items.append(UnitedItem(
+                id: "disk",
+                title: "Disk",
+                progress: model.diskUsagePct / 100.0,
+                colors: [DesktopWidgetType.disk.color1, DesktopWidgetType.disk.color2],
+                valueString: String(format: "%.0f%%", model.diskUsagePct),
+                historyValue: { $0.diskReadMBps + $0.diskWriteMBps },
+                type: .disk
+            ))
+        }
+        if unitedShowNet {
+            items.append(UnitedItem(
+                id: "net",
+                title: "Net",
+                progress: {
+                    let totalMBps = model.netDownloadMBps + model.netUploadMBps
+                    return min(1.0, totalMBps / 10.0)
+                }(),
+                colors: [DesktopWidgetType.net.color1, DesktopWidgetType.net.color2],
+                valueString: {
+                    let totalSpeed = model.netDownloadMBps + model.netUploadMBps
+                    if totalSpeed >= 1.0 {
+                        return String(format: "%.1f M/s", totalSpeed)
+                    } else {
+                        return String(format: "%.0f K/s", totalSpeed * 1024.0)
+                    }
+                }(),
+                historyValue: { $0.netDownloadMBps + $0.netUploadMBps },
+                type: .net
+            ))
+        }
+        if unitedShowFan {
+            items.append(UnitedItem(
+                id: "fan",
+                title: "Fan",
+                progress: {
+                    let maxRPM: Double = 5000.0
+                    let currentRPM = Double(model.fans.first?.rpm ?? 0)
+                    return min(1.0, currentRPM / maxRPM)
+                }(),
+                colors: [DesktopWidgetType.fan.color1, DesktopWidgetType.fan.color2],
+                valueString: {
+                    let rpm = model.fans.first?.rpm ?? 0
+                    return rpm > 0 ? "\(rpm) RPM" : "0 RPM"
+                }(),
+                historyValue: { $0.fanRPM },
+                type: .fan
+            ))
+        }
+        return items
+    }
     
     init(model: TelemetryModel, manager: DesktopWidgetManager, type: DesktopWidgetType) {
         self.model = model
@@ -1437,7 +1585,7 @@ struct DesktopWidgetView: View {
                 textListStyle
             }
         }
-        .frame(width: type == .united ? 148 : (style == .classic || style == .textList ? 128 : (style == .proMonitor ? 304 : 216)), height: type == .united ? 148 : 128)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(16)
         .background(
             VisualEffectBackground(material: .hudWindow, blendingMode: .behindWindow, state: .active, cornerRadius: 24)
@@ -1494,18 +1642,20 @@ struct DesktopWidgetView: View {
             Spacer()
             
             if type == .united {
-                let cpuProgress = model.cpuLoadAvg / 100.0
-                let gpuProgress = model.gpuLoadPct / 100.0
-                let ramProgress = model.ramUsagePct / 100.0
-                let diskProgress = model.diskUsagePct / 100.0
-                
-                LazyVGrid(columns: [GridItem(.fixed(56), spacing: 8), GridItem(.fixed(56), spacing: 8)], spacing: 6) {
-                    MiniCircularGauge(title: "CPU", progress: cpuProgress, colors: [DesktopWidgetType.cpu.color1, DesktopWidgetType.cpu.color2])
-                    MiniCircularGauge(title: "GPU", progress: gpuProgress, colors: [DesktopWidgetType.gpu.color1, DesktopWidgetType.gpu.color2])
-                    MiniCircularGauge(title: "RAM", progress: ramProgress, colors: [DesktopWidgetType.ram.color1, DesktopWidgetType.ram.color2])
-                    MiniCircularGauge(title: "Disk", progress: diskProgress, colors: [DesktopWidgetType.disk.color1, DesktopWidgetType.disk.color2])
+                let items = activeUnitedItems
+                if items.isEmpty {
+                    Text("No metrics active").font(.system(size: 9)).foregroundColor(.white.opacity(0.5))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                } else {
+                    let colCount = items.count > 2 ? 2 : items.count
+                    let columns = Array(repeating: GridItem(.fixed(56), spacing: 8), count: colCount)
+                    LazyVGrid(columns: columns, spacing: 6) {
+                        ForEach(items) { item in
+                            MiniCircularGauge(title: item.title, progress: item.progress, colors: item.colors)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
             } else {
                 HStack {
                     Spacer()
@@ -1545,7 +1695,7 @@ struct DesktopWidgetView: View {
             
             Spacer()
         }
-        .frame(width: type == .united ? 148 : 128, height: type == .united ? 148 : 128)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var proMonitorStyle: some View {
@@ -1585,26 +1735,14 @@ struct DesktopWidgetView: View {
                         Chart {
                             ForEach(model.history) { point in
                                 if type == .united {
-                                    LineMark(
-                                        x: .value("Time", point.time),
-                                        y: .value("CPU", point.cpuLoad)
-                                    )
-                                    .interpolationMethod(.catmullRom)
-                                    .foregroundStyle(DesktopWidgetType.cpu.color1)
-                                    
-                                    LineMark(
-                                        x: .value("Time", point.time),
-                                        y: .value("GPU", point.gpuLoad)
-                                    )
-                                    .interpolationMethod(.catmullRom)
-                                    .foregroundStyle(DesktopWidgetType.gpu.color1)
-                                    
-                                    LineMark(
-                                        x: .value("Time", point.time),
-                                        y: .value("RAM", point.ramUsagePct)
-                                    )
-                                    .interpolationMethod(.catmullRom)
-                                    .foregroundStyle(DesktopWidgetType.ram.color1)
+                                    ForEach(activeUnitedItems) { item in
+                                        LineMark(
+                                            x: .value("Time", point.time),
+                                            y: .value(item.title, item.historyValue(point))
+                                        )
+                                        .interpolationMethod(.catmullRom)
+                                        .foregroundStyle(item.colors[0])
+                                    }
                                 } else {
                                     let val: Double = {
                                         switch type {
@@ -1668,7 +1806,7 @@ struct DesktopWidgetView: View {
                     }
                 }
             }
-            .frame(width: 160, height: 128)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
     
@@ -1702,7 +1840,7 @@ struct DesktopWidgetView: View {
             
             Spacer()
         }
-        .frame(width: 216, height: 128)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var textListStyle: some View {
@@ -1723,7 +1861,7 @@ struct DesktopWidgetView: View {
             
             Spacer()
         }
-        .frame(width: 128, height: 128)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     @ViewBuilder
@@ -1783,10 +1921,26 @@ struct DesktopWidgetView: View {
             }
         case .united:
             VStack(spacing: 2) {
-                StatListRow(label: "CPU", value: String(format: "%.1f%% (%.0f°C)", model.cpuLoadAvg, model.cpuTempC))
-                StatListRow(label: "GPU", value: String(format: "%.1f%% (%.0f°C)", model.gpuLoadPct, model.gpuTempC))
-                StatListRow(label: "RAM", value: String(format: "%.1f%%", model.ramUsagePct))
-                StatListRow(label: "Disk", value: String(format: "%.1f%%", model.diskUsagePct))
+                let items = activeUnitedItems
+                if items.isEmpty {
+                    Text("No metrics active").font(.system(size: 9)).foregroundColor(.white.opacity(0.5))
+                } else {
+                    ForEach(items) { item in
+                        StatListRow(label: item.title, value: {
+                            if item.type == .cpu {
+                                return String(format: "%.1f%% (%.0f°C)", model.cpuLoadAvg, model.cpuTempC)
+                            } else if item.type == .gpu {
+                                return String(format: "%.1f%% (%.0f°C)", model.gpuLoadPct, model.gpuTempC)
+                            } else if item.type == .ram {
+                                return String(format: "%.1f%%", model.ramUsagePct)
+                            } else if item.type == .disk {
+                                return String(format: "%.1f%%", model.diskUsagePct)
+                            } else {
+                                return item.valueString
+                            }
+                        }())
+                    }
+                }
             }
         }
     }
