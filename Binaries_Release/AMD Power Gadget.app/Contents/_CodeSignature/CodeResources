@@ -14,15 +14,15 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerGadget.nib</key>
 		<data>
-		YgV17OZi8XUl3dzs7Fk76UakRPw=
+		R1HLPCX53T6jzRWnWreew3SmRvo=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<data>
-		KW+wOuKjUL7ioUEbE9ViVGOwjMk=
+		Zn7gnRubSUdyuwC892JHwWjxh+Y=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<data>
-		Q/Cl3Q0aAgVXqjMdzdPa1XRHzZo=
+		1urSI7IZtO5t9xw1QBUfD2wzUYw=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
 		<data>
@@ -40,7 +40,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			vJuO/FyqQlMcV9TniaUfHN2NkEg=
+			jRaPBYsf7/uQ4tfnDiN87fhsvyg=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -49,7 +49,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			5ug/9DhtEOqXKRmIbNDwx7jVi8k=
+			DeoDuy8iGmcFLtEdpMU1qno4RzQ=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -84,21 +84,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			MawoyU8GSspzYUNOfrbr4gAz1TSQc+/khlAfRTjzFdA=
+			kHtW4We7dxssmUDdDUv3dWt8UCwcKP+8Q1lXOXS1zPM=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			ADt4eFZdQ8JMsYs0EoY+fvOEQVUUWOPEnXUcNGirXIc=
+			Y5ztRRMy/M2x2rKK87i+Q5/rHQwDwz/UR0908ZGWjnw=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			8RFVRIJOaU/A5My5vm0BTBYHyaS3rdFp7PPdzxHHKk8=
+			2gREUoD6T99HDSksu7MRc02tYpmOylLz1M/oqXXGX9I=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
@@ -126,7 +126,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			f0wO3Mbhm+dyBz772uqSn2ZZJeQcHCNNaTjzB1zjsU0=
+			4vQFmBN9aYR0IwjJwf43WXJXRwy39LZgmDZ/ToVc1W8=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -135,7 +135,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			QAti7MX5kGoSxhq9+l8CPiVi8NRK84Zlr68/TOSHaOU=
+			d91z4mMj8URRNOMY7g4ZY2pOeQ1XL8OsFKd+KFrUNds=
 			</data>
 			<key>optional</key>
 			<true/>

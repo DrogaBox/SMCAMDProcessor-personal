@@ -7,6 +7,7 @@
 
 import Cocoa
 import ServiceManagement
+import Metal
 
 @MainActor
 @NSApplicationMain
@@ -107,6 +108,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             ViewController.launch()
         }
 
+        // Initialize Desktop Widgets if enabled
+        DesktopWidgetManager.shared.refreshWidgets()
+        
+        // Start background telemetry sampling for History
+        _ = HistoryManager.shared
+        
+        // Fallback Mode Detection
+        if !UserDefaults.standard.bool(forKey: "user_forced_low_performance") {
+            let device = MTLCreateSystemDefaultDevice()
+            if device == nil {
+                print("No Metal acceleration detected. Enabling Low Performance Mode.")
+                UserDefaults.standard.set(true, forKey: "low_performance_mode")
+            } else {
+                UserDefaults.standard.set(false, forKey: "low_performance_mode")
+            }
+        }
     }
 
     func askStartup() {

@@ -114,6 +114,13 @@ struct TelemetryPoint: Identifiable {
     var gpuWatts: Double
     var netUploadMBps: Double
     var netDownloadMBps: Double
+    var cpuLoad: Double
+    var gpuLoad: Double
+    var ramUsagePct: Double
+    var diskUsagePct: Double
+    var diskReadMBps: Double
+    var diskWriteMBps: Double
+    var fanRPM: Double
 }
 
 struct SystemInfo {
@@ -193,6 +200,13 @@ final class TelemetryModel: ObservableObject {
     @Published var cpuLoadAvg: Double = 0
     @Published var ramUsagePct: Double = 0
     @Published var diskUsagePct: Double = 0
+    @Published var diskReadMBps: Double = 0
+    @Published var diskWriteMBps: Double = 0
+    @Published var ramSwapTotalBytes: Double = 0
+    @Published var ramSwapUsedBytes: Double = 0
+    @Published var netLocalIP: String = "Unknown"
+    @Published var netActiveInterface: String = "Unknown"
+    @Published var systemUptimeFormatted: String = "0m"
     @Published var topProcesses: [ProcessInfoRow] = []
 
     @Published var cores: [CoreSnapshot] = []
@@ -279,14 +293,22 @@ final class TelemetryModel: ObservableObject {
 
     private var activeWindows = false
     private var popoverVisible = false
+    @Published var isAnyWidgetHovered = false {
+        didSet {
+            updateTimerState()
+        }
+    }
+    private var lastDiskReadBytes: UInt64 = 0
+    private var lastDiskWriteBytes: UInt64 = 0
+    private var lastDiskCheck: Date = Date.distantPast
 
     func setPopoverVisible(_ visible: Bool) {
         popoverVisible = visible
         updateTimerState()
     }
 
-    private func updateTimerState() {
-        if activeWindows || popoverVisible {
+    func updateTimerState() {
+        if activeWindows || popoverVisible || DesktopWidgetManager.shared.hasActiveWidgets {
             restartTimer()
         } else {
             timer?.cancel()
@@ -321,6 +343,12 @@ final class TelemetryModel: ObservableObject {
         initSMC()
         loadPStateRows()
         loadCPUControls()
+        
+        let initialDisk = getDiskIOBytes()
+        lastDiskReadBytes = initialDisk.read
+        lastDiskWriteBytes = initialDisk.write
+        lastDiskCheck = Date()
+        
         sample()
 
         restartTimer()
@@ -423,7 +451,14 @@ final class TelemetryModel: ObservableObject {
 
     func restartTimer() {
         timer?.cancel()
-        let interval = RefreshRateConfig.shared.interval
+        let interval: Double
+        if activeWindows || popoverVisible || isAnyWidgetHovered {
+            interval = RefreshRateConfig.shared.interval
+        } else if DesktopWidgetManager.shared.hasActiveWidgets {
+            interval = 2.0 // Slow refresh when widgets are in background to conserve resources
+        } else {
+            interval = RefreshRateConfig.shared.interval
+        }
         timer = Timer.publish(every: interval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.sample() }
@@ -517,7 +552,18 @@ final class TelemetryModel: ObservableObject {
             let freq = freqsMHz[physicalIdx]
             let load = (loadIndex.count > logicalIdx) ? loadIndex[logicalIdx] * 100.0 : 0.0
             let isLogical = logicalIdx >= numPhysicalCores
-            let cppcVal = (cppcSupported && cppcScores.count > logicalIdx) ? cppcScores[logicalIdx] : nil
+            
+            var cppcVal: UInt8? = nil
+            if cppcSupported {
+                if !cppcScoresEstimated && cppcScores.count > logicalIdx {
+                    cppcVal = cppcScores[logicalIdx]
+                } else if cppcScoresEstimated {
+                    if let r = rankedPhysicalCores.first(where: { $0.id == physicalIdx + 1 }) {
+                        cppcVal = r.score
+                    }
+                }
+            }
+            
             newCores.append(CoreSnapshot(
                 id: logicalIdx,
                 freqMHz: freq,
@@ -533,6 +579,25 @@ final class TelemetryModel: ObservableObject {
         cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
         ramUsagePct = getRAMUsagePct()
         diskUsagePct = getDiskUsagePct()
+        
+        let now = Date()
+        let diskIO = getDiskIOBytes()
+        if lastDiskCheck != Date.distantPast {
+            let elapsed = now.timeIntervalSince(lastDiskCheck)
+            if elapsed > 0.1 {
+                let rDelta = diskIO.read >= lastDiskReadBytes ? diskIO.read - lastDiskReadBytes : 0
+                let wDelta = diskIO.write >= lastDiskWriteBytes ? diskIO.write - lastDiskWriteBytes : 0
+                
+                let rSpeed = Double(rDelta) / elapsed / (1024.0 * 1024.0)
+                let wSpeed = Double(wDelta) / elapsed / (1024.0 * 1024.0)
+                
+                diskReadMBps = rSpeed < 0.00001 ? 0 : rSpeed
+                diskWriteMBps = wSpeed < 0.00001 ? 0 : wSpeed
+            }
+        }
+        lastDiskReadBytes = diskIO.read
+        lastDiskWriteBytes = diskIO.write
+        lastDiskCheck = now
         
         if popoverVisible {
             Task.detached(priority: .background) {
@@ -553,6 +618,15 @@ final class TelemetryModel: ObservableObject {
         self.netDownloadMBps = netDown
 
         let relTime = Date.timeIntervalSinceReferenceDate - startTime
+        
+        var firstFanRPM: Double = 0
+        if smcDriverLoaded && numFans > 0 {
+            let rpms = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 93)
+            if let firstRpm = rpms.first {
+                firstFanRPM = Double(firstRpm)
+            }
+        }
+
         let point = TelemetryPoint(
             time: relTime,
             cpuFreqGHz: cpuFreqAvgGHz,
@@ -563,7 +637,14 @@ final class TelemetryModel: ObservableObject {
             cpuWatts: cpuWatts,
             gpuWatts: gpuPowerW,
             netUploadMBps: netUp,
-            netDownloadMBps: netDown
+            netDownloadMBps: netDown,
+            cpuLoad: cpuLoadAvg,
+            gpuLoad: gpuLoadPct,
+            ramUsagePct: ramUsagePct,
+            diskUsagePct: diskUsagePct,
+            diskReadMBps: diskReadMBps,
+            diskWriteMBps: diskWriteMBps,
+            fanRPM: firstFanRPM
         )
         history.append(point)
         if history.count > maxHistoryPoints { history.removeFirst() }
@@ -624,6 +705,16 @@ final class TelemetryModel: ObservableObject {
         speedStepClocks  = ProcessorModel.shared.getVaildPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
         loadCPUControls()
+        
+        let swap = getSwapMemoryUsage()
+        ramSwapTotalBytes = swap.total
+        ramSwapUsedBytes = swap.used
+        
+        let ipInfo = getLocalIPAddressAndInterface()
+        netLocalIP = ipInfo.ip
+        netActiveInterface = ipInfo.interface
+        
+        systemUptimeFormatted = getSystemUptime()
     }
 
     // Format instruction count with suffix like original: K, M, G, T, P, E
@@ -772,6 +863,107 @@ final class TelemetryModel: ObservableObject {
             }
         } catch {}
         return 0.0
+    }
+
+    nonisolated private func getDiskIOBytes() -> (read: UInt64, write: UInt64) {
+        var readBytes: UInt64 = 0
+        var writeBytes: UInt64 = 0
+        
+        var iterator: io_iterator_t = 0
+        let result = IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOBlockStorageDriver"), &iterator)
+        if result == kIOReturnSuccess {
+            while true {
+                let parent = IOIteratorNext(iterator)
+                if parent == 0 { break }
+                
+                var properties: Unmanaged<CFMutableDictionary>? = nil
+                if IORegistryEntryCreateCFProperties(parent, &properties, kCFAllocatorDefault, 0) == kIOReturnSuccess,
+                   let dict = properties?.takeRetainedValue() as? [String: Any] {
+                    if let stats = dict["Statistics"] as? [String: Any] {
+                        if let r = stats["Bytes (Read)"] as? NSNumber {
+                            readBytes += r.uint64Value
+                        } else if let r = stats["Bytes (Read)"] as? Int64 {
+                            readBytes += UInt64(r)
+                        }
+                        if let w = stats["Bytes (Write)"] as? NSNumber {
+                            writeBytes += w.uint64Value
+                        } else if let w = stats["Bytes (Write)"] as? Int64 {
+                            writeBytes += UInt64(w)
+                        }
+                    }
+                }
+                IOObjectRelease(parent)
+            }
+            IOObjectRelease(iterator)
+        }
+        return (readBytes, writeBytes)
+    }
+
+    struct xsw_usage {
+        var xsu_total: UInt64
+        var xsu_avail: UInt64
+        var xsu_used: UInt64
+        var xsu_pagesize: UInt32
+        var xsu_encrypted: Int32
+    }
+
+    nonisolated private func getSwapMemoryUsage() -> (total: Double, used: Double, free: Double) {
+        var size = MemoryLayout<xsw_usage>.size
+        var usage = xsw_usage(xsu_total: 0, xsu_avail: 0, xsu_used: 0, xsu_pagesize: 0, xsu_encrypted: 0)
+        let result = sysctlbyname("vm.swapusage", &usage, &size, nil, 0)
+        if result == 0 {
+            return (Double(usage.xsu_total), Double(usage.xsu_used), Double(usage.xsu_avail))
+        }
+        return (0.0, 0.0, 0.0)
+    }
+
+    nonisolated private func getLocalIPAddressAndInterface() -> (ip: String, interface: String) {
+        var ipAddress = "Disconnected"
+        var interfaceName = "None"
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        if getifaddrs(&ifaddr) == 0 {
+            var ptr = ifaddr
+            while ptr != nil {
+                defer { ptr = ptr?.pointee.ifa_next }
+                guard let interface = ptr?.pointee else { continue }
+                let addrFamily = interface.ifa_addr.pointee.sa_family
+                if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
+                    let name = String(cString: interface.ifa_name)
+                    if name.hasPrefix("en") || name.hasPrefix("bridge") || name.hasPrefix("bond") {
+                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                                    &hostname, socklen_t(hostname.count),
+                                    nil, 0, NI_NUMERICHOST)
+                        let ip = String(cString: hostname)
+                        
+                        if interfaceName == "None" || name.hasPrefix("en") {
+                            ipAddress = ip
+                            interfaceName = name
+                        }
+                        
+                        if addrFamily == UInt8(AF_INET) && name.hasPrefix("en") {
+                            break
+                        }
+                    }
+                }
+            }
+            freeifaddrs(ifaddr)
+        }
+        return (ipAddress, interfaceName)
+    }
+
+    nonisolated private func getSystemUptime() -> String {
+        let seconds = ProcessInfo.processInfo.systemUptime
+        let days = Int(seconds) / 86400
+        let hours = (Int(seconds) % 86400) / 3600
+        let minutes = (Int(seconds) % 3600) / 60
+        if days > 0 {
+            return "\(days)d \(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
     }
 
     nonisolated private func fetchTopProcesses() -> [ProcessInfoRow] {

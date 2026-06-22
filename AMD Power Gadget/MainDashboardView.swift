@@ -9,7 +9,25 @@ import SwiftUI
 import Charts
 
 // MARK: - Visual Effect Blur Background (macOS)
-struct VisualEffectBackground: NSViewRepresentable {
+struct VisualEffectBackground: View {
+    let material: NSVisualEffectView.Material
+    let blendingMode: NSVisualEffectView.BlendingMode
+    let state: NSVisualEffectView.State
+    let cornerRadius: CGFloat
+    
+    @AppStorage("low_performance_mode") private var isLowPerformanceMode = false
+
+    var body: some View {
+        if isLowPerformanceMode {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color(red: 0.12, green: 0.12, blue: 0.12)) // Solid dark fallback
+        } else {
+            VisualEffectNSView(material: material, blendingMode: blendingMode, state: state, cornerRadius: cornerRadius)
+        }
+    }
+}
+
+struct VisualEffectNSView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
     let state: NSVisualEffectView.State
@@ -60,7 +78,9 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     case advanced   = "Advanced"
     case menuBar    = "Menu Bar"
     case popover    = "Popover Menu"
+    case desktopWidgets = "Desktop Widgets"
     case systemInfo = "System Info"
+    case analysis   = "Análisis"
 
     var icon: String {
         switch self {
@@ -71,7 +91,9 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .advanced:   return "gearshape.2"
         case .menuBar:    return "menubar.rectangle"
         case .popover:    return "macwindow.badge.plus"
+        case .desktopWidgets: return "square.grid.2x2"
         case .systemInfo: return "info.circle"
+        case .analysis:   return "chart.xyaxis.line"
         }
     }
 }
@@ -116,8 +138,10 @@ struct MainDashboardView: View {
         case .profiles:   ProfilesContentView(model: model)
         case .advanced:   AdvancedContentView(model: model)
         case .menuBar:    MenuBarConfigView(model: model)
-        case .popover:    PopoverConfigView(model: model)
+                case .popover:    PopoverConfigView(model: model)
+        case .desktopWidgets: DesktopWidgetsConfigView(model: model)
         case .systemInfo: SystemInfoContentView(model: model)
+        case .analysis:   AnalysisContentView()
         }
     }
 }
@@ -1470,6 +1494,9 @@ struct AdvancedContentView: View {
     @ObservedObject var model: TelemetryModel
     @State private var showApplyConfirm = false
     @State private var applyOK: Bool? = nil
+    
+    @AppStorage("low_performance_mode") private var isLowPerformanceMode = false
+    @AppStorage("user_forced_low_performance") private var userForced = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -1535,6 +1562,28 @@ struct AdvancedContentView: View {
                             Spacer()
                             Text("5.0s").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
                         }
+                    }
+                }
+
+                Divider().background(Color.tahoeCardBorder)
+                SectionTitle("Performance & Fallback")
+                Text("Disable heavy visual effects if your system lacks Metal graphics acceleration.")
+                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                TahoeCard(accent: Color.tahoeSubtext.opacity(0.15)) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Low Performance Mode").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                            Text("Replaces translucent blurs with solid colors to save CPU").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                        }
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { isLowPerformanceMode },
+                            set: { newValue in
+                                isLowPerformanceMode = newValue
+                                userForced = true // User manually overrode auto-detection
+                            }
+                        ))
+                        .toggleStyle(SwitchToggleStyle(tint: .tahoeSubtext)).labelsHidden()
                     }
                 }
 
@@ -1799,7 +1848,7 @@ private struct PStateEditorView: View {
             }
             
             if let ok = applyOK {
-                Text(ok ? "✅ P-States applied successfully." : "❌ Failed — check kext privileges (-amdpnopchk).")
+                Text(ok ? "P-States applied successfully." : "Failed — check kext privileges (-amdpnopchk).")
                     .font(.system(size: 11)).foregroundColor(ok ? .tahoeAccentGreen : .tahoeAccentRed)
             }
         }
@@ -2640,7 +2689,7 @@ struct SystemInfoContentView: View {
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "Kext Version",    value: model.sysInfo.kextVersion)
                     Divider().background(Color.tahoeCardBorder)
-                    InfoRow(label: "CPU Supported",   value: model.sysInfo.kextSupported ? "Yes ✅" : "Not yet")
+                    InfoRow(label: "CPU Supported",   value: model.sysInfo.kextSupported ? "Yes" : "Not yet")
                 }
 
                 Divider().background(Color.tahoeCardBorder)
@@ -3564,5 +3613,470 @@ struct MiniSparkline: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Analysis e Historial
+
+import Combine
+import Charts
+
+struct HistoryDataPoint: Codable, Identifiable {
+    var id: UUID = UUID()
+    let timestamp: Date
+    let cpuLoad: Double
+    let cpuTemp: Double
+    let ramUsage: Double
+    let gpuTemp: Double
+    let gpuLoad: Double
+}
+
+class HistoryManager: ObservableObject {
+    static let shared = HistoryManager()
+    
+    @Published var historyData: [HistoryDataPoint] = []
+    
+    private let saveURL: URL
+    private var timer: Timer?
+    
+    init() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appDir = appSupport.appendingPathComponent("AMD Power Gadget")
+        try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
+        saveURL = appDir.appendingPathComponent("telemetry_history.json")
+        
+        loadData()
+        startSampling()
+    }
+    
+    private func loadData() {
+        guard let data = try? Data(contentsOf: saveURL) else { return }
+        do {
+            let decoder = JSONDecoder()
+            historyData = try decoder.decode([HistoryDataPoint].self, from: data)
+            pruneOldData()
+        } catch {
+            print("Failed to decode history: \(error)")
+        }
+    }
+    
+    func saveData() {
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(historyData)
+            try data.write(to: saveURL, options: .atomic)
+        } catch {
+            print("Failed to encode history: \(error)")
+        }
+    }
+    
+    private func pruneOldData() {
+        // Keep data for 30 days
+        let cutoff = Date().addingTimeInterval(-30 * 24 * 60 * 60)
+        historyData.removeAll(where: { $0.timestamp < cutoff })
+    }
+    
+    private func startSampling() {
+        // Sample every 60 seconds
+        timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+            self?.sampleCurrentTelemetry()
+        }
+    }
+    
+    func sampleCurrentTelemetry() {
+        DispatchQueue.main.async {
+            let model = TelemetryModel.shared
+            let point = HistoryDataPoint(
+                timestamp: Date(),
+                cpuLoad: model.cpuLoadAvg,
+                cpuTemp: model.cpuTempC,
+                ramUsage: model.ramUsagePct,
+                gpuTemp: model.gpuTempC,
+                gpuLoad: model.gpuLoadPct
+            )
+            
+            self.historyData.append(point)
+            self.pruneOldData()
+            self.saveData()
+        }
+    }
+    
+    func downsampledData(for hours: Int) -> [HistoryDataPoint] {
+        let cutoff = Date().addingTimeInterval(Double(-hours * 60 * 60))
+        let filtered = historyData.filter { $0.timestamp >= cutoff }
+        
+        // If it's a short period (1h or 24h), return as is (max 1440 points is fine for SwiftUI Charts)
+        if hours <= 24 {
+            return filtered
+        }
+        
+        // Downsample to ~1 point per hour for 7 days / 30 days
+        var downsampled: [HistoryDataPoint] = []
+        var currentBucketStart: Date?
+        var currentBucketPoints: [HistoryDataPoint] = []
+        
+        for point in filtered {
+            if currentBucketStart == nil {
+                currentBucketStart = point.timestamp
+            }
+            
+            if point.timestamp.timeIntervalSince(currentBucketStart!) > 3600 {
+                // Average the bucket
+                if !currentBucketPoints.isEmpty {
+                    let avgCpuLoad = currentBucketPoints.map { $0.cpuLoad }.reduce(0, +) / Double(currentBucketPoints.count)
+                    let avgCpuTemp = currentBucketPoints.map { $0.cpuTemp }.reduce(0, +) / Double(currentBucketPoints.count)
+                    let avgRamUsage = currentBucketPoints.map { $0.ramUsage }.reduce(0, +) / Double(currentBucketPoints.count)
+                    let avgGpuTemp = currentBucketPoints.map { $0.gpuTemp }.reduce(0, +) / Double(currentBucketPoints.count)
+                    let avgGpuLoad = currentBucketPoints.map { $0.gpuLoad }.reduce(0, +) / Double(currentBucketPoints.count)
+                    
+                    downsampled.append(HistoryDataPoint(
+                        timestamp: currentBucketStart!.addingTimeInterval(1800), // Midpoint of hour
+                        cpuLoad: avgCpuLoad,
+                        cpuTemp: avgCpuTemp,
+                        ramUsage: avgRamUsage,
+                        gpuTemp: avgGpuTemp,
+                        gpuLoad: avgGpuLoad
+                    ))
+                }
+                currentBucketStart = point.timestamp
+                currentBucketPoints = [point]
+            } else {
+                currentBucketPoints.append(point)
+            }
+        }
+        
+        return downsampled
+    }
+}
+
+struct AnalysisContentView: View {
+    @ObservedObject var historyManager = HistoryManager.shared
+    @State private var selectedTimeframe: Int = 1 // Hours
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Header & Filters
+            HStack {
+                SectionTitle("System History & Trends")
+                Spacer()
+                Picker("Timeframe", selection: $selectedTimeframe) {
+                    Text("1h").tag(1)
+                    Text("24h").tag(24)
+                    Text("7d").tag(24 * 7)
+                    Text("30d").tag(24 * 30)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(width: 250)
+            }
+            .padding(.horizontal)
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    let data = historyManager.downsampledData(for: selectedTimeframe)
+                    
+                    if data.isEmpty {
+                        VStack {
+                            Spacer(minLength: 100)
+                            Text("Not enough data collected yet.")
+                                .foregroundColor(Color.tahoeSubtext)
+                            Text("AMD Power Gadget samples data every minute in the background.")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.tahoeSubtext.opacity(0.7))
+                            Spacer()
+                        }
+                    } else {
+                        // CPU Load Chart
+                        HistoryCard(title: "CPU Load", subtitle: "Average utilization over time", accent: Color.tahoeAccentCyan) {
+                            if #available(macOS 13.0, *) {
+                                Chart(data) { point in
+                                    LineMark(
+                                        x: .value("Time", point.timestamp),
+                                        y: .value("Load %", point.cpuLoad)
+                                    )
+                                    .foregroundStyle(Color.tahoeAccentCyan)
+                                    
+                                    AreaMark(
+                                        x: .value("Time", point.timestamp),
+                                        y: .value("Load %", point.cpuLoad)
+                                    )
+                                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentCyan.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                }
+                                .chartYScale(domain: 0...100)
+                                .frame(height: 150)
+                            } else {
+                                Text("Charts require macOS 13.0+")
+                            }
+                        }
+                        
+                        // Temperatures Chart (CPU & GPU)
+                        HistoryCard(title: "Thermal History", subtitle: "CPU and GPU temperatures", accent: Color.tahoeAccentRed) {
+                            if #available(macOS 13.0, *) {
+                                Chart(data) { point in
+                                    LineMark(
+                                        x: .value("Time", point.timestamp),
+                                        y: .value("CPU Temp", point.cpuTemp)
+                                    )
+                                    .foregroundStyle(Color.tahoeAccentOrange)
+                                    
+                                    LineMark(
+                                        x: .value("Time", point.timestamp),
+                                        y: .value("GPU Temp", point.gpuTemp)
+                                    )
+                                    .foregroundStyle(Color.tahoeAccentPurple)
+                                }
+                                .chartYScale(domain: 20...110)
+                                .frame(height: 150)
+                            } else {
+                                Text("Charts require macOS 13.0+")
+                            }
+                        }
+                        
+                        // RAM Usage Chart
+                        HistoryCard(title: "Memory Usage", subtitle: "RAM utilization percentage", accent: Color.tahoeAccentGreen) {
+                            if #available(macOS 13.0, *) {
+                                Chart(data) { point in
+                                    LineMark(
+                                        x: .value("Time", point.timestamp),
+                                        y: .value("RAM %", point.ramUsage)
+                                    )
+                                    .foregroundStyle(Color.tahoeAccentGreen)
+                                    
+                                    AreaMark(
+                                        x: .value("Time", point.timestamp),
+                                        y: .value("RAM %", point.ramUsage)
+                                    )
+                                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentGreen.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                }
+                                .chartYScale(domain: 0...100)
+                                .frame(height: 150)
+                            } else {
+                                Text("Charts require macOS 13.0+")
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 20)
+            }
+        }
+        .onAppear {
+            historyManager.sampleCurrentTelemetry()
+        }
+    }
+}
+
+struct HistoryCard<Content: View>: View {
+    let title: String
+    let subtitle: String
+    let accent: Color
+    let content: Content
+    
+    init(title: String, subtitle: String, accent: Color, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.subtitle = subtitle
+        self.accent = accent
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.tahoeText)
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.tahoeSubtext)
+                }
+                Spacer()
+            }
+            
+            content
+        }
+        .padding(20)
+        .background(Color.tahoeCard)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.tahoeCardBorder, lineWidth: 1)
+        )
+    }
+}
+
+struct DesktopWidgetsConfigView: View {
+    @ObservedObject var model: TelemetryModel
+    @ObservedObject var manager = DesktopWidgetManager.shared
+    
+    @AppStorage("widget_enabled_CPU") private var widgetCpuEnabled = false
+    @AppStorage("widget_enabled_GPU") private var widgetGpuEnabled = false
+    @AppStorage("widget_enabled_RAM") private var widgetRamEnabled = false
+    @AppStorage("widget_enabled_Disk") private var widgetDiskEnabled = false
+    @AppStorage("widget_enabled_Net") private var widgetNetEnabled = false
+    @AppStorage("widget_enabled_Fan") private var widgetFanEnabled = false
+    @AppStorage("widget_enabled_Clock") private var widgetClockEnabled = false
+    
+    @AppStorage("widget_auto_align") private var widgetAutoAlign = false
+    @AppStorage("widget_align_corner") private var widgetAlignCorner = "topRight"
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                SectionTitle("Desktop Widgets")
+                Text("Show a floating, non-interactive widget on your desktop for live telemetry.")
+                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                
+                TahoeCard(accent: Color.tahoeAccentBlue.opacity(0.15)) {
+                    VStack(spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Edit Widget Layout").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Unlock widgets to drag them around the screen").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            Button(action: {
+                                manager.isEditingWidgets.toggle()
+                            }) {
+                                Text(manager.isEditingWidgets ? "Done" : "Edit Layout")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(manager.isEditingWidgets ? .black : .white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 4)
+                                    .background(manager.isEditingWidgets ? Color.white : Color.tahoeAccentBlue)
+                                    .cornerRadius(6)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        
+                        Divider().background(Color.white.opacity(0.1))
+                        
+                        HStack {
+                            Text("Show CPU Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetCpuEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        HStack {
+                            Text("Show GPU Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetGpuEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        HStack {
+                            Text("Show RAM Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetRamEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        HStack {
+                            Text("Show Disk Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetDiskEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        HStack {
+                            Text("Show Network Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetNetEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        HStack {
+                            Text("Show Fan Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetFanEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        HStack {
+                            Text("Show Clock Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetClockEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                    }
+                }
+                
+                Divider().background(Color.tahoeCardBorder)
+                
+                SectionTitle("Widget Options")
+                Text("Customize the appearance and behavior of your desktop widgets.")
+                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                
+                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Right-click any widget directly on your desktop to change its style dynamically (Classic Glass, Pro Monitor, or Core Matrix).").font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                        
+                        Divider().background(Color.white.opacity(0.1))
+                        
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Auto-Align Active Widgets").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Automatically stack active widgets at a corner").font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $widgetAutoAlign)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
+                        }
+                        
+                        if widgetAutoAlign {
+                            HStack {
+                                Text("Alignment Corner").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
+                                Spacer()
+                                Picker("", selection: $widgetAlignCorner) {
+                                    Text("Top Right").tag("topRight")
+                                    Text("Top Left").tag("topLeft")
+                                    Text("Bottom Right").tag("bottomRight")
+                                    Text("Bottom Left").tag("bottomLeft")
+                                }
+                                .pickerStyle(.menu)
+                                .frame(width: 140)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 24).padding(.vertical, 20)
+        }
+        .onChange(of: widgetCpuEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetGpuEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetRamEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetDiskEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetNetEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetFanEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetClockEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetAutoAlign) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetAlignCorner) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
     }
 }

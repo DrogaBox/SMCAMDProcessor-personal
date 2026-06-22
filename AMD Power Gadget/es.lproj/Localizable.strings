@@ -10,6 +10,7 @@
 "Advanced" = "Avanzado";
 "Menu Bar" = "Barra de Menús";
 "System Info" = "Información de Sistema";
+"Desktop Widgets" = "Widgets de Escritorio";
 
 "AMD Power" = "AMD Power";
 "Gadget" = "Gadget";
@@ -151,4 +152,27 @@
 "Mode" = "Modo";
 "EPP Profile" = "Perfil EPP";
 
-
+/* Desktop Widgets */
+"Show CPU Widget" = "Mostrar Widget de CPU";
+"Show GPU Widget" = "Mostrar Widget de GPU";
+"Show RAM Widget" = "Mostrar Widget de Memoria (RAM)";
+"Show Disk Widget" = "Mostrar Widget de Disco";
+"Show Network Widget" = "Mostrar Widget de Red";
+"Show Fan Widget" = "Mostrar Widget de Ventiladores";
+"Edit Widget Layout" = "Editar Diseño de Widgets";
+"Unlock widgets to drag them around the screen" = "Desbloquear widgets para arrastrarlos por la pantalla";
+"Widget Options" = "Opciones de Widget";
+"Customize the appearance and behavior of your desktop widgets." = "Personalizar la apariencia y el comportamiento de los widgets de escritorio.";
+"Auto-Align Active Widgets" = "Alinear Widgets Activos";
+"Automatically stack active widgets at a corner" = "Alinear automáticamente los widgets activos en una esquina";
+"Alignment Corner" = "Esquina de Alineación";
+"Top Right" = "Superior Derecha";
+"Top Left" = "Superior Izquierda";
+"Bottom Right" = "Inferior Derecha";
+"Bottom Left" = "Inferior Izquierda";
+"Show Clock Widget" = "Mostrar Widget de Reloj";
+"Clock" = "Reloj";
+"Stats Table" = "Tabla de Estadísticas";
+"Classic Glass" = "Clásico Glass";
+"Pro Monitor" = "Pro Monitor";
+"Core Matrix" = "Matriz de Núcleos";

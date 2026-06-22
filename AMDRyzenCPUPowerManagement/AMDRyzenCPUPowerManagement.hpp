@@ -206,6 +206,7 @@ public:
     bool cppcActiveMode {false};
     uint8_t cppcEPPValue {0x3F};
     uint8_t cppcHighestPerf_perCore[CPUInfo::MaxCpus] {};
+    bool cppcThrottled {false};
     uint64_t cstateAddrConfig {0};
     
     uint8_t cpuFamily;

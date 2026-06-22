@@ -804,7 +804,9 @@ void AMDRyzenCPUPowerManagement::applyEPPControl() {
             reqVal |= (uint64_t)lowestPerf;
             reqVal |= ((uint64_t)highestPerf) << 8;
             reqVal |= 0ULL << 16; // Desired Performance = 0 (autonomous)
-            reqVal |= ((uint64_t)provider->cppcEPPValue) << 24;
+            
+            uint8_t effectiveEPP = provider->cppcThrottled ? 0xFF : provider->cppcEPPValue;
+            reqVal |= ((uint64_t)effectiveEPP) << 24;
             
             provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
             provider->write_msr(kMSR_AMD_CPPC_REQ, reqVal);
@@ -895,7 +897,21 @@ float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
 void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     float sum = 0;
     for (int i = 0; i < HF_TEMP_SAMPLE_LEN; i++) sum += tempSamples[i];
-    PACKAGE_TEMPERATURE_perPackage[0] = sum * HF_TEMP_SAMPLE_LENREP;
+    float currentTemp = sum * HF_TEMP_SAMPLE_LENREP;
+    PACKAGE_TEMPERATURE_perPackage[0] = currentTemp;
+    
+    // Dynamic CPPC Throttling Logic
+    if (cppcActiveMode) {
+        if (!cppcThrottled && currentTemp > 95.0f) {
+            cppcThrottled = true;
+            IOLog("AMDCPUSupport: Thermal limit reached (%.1f°C). Throttling CPPC EPP to Power Save.\\n", currentTemp);
+            applyEPPControl();
+        } else if (cppcThrottled && currentTemp < 85.0f) {
+            cppcThrottled = false;
+            IOLog("AMDCPUSupport: Thermal condition cleared (%.1f°C). Restoring CPPC EPP.\\n", currentTemp);
+            applyEPPControl();
+        }
+    }
 }
 
 void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
