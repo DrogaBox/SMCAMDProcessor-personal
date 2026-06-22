@@ -1433,7 +1433,7 @@ struct DesktopWidgetView: View {
                 progress: model.diskUsagePct / 100.0,
                 colors: [DesktopWidgetType.disk.color1, DesktopWidgetType.disk.color2],
                 valueString: String(format: "%.0f%%", model.diskUsagePct),
-                historyValue: { $0.diskReadMBps + $0.diskWriteMBps },
+                historyValue: { min(100.0, (($0.diskReadMBps + $0.diskWriteMBps) / 100.0) * 100.0) }, // Normalized to 100 MB/s max
                 type: .disk
             ))
         }
@@ -1454,7 +1454,7 @@ struct DesktopWidgetView: View {
                         return String(format: "%.0f K/s", totalSpeed * 1024.0)
                     }
                 }(),
-                historyValue: { $0.netDownloadMBps + $0.netUploadMBps },
+                historyValue: { min(100.0, (($0.netDownloadMBps + $0.netUploadMBps) / 10.0) * 100.0) }, // Normalized to 10 MB/s max
                 type: .net
             ))
         }
@@ -1472,7 +1472,7 @@ struct DesktopWidgetView: View {
                     let rpm = model.fans.first?.rpm ?? 0
                     return rpm > 0 ? "\(rpm) RPM" : "0 RPM"
                 }(),
-                historyValue: { $0.fanRPM },
+                historyValue: { min(100.0, (Double($0.fanRPM) / 5000.0) * 100.0) }, // Normalized to 5000 RPM max
                 type: .fan
             ))
         }
