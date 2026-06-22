@@ -950,6 +950,7 @@ enum DesktopWidgetType: String, CaseIterable {
     case net = "Net"
     case fan = "Fan"
     case clock = "Clock"
+    case united = "United"
     
     var color1: Color {
         switch self {
@@ -960,6 +961,7 @@ enum DesktopWidgetType: String, CaseIterable {
         case .net: return .green
         case .fan: return .teal
         case .clock: return .orange
+        case .united: return .blue
         }
     }
     
@@ -972,6 +974,7 @@ enum DesktopWidgetType: String, CaseIterable {
         case .net: return .mint
         case .fan: return Color(red: 0.2, green: 0.7, blue: 0.8)
         case .clock: return .yellow
+        case .united: return .purple
         }
     }
 }
@@ -1024,8 +1027,15 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         let style = DesktopWidgetStyle(rawValue: styleRaw) ?? .classic
         let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
         
-        let width: CGFloat = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
-        let height: CGFloat = 160
+        let width: CGFloat
+        let height: CGFloat
+        if type == .united {
+            width = 180
+            height = 180
+        } else {
+            width = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
+            height = 160
+        }
         
         let savedXKey = "widget_x_\(type.rawValue)"
         let savedYKey = "widget_y_\(type.rawValue)"
@@ -1046,6 +1056,7 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
             case .net: offsetMultiplier = 4
             case .fan: offsetMultiplier = 5
             case .clock: offsetMultiplier = 6
+            case .united: offsetMultiplier = 7
             }
             let margin: CGFloat = 16
             let spacing: CGFloat = 16
@@ -1089,8 +1100,15 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
     func resizeWidget(type: DesktopWidgetType, style: DesktopWidgetStyle) {
         guard let window = widgetWindows[type] else { return }
         let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
-        let width: CGFloat = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
-        let height: CGFloat = 160
+        let width: CGFloat
+        let height: CGFloat
+        if type == .united {
+            width = 180
+            height = 180
+        } else {
+            width = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
+            height = 160
+        }
         
         let oldFrame = window.frame
         let newX = oldFrame.maxX - width
@@ -1268,6 +1286,37 @@ enum DesktopWidgetStyle: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
+struct MiniCircularGauge: View {
+    let title: String
+    let progress: Double
+    let colors: [Color]
+    
+    var body: some View {
+        VStack(spacing: 2) {
+            ZStack {
+                Circle().stroke(Color.white.opacity(0.06), lineWidth: 4)
+                Circle()
+                    .trim(from: 0, to: CGFloat(min(1.0, max(0.0, progress))))
+                    .stroke(
+                        LinearGradient(gradient: Gradient(colors: colors), startPoint: .topLeading, endPoint: .bottomTrailing),
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                    .rotationEffect(Angle(degrees: -90))
+                
+                Text(String(format: "%.0f%%", progress * 100))
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 44, height: 44)
+            
+            Text(title)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .frame(width: 56, height: 56)
+    }
+}
+
 struct DesktopWidgetView: View {
     @ObservedObject var model: TelemetryModel
     @ObservedObject var manager: DesktopWidgetManager
@@ -1306,6 +1355,8 @@ struct DesktopWidgetView: View {
             let calendar = Calendar.current
             let minutes = Double(calendar.component(.minute, from: Date()))
             return (minutes / 60.0) * 100.0
+        case .united:
+            return model.cpuLoadAvg
         }
     }
     
@@ -1332,6 +1383,8 @@ struct DesktopWidgetView: View {
             let fmt = DateFormatter()
             fmt.dateFormat = "HH:mm"
             return fmt.string(from: Date())
+        case .united:
+            return ""
         }
     }
     
@@ -1348,6 +1401,7 @@ struct DesktopWidgetView: View {
         case .net: return NSLocalizedString("Network", comment: "")
         case .fan: return NSLocalizedString("Fan", comment: "")
         case .clock: return NSLocalizedString("Clock", comment: "")
+        case .united: return NSLocalizedString("United", comment: "")
         }
     }
     
@@ -1360,6 +1414,7 @@ struct DesktopWidgetView: View {
         case .net: return "network"
         case .fan: return "fan"
         case .clock: return "clock"
+        case .united: return "square.grid.2x2"
         }
     }
     
@@ -1376,7 +1431,7 @@ struct DesktopWidgetView: View {
                 textListStyle
             }
         }
-        .frame(width: style == .classic || style == .textList ? 128 : (style == .proMonitor ? 304 : 216), height: 128)
+        .frame(width: type == .united ? 148 : (style == .classic || style == .textList ? 128 : (style == .proMonitor ? 304 : 216)), height: type == .united ? 148 : 128)
         .padding(16)
         .background(
             VisualEffectBackground(material: .hudWindow, blendingMode: .behindWindow, state: .active, cornerRadius: 24)
@@ -1432,44 +1487,59 @@ struct DesktopWidgetView: View {
             
             Spacer()
             
-            HStack {
-                Spacer()
-                ZStack {
-                    Circle().stroke(Color.white.opacity(0.06), lineWidth: 6)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, valuePct / 100.0))))
-                        .stroke(
-                            LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .topLeading, endPoint: .bottomTrailing),
-                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
-                        )
-                        .rotationEffect(Angle(degrees: -90))
-                    
-                    VStack(spacing: 0) {
-                        if type == .clock {
-                            let clockStrings = getClockStrings()
-                            Text(clockStrings.time)
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                            Text(clockStrings.day)
-                                .font(.system(size: 8, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
-                        } else {
-                            Text(String(format: "%.0f%%", valuePct))
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                            Text(valueString)
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
+            if type == .united {
+                let cpuProgress = model.cpuLoadAvg / 100.0
+                let gpuProgress = model.gpuLoadPct / 100.0
+                let ramProgress = model.ramUsagePct / 100.0
+                let diskProgress = model.diskUsagePct / 100.0
+                
+                LazyVGrid(columns: [GridItem(.fixed(56), spacing: 8), GridItem(.fixed(56), spacing: 8)], spacing: 6) {
+                    MiniCircularGauge(title: "CPU", progress: cpuProgress, colors: [DesktopWidgetType.cpu.color1, DesktopWidgetType.cpu.color2])
+                    MiniCircularGauge(title: "GPU", progress: gpuProgress, colors: [DesktopWidgetType.gpu.color1, DesktopWidgetType.gpu.color2])
+                    MiniCircularGauge(title: "RAM", progress: ramProgress, colors: [DesktopWidgetType.ram.color1, DesktopWidgetType.ram.color2])
+                    MiniCircularGauge(title: "Disk", progress: diskProgress, colors: [DesktopWidgetType.disk.color1, DesktopWidgetType.disk.color2])
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                HStack {
+                    Spacer()
+                    ZStack {
+                        Circle().stroke(Color.white.opacity(0.06), lineWidth: 6)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(min(1.0, max(0.0, valuePct / 100.0))))
+                            .stroke(
+                                LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .topLeading, endPoint: .bottomTrailing),
+                                style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                            )
+                            .rotationEffect(Angle(degrees: -90))
+                        
+                        VStack(spacing: 0) {
+                            if type == .clock {
+                                let clockStrings = getClockStrings()
+                                Text(clockStrings.time)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                Text(clockStrings.day)
+                                    .font(.system(size: 8, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.7))
+                            } else {
+                                Text(String(format: "%.0f%%", valuePct))
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                Text(valueString)
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
                         }
                     }
+                    .frame(width: 80, height: 80)
+                    Spacer()
                 }
-                .frame(width: 80, height: 80)
-                Spacer()
             }
             
             Spacer()
         }
-        .frame(width: 128, height: 128)
+        .frame(width: type == .united ? 148 : 128, height: type == .united ? 148 : 128)
     }
     
     private var proMonitorStyle: some View {
@@ -1487,7 +1557,7 @@ struct DesktopWidgetView: View {
                     if #available(macOS 13.0, *) {
                         let yMax: Double = {
                             switch type {
-                            case .cpu, .gpu, .ram:
+                            case .cpu, .gpu, .ram, .united:
                                 return 100.0
                             case .disk:
                                 let maxVal = model.history.map { $0.diskReadMBps + $0.diskWriteMBps }.max() ?? 10.0
@@ -1508,33 +1578,54 @@ struct DesktopWidgetView: View {
                         
                         Chart {
                             ForEach(model.history) { point in
-                                LineMark(
-                                    x: .value("Time", point.time),
-                                    y: .value("Value", 
-                                        type == .cpu ? point.cpuLoad : 
-                                        (type == .gpu ? point.gpuLoad : 
-                                        (type == .ram ? point.ramUsagePct : 
-                                        (type == .disk ? point.diskReadMBps + point.diskWriteMBps : 
-                                        (type == .fan ? point.fanRPM : 
-                                        (point.netDownloadMBps + point.netUploadMBps)
-                                        )))))
-                                )
-                                .interpolationMethod(.catmullRom)
-                                .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .leading, endPoint: .trailing))
-                                
-                                AreaMark(
-                                    x: .value("Time", point.time),
-                                    y: .value("Value", 
-                                        type == .cpu ? point.cpuLoad : 
-                                        (type == .gpu ? point.gpuLoad : 
-                                        (type == .ram ? point.ramUsagePct : 
-                                        (type == .disk ? point.diskReadMBps + point.diskWriteMBps : 
-                                        (type == .fan ? point.fanRPM : 
-                                        (point.netDownloadMBps + point.netUploadMBps)
-                                        )))))
-                                )
-                                .interpolationMethod(.catmullRom)
-                                .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1.opacity(0.12), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                if type == .united {
+                                    LineMark(
+                                        x: .value("Time", point.time),
+                                        y: .value("CPU", point.cpuLoad)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(DesktopWidgetType.cpu.color1)
+                                    
+                                    LineMark(
+                                        x: .value("Time", point.time),
+                                        y: .value("GPU", point.gpuLoad)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(DesktopWidgetType.gpu.color1)
+                                    
+                                    LineMark(
+                                        x: .value("Time", point.time),
+                                        y: .value("RAM", point.ramUsagePct)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(DesktopWidgetType.ram.color1)
+                                } else {
+                                    let val: Double = {
+                                        switch type {
+                                        case .cpu: return point.cpuLoad
+                                        case .gpu: return point.gpuLoad
+                                        case .ram: return point.ramUsagePct
+                                        case .disk: return point.diskReadMBps + point.diskWriteMBps
+                                        case .fan: return point.fanRPM
+                                        case .net: return point.netDownloadMBps + point.netUploadMBps
+                                        case .clock, .united: return 0.0
+                                        }
+                                    }()
+                                    
+                                    LineMark(
+                                        x: .value("Time", point.time),
+                                        y: .value("Value", val)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .leading, endPoint: .trailing))
+                                    
+                                    AreaMark(
+                                        x: .value("Time", point.time),
+                                        y: .value("Value", val)
+                                    )
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1.opacity(0.12), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                }
                             }
                         }
                         .chartXScale(domain: xMin...xMax)
@@ -1545,7 +1636,7 @@ struct DesktopWidgetView: View {
                                 AxisValueLabel() {
                                     if let doubleVal = value.as(Double.self) {
                                         switch type {
-                                        case .cpu, .gpu, .ram:
+                                        case .cpu, .gpu, .ram, .united:
                                             Text(String(format: "%.0f%%", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
                                         case .disk:
                                             Text(String(format: "%.1f M/s", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
@@ -1683,6 +1774,13 @@ struct DesktopWidgetView: View {
                 StatListRow(label: "Local Time", value: clock.local)
                 StatListRow(label: "UTC Time", value: clock.utc)
                 StatListRow(label: "Weekday", value: clock.weekday)
+            }
+        case .united:
+            VStack(spacing: 2) {
+                StatListRow(label: "CPU", value: String(format: "%.1f%% (%.0f°C)", model.cpuLoadAvg, model.cpuTempC))
+                StatListRow(label: "GPU", value: String(format: "%.1f%% (%.0f°C)", model.gpuLoadPct, model.gpuTempC))
+                StatListRow(label: "RAM", value: String(format: "%.1f%%", model.ramUsagePct))
+                StatListRow(label: "Disk", value: String(format: "%.1f%%", model.diskUsagePct))
             }
         }
     }
