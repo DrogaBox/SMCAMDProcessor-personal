@@ -1043,9 +1043,12 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         
         let windowRect: NSRect
         if hasSavedPos {
-            let x = UserDefaults.standard.double(forKey: savedXKey)
-            let y = UserDefaults.standard.double(forKey: savedYKey)
-            windowRect = NSRect(x: CGFloat(x), y: CGFloat(y), width: width, height: height)
+            let loadedX = CGFloat(UserDefaults.standard.double(forKey: savedXKey))
+            let loadedY = CGFloat(UserDefaults.standard.double(forKey: savedYKey))
+            let margin: CGFloat = 16
+            let x = max(screenRect.minX + margin, min(loadedX, screenRect.maxX - width - margin))
+            let y = max(screenRect.minY + margin, min(loadedY, screenRect.maxY - height - margin))
+            windowRect = NSRect(x: x, y: y, width: width, height: height)
         } else {
             let offsetMultiplier: CGFloat
             switch type {
@@ -1121,81 +1124,77 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
     }
     
     func snapWindow(_ window: NSWindow) {
-        let screen = NSScreen.main ?? NSScreen.screens.first
+        let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first
         let screenRect = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
         
-        let snapThreshold: CGFloat = 20.0
         let margin: CGFloat = 16.0
         let spacing: CGFloat = 16.0
+        let gridSize: CGFloat = 20.0
+        let snapThreshold: CGFloat = 10.0 // Magnetic snapping to other widgets when within 10px
         
         let frame = window.frame
         var newX = frame.origin.x
         var newY = frame.origin.y
         
-        // 1. Snap to screen edges
-        // Left edge: screenRect.minX + margin
-        if abs(frame.minX - (screenRect.minX + margin)) < snapThreshold {
-            newX = screenRect.minX + margin
-        }
-        // Right edge: screenRect.maxX - frame.width - margin
-        else if abs(frame.maxX - (screenRect.maxX - margin)) < snapThreshold {
-            newX = screenRect.maxX - frame.width - margin
-        }
+        // 1. Grid Snapping
+        // We round the position relative to the screen bounds plus margins to fit a 20px grid
+        let relativeX = newX - (screenRect.minX + margin)
+        let relativeY = newY - (screenRect.minY + margin)
         
-        // Top edge: screenRect.maxY - frame.height - margin
-        if abs(frame.maxY - (screenRect.maxY - margin)) < snapThreshold {
-            newY = screenRect.maxY - frame.height - margin
-        }
-        // Bottom edge: screenRect.minY + margin
-        else if abs(frame.minY - (screenRect.minY + margin)) < snapThreshold {
-            newY = screenRect.minY + margin
-        }
+        let snappedRelativeX = round(relativeX / gridSize) * gridSize
+        let snappedRelativeY = round(relativeY / gridSize) * gridSize
         
-        // 2. Snap to other widgets
+        newX = screenRect.minX + margin + snappedRelativeX
+        newY = screenRect.minY + margin + snappedRelativeY
+        
+        // 2. Strict bounds check to keep widgets inside the screen visible frame
+        newX = max(screenRect.minX + margin, min(newX, screenRect.maxX - frame.width - margin))
+        newY = max(screenRect.minY + margin, min(newY, screenRect.maxY - frame.height - margin))
+        
+        // 3. Magnetic alignment to other active widgets
         for (otherType, otherWin) in widgetWindows {
             if otherWin == window { continue }
             let otherFrame = otherWin.frame
             
-            // X alignment snaps:
-            // Snap left edge to other left edge
-            if abs(frame.minX - otherFrame.minX) < snapThreshold {
+            // Snap X edges:
+            if abs(newX - otherFrame.minX) < snapThreshold {
                 newX = otherFrame.minX
-            }
-            // Snap right edge to other right edge
-            else if abs(frame.maxX - otherFrame.maxX) < snapThreshold {
+            } else if abs((newX + frame.width) - otherFrame.maxX) < snapThreshold {
                 newX = otherFrame.maxX - frame.width
-            }
-            // Snap left edge to other right edge + spacing
-            else if abs(frame.minX - (otherFrame.maxX + spacing)) < snapThreshold {
+            } else if abs(newX - (otherFrame.maxX + spacing)) < snapThreshold {
                 newX = otherFrame.maxX + spacing
-            }
-            // Snap right edge to other left edge - spacing
-            else if abs(frame.maxX - (otherFrame.minX - spacing)) < snapThreshold {
+            } else if abs((newX + frame.width) - (otherFrame.minX - spacing)) < snapThreshold {
                 newX = otherFrame.minX - frame.width - spacing
             }
             
-            // Y alignment snaps:
-            // Snap top edge to other top edge
-            if abs(frame.maxY - otherFrame.maxY) < snapThreshold {
+            // Snap Y edges:
+            if abs((newY + frame.height) - otherFrame.maxY) < snapThreshold {
                 newY = otherFrame.maxY - frame.height
-            }
-            // Snap bottom edge to other bottom edge
-            else if abs(frame.minY - otherFrame.minY) < snapThreshold {
+            } else if abs(newY - otherFrame.minY) < snapThreshold {
                 newY = otherFrame.minY
-            }
-            // Snap top edge to other bottom edge - spacing
-            else if abs(frame.maxY - (otherFrame.minY - spacing)) < snapThreshold {
+            } else if abs((newY + frame.height) - (otherFrame.minY - spacing)) < snapThreshold {
                 newY = otherFrame.minY - spacing - frame.height
-            }
-            // Snap bottom edge to other top edge + spacing
-            else if abs(frame.minY - (otherFrame.maxY + spacing)) < snapThreshold {
+            } else if abs(newY - (otherFrame.maxY + spacing)) < snapThreshold {
                 newY = otherFrame.maxY + spacing
             }
         }
         
-        // Apply snapped frame if changed
+        // Double clamp after magnetic snaps to avoid any widget sticking outside
+        newX = max(screenRect.minX + margin, min(newX, screenRect.maxX - frame.width - margin))
+        newY = max(screenRect.minY + margin, min(newY, screenRect.maxY - frame.height - margin))
+        
+        // Apply frame with animation
         if newX != frame.origin.x || newY != frame.origin.y {
             window.setFrame(NSRect(x: newX, y: newY, width: frame.width, height: frame.height), display: true, animate: true)
+        }
+        
+        // Save the safe, clamped position to user settings
+        for (type, win) in widgetWindows {
+            if win == window {
+                UserDefaults.standard.set(Double(newX), forKey: "widget_x_\(type.rawValue)")
+                UserDefaults.standard.set(Double(newY), forKey: "widget_y_\(type.rawValue)")
+                break
+            }
         }
     }
     
@@ -1270,8 +1269,15 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         for (type, win) in widgetWindows {
             if win == window {
                 let origin = window.frame.origin
-                UserDefaults.standard.set(Double(origin.x), forKey: "widget_x_\(type.rawValue)")
-                UserDefaults.standard.set(Double(origin.y), forKey: "widget_y_\(type.rawValue)")
+                let screen = window.screen ?? NSScreen.main ?? NSScreen.screens.first
+                let screenRect = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
+                let margin: CGFloat = 16
+                
+                let clampedX = max(screenRect.minX + margin, min(origin.x, screenRect.maxX - window.frame.width - margin))
+                let clampedY = max(screenRect.minY + margin, min(origin.y, screenRect.maxY - window.frame.height - margin))
+                
+                UserDefaults.standard.set(Double(clampedX), forKey: "widget_x_\(type.rawValue)")
+                UserDefaults.standard.set(Double(clampedY), forKey: "widget_y_\(type.rawValue)")
                 break
             }
         }
