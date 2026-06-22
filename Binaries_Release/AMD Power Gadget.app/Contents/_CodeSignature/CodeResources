@@ -14,15 +14,15 @@
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/AMDPowerGadget.nib</key>
 		<data>
-		R1HLPCX53T6jzRWnWreew3SmRvo=
+		KGRIfRv88R8tAjnemKAoTy1wJMA=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<data>
-		Zn7gnRubSUdyuwC892JHwWjxh+Y=
+		68sLyPn65hiTUobbFbyrOaEyVZU=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<data>
-		1urSI7IZtO5t9xw1QBUfD2wzUYw=
+		r/va41tglRQQbi/mHC2aWD0hbbs=
 		</data>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
 		<data>
@@ -40,7 +40,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			jRaPBYsf7/uQ4tfnDiN87fhsvyg=
+			27j7riYtdbCBdt5sf1MSNVL4twA=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -49,7 +49,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			DeoDuy8iGmcFLtEdpMU1qno4RzQ=
+			Hz2MwVav9o1z6fsmKWEqm45zz9I=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -61,10 +61,10 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			dpCrJemldOK8Nf9Y6z6vK+UTxEw=
+			F2zp648dw47H2Yo0KEuwnZhONFM=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7690ab25e9a574e2bc35ff58eb3eaf2be513c44c"</string>
+			<string>cdhash H"176ce9eb8f1dc38ec7d98a34284bb09d984e3453" or cdhash H"54c7a3b028c53482bfd604cd95d49aa71da9dcd1"</string>
 		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
@@ -84,21 +84,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			kHtW4We7dxssmUDdDUv3dWt8UCwcKP+8Q1lXOXS1zPM=
+			qBl4fWe2E+uDKVuQr9gNqjd/qTEyVskHghn3mfB2gm8=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/Info.plist</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Y5ztRRMy/M2x2rKK87i+Q5/rHQwDwz/UR0908ZGWjnw=
+			y4rgf4gq8PX/kXVDIQYIxvEavqou7S39CK0lrqJMiJQ=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/MainMenu.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			2gREUoD6T99HDSksu7MRc02tYpmOylLz1M/oqXXGX9I=
+			XjH9CxkMwJBHgGOWp++IJMWOM8WRAuODpMQZ/XQdNv4=
 			</data>
 		</dict>
 		<key>Resources/Base.lproj/Main.storyboardc/XfG-lQ-9wD-view-m2S-Jp-Qdl.nib</key>
@@ -126,7 +126,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			4vQFmBN9aYR0IwjJwf43WXJXRwy39LZgmDZ/ToVc1W8=
+			llLCRclkivaP56tfJgBi4++9LndxT1UKiePgcy3NQhY=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -135,7 +135,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			d91z4mMj8URRNOMY7g4ZY2pOeQ1XL8OsFKd+KFrUNds=
+			PnRK2oc99i+8kXQ42GR0wNKpO/O51pA+IAc6hSXQI3E=
 			</data>
 			<key>optional</key>
 			<true/>
