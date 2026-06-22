@@ -3915,6 +3915,7 @@ struct DesktopWidgetsConfigView: View {
     @AppStorage("widget_enabled_Net") private var widgetNetEnabled = false
     @AppStorage("widget_enabled_Fan") private var widgetFanEnabled = false
     @AppStorage("widget_enabled_Clock") private var widgetClockEnabled = false
+    @AppStorage("widget_enabled_United") private var widgetUnitedEnabled = false
     
     @AppStorage("widget_auto_align") private var widgetAutoAlign = false
     @AppStorage("widget_align_corner") private var widgetAlignCorner = "topRight"
@@ -3998,6 +3999,13 @@ struct DesktopWidgetsConfigView: View {
                             Toggle("", isOn: $widgetClockEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
                         }
+                        
+                        HStack {
+                            Text("Show United Widget").font(.system(size: 11)).foregroundColor(.tahoeText)
+                            Spacer()
+                            Toggle("", isOn: $widgetUnitedEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
                     }
                 }
                 
@@ -4067,6 +4075,10 @@ struct DesktopWidgetsConfigView: View {
             NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
         }
         .onChange(of: widgetClockEnabled) { _ in
+            manager.refreshWidgets()
+            NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+        }
+        .onChange(of: widgetUnitedEnabled) { _ in
             manager.refreshWidgets()
             NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
         }
