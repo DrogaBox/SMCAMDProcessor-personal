@@ -3917,6 +3917,13 @@ struct DesktopWidgetsConfigView: View {
     @AppStorage("widget_enabled_Clock") private var widgetClockEnabled = false
     @AppStorage("widget_enabled_United") private var widgetUnitedEnabled = false
     
+    @AppStorage("widget_united_show_cpu") private var unitedShowCpu = true
+    @AppStorage("widget_united_show_gpu") private var unitedShowGpu = true
+    @AppStorage("widget_united_show_ram") private var unitedShowRam = true
+    @AppStorage("widget_united_show_disk") private var unitedShowDisk = true
+    @AppStorage("widget_united_show_net") private var unitedShowNet = false
+    @AppStorage("widget_united_show_fan") private var unitedShowFan = false
+    
     @AppStorage("widget_auto_align") private var widgetAutoAlign = false
     @AppStorage("widget_align_corner") private var widgetAlignCorner = "topRight"
     
@@ -4005,6 +4012,58 @@ struct DesktopWidgetsConfigView: View {
                             Spacer()
                             Toggle("", isOn: $widgetUnitedEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                        }
+                        
+                        if widgetUnitedEnabled {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Configure Combined Metrics").font(.system(size: 10, weight: .semibold)).foregroundColor(.tahoeSubtext)
+                                    .padding(.top, 4)
+                                
+                                HStack {
+                                    Text("Include CPU").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Toggle("", isOn: $unitedShowCpu)
+                                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                                        .scaleEffect(0.8)
+                                }
+                                HStack {
+                                    Text("Include GPU").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Toggle("", isOn: $unitedShowGpu)
+                                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                                        .scaleEffect(0.8)
+                                }
+                                HStack {
+                                    Text("Include RAM").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Toggle("", isOn: $unitedShowRam)
+                                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                                        .scaleEffect(0.8)
+                                }
+                                HStack {
+                                    Text("Include Disk").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Toggle("", isOn: $unitedShowDisk)
+                                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                                        .scaleEffect(0.8)
+                                }
+                                HStack {
+                                    Text("Include Network").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Toggle("", isOn: $unitedShowNet)
+                                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                                        .scaleEffect(0.8)
+                                }
+                                HStack {
+                                    Text("Include Fan").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Spacer()
+                                    Toggle("", isOn: $unitedShowFan)
+                                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue)).labelsHidden()
+                                        .scaleEffect(0.8)
+                                }
+                            }
+                            .padding(.leading, 12)
+                            .padding(.bottom, 4)
                         }
                     }
                 }
