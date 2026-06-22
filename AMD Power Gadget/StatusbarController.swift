@@ -8,6 +8,7 @@
 
 import Cocoa
 import SwiftUI
+import Charts
 
 // MARK: - Refresh Rate Config
 class RefreshRateConfig: ObservableObject {
@@ -465,7 +466,9 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let baseInterval = RefreshRateConfig.shared.interval
         
         updateTimer = Timer.scheduledTimer(withTimeInterval: baseInterval, repeats: true, block: { [weak self] _ in
-            self?.update()
+            DispatchQueue.main.async {
+                self?.update()
+            }
         })
     }
 
@@ -716,6 +719,24 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         update()
     }
 
+    @objc func toggleWidget(_ sender: NSMenuItem) {
+        guard let typeString = sender.representedObject as? String,
+              let type = DesktopWidgetType(rawValue: typeString) else { return }
+        
+        let key = "widget_enabled_\(type.rawValue)"
+        let isEnabled = !UserDefaults.standard.bool(forKey: key)
+        UserDefaults.standard.set(isEnabled, forKey: key)
+        sender.state = isEnabled ? .on : .off
+        DesktopWidgetManager.shared.refreshWidgets()
+        NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+    }
+    
+    @objc func toggleWidgetEdit(_ sender: NSMenuItem) {
+        DesktopWidgetManager.shared.isEditingWidgets.toggle()
+        sender.state = DesktopWidgetManager.shared.isEditingWidgets ? .on : .off
+        NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+    }
+
     private func addMenuItems() {
         if menu == nil {
             menu = NSMenu()
@@ -729,6 +750,32 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         m.addItem(item)
         item = NSMenuItem(title: NSLocalizedString("Fan Control", comment: ""), action: #selector(fans), keyEquivalent: ""); item.target = self
         m.addItem(item)
+        
+        m.addItem(NSMenuItem.separator())
+
+        // Desktop Widgets submenu (built dynamically)
+        let widgetsMenu = NSMenu()
+        
+        for type in DesktopWidgetType.allCases {
+            let key = "widget_enabled_\(type.rawValue)"
+            let isEnabled = UserDefaults.standard.bool(forKey: key)
+            let wItem = NSMenuItem(title: NSLocalizedString("Show \(type.rawValue) Widget", comment: ""), action: #selector(toggleWidget(_:)), keyEquivalent: "")
+            wItem.target = self
+            wItem.representedObject = type.rawValue
+            wItem.state = isEnabled ? .on : .off
+            widgetsMenu.addItem(wItem)
+        }
+        
+        widgetsMenu.addItem(NSMenuItem.separator())
+        
+        let editItem = NSMenuItem(title: NSLocalizedString("Edit Widget Layout", comment: ""), action: #selector(toggleWidgetEdit(_:)), keyEquivalent: "")
+        editItem.target = self
+        editItem.state = DesktopWidgetManager.shared.isEditingWidgets ? .on : .off
+        widgetsMenu.addItem(editItem)
+        
+        let widgetsMenuItem = NSMenuItem(title: NSLocalizedString("Desktop Widgets", comment: ""), action: nil, keyEquivalent: "")
+        widgetsMenuItem.submenu = widgetsMenu
+        m.addItem(widgetsMenuItem)
         
         m.addItem(NSMenuItem.separator())
 
@@ -854,23 +901,934 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
     }
 
-
-// MARK: - Helpers
-private func getFreeMemoryMB() -> Int {
-    var stats = vm_statistics64()
-    var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
-    let result = withUnsafeMutablePointer(to: &stats) {
-        $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-            host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+    // MARK: - Helpers
+    private func getFreeMemoryMB() -> Int {
+        var stats = vm_statistics64()
+        var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &stats) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+            }
         }
+        if result == KERN_SUCCESS {
+            let pageSize = Int(getpagesize())
+            let freePages = Int(stats.free_count) + Int(stats.inactive_count)
+            return (freePages * pageSize) / (1024 * 1024)
+        }
+        return 0
     }
-    if result == KERN_SUCCESS {
-        let pageSize = Int(getpagesize())
-        let freePages = Int(stats.free_count) + Int(stats.inactive_count)
-        return (freePages * pageSize) / (1024 * 1024)
-    }
-    return 0
 }
 
+import Cocoa
+import SwiftUI
+import Charts
 
+// Custom NSHostingView subclass to handle window dragging in edit mode
+class WidgetHostingView<Content: View>: NSHostingView<Content> {
+    override func mouseDown(with event: NSEvent) {
+        if DesktopWidgetManager.shared.isEditingWidgets {
+            // Turn off auto-alignment if the user starts dragging
+            if UserDefaults.standard.bool(forKey: "widget_auto_align") {
+                UserDefaults.standard.set(false, forKey: "widget_auto_align")
+                NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+            }
+            if let window = self.window {
+                window.performDrag(with: event)
+                DesktopWidgetManager.shared.snapWindow(window)
+            }
+        } else {
+            super.mouseDown(with: event)
+        }
+    }
+}
+
+enum DesktopWidgetType: String, CaseIterable {
+    case cpu = "CPU"
+    case gpu = "GPU"
+    case ram = "RAM"
+    case disk = "Disk"
+    case net = "Net"
+    case fan = "Fan"
+    case clock = "Clock"
+    
+    var color1: Color {
+        switch self {
+        case .cpu: return .blue
+        case .gpu: return .purple
+        case .ram: return .orange
+        case .disk: return .pink
+        case .net: return .green
+        case .fan: return .teal
+        case .clock: return .orange
+        }
+    }
+    
+    var color2: Color {
+        switch self {
+        case .cpu: return .cyan
+        case .gpu: return Color(red: 0.5, green: 0.3, blue: 0.9)
+        case .ram: return .yellow
+        case .disk: return Color(red: 0.9, green: 0.4, blue: 0.6)
+        case .net: return .mint
+        case .fan: return Color(red: 0.2, green: 0.7, blue: 0.8)
+        case .clock: return .yellow
+        }
+    }
+}
+
+@MainActor
+class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
+    static let shared = DesktopWidgetManager()
+    
+    @Published var isEditingWidgets = false {
+        didSet { updateWindowModes() }
+    }
+    
+    private var widgetWindows: [DesktopWidgetType: NSWindow] = [:]
+    
+    var hasActiveWidgets: Bool {
+        return !widgetWindows.isEmpty
+    }
+    
+    func refreshWidgets() {
+        for type in DesktopWidgetType.allCases {
+            let key = "widget_enabled_\(type.rawValue)"
+            let isEnabled = UserDefaults.standard.bool(forKey: key)
+            
+            if isEnabled && widgetWindows[type] == nil {
+                spawnWidget(type: type)
+            } else if !isEnabled && widgetWindows[type] != nil {
+                if let win = widgetWindows[type] {
+                    win.orderOut(nil)
+                    win.contentView = nil
+                }
+                widgetWindows.removeValue(forKey: type)
+            }
+        }
+        
+        autoAlignActiveWidgets()
+        
+        DispatchQueue.main.async {
+            TelemetryModel.shared.updateTimerState() // Ensure timer runs if widgets are active
+        }
+    }
+    
+    private func spawnWidget(type: DesktopWidgetType) {
+        let widgetView = DesktopWidgetView(model: TelemetryModel.shared, manager: self, type: type)
+        let hostingView = WidgetHostingView(rootView: widgetView)
+        
+        let screen = NSScreen.main ?? NSScreen.screens.first
+        let screenRect = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
+        
+        let styleRaw = UserDefaults.standard.string(forKey: "widget_style_v2_\(type.rawValue)") ?? DesktopWidgetStyle.classic.rawValue
+        let style = DesktopWidgetStyle(rawValue: styleRaw) ?? .classic
+        let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
+        
+        let width: CGFloat = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
+        let height: CGFloat = 160
+        
+        let savedXKey = "widget_x_\(type.rawValue)"
+        let savedYKey = "widget_y_\(type.rawValue)"
+        let hasSavedPos = UserDefaults.standard.object(forKey: savedXKey) != nil
+        
+        let windowRect: NSRect
+        if hasSavedPos {
+            let x = UserDefaults.standard.double(forKey: savedXKey)
+            let y = UserDefaults.standard.double(forKey: savedYKey)
+            windowRect = NSRect(x: CGFloat(x), y: CGFloat(y), width: width, height: height)
+        } else {
+            let offsetMultiplier: CGFloat
+            switch type {
+            case .cpu: offsetMultiplier = 0
+            case .gpu: offsetMultiplier = 1
+            case .ram: offsetMultiplier = 2
+            case .disk: offsetMultiplier = 3
+            case .net: offsetMultiplier = 4
+            case .fan: offsetMultiplier = 5
+            case .clock: offsetMultiplier = 6
+            }
+            let margin: CGFloat = 16
+            let spacing: CGFloat = 16
+            let x = screenRect.maxX - width - margin
+            let y = screenRect.maxY - height - margin - (offsetMultiplier * (height + spacing))
+            windowRect = NSRect(x: x, y: y, width: width, height: height)
+        }
+        
+        let widgetWindow = NSWindow(
+            contentRect: windowRect,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        
+        widgetWindow.contentView = hostingView
+        widgetWindow.isOpaque = false
+        widgetWindow.backgroundColor = .clear
+        widgetWindow.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        widgetWindow.hasShadow = true
+        widgetWindow.delegate = self
+        
+        widgetWindows[type] = widgetWindow
+        updateWindowModes()
+        widgetWindow.orderFront(nil)
+    }
+    
+    private func updateWindowModes() {
+        for (_, window) in widgetWindows {
+            if isEditingWidgets {
+                window.level = .normal
+                window.ignoresMouseEvents = false
+            } else {
+                // Places the widgets 1 level above the wallpaper to make them visible but behind standard apps and desktop icons
+                window.level = NSWindow.Level(Int(CGWindowLevelForKey(.desktopWindow)) + 1)
+                window.ignoresMouseEvents = true
+            }
+        }
+    }
+    
+    func resizeWidget(type: DesktopWidgetType, style: DesktopWidgetStyle) {
+        guard let window = widgetWindows[type] else { return }
+        let resolvedStyle = (style == .coreMatrix && type != .cpu) ? .classic : style
+        let width: CGFloat = resolvedStyle == .classic ? 160 : (resolvedStyle == .proMonitor ? 336 : 248)
+        let height: CGFloat = 160
+        
+        let oldFrame = window.frame
+        let newX = oldFrame.maxX - width
+        let newY = oldFrame.maxY - height
+        
+        window.setFrame(NSRect(x: newX, y: newY, width: width, height: height), display: true, animate: true)
+        
+        UserDefaults.standard.set(Double(newX), forKey: "widget_x_\(type.rawValue)")
+        UserDefaults.standard.set(Double(newY), forKey: "widget_y_\(type.rawValue)")
+    }
+    
+    func snapWindow(_ window: NSWindow) {
+        let screen = NSScreen.main ?? NSScreen.screens.first
+        let screenRect = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
+        
+        let snapThreshold: CGFloat = 20.0
+        let margin: CGFloat = 16.0
+        let spacing: CGFloat = 16.0
+        
+        let frame = window.frame
+        var newX = frame.origin.x
+        var newY = frame.origin.y
+        
+        // 1. Snap to screen edges
+        // Left edge: screenRect.minX + margin
+        if abs(frame.minX - (screenRect.minX + margin)) < snapThreshold {
+            newX = screenRect.minX + margin
+        }
+        // Right edge: screenRect.maxX - frame.width - margin
+        else if abs(frame.maxX - (screenRect.maxX - margin)) < snapThreshold {
+            newX = screenRect.maxX - frame.width - margin
+        }
+        
+        // Top edge: screenRect.maxY - frame.height - margin
+        if abs(frame.maxY - (screenRect.maxY - margin)) < snapThreshold {
+            newY = screenRect.maxY - frame.height - margin
+        }
+        // Bottom edge: screenRect.minY + margin
+        else if abs(frame.minY - (screenRect.minY + margin)) < snapThreshold {
+            newY = screenRect.minY + margin
+        }
+        
+        // 2. Snap to other widgets
+        for (otherType, otherWin) in widgetWindows {
+            if otherWin == window { continue }
+            let otherFrame = otherWin.frame
+            
+            // X alignment snaps:
+            // Snap left edge to other left edge
+            if abs(frame.minX - otherFrame.minX) < snapThreshold {
+                newX = otherFrame.minX
+            }
+            // Snap right edge to other right edge
+            else if abs(frame.maxX - otherFrame.maxX) < snapThreshold {
+                newX = otherFrame.maxX - frame.width
+            }
+            // Snap left edge to other right edge + spacing
+            else if abs(frame.minX - (otherFrame.maxX + spacing)) < snapThreshold {
+                newX = otherFrame.maxX + spacing
+            }
+            // Snap right edge to other left edge - spacing
+            else if abs(frame.maxX - (otherFrame.minX - spacing)) < snapThreshold {
+                newX = otherFrame.minX - frame.width - spacing
+            }
+            
+            // Y alignment snaps:
+            // Snap top edge to other top edge
+            if abs(frame.maxY - otherFrame.maxY) < snapThreshold {
+                newY = otherFrame.maxY - frame.height
+            }
+            // Snap bottom edge to other bottom edge
+            else if abs(frame.minY - otherFrame.minY) < snapThreshold {
+                newY = otherFrame.minY
+            }
+            // Snap top edge to other bottom edge - spacing
+            else if abs(frame.maxY - (otherFrame.minY - spacing)) < snapThreshold {
+                newY = otherFrame.minY - spacing - frame.height
+            }
+            // Snap bottom edge to other top edge + spacing
+            else if abs(frame.minY - (otherFrame.maxY + spacing)) < snapThreshold {
+                newY = otherFrame.maxY + spacing
+            }
+        }
+        
+        // Apply snapped frame if changed
+        if newX != frame.origin.x || newY != frame.origin.y {
+            window.setFrame(NSRect(x: newX, y: newY, width: frame.width, height: frame.height), display: true, animate: true)
+        }
+    }
+    
+    func autoAlignActiveWidgets() {
+        let autoAlign = UserDefaults.standard.bool(forKey: "widget_auto_align")
+        guard autoAlign else { return }
+        
+        let corner = UserDefaults.standard.string(forKey: "widget_align_corner") ?? "topRight"
+        let screen = NSScreen.main ?? NSScreen.screens.first
+        let screenRect = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
+        
+        let activeTypes = DesktopWidgetType.allCases.filter { UserDefaults.standard.bool(forKey: "widget_enabled_\($0.rawValue)") }
+        
+        var currentY: CGFloat = 0
+        let margin: CGFloat = 16
+        let spacing: CGFloat = 16
+        
+        for (index, type) in activeTypes.enumerated() {
+            guard let window = widgetWindows[type] else { continue }
+            let w = window.frame.width
+            let h = window.frame.height
+            
+            let x: CGFloat
+            let y: CGFloat
+            
+            switch corner {
+            case "topRight":
+                x = screenRect.maxX - w - margin
+                if index == 0 {
+                    currentY = screenRect.maxY - h - margin
+                } else {
+                    currentY -= (h + spacing)
+                }
+                y = currentY
+            case "topLeft":
+                x = screenRect.minX + margin
+                if index == 0 {
+                    currentY = screenRect.maxY - h - margin
+                } else {
+                    currentY -= (h + spacing)
+                }
+                y = currentY
+            case "bottomRight":
+                x = screenRect.maxX - w - margin
+                if index == 0 {
+                    currentY = screenRect.minY + margin
+                } else {
+                    currentY += (h + spacing)
+                }
+                y = currentY
+            case "bottomLeft":
+                x = screenRect.minX + margin
+                if index == 0 {
+                    currentY = screenRect.minY + margin
+                } else {
+                    currentY += (h + spacing)
+                }
+                y = currentY
+            default:
+                continue
+            }
+            
+            window.setFrame(NSRect(x: x, y: y, width: w, height: h), display: true, animate: true)
+            
+            UserDefaults.standard.set(Double(x), forKey: "widget_x_\(type.rawValue)")
+            UserDefaults.standard.set(Double(y), forKey: "widget_y_\(type.rawValue)")
+        }
+    }
+    
+    func windowDidMove(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        for (type, win) in widgetWindows {
+            if win == window {
+                let origin = window.frame.origin
+                UserDefaults.standard.set(Double(origin.x), forKey: "widget_x_\(type.rawValue)")
+                UserDefaults.standard.set(Double(origin.y), forKey: "widget_y_\(type.rawValue)")
+                break
+            }
+        }
+    }
+}
+
+enum DesktopWidgetStyle: String, CaseIterable, Identifiable {
+    case classic = "Classic Glass"
+    case proMonitor = "Pro Monitor"
+    case coreMatrix = "Core Matrix"
+    case textList = "Stats Table"
+    var id: String { self.rawValue }
+}
+
+struct DesktopWidgetView: View {
+    @ObservedObject var model: TelemetryModel
+    @ObservedObject var manager: DesktopWidgetManager
+    let type: DesktopWidgetType
+    
+    @AppStorage private var styleRaw: String
+    @State private var isHovered = false
+    
+    init(model: TelemetryModel, manager: DesktopWidgetManager, type: DesktopWidgetType) {
+        self.model = model
+        self.manager = manager
+        self.type = type
+        self._styleRaw = AppStorage(wrappedValue: DesktopWidgetStyle.classic.rawValue, "widget_style_v2_\(type.rawValue)")
+    }
+    
+    var style: DesktopWidgetStyle {
+        let s = DesktopWidgetStyle(rawValue: styleRaw) ?? .classic
+        if s == .coreMatrix && type != .cpu { return .classic } // Matrix only for CPU
+        return s
+    }
+    
+    var valuePct: Double {
+        switch type {
+        case .cpu: return model.cpuLoadAvg
+        case .gpu: return model.gpuLoadPct
+        case .ram: return model.ramUsagePct
+        case .disk: return model.diskUsagePct
+        case .net:
+            let totalMBps = model.netDownloadMBps + model.netUploadMBps
+            return min(100.0, (totalMBps / 10.0) * 100.0)
+        case .fan:
+            let maxRPM: Double = 5000.0
+            let currentRPM = Double(model.fans.first?.rpm ?? 0)
+            return min(100.0, (currentRPM / maxRPM) * 100.0)
+        case .clock:
+            let calendar = Calendar.current
+            let minutes = Double(calendar.component(.minute, from: Date()))
+            return (minutes / 60.0) * 100.0
+        }
+    }
+    
+    var valueString: String {
+        switch type {
+        case .cpu: return String(format: "%.1f°C", model.cpuTempC)
+        case .gpu: return String(format: "%.1f°C", model.gpuTempC)
+        case .ram: 
+            let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+            return String(format: "%.1f GB", usedGB)
+        case .disk:
+            return String(format: "%.0f%%", model.diskUsagePct)
+        case .net:
+            let totalSpeed = model.netDownloadMBps + model.netUploadMBps
+            if totalSpeed >= 1.0 {
+                return String(format: "%.1f MB/s", totalSpeed)
+            } else {
+                return String(format: "%.0f KB/s", totalSpeed * 1024.0)
+            }
+        case .fan:
+            let rpm = model.fans.first?.rpm ?? 0
+            return rpm > 0 ? "\(rpm) RPM" : "0 RPM"
+        case .clock:
+            let fmt = DateFormatter()
+            fmt.dateFormat = "HH:mm"
+            return fmt.string(from: Date())
+        }
+    }
+    
+    var isMonochrome: Bool {
+        return false
+    }
+    
+    private func titleForType(_ type: DesktopWidgetType) -> String {
+        switch type {
+        case .cpu: return NSLocalizedString("CPU", comment: "")
+        case .gpu: return NSLocalizedString("GPU", comment: "")
+        case .ram: return NSLocalizedString("RAM", comment: "")
+        case .disk: return NSLocalizedString("Disk", comment: "")
+        case .net: return NSLocalizedString("Network", comment: "")
+        case .fan: return NSLocalizedString("Fan", comment: "")
+        case .clock: return NSLocalizedString("Clock", comment: "")
+        }
+    }
+    
+    private func symbolForType(_ type: DesktopWidgetType) -> String {
+        switch type {
+        case .cpu: return "cpu"
+        case .gpu: return "display"
+        case .ram: return "memorycard"
+        case .disk: return "internaldrive"
+        case .net: return "network"
+        case .fan: return "fan"
+        case .clock: return "clock"
+        }
+    }
+    
+    var body: some View {
+        Group {
+            switch style {
+            case .classic:
+                classicStyle
+            case .proMonitor:
+                proMonitorStyle
+            case .coreMatrix:
+                coreMatrixStyle
+            case .textList:
+                textListStyle
+            }
+        }
+        .frame(width: style == .classic || style == .textList ? 128 : (style == .proMonitor ? 304 : 216), height: 128)
+        .padding(16)
+        .background(
+            VisualEffectBackground(material: .hudWindow, blendingMode: .behindWindow, state: .active, cornerRadius: 24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.white.opacity(0.04), lineWidth: 1)
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(manager.isEditingWidgets ? Color.blue : Color.clear, style: StrokeStyle(lineWidth: manager.isEditingWidgets ? 3 : 1, dash: manager.isEditingWidgets ? [5] : []))
+        )
+        .grayscale(isMonochrome ? 1.0 : 0.0)
+        .opacity(manager.isEditingWidgets ? 0.9 : 1.0)
+        .onHover { h in
+            withAnimation(.easeInOut(duration: 0.2)) { isHovered = h }
+            model.isAnyWidgetHovered = h
+        }
+        .onChange(of: styleRaw) { newValue in
+            let newStyle = DesktopWidgetStyle(rawValue: newValue) ?? .classic
+            manager.resizeWidget(type: type, style: newStyle)
+        }
+        .contextMenu {
+            Text("Widget Style")
+            Divider()
+            ForEach(DesktopWidgetStyle.allCases) { s in
+                if s == .coreMatrix && type != .cpu {
+                    // Skip
+                } else {
+                    Button(action: { styleRaw = s.rawValue }) {
+                        HStack {
+                            Text(s.rawValue)
+                            if style == s { Image(systemName: "checkmark") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Styles
+    
+    private var classicStyle: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: symbolForType(type))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(type.color1)
+                Text(titleForType(type))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            Spacer()
+            
+            HStack {
+                Spacer()
+                ZStack {
+                    Circle().stroke(Color.white.opacity(0.06), lineWidth: 6)
+                    Circle()
+                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, valuePct / 100.0))))
+                        .stroke(
+                            LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .topLeading, endPoint: .bottomTrailing),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        )
+                        .rotationEffect(Angle(degrees: -90))
+                    
+                    VStack(spacing: 0) {
+                        if type == .clock {
+                            let clockStrings = getClockStrings()
+                            Text(clockStrings.time)
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text(clockStrings.day)
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                        } else {
+                            Text(String(format: "%.0f%%", valuePct))
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text(valueString)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+                }
+                .frame(width: 80, height: 80)
+                Spacer()
+            }
+            
+            Spacer()
+        }
+        .frame(width: 128, height: 128)
+    }
+    
+    private var proMonitorStyle: some View {
+        HStack(spacing: 16) {
+            classicStyle
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if type == .clock {
+                    MiniCalendarView()
+                } else {
+                    Text("Real-time History")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    if #available(macOS 13.0, *) {
+                        let yMax: Double = {
+                            switch type {
+                            case .cpu, .gpu, .ram:
+                                return 100.0
+                            case .disk:
+                                let maxVal = model.history.map { $0.diskReadMBps + $0.diskWriteMBps }.max() ?? 10.0
+                                return max(10.0, maxVal)
+                            case .fan:
+                                let maxVal = model.history.map { $0.fanRPM }.max() ?? 2000.0
+                                return max(1500.0, maxVal)
+                            case .net:
+                                let maxVal = model.history.map { $0.netDownloadMBps + $0.netUploadMBps }.max() ?? 1.0
+                                return max(1.0, maxVal)
+                            case .clock:
+                                return 100.0
+                            }
+                        }()
+                        let yMin: Double = 0.0
+                        let xMin = model.history.first?.time ?? 0.0
+                        let xMax = model.history.last?.time ?? 1.0
+                        
+                        Chart {
+                            ForEach(model.history) { point in
+                                LineMark(
+                                    x: .value("Time", point.time),
+                                    y: .value("Value", 
+                                        type == .cpu ? point.cpuLoad : 
+                                        (type == .gpu ? point.gpuLoad : 
+                                        (type == .ram ? point.ramUsagePct : 
+                                        (type == .disk ? point.diskReadMBps + point.diskWriteMBps : 
+                                        (type == .fan ? point.fanRPM : 
+                                        (point.netDownloadMBps + point.netUploadMBps)
+                                        )))))
+                                )
+                                .interpolationMethod(.catmullRom)
+                                .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .leading, endPoint: .trailing))
+                                
+                                AreaMark(
+                                    x: .value("Time", point.time),
+                                    y: .value("Value", 
+                                        type == .cpu ? point.cpuLoad : 
+                                        (type == .gpu ? point.gpuLoad : 
+                                        (type == .ram ? point.ramUsagePct : 
+                                        (type == .disk ? point.diskReadMBps + point.diskWriteMBps : 
+                                        (type == .fan ? point.fanRPM : 
+                                        (point.netDownloadMBps + point.netUploadMBps)
+                                        )))))
+                                )
+                                .interpolationMethod(.catmullRom)
+                                .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1.opacity(0.12), Color.clear]), startPoint: .top, endPoint: .bottom))
+                            }
+                        }
+                        .chartXScale(domain: xMin...xMax)
+                        .chartXAxis(.hidden)
+                        .chartYAxis {
+                            let values: [Double] = [0.0, yMax / 2.0, yMax]
+                            AxisMarks(position: .leading, values: values) { value in
+                                AxisValueLabel() {
+                                    if let doubleVal = value.as(Double.self) {
+                                        switch type {
+                                        case .cpu, .gpu, .ram:
+                                            Text(String(format: "%.0f%%", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
+                                        case .disk:
+                                            Text(String(format: "%.1f M/s", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
+                                        case .net:
+                                            if doubleVal >= 1.0 {
+                                                Text(String(format: "%.1f M/s", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
+                                            } else {
+                                                Text(String(format: "%.0f K/s", doubleVal * 1024.0)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
+                                            }
+                                        case .fan:
+                                            Text(String(format: "%.0f", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
+                                        case .clock:
+                                            Text(String(format: "%.0f%%", doubleVal)).font(.system(size: 7)).foregroundColor(.white.opacity(0.4))
+                                        }
+                                    }
+                                }
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2])).foregroundStyle(Color.white.opacity(0.1))
+                            }
+                        }
+                        .chartYScale(domain: yMin...yMax)
+                    } else {
+                        Text("Charts require macOS 13+").font(.system(size: 10)).foregroundColor(.white.opacity(0.5))
+                    }
+                }
+            }
+            .frame(width: 160, height: 128)
+        }
+    }
+    
+    private var coreMatrixStyle: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "cpu")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(type.color1)
+                Text(NSLocalizedString("AMD CPU Cores", comment: ""))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+                Spacer()
+                Text(String(format: "Avg: %.0f%%", valuePct))
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundColor(type.color1)
+            }
+            
+            Spacer()
+            
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
+            LazyVGrid(columns: columns, spacing: 4) {
+                ForEach(0..<model.cores.count, id: \.self) { i in
+                    let load = Double(model.cores[i].loadPct)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(load > 80 ? Color.red : (load > 40 ? Color.orange : type.color1))
+                        .opacity(0.2 + (load / 100.0) * 0.8)
+                        .frame(height: 12)
+                }
+            }
+            
+            Spacer()
+        }
+        .frame(width: 216, height: 128)
+    }
+    
+    private var textListStyle: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: symbolForType(type))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(type.color1)
+                Text(titleForType(type))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(.bottom, 2)
+            
+            Spacer()
+            
+            textListContent
+            
+            Spacer()
+        }
+        .frame(width: 128, height: 128)
+    }
+    
+    @ViewBuilder
+    private var textListContent: some View {
+        switch type {
+        case .cpu:
+            VStack(spacing: 2) {
+                StatListRow(label: "Avg Load", value: String(format: "%.1f%%", model.cpuLoadAvg))
+                StatListRow(label: "Temp", value: String(format: "%.1f°C", model.cpuTempC))
+                StatListRow(label: "Power", value: String(format: "%.1f W", model.cpuWatts))
+                StatListRow(label: "Max Freq", value: String(format: "%.2f GHz", model.cpuFreqMaxGHz))
+                StatListRow(label: "Uptime", value: model.systemUptimeFormatted)
+            }
+        case .gpu:
+            VStack(spacing: 2) {
+                StatListRow(label: "GPU Load", value: String(format: "%.1f%%", model.gpuLoadPct))
+                StatListRow(label: "Temp", value: String(format: "%.1f°C", model.gpuTempC))
+                StatListRow(label: "Power", value: String(format: "%.1f W", model.gpuPowerW))
+                StatListRow(label: "VRAM Used", value: String(format: "%.1f GB", model.gpuVramUsedBytes / (1024*1024*1024)))
+            }
+        case .ram:
+            VStack(spacing: 2) {
+                let ram = getRamStats()
+                StatListRow(label: "Used RAM", value: ram.used)
+                StatListRow(label: "Free RAM", value: ram.free)
+                StatListRow(label: "Swap Total", value: formatBytes(model.ramSwapTotalBytes))
+                StatListRow(label: "Swap Used", value: formatBytes(model.ramSwapUsedBytes))
+            }
+        case .disk:
+            VStack(spacing: 2) {
+                StatListRow(label: "Disk Usage", value: String(format: "%.1f%%", model.diskUsagePct))
+                StatListRow(label: "Read Speed", value: formatSpeed(model.diskReadMBps))
+                StatListRow(label: "Write Speed", value: formatSpeed(model.diskWriteMBps))
+            }
+        case .net:
+            VStack(spacing: 2) {
+                StatListRow(label: "Upload", value: formatSpeed(model.netUploadMBps))
+                StatListRow(label: "Download", value: formatSpeed(model.netDownloadMBps))
+                StatListRow(label: "Interface", value: model.netActiveInterface)
+                StatListRow(label: "IP Address", value: model.netLocalIP)
+            }
+        case .fan:
+            VStack(spacing: 2) {
+                ForEach(0..<min(3, model.fans.count), id: \.self) { idx in
+                    StatListRow(label: "Fan \(idx + 1)", value: "\(model.fans[idx].rpm) RPM")
+                }
+                if model.fans.isEmpty {
+                    StatListRow(label: "Fan 1", value: "0 RPM")
+                }
+            }
+        case .clock:
+            let clock = getClockTextListStrings()
+            VStack(spacing: 2) {
+                StatListRow(label: "Local Time", value: clock.local)
+                StatListRow(label: "UTC Time", value: clock.utc)
+                StatListRow(label: "Weekday", value: clock.weekday)
+            }
+        }
+    }
+    
+    private func getClockStrings() -> (time: String, day: String) {
+        let date = Date()
+        let fmtTime = DateFormatter()
+        fmtTime.dateFormat = "HH:mm"
+        let fmtDay = DateFormatter()
+        fmtDay.dateFormat = "d MMM"
+        return (fmtTime.string(from: date), fmtDay.string(from: date))
+    }
+    
+    private func getClockTextListStrings() -> (local: String, utc: String, weekday: String) {
+        let date = Date()
+        let fmtTime = DateFormatter()
+        fmtTime.dateFormat = "HH:mm:ss"
+        let fmtUTC = DateFormatter()
+        fmtUTC.timeZone = TimeZone(abbreviation: "UTC")
+        fmtUTC.dateFormat = "HH:mm:ss"
+        let fmtDay = DateFormatter()
+        fmtDay.dateFormat = "EEEE"
+        return (fmtTime.string(from: date), fmtUTC.string(from: date), fmtDay.string(from: date).capitalized)
+    }
+    
+    private func getRamStats() -> (used: String, free: String, total: String, pct: String) {
+        let totalGB = Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0)
+        let usedGB = (model.ramUsagePct / 100.0) * totalGB
+        let freeGB = totalGB - usedGB
+        return (
+            String(format: "%.1f GB", usedGB),
+            String(format: "%.1f GB", freeGB),
+            String(format: "%.1f GB", totalGB),
+            String(format: "%.1f%%", model.ramUsagePct)
+        )
+    }
+    
+    private func formatSpeed(_ mbps: Double) -> String {
+        let bytesPerSec = mbps * 1024.0 * 1024.0
+        if bytesPerSec >= 1024.0 * 1024.0 {
+            return String(format: "%.1f MB/s", bytesPerSec / (1024.0 * 1024.0))
+        } else if bytesPerSec >= 1.0 {
+            return String(format: "%.1f KB/s", bytesPerSec / 1024.0)
+        } else {
+            return "0 KB/s"
+        }
+    }
+    
+    private func formatBytes(_ bytes: Double) -> String {
+        if bytes >= 1024.0 * 1024.0 * 1024.0 {
+            return String(format: "%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+        } else if bytes >= 1024.0 * 1024.0 {
+            return String(format: "%.1f MB", bytes / (1024.0 * 1024.0))
+        } else if bytes >= 1024.0 {
+            return String(format: "%.1f KB", bytes / 1024.0)
+        } else {
+            return String(format: "%.0f B", bytes)
+        }
+    }
+}
+
+struct StatListRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundColor(.white.opacity(0.5))
+            Spacer()
+            Text(value)
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        }
+        .padding(.vertical, 1)
+    }
+}
+
+struct MiniCalendarView: View {
+    let date = Date()
+    let calendar = Calendar.current
+    
+    var daysInMonth: [Int?] {
+        guard let monthRange = calendar.range(of: .day, in: .month, for: date),
+              let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))
+        else { return [] }
+        
+        let weekdayOfFirst = calendar.component(.weekday, from: firstDayOfMonth)
+        let startOffset = (weekdayOfFirst + 5) % 7
+        
+        var days: [Int?] = Array(repeating: nil, count: startOffset)
+        for day in monthRange {
+            days.append(day)
+        }
+        return days
+    }
+    
+    var weekdays: [String] {
+        var symbols = calendar.veryShortWeekdaySymbols
+        if !symbols.isEmpty {
+            let first = symbols.removeFirst()
+            symbols.append(first)
+        }
+        return symbols
+    }
+    
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(monthName.uppercased())
+                .font(.system(size: 8, weight: .bold))
+                .foregroundColor(.orange)
+            
+            HStack(spacing: 4) {
+                ForEach(0..<weekdays.count, id: \.self) { idx in
+                    Text(weekdays[idx])
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundColor(.white.opacity(0.4))
+                        .frame(width: 14)
+                }
+            }
+            
+            let columns = Array(repeating: GridItem(.fixed(14), spacing: 4), count: 7)
+            let today = calendar.component(.day, from: date)
+            
+            LazyVGrid(columns: columns, spacing: 3) {
+                ForEach(0..<daysInMonth.count, id: \.self) { idx in
+                    if let day = daysInMonth[idx] {
+                        Text("\(day)")
+                            .font(.system(size: 7, weight: day == today ? .bold : .medium))
+                            .foregroundColor(day == today ? .black : .white)
+                            .frame(width: 14, height: 14)
+                            .background(day == today ? Color.orange : Color.clear)
+                            .cornerRadius(7)
+                    } else {
+                        Text("")
+                            .frame(width: 14, height: 14)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var monthName: String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMMM"
+        return fmt.string(from: date)
+    }
 }

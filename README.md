@@ -21,13 +21,13 @@ Full compatibility with all AMD Zen architectures supported by the **AMD Vanilla
 
 | Architecture | CPUID Family | Models | Example CPUs | Status |
 |---|---|---|---|---|
-| **Zen** | `17h` | `01h-0Fh` | Ryzen 1000, Threadripper 1000 | ✅ Full |
-| **Zen+** | `17h` | `10h-2Fh` | Ryzen 2000, Threadripper 2000 | ✅ Full |
-| **Zen 2** | `17h` | `30h+` | Ryzen 3000, Threadripper 3000 | ✅ Full |
-| **Zen 3** | `19h` | `00h-0Fh` | Ryzen 5000 | ✅ Full |
-| **Zen 3+** | `19h` | `40h-5Fh` | Ryzen 6000 Mobile | ✅ Full |
-| **Zen 4** | `19h` | `10h-1Fh, 60h-7Fh` | Ryzen 7000, Threadripper 7000 | ✅ Full |
-| **Zen 5** | `1Ah` | `40h-4Fh` | Ryzen 9000 (Granite Ridge) | ✅ Full |
+| **Zen** | `17h` | `01h-0Fh` | Ryzen 1000, Threadripper 1000 | Full |
+| **Zen+** | `17h` | `10h-2Fh` | Ryzen 2000, Threadripper 2000 | Full |
+| **Zen 2** | `17h` | `30h+` | Ryzen 3000, Threadripper 3000 | Full |
+| **Zen 3** | `19h` | `00h-0Fh` | Ryzen 5000 | Full |
+| **Zen 3+** | `19h` | `40h-5Fh` | Ryzen 6000 Mobile | Full |
+| **Zen 4** | `19h` | `10h-1Fh, 60h-7Fh` | Ryzen 7000, Threadripper 7000 | Full |
+| **Zen 5** | `1Ah` | `40h-4Fh` | Ryzen 9000 (Granite Ridge) | Full |
 
 > **Note:** Per-CCD temperature monitoring uses architecture-specific SMN register offsets (`0x154` for Zen 1–3, `0x308` for Zen 4–5) matching the Linux kernel `k10temp` driver for accurate thermal reporting across all generations.
 
@@ -72,7 +72,7 @@ To support frequency monitoring, P-state customization, and logging diagnostics 
 
 `SMCAMDProcessor` is distributed as two separate kernel extensions (Kexts):
 1. **`AMDRyzenCPUPowerManagement.kext`**: The core power management and hardware monitoring driver. This kext is **required** to use **AMD Power Gadget**.
-2. **`SMCAMDProcessor.kext`**: The VirtualSMC sensor publishing plugin. This publishes CPU temperatures and fan readings to VirtualSMC, enabling third-party apps like *Stats* or *HWMonitorSMC2* to read them. It depends on `AMDRyzenCPUPowerManagement.kext` and must be loaded after it.
+2. **`SMCAMDProcessor.kext`**: The VirtualSMC sensor publishing plugin. This publishes CPU temperatures and fan readings to VirtualSMC, enabling third-party system monitors or *HWMonitorSMC2* to read them. It depends on `AMDRyzenCPUPowerManagement.kext` and must be loaded after it.
 
 ### OpenCore Configuration Order:
 Ensure the kexts are loaded in the correct dependency order in your `config.plist`:
