@@ -132,6 +132,19 @@ This project would not be possible without the extensive research, development, 
 
 ---
 
+## Release v3.3.0 Features & Stability Architecture
+
+Version **3.3.0** introduces a comprehensive kernel extension and application architecture hardening, systematically resolving 35 audited low-level C/C++ kernel driver issues and Swift UI boundary bugs for maximum system rock-solid stability and zero kernel panics.
+
+### Key Improvements in v3.3.0:
+* **Zero Kernel Panics & Memory Hardening**: Integrated zero-checks for hardware division in CPU average load calculations and P-State initialization loops. Resolved time delta division hazards and 32-bit energy counter wrap-around anomalies.
+* **SuperIO Fan Hardware Rate Limiting**: Added rate-limiting mechanics for LPC/SuperIO register polling to prevent hardware lockup and registry contention during high-frequency monitoring.
+* **Kernel & UI ABI Alignment**: Performed a unified rename of `boardVender` to `boardVendor` across all C++ IOKit drivers and Swift UI telemetry models, resolving motherboard model string truncation.
+* **Clean Hardware Cleanup**: Resolved memory leaks in SuperIO initialization loops and dangled provider pointers during kext teardown.
+* **Updated Core Dependencies**: Built against the latest **Lilu v1.7.3** and **VirtualSMC v1.3.8** core libraries from Dortania.
+
+---
+
 ## Release v2.1.4 Features & Contributors
 
 Version **2.1.4** brings the most comprehensive modernization yet, featuring a complete SwiftUI status bar NSPopover, extended GPU telemetry (VRAM, Power, and Fan speed), multi-CCD temperature monitoring for Zen 5, localization fixes, and Xcode target optimizations.

@@ -345,3 +345,25 @@ To modernize the application structure and consolidate features into the main Sw
 ## 36. GPU Telemetry Smoothing and Menu Localization
 * **GPU Load EMA (Exponential Moving Average)**: Applied an EMA to the `gpuLoadPct` telemetry loop to prevent stuttering, erratic jumping, and dropping to 0 instantaneously. The UI now updates smoothly in real-time.
 * **Legacy Menu Localization**: Renamed the deprecated app and status bar menus "AMD Power Tool" and "SMC Fans" to "**Advanced**" and "**Fan Control**", properly routing to the new SwiftUI layout.
+
+---
+
+## 37. Comprehensive Kernel & App Architecture Hardening (v3.3.0)
+Full systematic code audit and remediation across kernel extensions (C/C++) and GUI application (Swift):
+* **Kernel Panic & Memory Protection**:
+  * Added zero-checks to `pmRyzen_avgload_pcpu` and `pmRyzen_init_PState` to prevent hardware division-by-zero panics.
+  * Guarded `updatePackageEnergy` against zero time deltas and anomalous 32-bit counter overflow.
+  * Corrected function pointer cast signature mismatch for `pmRyzen_cpu_IPI`.
+  * Implemented retry limit (1000 iterations) in `pmRyzen_stop` to eliminate potential infinite loops during CPU idle exit.
+  * Fixed string buffer initialization for `kMODULE_VERSION` using bounded `strncpy`.
+  * Cleaned up dangling provider pointer `fProvider` in `SMCAMDProcessor::stop()`.
+* **Resource Optimization & Hardware Safety**:
+  * Implemented rate limiting for SuperIO fan hardware access in UserClient selectors 93 and 94 to prevent registry contention.
+  * Resolved memory leak in `initSuperIO` by deleting stale instances before reallocation.
+  * Fixed `PStateEnabledLen` linear computation to reflect actual active P-states dynamically.
+  * Optimized kernel symbol resolution loop in `kernel_resolver.c` with immediate break on match.
+* **ABI Boundary Alignment & UI Refinement**:
+  * Renamed `boardVender` to `boardVendor` across all C++ kernel interfaces and Swift data structures.
+  * Standardized `IOLog` class identifiers to `SMCAMDProcessor`.
+  * Reordered layer initialization order in `GraphView` and updated key path observers for smooth rendering.
+
