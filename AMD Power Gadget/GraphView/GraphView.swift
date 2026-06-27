@@ -68,7 +68,6 @@ class GraphView: NSView {
         viewBottom = frame.height * viewBottomPercentage
         viewHeight = viewTop - viewBottom
 
-        self.layer = layer
         wantsLayer = true
         layer?.cornerRadius = 20
         layer?.masksToBounds = true

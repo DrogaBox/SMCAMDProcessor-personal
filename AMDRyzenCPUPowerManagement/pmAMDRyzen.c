@@ -105,7 +105,8 @@ pmDispatch_t pmRyzen_cpuFuncs = {
 
 void pmRyzen_init_PState(){
     uint64_t p0 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0);
-    float p0spd = (p0 & 0xff) / ((p0 >> 8) & 0x1f) * 200.0F;
+    uint64_t p0dfsid = (p0 >> 8) & 0x1f;
+    float p0spd = (p0dfsid > 0) ? ((float)(p0 & 0xff) / (float)p0dfsid) * 200.0f : 0.0f;
     
     uint64_t p1 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1);
     uint64_t p1fid = (uint64_t)((p0spd * 0.80F) / 200.0F * (float)((p1 >> 8) & 0x1f));
@@ -152,7 +153,7 @@ void pmRyzen_init(void *handle){
     pmRyzen_pmUnRegister = (void(*)(pmDispatch_t*))pmRyzen_symtable._pmUnRegister;
     pmRyzen_cpu_NMI = (void(*)(int))pmRyzen_symtable._cpu_NMI_interrupt;
     pmRyzen_NMI_enabled = (void(*)(boolean_t))pmRyzen_symtable._NMIPI_enable;
-    pmRyzen_cpu_IPI = (void(*)(boolean_t))pmRyzen_symtable._i386_cpu_IPI;
+    pmRyzen_cpu_IPI = (void(*)(int))pmRyzen_symtable._i386_cpu_IPI;
     pmRyzen_tsc_freq = *((uint64_t*)pmRyzen_symtable._tscFreq);
     
     
@@ -217,8 +218,13 @@ void pmRyzen_stop(){
     
     //Make sure all cores exited idle thread.
     for (int i = 0; i < pmRyzen_num_logi; i++) {
+        int retries = 0;
         while(pmRyzen_exit_idle(pmRyzen_cpunum_to_lcpu[i])){
             (*pmRyzen_cpu_IPI)(i);
+            if (++retries > 1000) {
+                IOLog("pmRyzen_stop: CPU %d failed to exit idle after 1000 retries\n", i);
+                break;
+            }
         }
     }
 }
@@ -231,12 +237,16 @@ float pmRyzen_avgload_pcpu(uint32_t cpu){
     
     x86_lcpu_t *lcpu = pmRyzen_cpunum_to_lcpu[cpu]->core->lcpus;
     while (lcpu) {
-        loadacc += 1 - (float)pmRyzen_cpus[lcpu->cpu_num].eff_idleaccd / (float)pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd;
+        float idle_ratio = (pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd > 0)
+            ? (float)pmRyzen_cpus[lcpu->cpu_num].eff_idleaccd / (float)pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd
+            : 0.0f;
+        loadacc += 1.0f - idle_ratio;
         num_lcpus++;
         
         lcpu = lcpu->next_in_core;
     }
     
+    if (num_lcpus == 0) return 0.0f;
     return loadacc / (float)num_lcpus;
 }
 

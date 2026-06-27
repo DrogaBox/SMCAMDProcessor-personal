@@ -26,6 +26,7 @@ class NetworkStats {
     private let queue = DispatchQueue(label: "com.amdpowergadget.network", qos: .utility)
     private var currentSnapshot: NetworkSnapshot?
     private var physicalInterfaceCache: [UInt32: Bool] = [:]
+    private var cacheLastCleared: Date = Date()
 
     init() {
         // In-process sysctl does not require initialization or background processes
@@ -45,6 +46,10 @@ class NetworkStats {
     
     func update() -> NetworkSnapshot? {
         return queue.sync {
+            if Date().timeIntervalSince(cacheLastCleared) > 30 {
+                physicalInterfaceCache.removeAll()
+                cacheLastCleared = Date()
+            }
             let now = Date()
             
             // Rate limit the sysctl call to once every 200ms to prevent jitter and minimize overhead

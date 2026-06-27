@@ -46,7 +46,8 @@ class GraphViewLineLayer: CALayer {
             key == #keyPath(pointsX) ||
             key == #keyPath(pointsY) ||
             key == #keyPath(dataXScale) ||
-            key == #keyPath(xOffset){
+            key == #keyPath(xOffset) ||
+            key == #keyPath(scrollIndexBar){
             return true
         }
         return super.needsDisplay(forKey:key)

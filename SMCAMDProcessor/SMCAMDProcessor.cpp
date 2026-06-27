@@ -48,9 +48,9 @@ bool SMCAMDProcessor::setupKeysVsmc(){
     //    }
     
     if(!suc){
-        IOLog("AMDCPUSupport::setupKeysVsmc: VirtualSMCAPI::addKey returned false. \n");
+        IOLog("SMCAMDProcessor::setupKeysVsmc: VirtualSMCAPI::addKey returned false. \n");
     } else {
-        IOLog("AMDCPUSupport::setupKeysVsmc: VirtualSMCAPI::addKey succeed!. \n");
+        IOLog("SMCAMDProcessor::setupKeysVsmc: VirtualSMCAPI::addKey succeed!. \n");
     }
     
     return suc;
@@ -58,19 +58,19 @@ bool SMCAMDProcessor::setupKeysVsmc(){
 
 bool SMCAMDProcessor::vsmcNotificationHandler(void *sensors, void *refCon, IOService *vsmc, IONotifier *notifier) {
     if (sensors && vsmc) {
-        IOLog("AMDCPUSupport: got vsmc notification\n");
+        IOLog("SMCAMDProcessor: got vsmc notification\n");
         auto &plugin = static_cast<SMCAMDProcessor *>(sensors)->vsmcPlugin;
         auto ret = vsmc->callPlatformFunction(VirtualSMCAPI::SubmitPlugin, true, sensors, &plugin, nullptr, nullptr);
         if (ret == kIOReturnSuccess) {
-            IOLog("AMDCPUSupport: submitted plugin\n");
+            IOLog("SMCAMDProcessor: submitted plugin\n");
             return true;
         } else if (ret != kIOReturnUnsupported) {
-            IOLog("AMDCPUSupport: plugin submission failure %X\n", ret);
+            IOLog("SMCAMDProcessor: plugin submission failure %X\n", ret);
         } else {
-            IOLog("AMDCPUSupport: plugin submission to non vsmc\n");
+            IOLog("SMCAMDProcessor: plugin submission to non vsmc\n");
         }
     } else {
-        IOLog("AMDCPUSupport: got null vsmc notification\n");
+        IOLog("SMCAMDProcessor: got null vsmc notification\n");
     }
     return false;
 }
@@ -105,5 +105,6 @@ void SMCAMDProcessor::stop(IOService *provider){
         vsmcNotifier->remove();
         vsmcNotifier = nullptr;
     }
+    fProvider = nullptr;
     IOService::stop(provider);
 }

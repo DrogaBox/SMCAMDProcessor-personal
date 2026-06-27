@@ -24,7 +24,7 @@ class ProcessorModel {
     private var loadIndex : [Float] = []
     private var previousCpuLoadInfo : [processor_cpu_load_info] = []
     private var PStateDefClock : [Float] = []
-    private var vaildPStateLength : Int = 0
+    private var validPStateLength : Int = 0
     private var emulatedPState : Int = 0
     private var isEmulatingPStates : Bool = false
     private var emulatedPStateDefClock : [Float] = []
@@ -37,7 +37,7 @@ class ProcessorModel {
     var cpuidBasic : [UInt64] = []
     var boardValid = false
     var boardName : String = "Unknown"
-    var boardVender : String = "Unknown"
+    var boardVendor : String = "Unknown"
 
     var fetchRetry : Int = 10
     var fetchRetry2 : Int = 10
@@ -295,7 +295,7 @@ class ProcessorModel {
             }
             i += 1
         }
-        vaildPStateLength = i
+        validPStateLength = i
 
     }
 
@@ -316,7 +316,7 @@ class ProcessorModel {
 
         if scalerOut[0] == 1 {
             boardValid = true
-            boardVender = String(cString: Array(outputStr[0...64-1]))
+            boardVendor = String(cString: Array(outputStr[0...64-1]))
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .trimmingCharacters(in: .controlCharacters)
             boardName = String(cString: Array(outputStr[64...128-1]))
@@ -345,7 +345,7 @@ class ProcessorModel {
 
         // If we detect only one (or zero) legacy P-states due to UEFI/BIOS behavior on Zen 3,
         // activate permanent emulation mode for this session.
-        if vaildPStateLength <= 1 {
+        if validPStateLength <= 1 {
             var baseClock: Float = 0.0
             if PStateDefClock.count > 0 && PStateDefClock[0] > 1000.0 {
                 baseClock = PStateDefClock[0]
@@ -398,7 +398,7 @@ class ProcessorModel {
 
             PStateDefClock = [step5, step4, step3, step2, step1, 0.0, 0.0, 0.0, 0.0, 0.0]
             emulatedPStateDefClock = PStateDefClock
-            vaildPStateLength = 5
+            validPStateLength = 5
             isEmulatingPStates = true
         }
     }
@@ -504,11 +504,11 @@ class ProcessorModel {
         return PStateDef
     }
 
-    func getVaildPStateClocks() -> [Float] {
-        if vaildPStateLength <= 0 || PStateDefClock.isEmpty {
+    func getValidPStateClocks() -> [Float] {
+        if validPStateLength <= 0 || PStateDefClock.isEmpty {
             return [3300.0] // Safe fallback: return at least one valid value
         }
-        let len = min(vaildPStateLength, PStateDefClock.count)
+        let len = min(validPStateLength, PStateDefClock.count)
         return Array(PStateDefClock[0...len-1])
     }
 
@@ -636,7 +636,7 @@ class ProcessorModel {
         }
 
         if boardValid {
-            systemConfig["mb"] = "\(boardName) \(boardVender)"
+            systemConfig["mb"] = "\(boardName) \(boardVendor)"
         }
 
         var iter : io_iterator_t = 0

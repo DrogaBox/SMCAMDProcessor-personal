@@ -161,6 +161,7 @@ find_symbol(mach_header_64_t *mh, const char *name)
         char *str = strtab + nl->n_un.n_strx;
         if (strncmp(str, name, symlen) == 0) {
             addr = (void *)nl->n_value;
+            break;
         }
     }
     
