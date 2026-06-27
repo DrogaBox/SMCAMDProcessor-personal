@@ -326,7 +326,7 @@ final class TelemetryModel: ObservableObject {
     init() {
         buildSystemInfo()
         updateRankedPhysicalCores() // Initialize ranking early (fallback mode)
-        speedStepClocks = ProcessorModel.shared.getVaildPStateClocks()
+        speedStepClocks = ProcessorModel.shared.getValidPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
 
         // Load settings from UserDefaults
@@ -377,7 +377,7 @@ final class TelemetryModel: ObservableObject {
 
         if pm.boardValid {
             info.boardName   = pm.boardName
-            info.boardVendor = pm.boardVender
+            info.boardVendor = pm.boardVendor
         }
         info.gpuModel = pm.systemConfig["gpu"] ?? ""
 
@@ -702,7 +702,7 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        speedStepClocks  = ProcessorModel.shared.getVaildPStateClocks()
+        speedStepClocks  = ProcessorModel.shared.getValidPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
         loadCPUControls()
         

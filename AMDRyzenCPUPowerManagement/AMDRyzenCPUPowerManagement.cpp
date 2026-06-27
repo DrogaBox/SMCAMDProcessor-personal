@@ -38,7 +38,8 @@ uint8_t pmRyzen_symtable_ready = 0;
 
 
 bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
-//    strcpy((char*)kMODULE_VERSION, xStringify(MODULE_VERSION), (uint32_t)strlen(xStringify(MODULE_VERSION)));
+    strncpy(kMODULE_VERSION, xStringify(MODULE_VERSION), sizeof(kMODULE_VERSION) - 1);
+    kMODULE_VERSION[sizeof(kMODULE_VERSION) - 1] = '\0';
     IOLog("AMDCPUSupport v%s, init\n", xStringify(MODULE_VERSION));
     
     IOLog("AMDCPUSupport::enter dlinking..\n");
@@ -397,11 +398,9 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         cppcSupported = (cpuid_ebx >> 27) & 0x1;
     }
     
-    // Force CPPC supported to true to test reading on all cores for diagnostics
-    cppcSupported = true;
     cppcActiveMode = checkKernelArgument("-amdcppcactive");
     
-    IOLog("AMDCPUSupport::start CPPC forced supported: %d, Active Mode: %d\n", cppcSupported, cppcActiveMode);
+    IOLog("AMDCPUSupport::start CPPC supported: %d, Active Mode: %d\n", cppcSupported, cppcActiveMode);
 
     
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
@@ -580,7 +579,7 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
     uint64_t efistat;
     
     efistat = efiRT->getVariable(OC_OEM_VENDOR_VARIABLE_NAME, &EfiRuntimeServices::LiluVendorGuid,
-                                 &att, &sizee, boardVender);
+                                 &att, &sizee, boardVendor);
     
     sizee = BASEBOARD_STRING_MAX;
     uint64_t efistat2 = efiRT->getVariable(OC_OEM_BOARD_VARIABLE_NAME, &EfiRuntimeServices::LiluVendorGuid,
@@ -597,16 +596,16 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
             
             if (mfgObj) {
                 if (OSString *str = OSDynamicCast(OSString, mfgObj)) {
-                    strncpy(boardVender, str->getCStringNoCopy(), BASEBOARD_STRING_MAX - 1);
-                    boardVender[BASEBOARD_STRING_MAX - 1] = '\0';
+                    strncpy(boardVendor, str->getCStringNoCopy(), BASEBOARD_STRING_MAX - 1);
+                    boardVendor[BASEBOARD_STRING_MAX - 1] = '\0';
                 } else if (OSData *data = OSDynamicCast(OSData, mfgObj)) {
                     size_t len = data->getLength();
                     size_t copyLen = (len < BASEBOARD_STRING_MAX - 1) ? len : (BASEBOARD_STRING_MAX - 1);
-                    memcpy(boardVender, data->getBytesNoCopy(), copyLen);
-                    boardVender[copyLen] = '\0';
+                    memcpy(boardVendor, data->getBytesNoCopy(), copyLen);
+                    boardVendor[copyLen] = '\0';
                 }
             } else {
-                strncpy(boardVender, "Unknown Vendor", BASEBOARD_STRING_MAX - 1);
+                strncpy(boardVendor, "Unknown Vendor", BASEBOARD_STRING_MAX - 1);
             }
             
             if (modelObj) {
@@ -628,7 +627,7 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
         }
     }
     
-    IOLog("MB: %s %s (Valid: %d)\n", boardName, boardVender, boardInfoValid);
+    IOLog("MB: %s %s (Valid: %d)\n", boardName, boardVendor, boardInfoValid);
 }
 
 bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
@@ -857,6 +856,8 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
     uint32_t temperature = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
     
     
+    // Note: kF17H_TEMP_OFFSET_FLAG (bit 19, 0x80000) is correct for Family 17h/19h (Zen 2/3).
+    // Family 1Ah (Zen 5) may require different offset logic — verify against k10temp.c if adding support.
     bool tempOffsetFlag = (temperature & kF17H_TEMP_OFFSET_FLAG) != 0;
     temperature = (temperature >> 21) * 125;
     
@@ -928,7 +929,11 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
 
     uint32_t energyDelta = energyValue - (uint32_t)lastUpdateEnergyValue;
 
+    // Guard against anomalous wrap-around producing absurd delta values
+    if (energyDelta > 0x80000000u) { lastUpdateEnergyValue = energyValue; return; }
+
     double seconds = (ctsc - pwrLastTSC) / (double)(xnuTSCFreq);
+    if (seconds <= 0.0) { pwrLastTSC = ctsc; return; }
     double e = (pwrEnergyUnit * energyDelta) / (seconds);
     e *= pwrTimeUnit * 1000;
     uniPackageEnergy = e;
@@ -972,7 +977,7 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
         //        IOLog("a: %llu", msr_value_buf);
     }
     
-    PStateEnabledLen = max(PStateEnabledLen, len);
+    PStateEnabledLen = len;
 }
 
 void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
@@ -1015,6 +1020,7 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
 
 bool AMDRyzenCPUPowerManagement::initSuperIO(uint16_t *chipIntel){
     
+    if (superIO) { delete superIO; }
     superIO = nullptr;
     if(!superIO) superIO = ISSuperIONCT668X::getDevice(&savedSMCChipIntel);
     if(!superIO) superIO = ISSuperIONCT67XXFamily::getDevice(&savedSMCChipIntel);

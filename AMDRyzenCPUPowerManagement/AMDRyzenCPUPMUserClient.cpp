@@ -7,7 +7,7 @@
 
 #include "AMDRyzenCPUPMUserClient.hpp"
 
-
+static uint32_t fanUpdateCounter = 0;
 
 OSDefineMetaClassAndStructors(AMDRyzenCPUPMUserClient, IOUserClient);
 
@@ -51,15 +51,6 @@ void AMDRyzenCPUPMUserClient::stop(IOService *provider){
     
     fProvider = nullptr;
     IOService::stop(provider);
-}
-
-//this is a meme, not getting the joke? nvm.
-uint64_t multiply_two_numbers(uint64_t number_one, uint64_t number_two){
-    uint64_t number_three = 0;
-    for(uint32_t i = 0; i < number_two; i++){
-        number_three = number_three + number_one;
-    }
-    return number_three;
 }
 
 bool AMDRyzenCPUPMUserClient::hasPrivilege(){
@@ -493,7 +484,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             for(uint32_t i = 0; i < requiredSize && i < maxLen; i++){
                 if (i < 64) {
-                    dataOut[i] = fProvider->boardVender[i];
+                    dataOut[i] = fProvider->boardVendor[i];
                 } else {
                     dataOut[i] = fProvider->boardName[i-64];
                 }
@@ -757,7 +748,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            fProvider->superIO->updateFanRPMS();
+            if ((++fanUpdateCounter % 4) == 0) {
+                fProvider->superIO->updateFanRPMS();
+            }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
             
             for (uint32_t i = 0; i < copyCount; i++) {
@@ -783,7 +776,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            fProvider->superIO->updateFanControl();
+            if ((fanUpdateCounter % 4) == 0) {
+                fProvider->superIO->updateFanControl();
+            }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
             
             for (uint32_t i = 0; i < copyCount; i++) {

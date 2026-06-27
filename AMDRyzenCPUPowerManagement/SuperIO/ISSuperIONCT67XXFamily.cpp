@@ -98,12 +98,13 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
     IOLog("SMC Chip id:%X revision:%X \n", deviceID, revision);
     ISLPCPort::select(portSel, CHIP_HWM_LDN);
     
-    uint16_t devAddr = ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER);
+    uint16_t devAddr = ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) & (~7);
     
     //verify addr
     IOSleep(100);
     if(ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) != devAddr){
         IOLog("NCT67XX address verify failed");
+        return nullptr;
     }
     
     IOLog("Chip address: 0x%X\n", devAddr);
@@ -168,22 +169,22 @@ int ISSuperIONCT67XXFamily::getNumberOfFans(){
 }
 
 const char *ISSuperIONCT67XXFamily::getReadableStringForFan(int fan){
-    if(fan > activeFansOnSystem) return nullptr;
+    if(fan >= activeFansOnSystem) return nullptr;
     return kFAN_READABLE_STRS[fan];
 }
 
 uint32_t ISSuperIONCT67XXFamily::getRPMForFan(int fan){
-    if(fan > activeFansOnSystem) return 0;
+    if(fan >= activeFansOnSystem) return 0;
     return fanRPMs[fan];
 }
 
 bool ISSuperIONCT67XXFamily::getFanAutoControlMode(int fan){
-    if(fan > activeFansOnSystem) return 0;
+    if(fan >= activeFansOnSystem) return 0;
     return fanControlMode[fan] != 0;
 }
 
 uint8_t ISSuperIONCT67XXFamily::getFanThrottle(int fan){
-    if(fan > activeFansOnSystem) return 0;
+    if(fan >= activeFansOnSystem) return 0;
     return fanThrottles[fan];
 }
 

@@ -223,7 +223,7 @@ public:
     uint32_t cpuCacheL2_perCore;
     uint32_t cpuCacheL3;
     
-    char boardVender[BASEBOARD_STRING_MAX]{};
+    char boardVendor[BASEBOARD_STRING_MAX]{};
     char boardName[BASEBOARD_STRING_MAX]{};
     bool boardInfoValid = false;
     

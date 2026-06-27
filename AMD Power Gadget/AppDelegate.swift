@@ -96,8 +96,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let sl = UserDefaults.standard.bool(forKey: "startAtLogin")
 
         if !UserDefaults.standard.bool(forKey: "startAtLoginAsked") {
-            askStartup()
             UserDefaults.standard.set(true, forKey: "startAtLoginAsked")
+            askStartup()
         } else { applyStartAtLogin(enabled: sl) }
 
         applyStatusBarSwitch(enabled: sb)

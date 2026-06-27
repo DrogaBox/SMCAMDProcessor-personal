@@ -152,30 +152,30 @@ int ISSuperIOIT86XXEFamily::getNumberOfFans()
 
 const char* ISSuperIOIT86XXEFamily::getReadableStringForFan(int fan)
 {
-    if (fan > activeFansOnSystem)
+    if (fan >= activeFansOnSystem)
         return nullptr;
     return kFAN_READABLE_STRS[fan];
 }
 
 uint32_t ISSuperIOIT86XXEFamily::getRPMForFan(int fan)
 {
-    if (fan > activeFansOnSystem)
+    if (fan >= activeFansOnSystem)
         return 0;
     return fanRPMs[fan];
 }
 
 bool ISSuperIOIT86XXEFamily::getFanAutoControlMode(int fan)
 {
-    if (fan > activeFansOnSystem)
+    if (fan >= activeFansOnSystem)
         return 0;
     return fanControlMode[fan] != 0;
 }
 
 uint8_t ISSuperIOIT86XXEFamily::getFanThrottle(int fan)
 {
-    if (fan > activeFansOnSystem)
+    if (fan >= activeFansOnSystem)
         return 0;
-    return fanControlMode[fan];
+    return fanThrottles[fan];
 }
 
 void ISSuperIOIT86XXEFamily::updateFanRPMS()
@@ -201,6 +201,7 @@ void ISSuperIOIT86XXEFamily::updateFanControl()
     for (int i = 0; i < activeFansOnSystem; i++)
     {
         fanControlMode[i] = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
+        fanThrottles[i] = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
     }
 }
 

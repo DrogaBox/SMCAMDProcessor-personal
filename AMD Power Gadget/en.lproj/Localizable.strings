@@ -3,6 +3,10 @@
   AMD Power Gadget
 */
 
+/* NOTE: Some keys use Spanish text for historical reasons. */
+/* These are used as lookup identifiers and work correctly. */
+/* A future refactor should standardize all keys to English. */
+
 "Dashboard" = "Dashboard";
 "Telemetry" = "Telemetry";
 "Fan Control" = "Fan Control";

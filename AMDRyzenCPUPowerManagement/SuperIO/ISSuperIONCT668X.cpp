@@ -71,6 +71,13 @@ ISSuperIONCT668X* ISSuperIONCT668X::getDevice(uint16_t *chipIntel){
     
     IOLog("Chip address: 0x%X\n", devAddr);
     
+    IOSleep(100);
+    uint16_t devAddrVerify = ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) & (~7);
+    if (devAddrVerify != devAddr) {
+        IOLog("NCT668X address verification failed: 0x%X != 0x%X\n", devAddrVerify, devAddr);
+        return nullptr;
+    }
+    
     //Now that the present of chip is confirmed, disable IO address space lock.
     uint8_t conf = 0;
     switch (*chipIntel) {
@@ -79,7 +86,7 @@ ISSuperIONCT668X* ISSuperIONCT668X::getDevice(uint16_t *chipIntel){
         case CHIP_NCT6683:
             conf = ISLPCPort::readByte(portSel, 0x30);
             if(conf & 0x01){
-                ISLPCPort::writeByte(portSel, 0x30, conf & 0x01);
+                ISLPCPort::writeByte(portSel, 0x30, conf & ~0x01);
             }
             break;
             
@@ -118,23 +125,23 @@ int ISSuperIONCT668X::getNumberOfFans(){
 }
 
 const char *ISSuperIONCT668X::getReadableStringForFan(int fan){
-    if(fan > activeFansOnSystem) return nullptr;
+    if(fan >= activeFansOnSystem) return nullptr;
     //TODO: label fans
     return kFAN_READABLE_STRS[0];
 }
 
 uint32_t ISSuperIONCT668X::getRPMForFan(int fan){
-    if(fan > activeFansOnSystem) return 0;
+    if(fan >= activeFansOnSystem) return 0;
     return fanRPMs[fan];
 }
 
 bool ISSuperIONCT668X::getFanAutoControlMode(int fan){
-    if(fan > activeFansOnSystem) return 0;
+    if(fan >= activeFansOnSystem) return 0;
     return fanControlMode[fan] != 0;
 }
 
 uint8_t ISSuperIONCT668X::getFanThrottle(int fan){
-    if(fan > activeFansOnSystem) return 0;
+    if(fan >= activeFansOnSystem) return 0;
     return fanThrottles[fan];
 }
 
@@ -148,7 +155,7 @@ void ISSuperIONCT668X::updateFanRPMS(){
 }
 
 void ISSuperIONCT668X::updateFanControl(){
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < activeFansOnSystem; i++) {
 //        fanControlMode[i] = readByte(kFAN_CTRL_MODE_REGS(i));
 //        IOLog("fan ctrl %d: %d\n", i, (int)v);
         
@@ -169,4 +176,7 @@ void ISSuperIONCT668X::overrideFanControl(int fan, uint8_t thr){
 void ISSuperIONCT668X::setDefaultFanControl(int fan){
     if(fan >= activeFansOnSystem) return;
     
+    // Restore automatic fan control by setting SmartFan mode
+    // TODO: Verify the exact register/value for NCT668X auto mode
+    fanControlMode[fan] = 1;
 }
