@@ -229,6 +229,38 @@ final class TelemetryModel: ObservableObject {
     @Published var cstateAddress: UInt64 = 0
     @Published var cppcActiveMode: Bool = false
     @Published var cppcEPPValue: UInt8 = 0x3F
+    
+    @Published var autoEPPEnabled: Bool = false {
+        didSet {
+            UserDefaults.standard.set(autoEPPEnabled, forKey: "autoEPPEnabled")
+        }
+    }
+    @Published var autoEPPIdleThreshold: Double = 15.0 {
+        didSet {
+            UserDefaults.standard.set(autoEPPIdleThreshold, forKey: "autoEPPIdleThreshold")
+        }
+    }
+    @Published var autoEPPHighThreshold: Double = 65.0 {
+        didSet {
+            UserDefaults.standard.set(autoEPPHighThreshold, forKey: "autoEPPHighThreshold")
+        }
+    }
+    private var lastAutoEPPApplied: UInt8? = nil
+    
+    @Published var autoFanCurveEnabled: Bool = false {
+        didSet {
+            UserDefaults.standard.set(autoFanCurveEnabled, forKey: "autoFanCurveEnabled")
+            if !autoFanCurveEnabled { setAllFansAuto() }
+        }
+    }
+    @Published var fanCurveMinTemp: Double = 40.0 {
+        didSet { UserDefaults.standard.set(fanCurveMinTemp, forKey: "fanCurveMinTemp") }
+    }
+    @Published var fanCurveMaxTemp: Double = 75.0 {
+        didSet { UserDefaults.standard.set(fanCurveMaxTemp, forKey: "fanCurveMaxTemp") }
+    }
+    private var lastAppliedFanPWM: UInt8? = nil
+    
     private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
     @Published var pStateRows: [PStateRow] = []
@@ -340,6 +372,18 @@ final class TelemetryModel: ObservableObject {
         if self.powerAlertThreshold == 0 { self.powerAlertThreshold = 142 }
         self.powerAlertDuration = UserDefaults.standard.integer(forKey: "powerAlertDuration")
         if self.powerAlertDuration == 0 { self.powerAlertDuration = 10 }
+
+        self.autoEPPEnabled = UserDefaults.standard.bool(forKey: "autoEPPEnabled")
+        let idleT = UserDefaults.standard.double(forKey: "autoEPPIdleThreshold")
+        self.autoEPPIdleThreshold = idleT > 0 ? idleT : 15.0
+        let highT = UserDefaults.standard.double(forKey: "autoEPPHighThreshold")
+        self.autoEPPHighThreshold = highT > 0 ? highT : 65.0
+
+        self.autoFanCurveEnabled = UserDefaults.standard.bool(forKey: "autoFanCurveEnabled")
+        let fMin = UserDefaults.standard.double(forKey: "fanCurveMinTemp")
+        self.fanCurveMinTemp = fMin > 0 ? fMin : 40.0
+        let fMax = UserDefaults.standard.double(forKey: "fanCurveMaxTemp")
+        self.fanCurveMaxTemp = fMax > 0 ? fMax : 75.0
 
         initSMC()
         applySavedCPUControls()
@@ -581,6 +625,14 @@ final class TelemetryModel: ObservableObject {
         
         let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
         cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
+        
+        if autoEPPEnabled && cppcActiveMode {
+            evaluateAutoEPP(currentLoad: cpuLoadAvg)
+        }
+        if autoFanCurveEnabled {
+            evaluateAutoFanCurve()
+        }
+        
         ramUsagePct = getRAMUsagePct()
         diskUsagePct = getDiskUsagePct()
         
@@ -804,6 +856,53 @@ final class TelemetryModel: ObservableObject {
         UserDefaults.standard.set(Int(epp), forKey: "saved_cppcEPPValue")
         UserDefaults.standard.set(true, forKey: "has_saved_cppcEPPValue")
         loadCPUControls()
+    }
+
+    private func evaluateAutoEPP(currentLoad: Double) {
+        let targetEPP: UInt8
+        if currentLoad >= autoEPPHighThreshold {
+            targetEPP = 0x00 // Performance
+        } else if currentLoad <= autoEPPIdleThreshold {
+            targetEPP = 0xC0 // Power Save
+        } else {
+            targetEPP = 0x3F // Balanced Performance
+        }
+        
+        if lastAutoEPPApplied != targetEPP {
+            lastAutoEPPApplied = targetEPP
+            _ = ProcessorModel.shared.setCPPCEPPValue(epp: targetEPP)
+            cppcEPPValue = targetEPP
+        }
+    }
+
+    private func evaluateAutoFanCurve() {
+        guard smcDriverLoaded, !fans.isEmpty else { return }
+        let currentTemp = cpuTempC
+        let targetPWM: UInt8
+        
+        if currentTemp >= 85.0 {
+            // Hardware Thermal Safety Guard: force 80% PWM (0xC8)
+            targetPWM = 0xC8
+        } else {
+            let minT = fanCurveMinTemp
+            let maxT = max(minT + 10.0, fanCurveMaxTemp)
+            let clampedTemp = min(maxT, max(minT, currentTemp))
+            let pct = (clampedTemp - minT) / (maxT - minT)
+            // Scale PWM between 20% (50) and 80% (200)
+            let pwmVal = 50.0 + pct * 150.0
+            targetPWM = UInt8(clampedTemp <= minT ? 0 : min(200, max(50, Int(round(pwmVal)))))
+        }
+        
+        if lastAppliedFanPWM != targetPWM {
+            lastAppliedFanPWM = targetPWM
+            for i in 0..<fans.count {
+                if targetPWM == 0 {
+                    _ = ProcessorModel.shared.kernelSetUInt64(selector: 96, args: [UInt64(i)])
+                } else {
+                    _ = ProcessorModel.shared.kernelSetUInt64(selector: 95, args: [UInt64(i), UInt64(targetPWM)])
+                }
+            }
+        }
     }
 
     func setSpeedStep(_ index: Int) {
