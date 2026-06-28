@@ -9,3 +9,6 @@ cleanup.py
 build/
 *.zip
 Binaries_Release/
+*.dSYM
+Tools/
+dSYM/
