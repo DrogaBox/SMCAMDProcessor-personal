@@ -45,6 +45,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     IOLog("AMDCPUSupport::enter dlinking..\n");
     
     pmRyzen_symtable_ready = 0;
+    int symbolRetries = 0;
     
 retry:
     find_mach_header_addr(getKernelVersion() >= KernelVersion::BigSur);
@@ -52,7 +53,11 @@ retry:
     
     if(!pmRyzen_symtable._wrmsr_carefully){
         kextloadAlerts++;
-        IOSleep(2);
+        if (++symbolRetries > 50) {
+            IOLog("SMCAMDProcessor::init symbol resolution for _wrmsr_carefully failed after 50 retries\n");
+            return false;
+        }
+        IOSleep(10);
         goto retry;
     }
     
@@ -573,6 +578,8 @@ IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdin
 }
 
 void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
+    if (boardInfoValid) return;
+    
     auto efiRT = EfiRuntimeServices::get();
     uint32_t att = 0;
     uint64_t sizee = BASEBOARD_STRING_MAX;
@@ -591,6 +598,8 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
         // Fallback: Query IOPlatformExpertDevice properties
         IOPlatformExpert *platform = getPlatform();
         if (platform) {
+            bool foundVendor = false;
+            bool foundModel = false;
             OSObject *mfgObj = platform->getProperty("manufacturer");
             OSObject *modelObj = platform->getProperty("model");
             
@@ -598,11 +607,13 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
                 if (OSString *str = OSDynamicCast(OSString, mfgObj)) {
                     strncpy(boardVendor, str->getCStringNoCopy(), BASEBOARD_STRING_MAX - 1);
                     boardVendor[BASEBOARD_STRING_MAX - 1] = '\0';
+                    foundVendor = true;
                 } else if (OSData *data = OSDynamicCast(OSData, mfgObj)) {
                     size_t len = data->getLength();
                     size_t copyLen = (len < BASEBOARD_STRING_MAX - 1) ? len : (BASEBOARD_STRING_MAX - 1);
                     memcpy(boardVendor, data->getBytesNoCopy(), copyLen);
                     boardVendor[copyLen] = '\0';
+                    foundVendor = true;
                 }
             } else {
                 strncpy(boardVendor, "Unknown Vendor", BASEBOARD_STRING_MAX - 1);
@@ -612,16 +623,18 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
                 if (OSString *str = OSDynamicCast(OSString, modelObj)) {
                     strncpy(boardName, str->getCStringNoCopy(), BASEBOARD_STRING_MAX - 1);
                     boardName[BASEBOARD_STRING_MAX - 1] = '\0';
+                    foundModel = true;
                 } else if (OSData *data = OSDynamicCast(OSData, modelObj)) {
                     size_t len = data->getLength();
                     size_t copyLen = (len < BASEBOARD_STRING_MAX - 1) ? len : (BASEBOARD_STRING_MAX - 1);
                     memcpy(boardName, data->getBytesNoCopy(), copyLen);
                     boardName[copyLen] = '\0';
+                    foundModel = true;
                 }
             } else {
                 strncpy(boardName, "Unknown Platform", BASEBOARD_STRING_MAX - 1);
             }
-            boardInfoValid = true;
+            boardInfoValid = foundVendor && foundModel;
         } else {
             boardInfoValid = false;
         }
@@ -806,14 +819,15 @@ void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
         hwConfig |= (1 << 25);
     }
     
-    //A bit hacky but at least works for now.
-    void* args[] = {this, &hwConfig};
+    struct CPBArgs {
+        AMDRyzenCPUPowerManagement *provider;
+        uint64_t hwConfig;
+    } cpbArgs{this, hwConfig};
     
     mp_rendezvous(nullptr, [](void *obj) {
-        auto v = static_cast<uint64_t*>(*((uint64_t**)obj+1));
-        auto provider = static_cast<AMDRyzenCPUPowerManagement*>(*((AMDRyzenCPUPowerManagement**)obj));
-        provider->write_msr(kMSR_HWCR, *v);
-    }, nullptr, args);
+        auto args = static_cast<CPBArgs*>(obj);
+        args->provider->write_msr(kMSR_HWCR, args->hwConfig);
+    }, nullptr, &cpbArgs);
 }
 
 bool AMDRyzenCPUPowerManagement::getCPBState(){
