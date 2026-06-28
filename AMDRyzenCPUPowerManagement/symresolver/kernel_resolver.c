@@ -39,6 +39,7 @@ void find_mach_header_addr(uint8_t kc){
     
     load_command_t* lcp = (load_command_t*)(base_address + sizeof(mach_header_64_t));
     for (uint32_t i = 0; i < mach_header->ncmds; i++) {
+        if (lcp->cmdsize == 0) break;
         if (lcp->cmd == LC_SEGMENT_64) {
             seg_command_64_t *sc = (seg_command_64_t*)lcp;
             if (!strncmp(sc->segname, "__TEXT_EXEC", sizeof(sc->segname))) {
@@ -52,16 +53,7 @@ void find_mach_header_addr(uint8_t kc){
 
 void *lookup_symbol(const char *symbol)
 {
-    
     if(!mh_base_addr) return NULL;
-//    IOLog("%s: aslr slide: 0x%0llx\n", __func__, slide);
-//    print_pointer((void*)slide);
-//    IOLog("%s: base address: 0x%0llx\n", __func__, base_address);
-//    print_pointer((void*)base_address);
-//
-//    IOLog("%s: actual address: 0x%0llx\n", __func__, (uint64_t)actual_header);
-//    print_pointer((void*)actual_header);
-    
     return find_symbol((mach_header_64_t*)mh_base_addr, symbol);
 }
 
@@ -74,6 +66,9 @@ find_segment_64(mach_header_64_t *mh, const char *segname)
     /* first load command begins straight after the mach header */
     lc = (load_command_t *)((uint64_t)mh + sizeof(mach_header_64_t));
     while ((uint64_t)lc < (uint64_t)mh + (uint64_t)mh->sizeofcmds) {
+        if (lc->cmdsize == 0 || (uint64_t)lc + lc->cmdsize > (uint64_t)mh + mh->sizeofcmds) {
+            break;
+        }
         if (lc->cmd == LC_SEGMENT_64) {
             /* evaluate segment */
             seg = (seg_command_64_t*)lc;
@@ -98,6 +93,9 @@ find_load_command(mach_header_64_t *mh, uint32_t cmd)
     /* first load command begins straight after the mach header */
     lc = (load_command_t *)((uint64_t)mh + sizeof(mach_header_64_t));
     while ((uint64_t)lc < (uint64_t)mh + (uint64_t)mh->sizeofcmds) {
+        if (lc->cmdsize == 0 || (uint64_t)lc + lc->cmdsize > (uint64_t)mh + mh->sizeofcmds) {
+            break;
+        }
         if (lc->cmd == cmd) {
             foundlc = (load_command_t *)lc;
             break;
