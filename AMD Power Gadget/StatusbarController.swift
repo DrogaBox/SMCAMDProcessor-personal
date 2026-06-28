@@ -462,6 +462,8 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: .init("CloseMenuBarPopover"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(update), name: .init("TelemetryDataUpdated"), object: nil)
+
+        TelemetryModel.shared.setStatusbarActive(true)
     }
 
     @objc func restartTimer() {
@@ -480,6 +482,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     func dismiss() {
         updateTimer?.invalidate()
         updateTimer = nil
+        TelemetryModel.shared.setStatusbarActive(false)
         NotificationCenter.default.removeObserver(self)
         if let item = statusItem {
             NSStatusBar.system.removeStatusItem(item)
