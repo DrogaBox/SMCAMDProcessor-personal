@@ -696,31 +696,12 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
 }
 
 void AMDRyzenCPUPowerManagement::calculateEffectiveFrequency(uint8_t physical){
+    uint64_t APERF = 0;
+    uint64_t MPERF = 0;
     
-    uint32_t APERF_lo, APERF_hi;
-    uint32_t MPERF_lo, MPERF_hi;
-    
-    /**
-     * The effective frequency interface provides +/- 50MHz accuracy if the following constraints are met:
-     * • Effective frequency is read at most one time per millisecond.
-     * • When reading or writing Core::X86::Msr::MPERF and Core::X86::Msr::APERF software executes only
-     *  MOV instructions, and no more than 3 MOV instructions, between the two RDMSR or WRMSR
-     *  instructions.
-     * • Core::X86::Msr::MPERF and Core::X86::Msr::APERF are invalid if an overflow occurs.
-    */
-    __asm__ volatile("movl $0xe8, %%ecx;"
-                     "rdmsr;"
-                     "movl %%eax, %0;"
-                     "movl %%edx, %1;"
-                     "movl $0xe7, %%ecx;"
-                     "rdmsr;"
-                     : "=r"(APERF_lo), "=r"(APERF_hi), "=a"(MPERF_lo), "=d"(MPERF_hi)
-                     :
-                     : "%ecx"
-                    );
-    
-    uint64_t APERF = APERF_lo | ((uint64_t)APERF_hi << 32);
-    uint64_t MPERF = MPERF_lo | ((uint64_t)MPERF_hi << 32);;
+    if (!read_msr(0xE8, &APERF) || !read_msr(0xE7, &MPERF)) {
+        return;
+    }
         
     uint64_t lastAPERF = lastAPERF_perCore[physical];
     uint64_t lastMPERF = lastMPERF_perCore[physical];
