@@ -715,6 +715,10 @@ class ProcessorModel {
     }
 
     func getGPUFanRPM() -> Float {
+        let temp = getGPUTemp()
+        if temp > 0 && temp < 50.0 {
+            return 0
+        }
         return getIOAcceleratorStat(key: "Fan Speed(RPM)")
     }
 
