@@ -3943,6 +3943,28 @@ struct DesktopWidgetsConfigView: View {
                             }
                             Spacer()
                             Button(action: {
+                                widgetCpuEnabled = false
+                                widgetGpuEnabled = false
+                                widgetRamEnabled = false
+                                widgetDiskEnabled = false
+                                widgetNetEnabled = false
+                                widgetFanEnabled = false
+                                widgetClockEnabled = false
+                                widgetUnitedEnabled = false
+                                DesktopWidgetManager.shared.refreshWidgets()
+                                NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+                            }) {
+                                Text(NSLocalizedString("Disable All Widgets", comment: ""))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.red.opacity(0.8))
+                                    .cornerRadius(6)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
                                 manager.isEditingWidgets.toggle()
                             }) {
                                 Text(manager.isEditingWidgets ? "Done" : "Edit Layout")

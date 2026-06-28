@@ -737,6 +737,14 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
     }
 
+    @objc func disableAllWidgets(_ sender: NSMenuItem) {
+        for type in DesktopWidgetType.allCases {
+            UserDefaults.standard.set(false, forKey: "widget_enabled_\(type.rawValue)")
+        }
+        DesktopWidgetManager.shared.refreshWidgets()
+        NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
+    }
+
     private func addMenuItems() {
         if menu == nil {
             menu = NSMenu()
@@ -772,6 +780,10 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         editItem.target = self
         editItem.state = DesktopWidgetManager.shared.isEditingWidgets ? .on : .off
         widgetsMenu.addItem(editItem)
+        
+        let disableAllItem = NSMenuItem(title: NSLocalizedString("Disable All Widgets", comment: ""), action: #selector(disableAllWidgets(_:)), keyEquivalent: "")
+        disableAllItem.target = self
+        widgetsMenu.addItem(disableAllItem)
         
         let widgetsMenuItem = NSMenuItem(title: NSLocalizedString("Desktop Widgets", comment: ""), action: nil, keyEquivalent: "")
         widgetsMenuItem.submenu = widgetsMenu
