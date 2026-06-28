@@ -262,6 +262,15 @@ public:
     
     double uniPackageEnergy;
     
+#pragma pack(push, 1)
+    struct CPUSensorPacket {
+        float packagePowerW;
+        float packageTempC;
+        uint32_t numLogicalCores;
+        float coreFrequenciesMHz[64];
+    };
+#pragma pack(pop)
+
     struct ZenCpuFeatureMap {
         uint32_t family;
         uint32_t modelStart;

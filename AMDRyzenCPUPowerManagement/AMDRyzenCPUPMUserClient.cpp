@@ -342,6 +342,27 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             fProvider->applyPowerControl();
             break;
         }
+
+        // Zero-copy streaming structured telemetry packet (Task 1.2)
+        case 100: {
+            arguments->scalarOutputCount = 0;
+            uint32_t requiredSize = sizeof(AMDRyzenCPUPowerManagement::CPUSensorPacket);
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput || maxLen < requiredSize) {
+                return kIOReturnBadArgument;
+            }
+            
+            AMDRyzenCPUPowerManagement::CPUSensorPacket *packet = (AMDRyzenCPUPowerManagement::CPUSensorPacket*) arguments->structureOutput;
+            packet->packagePowerW = (float)fProvider->uniPackageEnergy;
+            packet->packageTempC = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
+            packet->numLogicalCores = fProvider->totalNumberOfPhysicalCores;
+            for (uint32_t i = 0; i < 64 && i < fProvider->totalNumberOfPhysicalCores; i++) {
+                packet->coreFrequenciesMHz[i] = fProvider->effFreq_perCore[i];
+            }
+            break;
+        }
             
         //Get CPB
         case 11: {
