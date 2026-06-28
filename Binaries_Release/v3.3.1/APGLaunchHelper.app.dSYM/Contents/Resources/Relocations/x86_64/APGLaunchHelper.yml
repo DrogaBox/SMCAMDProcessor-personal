@@ -1,0 +1,20 @@
+---
+triple:          'x86_64-apple-darwin'
+binary-path:     '/Users/droga/Desktop/SMCAMDProcessor/Binaries_Release/v3.3.1/APGLaunchHelper.app/Contents/MacOS/APGLaunchHelper'
+relocations:
+  - { offset: 0xB350E, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x1000010E0, symSize: 0x8F }
+  - { offset: 0xB3548, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x1000010E0, symSize: 0x8F }
+  - { offset: 0xB360C, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateC29applicationDidFinishLaunchingyy10Foundation12NotificationVFySo20NSRunningApplicationCSg_s5Error_pSgtYbcfU0_', symObjAddr: 0x0, symBinAddr: 0x100001170, symSize: 0x10 }
+  - { offset: 0xB36E8, size: 0x8, addend: 0x0, symName: '_$sSo20NSRunningApplicationCSgs5Error_pSgIeghgg_ACSo7NSErrorCSgIeyBhyy_TR', symObjAddr: 0x10, symBinAddr: 0x100001180, symSize: 0x80 }
+  - { offset: 0xB3700, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateCMa', symObjAddr: 0x150, symBinAddr: 0x1000012C0, symSize: 0x20 }
+  - { offset: 0xB3735, size: 0x8, addend: 0x0, symName: '_$ss12_ArrayBufferV19_getElementSlowPathyyXlSiFSo20NSRunningApplicationC_Tg5', symObjAddr: 0x170, symBinAddr: 0x1000012E0, symSize: 0x1E0 }
+  - { offset: 0xB38A3, size: 0x8, addend: 0x0, symName: '_$sSo20NSRunningApplicationCMa', symObjAddr: 0x860, symBinAddr: 0x1000019D0, symSize: 0x40 }
+  - { offset: 0xB38B7, size: 0x8, addend: 0x0, symName: ___swift_instantiateConcreteTypeFromMangledNameV2, symObjAddr: 0x8A0, symBinAddr: 0x100001A10, symSize: 0x40 }
+  - { offset: 0xB38CB, size: 0x8, addend: 0x0, symName: _block_copy_helper, symObjAddr: 0x8E0, symBinAddr: 0x100001A50, symSize: 0x20 }
+  - { offset: 0xB38DF, size: 0x8, addend: 0x0, symName: _block_destroy_helper, symObjAddr: 0x900, symBinAddr: 0x100001A70, symSize: 0x10 }
+  - { offset: 0xB3A56, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateC29applicationDidFinishLaunchingyy10Foundation12NotificationVFySo20NSRunningApplicationCSg_s5Error_pSgtYbcfU0_', symObjAddr: 0x0, symBinAddr: 0x100001170, symSize: 0x10 }
+  - { offset: 0xB3ACC, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateC29applicationDidFinishLaunchingyy10Foundation12NotificationVFTo', symObjAddr: 0x90, symBinAddr: 0x100001200, symSize: 0x60 }
+  - { offset: 0xB3B0F, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateCACycfcTo', symObjAddr: 0xF0, symBinAddr: 0x100001260, symSize: 0x30 }
+  - { offset: 0xB3B44, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateCfD', symObjAddr: 0x120, symBinAddr: 0x100001290, symSize: 0x30 }
+  - { offset: 0xB3C61, size: 0x8, addend: 0x0, symName: '_$s15APGLaunchHelper11AppDelegateC29applicationDidFinishLaunchingyy10Foundation12NotificationVFTf4nd_n', symObjAddr: 0x350, symBinAddr: 0x1000014C0, symSize: 0x510 }
+...
