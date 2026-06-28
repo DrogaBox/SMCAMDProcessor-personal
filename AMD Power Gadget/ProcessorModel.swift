@@ -195,13 +195,16 @@ class ProcessorModel {
                                       nil, nil,
                                       &outputStr, &outbuffersize)
         }
-        else if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
+        if res != KERN_SUCCESS || outbuffersize <= 0 {
+            if res != KERN_SUCCESS { print(String(cString: mach_error_string(res))) }
             return ""
         }
 
-
-        return String(String(cString: Array(outputStr[0...outbuffersize-1])).prefix(outbuffersize))
+        var validBytes = Array(outputStr.prefix(outbuffersize))
+        if validBytes.isEmpty || validBytes.last != 0 {
+            validBytes.append(0)
+        }
+        return String(cString: validBytes)
     }
 
     func kernelSetUInt64(selector : UInt32, args : [UInt64]) -> Bool {
