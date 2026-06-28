@@ -257,11 +257,11 @@ fileprivate class StatusbarView: NSView {
 
         // FAN column
         if cfg.showFanRPM {
-            let fan = fanRPM > 0 ? String(fanRPM) : "—"
+            let fan = String(fanRPM)
             let fanColor: NSColor = .labelColor
             
             if cfg.showGPU && cfg.showGPUfan {
-                let gFanStr = gpuFanRPM > 0 ? String(format: "G:%.0f", gpuFanRPM) : "G:—"
+                let gFanStr = String(format: "G:%.0f", gpuFanRPM)
                 drawCompactDoubleColored(label: "F\nA\nN", up: "C:\(fan)", upColor: fanColor, down: gFanStr, downColor: .labelColor, x: x)
             } else {
                 drawCompactDoubleColored(label: "F\nA\nN", up: fan, upColor: fanColor, down: "RPM", downColor: .labelColor, x: x)
