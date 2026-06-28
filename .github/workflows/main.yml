@@ -63,13 +63,17 @@ jobs:
           name: Artifacts
           path: build/Release.zip
 
+      - name: Extract Release Notes
+        if: startsWith(github.ref, 'refs/tags/')
+        run: awk '/^## v/{count++} count==1{print}' CHANGELOG.md > build/release_notes.md
+
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
           files: build/Release.zip
-          body_path: CHANGELOG.md
+          body_path: build/release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
