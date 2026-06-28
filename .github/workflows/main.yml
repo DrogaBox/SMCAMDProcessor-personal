@@ -14,7 +14,6 @@ permissions:
 
 env:
   PROJECT_TYPE: KEXT
-  ACID32: 1
 
 jobs:
   build:
@@ -29,16 +28,15 @@ jobs:
           
       - name: Fetch Dependencies 
         run: |
-          src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) && eval "$src" || exit 1
-          src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/bootstrap.sh) && eval "$src" || exit 1
+          BUILD_MODE=prebuilt src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/bootstrap.sh) && eval "$src" || exit 1
           git clone https://github.com/acidanthera/VirtualSMC.git
           
       - name: Build All Schemes
         run: |
-          xcodebuild -scheme "AMDRyzenCPUPowerManagement" -jobs 1 -arch x86_64 -arch ACID32 -configuration Release -derivedDataPath ./build
-          xcodebuild -scheme "APGLaunchHelper" -jobs 1 -arch x86_64 -arch ACID32 -configuration Release -derivedDataPath ./build
-          xcodebuild -scheme "AMD Power Gadget" -jobs 1 -arch x86_64 -arch ACID32 -configuration Release -derivedDataPath ./build
-          xcodebuild -scheme "SMCAMDProcessor" -jobs 1 -arch x86_64 -arch ACID32 -configuration Release -derivedDataPath ./build
+          xcodebuild -scheme "AMDRyzenCPUPowerManagement" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+          xcodebuild -scheme "APGLaunchHelper" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+          xcodebuild -scheme "AMD Power Gadget" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+          xcodebuild -scheme "SMCAMDProcessor" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
 
       - name: Archive Artifacts
         run: |
@@ -60,4 +58,5 @@ jobs:
           files: build/Release.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
