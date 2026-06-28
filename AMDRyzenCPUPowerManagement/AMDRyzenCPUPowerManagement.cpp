@@ -370,6 +370,19 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     IOLog("AMDCPUSupport::start CCD temperature offset: 0x%X\n", ccdOffset);
     
+    if (cpuFamily == 0x1A) {
+        zenGeneration = 5;
+    } else if (cpuFamily == 0x19 && cpuModel >= 0x60) {
+        zenGeneration = 4;
+    } else if (cpuFamily == 0x19) {
+        zenGeneration = 3;
+    } else if (cpuFamily == 0x17 && cpuModel >= 0x30) {
+        zenGeneration = 2;
+    } else {
+        zenGeneration = 1;
+    }
+    IOLog("AMDCPUSupport::start Detected Zen Generation: %u\n", zenGeneration);
+    
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     // L1-D size in bits [31:24] of ECX, L1-I size in bits [31:24] of EDX (CPUID 0x80000005)
     cpuCacheL1_perCore = (cpuid_ecx >> 24) + (cpuid_edx >> 24);

@@ -262,6 +262,21 @@ public:
     
     double uniPackageEnergy;
     
+    struct ZenCpuFeatureMap {
+        uint32_t family;
+        uint32_t modelStart;
+        uint32_t modelEnd;
+        const char *generationName;
+        bool supportsCPPC;
+        bool supportsCPPCv2;
+        bool supportsMwait;
+    };
+
+    uint32_t zenGeneration = 3;
+    bool supportsCPPC = true;
+    bool supportsCPPCv2 = false;
+    bool supportsMwait = true;
+
     bool disablePrivilegeCheck = true;
     uint16_t savedSMCChipIntel = 0;
     uint16_t kextloadAlerts = 0;
