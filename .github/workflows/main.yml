@@ -34,6 +34,7 @@ jobs:
           unzip -q -o Lilu-1.7.2-RELEASE.zip
           curl -LfsO https://github.com/acidanthera/VirtualSMC/releases/download/1.3.7/VirtualSMC-1.3.7-RELEASE.zip
           unzip -q -o VirtualSMC-1.3.7-RELEASE.zip
+          git clone --depth 1 https://github.com/acidanthera/MacKernelSDK.git
           
       - name: Build AMDRyzenCPUPowerManagement
         run: xcodebuild -scheme "AMDRyzenCPUPowerManagement" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
