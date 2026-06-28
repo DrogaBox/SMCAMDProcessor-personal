@@ -264,6 +264,7 @@ final class TelemetryModel: ObservableObject {
     private var cachedNumLogicalCores: Int = 0
     private var rankedCoreLookupMap: [Int: RankedPhysicalCore] = [:]
     private var lastHeavySyscallCheck: Date = Date.distantPast
+    private var lastProcessFetchTime: Date = Date.distantPast
     
     private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
@@ -666,11 +667,14 @@ final class TelemetryModel: ObservableObject {
         lastDiskWriteBytes = diskIO.write
         lastDiskCheck = now
         
-        if popoverVisible {
-            Task.detached(priority: .background) {
-                let list = self.fetchTopProcesses()
-                await MainActor.run {
-                    self.topProcesses = list
+        if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
+            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 1.5 {
+                lastProcessFetchTime = now
+                Task.detached(priority: .background) {
+                    let list = self.fetchTopProcesses()
+                    await MainActor.run {
+                        self.topProcesses = list
+                    }
                 }
             }
         }

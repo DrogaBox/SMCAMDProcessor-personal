@@ -492,9 +492,13 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private var cachedGPUFanRPM: Float = 0
     private var lastGPUReadTime: Date = Date.distantPast
     private let gpuCacheInterval: TimeInterval = 3.0
+    private var cachedNumCores: Int = 0
 
     func update() {
-        let numberOfCores = ProcessorModel.shared.getNumOfCore()
+        if cachedNumCores == 0 {
+            cachedNumCores = ProcessorModel.shared.getNumOfCore()
+        }
+        let numberOfCores = cachedNumCores
         let outputStr: [Float] = ProcessorModel.shared.getMetric(forced: false)
 
         guard outputStr.count > numberOfCores + 2 else { return }
