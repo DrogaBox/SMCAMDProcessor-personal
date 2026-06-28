@@ -4,11 +4,11 @@ VirtualSMC/
 SMCAMDProcessor.xcodeproj/xcuserdata/
 SMCAMDProcessor.xcodeproj/project.xcworkspace/
 .DS_Store
-
 cleanup.py
 build/
 *.zip
 Binaries_Release/
+Binaries_*/
 *.dSYM
 Tools/
 dSYM/
