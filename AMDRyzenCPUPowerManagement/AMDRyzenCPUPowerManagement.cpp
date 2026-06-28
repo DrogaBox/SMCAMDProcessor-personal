@@ -63,7 +63,6 @@ retry:
     
     
     pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
-    pmRyzen_symtable._cpu_to_processor = lookup_symbol("_cpu_to_processor");
     pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
     pmRyzen_symtable._pmDispatch = lookup_symbol("_pmDispatch");
     pmRyzen_symtable._pmUnRegister = lookup_symbol("_pmUnRegister");
@@ -1039,22 +1038,6 @@ EXPORT extern "C" kern_return_t amdryzencpupm_kern_start(kmod_info_t *, void *) 
     // This works better and increases boot speed in some cases.
     PE_parse_boot_argn("liludelay", &ADDPR(debugPrintDelay), sizeof(ADDPR(debugPrintDelay)));
     ADDPR(debugEnabled) = checkKernelArgument("-amdpdbg");
-    
-//    IOLog("AMDCPUSupport::enter dlinking..\n");
-//
-//    pmRyzen_symtable_ready = 0;
-//
-//    pmRyzen_symtable._wrmsr_carefully = lookup_symbol("_wrmsr_carefully");
-//    pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
-//    pmRyzen_symtable._cpu_to_processor = lookup_symbol("_cpu_to_processor");
-//    pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
-//    pmRyzen_symtable._pmDispatch = lookup_symbol("_pmDispatch");
-//    pmRyzen_symtable._pmUnRegister = lookup_symbol("_pmUnRegister");
-//    pmRyzen_symtable._cpu_NMI_interrupt = lookup_symbol("_cpu_NMI_interrupt");
-//    pmRyzen_symtable._NMIPI_enable = lookup_symbol("_NMIPI_enable");
-//    pmRyzen_symtable._i386_cpu_IPI = lookup_symbol("_i386_cpu_IPI");
-//    pmRyzen_symtable_ready = 1;
-//    IOLog("AMDCPUSupport::enter link finished.\n");
     
     return KERN_SUCCESS;
 }

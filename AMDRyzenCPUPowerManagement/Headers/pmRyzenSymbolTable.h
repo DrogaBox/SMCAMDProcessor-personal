@@ -13,7 +13,6 @@
 typedef struct pmRyzen_symtable {
     void* _wrmsr_carefully;
     void* _KUNCUserNotificationDisplayAlert;
-    void* _cpu_to_processor;
     void* _tscFreq;
     void* _pmDispatch;
     void* _pmUnRegister;
