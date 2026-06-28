@@ -492,8 +492,6 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         const char*,const char*,const char*,const char*,const char*,unsigned*))_kunc_alert;
     }
 
-    cpu_to_processor = (processor_t(*)(int))pmRyzen_symtable._cpu_to_processor;
-
     xnuTSCFreq = *((uint64_t*)pmRyzen_symtable._tscFreq);
 
     pmRyzen_init(this);
@@ -782,7 +780,6 @@ void AMDRyzenCPUPowerManagement::applyEPPControl() {
     
     mp_rendezvous(nullptr, [](void *obj) {
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
-        uint32_t cpu_num = cpu_number();
         
         uint64_t cppcCap = 0;
         if (provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap)) {
