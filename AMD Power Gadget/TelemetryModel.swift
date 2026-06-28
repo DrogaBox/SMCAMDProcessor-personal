@@ -668,7 +668,7 @@ final class TelemetryModel: ObservableObject {
         lastDiskCheck = now
         
         if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
-            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 1.5 {
+            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 3.0 {
                 lastProcessFetchTime = now
                 Task.detached(priority: .background) {
                     let list = self.fetchTopProcesses()

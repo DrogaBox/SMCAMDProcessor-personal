@@ -3645,6 +3645,42 @@ struct LinearProgressBar: View {
 }
 
 // MARK: - Popover Mini Sparkline Widget
+struct SparklineShape: Shape {
+    let values: [Double]
+    let minVal: Double
+    let maxVal: Double
+    var isFilled: Bool = false
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard values.count > 1 else { return path }
+        
+        let range = max(0.001, maxVal - minVal)
+        let stepX = rect.width / CGFloat(values.count - 1)
+        
+        let points = values.enumerated().map { i, val in
+            let normY = CGFloat((val - minVal) / range)
+            let clampedY = max(0.0, min(1.0, normY))
+            let y = rect.height * (1.0 - clampedY)
+            let x = CGFloat(i) * stepX
+            return CGPoint(x: x, y: y)
+        }
+        
+        path.move(to: points[0])
+        for pt in points.dropFirst() {
+            path.addLine(to: pt)
+        }
+        
+        if isFilled, let last = points.last {
+            path.addLine(to: CGPoint(x: last.x, y: rect.height))
+            path.addLine(to: CGPoint(x: points[0].x, y: rect.height))
+            path.closeSubpath()
+        }
+        
+        return path
+    }
+}
+
 struct MiniSparkline: View {
     let label: String
     let currentVal: String
@@ -3653,33 +3689,10 @@ struct MiniSparkline: View {
     let value: (TelemetryPoint) -> Double
     var filterZeros: Bool = false
     
-    private var filteredData: [TelemetryPoint] {
-        if filterZeros {
-            return data.filter { value($0) > 0 }
-        }
-        return data
-    }
-    
-    private var yMin: Double {
-        let vals = filteredData.map(value)
-        let mn = vals.min() ?? 0
-        let mx = vals.max() ?? 100
-        let diff = mx - mn
-        let span = max(10.0, diff)
-        let center = (mx + mn) / 2.0
-        return center - span * 0.6
-    }
-    private var yMax: Double {
-        let vals = filteredData.map(value)
-        let mn = vals.min() ?? 0
-        let mx = vals.max() ?? 100
-        let diff = mx - mn
-        let span = max(10.0, diff)
-        let center = (mx + mn) / 2.0
-        return center + span * 0.6
-    }
-    
     var body: some View {
+        let rawVals = data.map(value)
+        let vals = filterZeros ? rawVals.filter { $0 > 0 } : rawVals
+        
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
@@ -3691,28 +3704,22 @@ struct MiniSparkline: View {
             }
             .frame(width: 75, alignment: .leading)
             
-            if filteredData.count > 1 {
-                let indexedData = Array(filteredData.enumerated())
-                Chart(indexedData, id: \.offset) { index, pt in
-                    AreaMark(
-                        x: .value("Index", Double(index)),
-                        y: .value(label, value(pt))
-                    )
-                    .foregroundStyle(LinearGradient(colors: [color.opacity(0.18), color.opacity(0.0)], startPoint: .top, endPoint: .bottom))
-                    .interpolationMethod(.catmullRom)
+            if vals.count > 1 {
+                let mn = vals.min() ?? 0
+                let mx = vals.max() ?? 100
+                let diff = mx - mn
+                let span = max(10.0, diff)
+                let center = (mx + mn) / 2.0
+                let yMin = center - span * 0.6
+                let yMax = center + span * 0.6
+                
+                ZStack {
+                    SparklineShape(values: vals, minVal: yMin, maxVal: yMax, isFilled: true)
+                        .fill(LinearGradient(colors: [color.opacity(0.22), color.opacity(0.0)], startPoint: .top, endPoint: .bottom))
                     
-                    LineMark(
-                        x: .value("Index", Double(index)),
-                        y: .value(label, value(pt))
-                    )
-                    .foregroundStyle(color)
-                    .lineStyle(StrokeStyle(lineWidth: 1.5))
-                    .interpolationMethod(.catmullRom)
+                    SparklineShape(values: vals, minVal: yMin, maxVal: yMax, isFilled: false)
+                        .stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                 }
-                .chartYScale(domain: yMin...yMax)
-                .chartXScale(domain: 0...Double(filteredData.count - 1))
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
                 .frame(height: 24)
                 .clipped()
             } else {
