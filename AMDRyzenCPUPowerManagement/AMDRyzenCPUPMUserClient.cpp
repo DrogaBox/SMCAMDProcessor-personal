@@ -7,8 +7,6 @@
 
 #include "AMDRyzenCPUPMUserClient.hpp"
 
-static uint32_t fanUpdateCounter = 0;
-
 OSDefineMetaClassAndStructors(AMDRyzenCPUPMUserClient, IOUserClient);
 
 
@@ -748,7 +746,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            if ((++fanUpdateCounter % 4) == 0) {
+            if ((++fProvider->fanUpdateCounter % 4) == 0) {
                 fProvider->superIO->updateFanRPMS();
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
@@ -776,7 +774,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            if ((fanUpdateCounter % 4) == 0) {
+            if ((fProvider->fanUpdateCounter % 4) == 0) {
                 fProvider->superIO->updateFanControl();
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
@@ -825,7 +823,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
-        //SMC Secret Undocumented feature (⁎⁍̴̛ᴗ⁍̴̛⁎)
+        //SMC Secret Undocumented feature (⁎⁍̴̛ᴗ⁍̴̛⁎) - Capped at 80% PWM (0xC8) for hardware safety
         case 97: {
             if(!fProvider->superIO)
                 return kIOReturnNoDevice;
@@ -839,7 +837,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             int numFan = fProvider->superIO->getNumberOfFans();
             for (int i = 0; i < numFan; i++) {
                 if(arguments->scalarInput[0])
-                    fProvider->superIO->overrideFanControl(i, 0xff);
+                    fProvider->superIO->overrideFanControl(i, 0xC8);
                 else
                     fProvider->superIO->setDefaultFanControl(i);
             }

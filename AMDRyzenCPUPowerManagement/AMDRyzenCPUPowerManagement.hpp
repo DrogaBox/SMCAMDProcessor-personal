@@ -283,6 +283,7 @@ private:
     uint32_t timeOfLastUpdate = 0;
     uint32_t estimatedRequestTimeInterval = 0;
     uint32_t timeOfLastMissedRequest = 0;
+    uint32_t fanUpdateCounter = 0;
     
     int tempNextSample = 0;
     float tempSamples[HF_TEMP_SAMPLE_LEN];
