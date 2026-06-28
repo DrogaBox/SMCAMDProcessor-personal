@@ -458,20 +458,16 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
         restartTimer()
 
-        // Listen for config changes
+        // Listen for config changes and telemetry updates
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: .init("CloseMenuBarPopover"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(update), name: .init("TelemetryDataUpdated"), object: nil)
     }
 
     @objc func restartTimer() {
         updateTimer?.invalidate()
-        let baseInterval = RefreshRateConfig.shared.interval
-        
-        updateTimer = Timer.scheduledTimer(withTimeInterval: baseInterval, repeats: true, block: { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.update()
-            }
-        })
+        updateTimer = nil
+        TelemetryModel.shared.updateTimerState()
     }
 
     @objc func updateLength() {
@@ -483,98 +479,49 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
     func dismiss() {
         updateTimer?.invalidate()
+        updateTimer = nil
+        NotificationCenter.default.removeObserver(self)
         if let item = statusItem {
             NSStatusBar.system.removeStatusItem(item)
             statusItem = nil
         }
     }
 
-    // MARK: - Cached GPU readings (3s cache)
-    private var cachedGPUTemp: Float = 0
-    private var cachedGPUPower: Float = 0
-    private var cachedGPUVram: Float = 0
-    private var cachedGPUFanRPM: Float = 0
-    private var lastGPUReadTime: Date = Date.distantPast
-    private let gpuCacheInterval: TimeInterval = 3.0
-    private var cachedNumCores: Int = 0
-
-    func update() {
-        if cachedNumCores == 0 {
-            cachedNumCores = ProcessorModel.shared.getNumOfCore()
-        }
-        let numberOfCores = cachedNumCores
-        guard numberOfCores > 0 else { return }
-        let outputStr: [Float] = ProcessorModel.shared.getMetric(forced: false)
-
-        guard outputStr.count > numberOfCores + 2 else { return }
-
-        let power = outputStr[0]
-        let temperature = outputStr[1]
-        var frequencies: [Float] = []
-        for i in 0..<numberOfCores {
-            frequencies.append(outputStr[Int(i + 3)])
-        }
-
-        let meanFre = Float(frequencies.reduce(0, +) / Float(frequencies.count))
-        let maxFre = frequencies.max() ?? 0
+    @objc func update() {
+        let tm = TelemetryModel.shared
+        let power = Float(tm.cpuWatts)
+        let temperature = Float(tm.cpuTempC)
+        let meanFre = Float(tm.cpuFreqAvgGHz * 1000.0)
+        let maxFre = Float(tm.cpuFreqMaxGHz * 1000.0)
 
         if temperature > peakTemp { peakTemp = temperature }
         if power > peakPower { peakPower = power }
         if maxFre > peakFreq { peakFreq = maxFre }
 
-        let now = Date()
-        if now.timeIntervalSince(lastGPUReadTime) >= gpuCacheInterval {
-            let rawGPUTemp = ProcessorModel.shared.getGPUTemp()
-            let rawGPUPower = ProcessorModel.shared.getGPUPower()
-            let rawGPUVram = ProcessorModel.shared.getGPUVramUsed()
-            let rawGPUFan = ProcessorModel.shared.getGPUFanRPM()
-            if rawGPUTemp > 0 { cachedGPUTemp = rawGPUTemp }
-            if rawGPUPower > 0 { cachedGPUPower = rawGPUPower }
-            cachedGPUVram = rawGPUVram
-            cachedGPUFanRPM = rawGPUFan
-            lastGPUReadTime = now
-        }
-
         view?.meanFreq = meanFre
         view?.maxFreq = maxFre
         view?.temp = temperature
         view?.pwr = power
-        view?.gpuTemp = cachedGPUTemp
-        view?.gpuPwr = cachedGPUPower
-        view?.gpuVram = Double(cachedGPUVram)
-        view?.gpuFanRPM = cachedGPUFanRPM
+        view?.gpuTemp = Float(tm.gpuTempC)
+        view?.gpuPwr = Float(tm.gpuPowerW)
+        view?.gpuVram = tm.gpuVramUsedBytes
+        view?.gpuFanRPM = Float(tm.gpuFanRPM)
 
-        // Extra items
-        // Fan: read from AMDRyzenCPUPowerManagement kext
         let fanIdx = max(0, MenuBarConfig.shared.fanIndex)
-        
-        if smcReady {
-            if numFans > 0 {
-                let rpms = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 93)
-                let currentFan = (fanIdx < rpms.count) ? rpms[fanIdx] : 0
-                view?.fanRPM = currentFan
-                if currentFan > peakFan { peakFan = currentFan }
-            } else {
-                view?.fanRPM = 0
-            }
+        if fanIdx < tm.fans.count {
+            let currentFan = tm.fans[fanIdx].rpm
+            view?.fanRPM = currentFan
+            if currentFan > peakFan { peakFan = currentFan }
         } else {
             view?.fanRPM = 0
         }
 
-        if let memStr = ProcessorModel.shared.systemConfig["mem"], let totalMB = Int(memStr) {
-            let freeMB = getFreeMemoryMB()
-            view?.memoryUsed = Float(totalMB - freeMB) / 1024.0
-            view?.totalMemory = String(format: "%.0fG", Float(totalMB) / 1024.0)
-        } else {
-            view?.memoryUsed = 0
-            view?.totalMemory = "0G"
-        }
+        view?.memoryUsed = Float((tm.ramUsagePct / 100.0) * Double(tm.sysInfo.ramGB))
+        view?.totalMemory = "\(tm.sysInfo.ramGB)G"
 
         if MenuBarConfig.shared.showNetwork {
-            if let netSnap = NetworkStats.shared.update() {
-                view?.netUpload = netSnap.uploadMBps
-                view?.netDownload = netSnap.downloadMBps
-            }
+            view?.netUpload = tm.netUploadMBps
+            view?.netDownload = tm.netDownloadMBps
         }
 
         view.setNeedsDisplay(view.bounds)
