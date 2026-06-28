@@ -536,7 +536,7 @@ final class TelemetryModel: ObservableObject {
         let metric   = ProcessorModel.shared.getMetric(forced: true)
         let loadIndex = ProcessorModel.shared.getLoadIndex()
 
-        guard metric.count > numPhysicalCores + 2 else { return }
+        guard numPhysicalCores > 0 && numLogicalCores > 0 && metric.count > numPhysicalCores + 2 else { return }
 
         let watts  = Double(metric[0])
         let tempC  = Double(metric[1])
@@ -1170,12 +1170,13 @@ final class TelemetryModel: ObservableObject {
         logger.stop()
     }
 
+    private static let isoFormatter = ISO8601DateFormatter()
     private func writeTelemetryToLogFile(point: TelemetryPoint) {
         guard isLoggingEnabled else { return }
         
         let delim = csvDelimiter
         let locale = Locale.current
-        let dateString = ISO8601DateFormatter().string(from: Date())
+        let dateString = TelemetryModel.isoFormatter.string(from: Date())
         
         let format = [
             "%@", // Timestamp

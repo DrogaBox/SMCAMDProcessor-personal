@@ -57,7 +57,7 @@ class ProcessorModel {
         let _ = IOConnectCallMethod(connect, 8, nil, 0, nil, 0,
                                       &scalerOut, &outputCount,
                                       &outputStr, &outputStrCount)
-        AMDRyzenCPUPowerManagementVersion = String(cString: Array(outputStr[0...outputStrCount-1]))
+        AMDRyzenCPUPowerManagementVersion = outputStrCount > 0 ? String(cString: Array(outputStr[0...min(outputStrCount - 1, outputStr.count - 1)])) : ""
 
         let compatVers = ["3.0.0", "3.1.0", "3.2.0", "3.3.0", "3.3.1"]
 
@@ -157,7 +157,8 @@ class ProcessorModel {
             return []
         }
 
-        return outputStr
+        let validElements = min(count, outputStrCount / 4)
+        return Array(outputStr[0..<max(0, validElements)])
     }
 
     func kernelGetUInt64(count : Int, selector : UInt32) -> [UInt64] {
@@ -233,8 +234,9 @@ class ProcessorModel {
         }
 
         numberOfCores = Int(scalerOut)
-        cachedMetric = Array(outputStr[0...numberOfCores + 2])
-        PStateCur = Int(outputStr[2])
+        let endIdx = min(numberOfCores + 2, outputStr.count - 1)
+        cachedMetric = outputStr.count > 0 && endIdx >= 0 ? Array(outputStr[0...endIdx]) : []
+        if outputStr.count > 2 { PStateCur = Int(outputStr[2]) }
 
 
         lastMLoad = NSDate().timeIntervalSince1970
@@ -632,7 +634,7 @@ class ProcessorModel {
 
 
         let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-        if let dictionary = try? FileManager.default.attributesOfFileSystem(forPath: paths.last!) {
+        if let path = paths.last, let dictionary = try? FileManager.default.attributesOfFileSystem(forPath: path) {
             if let size = dictionary[FileAttributeKey.systemSize] as? NSNumber {
                 systemConfig["rs"] = "\(Int(Int(truncating: size) / 1024 / 1024))"
             }
@@ -645,20 +647,23 @@ class ProcessorModel {
         var iter : io_iterator_t = 0
         let err = IOServiceGetMatchingServices(kIOMainPortDefault,
                                                IOServiceMatching("IOPCIDevice"), &iter)
-        if err != kIOReturnSuccess {return}
+        if err != kIOReturnSuccess { return }
+        defer { IOObjectRelease(iter) }
         while true {
             let reg = IOIteratorNext(iter)
-            if reg == 0 { break}
+            if reg == 0 { break }
+            defer { IOObjectRelease(reg) }
             var serviceDictionary : Unmanaged<CFMutableDictionary>?
             let e = IORegistryEntryCreateCFProperties(reg, &serviceDictionary, kCFAllocatorDefault, .zero)
 
-            if e != kIOReturnSuccess {continue}
-            if let dic : NSDictionary = serviceDictionary?.takeRetainedValue(){
+            if e != kIOReturnSuccess { continue }
+            if let dic : NSDictionary = serviceDictionary?.takeRetainedValue() {
                 if let type = dic.object(forKey: "IOName") as? String {
-                    if type != "display" {continue}
+                    if type != "display" { continue }
 
                     if let model = dic.object(forKey: "model") as? Data {
-                        systemConfig["gpu"] = String(data: model, encoding: .ascii)!
+                        let rawStr = String(data: model, encoding: .ascii) ?? String(data: model, encoding: .utf8) ?? "Unknown GPU"
+                        systemConfig["gpu"] = rawStr
                             .trimmingCharacters(in: .controlCharacters)
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                     } else {

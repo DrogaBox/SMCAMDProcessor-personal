@@ -5,12 +5,12 @@ on:
     branches:
       - master
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   PROJECT_TYPE: KEXT
@@ -18,7 +18,9 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: macos-latest
+    runs-on: macos-15
+    permissions:
+      contents: write
     env:
       JOB_TYPE: BUILD
     steps:
@@ -28,15 +30,20 @@ jobs:
           
       - name: Fetch Dependencies 
         run: |
-          BUILD_MODE=prebuilt src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/bootstrap.sh) && eval "$src" || exit 1
-          git clone https://github.com/acidanthera/VirtualSMC.git
+          git clone --depth 1 --branch 1.7.3 https://github.com/acidanthera/Lilu.git || git clone --depth 1 https://github.com/acidanthera/Lilu.git
+          git clone --depth 1 --branch 1.3.8 https://github.com/acidanthera/VirtualSMC.git || git clone --depth 1 https://github.com/acidanthera/VirtualSMC.git
           
-      - name: Build All Schemes
-        run: |
-          xcodebuild -scheme "AMDRyzenCPUPowerManagement" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
-          xcodebuild -scheme "APGLaunchHelper" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
-          xcodebuild -scheme "AMD Power Gadget" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
-          xcodebuild -scheme "SMCAMDProcessor" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+      - name: Build AMDRyzenCPUPowerManagement
+        run: xcodebuild -scheme "AMDRyzenCPUPowerManagement" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+        
+      - name: Build APGLaunchHelper
+        run: xcodebuild -scheme "APGLaunchHelper" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+
+      - name: Build AMD Power Gadget
+        run: xcodebuild -scheme "AMD Power Gadget" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
+
+      - name: Build SMCAMDProcessor
+        run: xcodebuild -scheme "SMCAMDProcessor" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
 
       - name: Archive Artifacts
         run: |
@@ -46,6 +53,7 @@ jobs:
           zip -r build/Release.zip build/Build/Products/Release
         
       - name: Upload to Artifacts
+        if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4
         with:
           name: Artifacts

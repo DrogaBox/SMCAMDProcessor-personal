@@ -1,10 +1,11 @@
 Lilu.kext/
 VirtualSMC.kext/
 VirtualSMC/
-SMCAMDProcessor.xcodeproj/
+SMCAMDProcessor.xcodeproj/xcuserdata/
+SMCAMDProcessor.xcodeproj/project.xcworkspace/
 .DS_Store
 
 cleanup.py
 build/
 *.zip
-Binaries_Release/*.zip
+Binaries_Release/

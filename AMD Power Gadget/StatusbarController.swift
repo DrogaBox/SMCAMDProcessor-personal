@@ -181,7 +181,7 @@ fileprivate class StatusbarView: NSView {
         p.maximumLineHeight = compactLH
 
         compactLabel = [
-            NSAttributedString.Key.font: NSFont(name: "Monaco", size: 7.2)!,
+            NSAttributedString.Key.font: NSFont(name: "Monaco", size: 7.2) ?? NSFont.monospacedSystemFont(ofSize: 7.2, weight: .regular),
             NSAttributedString.Key.foregroundColor: NSColor.labelColor,
             NSAttributedString.Key.paragraphStyle: p
         ]
@@ -450,7 +450,9 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         popover.delegate = self
 
         updateLength()
-        view.frame = statusItem.button!.bounds
+        if let btn = statusItem.button {
+            view?.frame = btn.bounds
+        }
 
         addMenuItems()
 
@@ -481,8 +483,10 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
     func dismiss() {
         updateTimer?.invalidate()
-        NSStatusBar.system.removeStatusItem(statusItem!)
-        statusItem = nil
+        if let item = statusItem {
+            NSStatusBar.system.removeStatusItem(item)
+            statusItem = nil
+        }
     }
 
     // MARK: - Cached GPU readings (3s cache)
@@ -499,6 +503,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             cachedNumCores = ProcessorModel.shared.getNumOfCore()
         }
         let numberOfCores = cachedNumCores
+        guard numberOfCores > 0 else { return }
         let outputStr: [Float] = ProcessorModel.shared.getMetric(forced: false)
 
         guard outputStr.count > numberOfCores + 2 else { return }
@@ -506,7 +511,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let power = outputStr[0]
         let temperature = outputStr[1]
         var frequencies: [Float] = []
-        for i in 0...(numberOfCores - 1) {
+        for i in 0..<numberOfCores {
             frequencies.append(outputStr[Int(i + 3)])
         }
 
@@ -677,7 +682,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         TelemetryModel.shared.selectedTab = .fanControl
     }
     
-    @objc func exitApp() { exit(0) }
+    @objc func exitApp() { NSApplication.shared.terminate(nil) }
 
     @objc func changeNetColor(_ sender: NSMenuItem) {
         MenuBarConfig.shared.netColorIdx = sender.tag
@@ -934,10 +939,6 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         return 0
     }
 }
-
-import Cocoa
-import SwiftUI
-import Charts
 
 // Custom NSHostingView subclass to handle window dragging in edit mode
 class WidgetHostingView<Content: View>: NSHostingView<Content> {
@@ -1449,7 +1450,7 @@ struct DesktopWidgetView: View {
                 progress: model.diskUsagePct / 100.0,
                 colors: [DesktopWidgetType.disk.color1, DesktopWidgetType.disk.color2],
                 valueString: String(format: "%.0f%%", model.diskUsagePct),
-                historyValue: { min(100.0, (($0.diskReadMBps + $0.diskWriteMBps) / 100.0) * 100.0) }, // Normalized to 100 MB/s max
+                historyValue: { min(100.0, $0.diskReadMBps + $0.diskWriteMBps) }, // Capped to 100 MB/s max
                 type: .disk
             ))
         }

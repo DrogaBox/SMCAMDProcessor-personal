@@ -1,6 +1,21 @@
-# Change Summary (Walkthrough v2.1.4+)
+# Change Summary & Release Changelog
 
-The following improvements regarding GPU telemetry, display support, and Xcode build stability have been implemented and verified:
+## v3.5.0 — Comprehensive Hardening & Quality Sweep
+* **Kernel Panic & Null Dereference Prevention**: Fixed infinite retry loops during driver unload (`pmRyzen_stop`), guarded NULL pointers in UserClient initialization and `kunc_alert` privilege checks, guarded `_tscFreq` dereferences, and implemented AMD host bridge PCI vendor matching.
+* **Swift App Stability Hardening**: Resolved out-of-bounds array slicing in `ProcessorModel`, added safe font fallback for Monaco, guarded layer unwrapping in `GraphView`, and guarded array indexing across all view models.
+* **CI/CD & Repository Security**: Removed remote script execution via eval, pinned dependencies to stable release branches, removed tracked binary assets and proprietary font binaries, and restricted GitHub workflow write permissions to release jobs.
+
+## v3.4.2 — Popover Menu CPU Optimization
+* **Throttled Sub-Process Spawning**: Regulated external `/bin/ps` process fetching in popover views to update at most once every 1.5 seconds, eliminating high-frequency process spawning CPU spikes.
+* **Status Bar Topography Caching**: Cached status bar core counts to prevent redundant IOKit kernel calls.
+
+## v3.4.1 — Minimal Resource Consumption & Performance Optimization
+* **O(1) Ranked Core Lookup Table**: Replaced linear array searches with a high-performance dictionary lookup map (`rankedCoreLookupMap`).
+* **Regulated Heavy Syscalls**: Throttled memory and disk I/O sysctl calls to sample once per second (1.0s).
+
+## v3.4.0 — Ultimate AMD Ryzen Thermal & Energy Suite
+* **Dynamic Auto-EPP Workload Engine**: Automated dynamic EPP profile switching based on real-time CPU utilization thresholds.
+* **Closed-Loop Thermal Fan Curve & Guard**: Dynamic SuperIO fan PWM scaling with an autonomous 80% PWM (`0xC8`) hardware thermal safety trigger at 85°C.
 
 ---
 

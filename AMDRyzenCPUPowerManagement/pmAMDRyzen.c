@@ -105,18 +105,19 @@ pmDispatch_t pmRyzen_cpuFuncs = {
 
 void pmRyzen_init_PState(){
     uint64_t p0 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0);
-    uint64_t p0dfsid = (p0 >> 8) & 0x1f;
+    uint64_t p0dfsid = (p0 >> 8) & 0x3f;
     float p0spd = (p0dfsid > 0) ? ((float)(p0 & 0xff) / (float)p0dfsid) * 200.0f : 0.0f;
     
     uint64_t p1 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1);
-    uint64_t p1fid = (uint64_t)((p0spd * 0.80F) / 200.0F * (float)((p1 >> 8) & 0x1f));
+    uint64_t p1fid = (uint64_t)((p0spd * 0.80F) / 200.0F * (float)((p1 >> 8) & 0x3f));
     
     pmRyzen_wrmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1, (p1 & ~0xFFULL) | p1fid | (1ULL << 63));
 }
 
 inline void set_PState(pmProcessor_t *cpu, uint8_t state){
     if(pmRyzen_pstatelimit == 0) return;
-    state = min(pmRyzen_pstatelimit, state);
+    if (state >= 8) state = 7;
+    state = min((uint8_t)pmRyzen_pstatelimit, state);
     if(cpu->PState == state) return;
     
     boolean_t from_hpstate = !cpu->PState;
@@ -292,11 +293,11 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
                      : "%ecx", "%edx", "%rax"
                      );
     
-#elif PMRYZEN_IDLE_SIMPLE
+#elif defined(PMRYZEN_IDLE_SIMPLE)
     
     __asm__ volatile("sti;hlt;");
     
-#elif PMRYZEN_IDLE_IO_CSTATE
+#elif defined(PMRYZEN_IDLE_IO_CSTATE)
     
     __asm__ volatile("sti;"
                      "inw $0xf2, %%ax;"
@@ -388,10 +389,7 @@ boolean_t pmRyzen_exit_idle(x86_lcpu_t *lcpu){
     
 #else
     target->arm_flag = 1;
-//    pmRyzen_exit_idle_ipi_c++;
-    
-    
-    return true;
+    return false;
 #endif
 }
 

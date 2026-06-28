@@ -107,6 +107,7 @@ ISSuperIOIT86XXEFamily* ISSuperIOIT86XXEFamily::getDevice(uint16_t* chipIntel)
     if (ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) != devAddr)
     {
         IOLog("IT%X%XE address verify failed", deviceID, revision);
+        return nullptr;
     }
 
     ISLPCPort::select(portSel, CHIP_GPIO_LDN);
@@ -117,6 +118,7 @@ ISSuperIOIT86XXEFamily* ISSuperIOIT86XXEFamily::getDevice(uint16_t* chipIntel)
     if (ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER + 2) != gpioAddress)
     {
         IOLog("IT%X%XE gpio address verify failed", deviceID, revision);
+        return nullptr;
     }
 
     // close port
@@ -200,7 +202,7 @@ void ISSuperIOIT86XXEFamily::updateFanControl()
 {
     for (int i = 0; i < activeFansOnSystem; i++)
     {
-        fanControlMode[i] = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
+        fanControlMode[i] = readByte(kFAN_PWM_CTRL_REGS[i]);
         fanThrottles[i] = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
     }
 }

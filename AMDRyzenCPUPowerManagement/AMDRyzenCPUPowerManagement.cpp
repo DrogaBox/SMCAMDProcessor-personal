@@ -80,8 +80,6 @@ void AMDRyzenCPUPowerManagement::free(){
 
 
 bool AMDRyzenCPUPowerManagement::getPCIService(){
-    
-    
     OSDictionary *matching_dict = serviceMatching("IOPCIDevice");
     if(!matching_dict){
         IOLog("AMDCPUSupport::getPCIService: serviceMatching unable to generate matching dictonary.\n");
@@ -92,23 +90,27 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
     waitForMatchingService(matching_dict);
     
     OSIterator *service_iter = getMatchingServices(matching_dict);
-    IOPCIDevice *service = 0;
+    IOPCIDevice *service = nullptr;
     
     if(!service_iter){
         IOLog("AMDCPUSupport::getPCIService: unable to find a matching IOPCIDevice.\n");
         return false;
     }
     
-    while (true){
-        OSObject *obj = service_iter->getNextObject();
-        if(!obj) break;
-        
-        service = OSDynamicCast(IOPCIDevice, obj);
-        break;
+    while (OSObject *obj = service_iter->getNextObject()) {
+        IOPCIDevice *dev = OSDynamicCast(IOPCIDevice, obj);
+        if (dev) {
+            uint16_t vendor = dev->configRead16(kIOPCIConfigVendorID);
+            if (vendor == 0x1022) { // AMD Host Bridge Vendor ID
+                service = dev;
+                break;
+            }
+        }
     }
+    service_iter->release();
     
     if(!service){
-        IOLog("AMDCPUSupport::getPCIService: unable to get IOPCIDevice on host system.\n");
+        IOLog("AMDCPUSupport::getPCIService: unable to get AMD IOPCIDevice on host system.\n");
         return false;
     }
     
@@ -384,14 +386,9 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
     // Check CPPC support: try to read MSR 0xC00102B0 first.
-    // Explicitly enable CPPC on this core first
-    write_msr(kMSR_AMD_CPPC_ENABLE, 1);
-    
-    // If it succeeds and returns a non-zero value, CPPC is supported and active.
     uint64_t cppcVal = 0;
     bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
     
-    // Always log the result to see what the CPU actually reports for MSR 0xC00102B0
     IOLog("AMDCPUSupport::start CPPC MSR 0xC00102B0 read success: %d, value: 0x%llX\n", msrSuccess, cppcVal);
     
     if (msrSuccess && cppcVal != 0) {
@@ -399,6 +396,10 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     } else {
         CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
         cppcSupported = (cpuid_ebx >> 27) & 0x1;
+    }
+    
+    if (cppcSupported) {
+        write_msr(kMSR_AMD_CPPC_ENABLE, 1);
     }
     
     cppcActiveMode = checkKernelArgument("-amdcppcactive");
@@ -491,7 +492,12 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         const char*,const char*,const char*,const char*,const char*,unsigned*))_kunc_alert;
     }
 
-    xnuTSCFreq = *((uint64_t*)pmRyzen_symtable._tscFreq);
+    if (pmRyzen_symtable._tscFreq != nullptr) {
+        xnuTSCFreq = *((uint64_t*)pmRyzen_symtable._tscFreq);
+    }
+    if (xnuTSCFreq == 0) {
+        xnuTSCFreq = 1000000000u; // Fallback default 1GHz calibration
+    }
 
     pmRyzen_init(this);
 
@@ -708,7 +714,7 @@ void AMDRyzenCPUPowerManagement::calculateEffectiveFrequency(uint8_t physical){
     uint64_t APERF = 0;
     uint64_t MPERF = 0;
     
-    if (!read_msr(0xE8, &APERF) || !read_msr(0xE7, &MPERF)) {
+    if (!read_msr(kMSR_APERF, &APERF) || !read_msr(kMSR_MPERF, &MPERF)) {
         return;
     }
         
@@ -892,11 +898,11 @@ void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     if (cppcActiveMode) {
         if (!cppcThrottled && currentTemp > 95.0f) {
             cppcThrottled = true;
-            IOLog("AMDCPUSupport: Thermal limit reached (%.1f°C). Throttling CPPC EPP to Power Save.\\n", currentTemp);
+            IOLog("AMDCPUSupport: Thermal limit reached (%.1f°C). Throttling CPPC EPP to Power Save.\n", currentTemp);
             applyEPPControl();
         } else if (cppcThrottled && currentTemp < 85.0f) {
             cppcThrottled = false;
-            IOLog("AMDCPUSupport: Thermal condition cleared (%.1f°C). Restoring CPPC EPP.\\n", currentTemp);
+            IOLog("AMDCPUSupport: Thermal condition cleared (%.1f°C). Restoring CPPC EPP.\n", currentTemp);
             applyEPPControl();
         }
     }

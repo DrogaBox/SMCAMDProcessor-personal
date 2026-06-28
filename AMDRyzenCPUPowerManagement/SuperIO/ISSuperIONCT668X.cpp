@@ -156,12 +156,9 @@ void ISSuperIONCT668X::updateFanRPMS(){
 
 void ISSuperIONCT668X::updateFanControl(){
     for (int i = 0; i < activeFansOnSystem; i++) {
-//        fanControlMode[i] = readByte(kFAN_CTRL_MODE_REGS(i));
-//        IOLog("fan ctrl %d: %d\n", i, (int)v);
-        
-        fanControlMode[i] = 1;//TODO: are there control modes in this chip?
+        uint8_t mode = readByte(FAN_PWMCMD_REGS(i));
+        fanControlMode[i] = (mode == 0) ? 1 : 0;
         fanThrottles[i] = readByte(FAN_PWM_REGS(i));
-//        IOLog("fan pwm %d: %d\n", i, (int)v);
     }
 }
 
@@ -175,8 +172,9 @@ void ISSuperIONCT668X::overrideFanControl(int fan, uint8_t thr){
 
 void ISSuperIONCT668X::setDefaultFanControl(int fan){
     if(fan >= activeFansOnSystem) return;
-    
-    // Restore automatic fan control by setting SmartFan mode
-    // TODO: Verify the exact register/value for NCT668X auto mode
+    writeByte(FAN_CFG_CTRL_REG, FAN_CFG_REQ);
+    IOSleep(2);
+    writeByte(FAN_PWMCMD_REGS(fan), 0);
+    writeByte(FAN_CFG_CTRL_REG, FAN_CFG_DONE);
     fanControlMode[fan] = 1;
 }
