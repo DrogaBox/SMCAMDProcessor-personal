@@ -362,8 +362,11 @@ Full systematic code audit and remediation across kernel extensions (C/C++) and 
   * Resolved memory leak in `initSuperIO` by deleting stale instances before reallocation.
   * Fixed `PStateEnabledLen` linear computation to reflect actual active P-states dynamically.
   * Optimized kernel symbol resolution loop in `kernel_resolver.c` with immediate break on match.
-* **ABI Boundary Alignment & UI Refinement**:
-  * Renamed `boardVender` to `boardVendor` across all C++ kernel interfaces and Swift data structures.
-  * Standardized `IOLog` class identifiers to `SMCAMDProcessor`.
-  * Reordered layer initialization order in `GraphView` and updated key path observers for smooth rendering.
+---
+
+## 38. Power Management Profile Persistence Across Reboots (v3.3.1)
+* **Persistent PM Profile State**: Integrated automatic `UserDefaults` persistence for CPU Power Management profile selections.
+* **Auto-Restoration on Startup**: Saved selections for CPPC Active Mode (EPP toggle), EPP Energy Preference profiles (Performance, Balanced Perf, Balanced Power, Power Save), CPB (Core Performance Boost), PPM, and LPM are automatically restored and applied to the kernel upon application launch.
+* **Issue Resolution**: Resolves community feature request (#NMattyy) regarding PM profile reset on system reboot.
+
 

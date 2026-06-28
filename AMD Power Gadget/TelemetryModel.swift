@@ -341,6 +341,7 @@ final class TelemetryModel: ObservableObject {
         if self.powerAlertDuration == 0 { self.powerAlertDuration = 10 }
 
         initSMC()
+        applySavedCPUControls()
         loadPStateRows()
         loadCPUControls()
         
@@ -732,6 +733,29 @@ final class TelemetryModel: ObservableObject {
         return "\(sign)\(rounded)\(units[idx])"
     }
 
+    func applySavedCPUControls() {
+        if UserDefaults.standard.bool(forKey: "has_saved_cppcActiveMode") {
+            let active = UserDefaults.standard.bool(forKey: "saved_cppcActiveMode")
+            _ = ProcessorModel.shared.setCPPCActiveMode(active: active)
+        }
+        if UserDefaults.standard.bool(forKey: "has_saved_cppcEPPValue") {
+            let epp = UInt8(UserDefaults.standard.integer(forKey: "saved_cppcEPPValue"))
+            _ = ProcessorModel.shared.setCPPCEPPValue(epp: epp)
+        }
+        if UserDefaults.standard.bool(forKey: "has_saved_cpbEnabled") {
+            let enabled = UserDefaults.standard.bool(forKey: "saved_cpbEnabled")
+            ProcessorModel.shared.setCPB(enabled: enabled)
+        }
+        if UserDefaults.standard.bool(forKey: "has_saved_ppmEnabled") {
+            let enabled = UserDefaults.standard.bool(forKey: "saved_ppmEnabled")
+            ProcessorModel.shared.setPPM(enabled: enabled)
+        }
+        if UserDefaults.standard.bool(forKey: "has_saved_lpmEnabled") {
+            let enabled = UserDefaults.standard.bool(forKey: "saved_lpmEnabled")
+            ProcessorModel.shared.setLPM(enabled: enabled)
+        }
+    }
+
     func loadCPUControls() {
         let cpb = ProcessorModel.shared.getCPB()
         cpbSupported = cpb.count > 0 && cpb[0]
@@ -746,26 +770,36 @@ final class TelemetryModel: ObservableObject {
 
     func setCPB(enabled: Bool) {
         ProcessorModel.shared.setCPB(enabled: enabled)
+        UserDefaults.standard.set(enabled, forKey: "saved_cpbEnabled")
+        UserDefaults.standard.set(true, forKey: "has_saved_cpbEnabled")
         loadCPUControls()
     }
 
     func setPPM(enabled: Bool) {
         ProcessorModel.shared.setPPM(enabled: enabled)
+        UserDefaults.standard.set(enabled, forKey: "saved_ppmEnabled")
+        UserDefaults.standard.set(true, forKey: "has_saved_ppmEnabled")
         loadCPUControls()
     }
 
     func setLPM(enabled: Bool) {
         ProcessorModel.shared.setLPM(enabled: enabled)
+        UserDefaults.standard.set(enabled, forKey: "saved_lpmEnabled")
+        UserDefaults.standard.set(true, forKey: "has_saved_lpmEnabled")
         loadCPUControls()
     }
 
     func setCPPCActiveMode(active: Bool) {
         _ = ProcessorModel.shared.setCPPCActiveMode(active: active)
+        UserDefaults.standard.set(active, forKey: "saved_cppcActiveMode")
+        UserDefaults.standard.set(true, forKey: "has_saved_cppcActiveMode")
         loadCPUControls()
     }
 
     func setCPPCEPPValue(epp: UInt8) {
         _ = ProcessorModel.shared.setCPPCEPPValue(epp: epp)
+        UserDefaults.standard.set(Int(epp), forKey: "saved_cppcEPPValue")
+        UserDefaults.standard.set(true, forKey: "has_saved_cppcEPPValue")
         loadCPUControls()
     }
 
