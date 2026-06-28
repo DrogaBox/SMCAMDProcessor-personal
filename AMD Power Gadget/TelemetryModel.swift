@@ -336,6 +336,7 @@ final class TelemetryModel: ObservableObject {
             updateTimerState()
         }
     }
+    private var statusbarActive = false
     private var lastDiskReadBytes: UInt64 = 0
     private var lastDiskWriteBytes: UInt64 = 0
     private var lastDiskCheck: Date = Date.distantPast
@@ -345,8 +346,13 @@ final class TelemetryModel: ObservableObject {
         updateTimerState()
     }
 
+    func setStatusbarActive(_ active: Bool) {
+        statusbarActive = active
+        updateTimerState()
+    }
+
     func updateTimerState() {
-        if activeWindows || popoverVisible || DesktopWidgetManager.shared.hasActiveWidgets {
+        if activeWindows || popoverVisible || DesktopWidgetManager.shared.hasActiveWidgets || statusbarActive {
             restartTimer()
         } else {
             timer?.cancel()
