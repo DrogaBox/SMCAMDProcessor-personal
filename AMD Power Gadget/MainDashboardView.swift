@@ -1296,6 +1296,45 @@ struct FanControlContentView: View {
                         TahoeButton(label: "All Auto", icon: "arrow.circlepath", accent: .tahoeAccentCyan) { model.setAllFansAuto() }
                         TahoeButton(label: "Max Speed", icon: "wind", accent: .tahoeAccentOrange) { model.setAllFansTakeOff() }
                     }
+                    
+                    Divider().background(Color.tahoeCardBorder)
+                    
+                    SectionTitle("Closed-Loop Thermal Fan Curve & Protection")
+                    TahoeCard(accent: Color.tahoeAccentOrange.opacity(0.2)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Dynamic Auto-Curve & Thermal Guard").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Text("Scales fan PWM automatically with temperature and forces 80% at 85°C").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                }
+                                Spacer()
+                                Toggle("", isOn: $model.autoFanCurveEnabled)
+                                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentOrange)).labelsHidden()
+                            }
+                            if model.autoFanCurveEnabled {
+                                Divider().background(Color.white.opacity(0.1))
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Minimum Temp (20% PWM)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                        Spacer()
+                                        Text(String(format: "%.0f°C", model.fanCurveMinTemp))
+                                            .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.tahoeAccentOrange)
+                                    }
+                                    Slider(value: $model.fanCurveMinTemp, in: 30...60, step: 5)
+                                        .accentColor(.tahoeAccentOrange)
+                                    
+                                    HStack {
+                                        Text("Maximum Temp (80% PWM)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                        Spacer()
+                                        Text(String(format: "%.0f°C", model.fanCurveMaxTemp))
+                                            .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.tahoeAccentOrange)
+                                    }
+                                    Slider(value: $model.fanCurveMaxTemp, in: 65...85, step: 5)
+                                        .accentColor(.tahoeAccentOrange)
+                                }
+                            }
+                        }
+                    }
                 }
                 
                 Divider().background(Color.tahoeCardBorder)
@@ -1437,7 +1476,44 @@ struct ProfilesContentView: View {
                 }
                 
                 if model.cppcActiveMode {
-                    // 2. CPPC EPP Picker
+                    // 2. Dynamic Auto-EPP Engine
+                    TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Dynamic Auto-EPP Workload Engine").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Text("Automatically switches EPP profiles based on live CPU load").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                }
+                                Spacer()
+                                Toggle("", isOn: $model.autoEPPEnabled)
+                                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
+                            }
+                            if model.autoEPPEnabled {
+                                Divider().background(Color.white.opacity(0.1))
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Idle Threshold (Power Save)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                        Spacer()
+                                        Text(String(format: "%.0f%%", model.autoEPPIdleThreshold))
+                                            .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.tahoeAccentCyan)
+                                    }
+                                    Slider(value: $model.autoEPPIdleThreshold, in: 5...30, step: 5)
+                                        .accentColor(.tahoeAccentCyan)
+                                    
+                                    HStack {
+                                        Text("High Load Threshold (Performance)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                        Spacer()
+                                        Text(String(format: "%.0f%%", model.autoEPPHighThreshold))
+                                            .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.tahoeAccentCyan)
+                                    }
+                                    Slider(value: $model.autoEPPHighThreshold, in: 40...90, step: 5)
+                                        .accentColor(.tahoeAccentCyan)
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. CPPC EPP Picker
                     SectionTitle("Energy Preference (EPP)")
                     Text("Select a hardware autonomous profile. The CPU will scale frequency dynamically.")
                         .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
@@ -1458,6 +1534,7 @@ struct ProfilesContentView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(maxWidth: .infinity)
+                        .disabled(model.autoEPPEnabled)
                     }
                 } else {
                     // 3. Legacy Speed Step Profiles
@@ -1484,6 +1561,8 @@ struct ProfilesContentView: View {
                         InfoRow(label: "Mode", value: "Native CPPC (EPP)")
                         Divider().background(Color.tahoeCardBorder)
                         InfoRow(label: "EPP Profile", value: NSLocalizedString(eppLabels[activeIdx], comment: ""))
+                        Divider().background(Color.tahoeCardBorder)
+                        InfoRow(label: "Auto-EPP Engine", value: model.autoEPPEnabled ? "Active (Dynamic Load)" : "Disabled")
                     } else if stepLabels.indices.contains(model.selectedSpeedStep) {
                         InfoRow(label: "Mode", value: "Legacy P-States")
                         Divider().background(Color.tahoeCardBorder)
