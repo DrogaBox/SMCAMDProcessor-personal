@@ -649,11 +649,8 @@ bool AMDRyzenCPUPowerManagement::write_msr(uint32_t addr, uint64_t value){
         return (*wrmsr_carefully)(addr, lo, hi) == 0;
     }
     
-    //Fall back with unsafe method
-    wrmsr64(addr, value);
-    
-    //If failed, we've already panic and starting reboot. So just return true.
-    return true;
+    IOLog("SMCAMDProcessor::write_msr safe wrapper unavailable for MSR 0x%X\n", addr);
+    return false;
 }
 
 void AMDRyzenCPUPowerManagement::registerRequest(){
