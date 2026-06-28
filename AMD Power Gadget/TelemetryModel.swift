@@ -23,6 +23,7 @@ struct CoreSnapshot: Identifiable {
     var isLogical: Bool
     var cppcScore: UInt8? = nil
     var cppcScoreEstimated: Bool = false
+    var coreRank: Int? = nil
 }
 
 /// A physical core with its CPPC or estimated silicon quality ranking
@@ -555,14 +556,15 @@ final class TelemetryModel: ObservableObject {
             let isLogical = logicalIdx >= numPhysicalCores
             
             var cppcVal: UInt8? = nil
-            if cppcSupported {
-                if !cppcScoresEstimated && cppcScores.count > logicalIdx {
-                    cppcVal = cppcScores[logicalIdx]
-                } else if cppcScoresEstimated {
-                    if let r = rankedPhysicalCores.first(where: { $0.id == physicalIdx + 1 }) {
-                        cppcVal = r.score
-                    }
+            var rRank: Int? = nil
+            if let r = rankedPhysicalCores.first(where: { $0.id == physicalIdx + 1 }) {
+                rRank = r.rank
+                if cppcSupported && cppcScoresEstimated {
+                    cppcVal = r.score
                 }
+            }
+            if cppcSupported && !cppcScoresEstimated && cppcScores.count > logicalIdx {
+                cppcVal = cppcScores[logicalIdx]
             }
             
             newCores.append(CoreSnapshot(
@@ -571,7 +573,8 @@ final class TelemetryModel: ObservableObject {
                 loadPct: Float(load),
                 isLogical: isLogical,
                 cppcScore: cppcVal,
-                cppcScoreEstimated: cppcScoresEstimated
+                cppcScoreEstimated: cppcScoresEstimated,
+                coreRank: rRank
             ))
         }
         cores = newCores

@@ -1164,38 +1164,64 @@ struct NetworkLineChartCard: View {
 // MARK: - Core Grid
 struct CoreGridCard: View {
     @ObservedObject var model: TelemetryModel
+    @AppStorage("sort_cores_by_ranking") private var sortCoresByRanking = false
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 8)
+
+    private var displayCores: [CoreSnapshot] {
+        if sortCoresByRanking {
+            return model.cores.sorted { (c1, c2) -> Bool in
+                let r1 = c1.coreRank ?? 999
+                let r2 = c2.coreRank ?? 999
+                if r1 != r2 {
+                    return r1 < r2
+                }
+                if c1.isLogical != c2.isLogical {
+                    return !c1.isLogical
+                }
+                return c1.id < c2.id
+            }
+        } else {
+            return model.cores
+        }
+    }
 
     var body: some View {
         TahoeCard {
             HStack(alignment: .center) {
                 SectionTitle("Current Utilization — \(model.sysInfo.logicalCores) Threads (\(model.sysInfo.physicalCores) Cores)")
-                if model.cppcSupported {
-                    Spacer()
-                    HStack(spacing: 4) {
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(.tahoeAccentGreen)
-                        Text(model.cppcScoresEstimated ? "CPPC: Estimated" : "CPPC: Active")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentGreen)
-                        if model.cppcScoresEstimated {
-                            Text("~")
+                Spacer()
+                HStack(spacing: 8) {
+                    Toggle(NSLocalizedString("Sort by Rank", comment: ""), isOn: $sortCoresByRanking)
+                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue))
+                        .font(.system(size: 10, weight: .semibold))
+                        .scaleEffect(0.85)
+                    
+                    if model.cppcSupported {
+                        HStack(spacing: 4) {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(.tahoeAccentGreen)
+                            Text(model.cppcScoresEstimated ? "CPPC: Estimated" : "CPPC: Active")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.tahoeAccentOrange)
+                                .foregroundColor(model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentGreen)
+                            if model.cppcScoresEstimated {
+                                Text("~")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.tahoeAccentOrange)
+                            }
                         }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.04))
+                        .cornerRadius(4)
+                        .help(model.cppcScoresEstimated ? "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." : "CPPC hardware rankings are active and loaded from the processor.")
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.white.opacity(0.04))
-                    .cornerRadius(4)
-                    .help(model.cppcScoresEstimated ? "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." : "CPPC hardware rankings are active and loaded from the processor.")
                 }
             }
             .padding(.bottom, 4)
 
             LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(model.cores) { CoreCell(core: $0) }
+                ForEach(displayCores) { CoreCell(core: $0, showRanking: sortCoresByRanking) }
             }
         }
     }
@@ -1203,6 +1229,7 @@ struct CoreGridCard: View {
 
 private struct CoreCell: View {
     let core: CoreSnapshot
+    let showRanking: Bool
     private var loadColor: Color {
         if core.loadPct > 80 { return Color(red: 1.0, green: 0.35, blue: 0.3) }
         if core.loadPct > 50 { return Color(red: 1.0, green: 0.75, blue: 0.1) }
@@ -1210,11 +1237,16 @@ private struct CoreCell: View {
     }
     private var labelText: String {
         let base = core.isLogical ? "T\(core.id + 1)" : "C\(core.id + 1)"
+        var parts: [String] = []
+        if showRanking, let rank = core.coreRank {
+            parts.append("#\(rank)")
+        }
+        parts.append(base)
         if let score = core.cppcScore, score > 0 {
             let prefix = core.cppcScoreEstimated ? "~" : ""
-            return "\(base) [\(prefix)\(score)]"
+            parts.append("[\(prefix)\(score)]")
         }
-        return base
+        return parts.joined(separator: " ")
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
