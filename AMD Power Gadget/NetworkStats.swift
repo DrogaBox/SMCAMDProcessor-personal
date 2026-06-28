@@ -101,7 +101,11 @@ class NetworkStats {
                                 bytesOut += if2m.ifm_data.ifi_obytes
                             }
                         }
-                        ptr = ptr.advanced(by: Int(ifm.ifm_msglen))
+                        let msgLen = Int(ifm.ifm_msglen)
+                        if msgLen <= 0 || ptr.advanced(by: msgLen) > end {
+                            break
+                        }
+                        ptr = ptr.advanced(by: msgLen)
                     }
                 }
             }

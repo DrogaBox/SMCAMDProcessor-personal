@@ -22,39 +22,34 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     token = securityToken;
     
     proc_t proc = (proc_t)get_bsdtask_info(owningTask);
+    if (!proc) return false;
     proc_name(proc_pid(proc), taskProcessBinaryName, 32);
     clientAuthorizedByUser = false;
     
-
-    
     return true;
-
 }
 
 bool AMDRyzenCPUPMUserClient::start(IOService *provider){
-    
     IOLog("AMDCPUSupportUserClient::start\n");
-    
     bool success = IOService::start(provider);
-    
     if(success){
         fProvider = OSDynamicCast(AMDRyzenCPUPowerManagement, provider);
     }
-    
     return success;
 }
 
 void AMDRyzenCPUPMUserClient::stop(IOService *provider){
     IOLog("AMDCPUSupportUserClient::stop\n");
-    
     fProvider = nullptr;
     IOService::stop(provider);
 }
 
 bool AMDRyzenCPUPMUserClient::hasPrivilege(){
+    if (!fProvider) return false;
     if(fProvider->disablePrivilegeCheck) return true;
     if(clientHasPrivilege(token, kIOClientPrivilegeAdministrator) == kIOReturnSuccess) return true;
     if(clientAuthorizedByUser) return true;
+    if(!fProvider->kunc_alert) return false;
     
     char buf[128];
     snprintf(buf, 128,
@@ -746,7 +741,8 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            if ((++fProvider->fanUpdateCounter % 4) == 0) {
+            UInt32 currentCount = OSIncrementAtomic(&fProvider->fanUpdateCounter);
+            if ((currentCount % 4) == 0) {
                 fProvider->superIO->updateFanRPMS();
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;

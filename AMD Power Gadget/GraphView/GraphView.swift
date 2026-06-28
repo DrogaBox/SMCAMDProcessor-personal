@@ -98,10 +98,12 @@ class GraphView: NSView {
         newLayer.viewHeight = viewHeight
         newLayer.dotRadius = dotRadius
         newLayer.foregroundColors = getForegroundColors(index: lineID)
-        newLayer.contentsScale = self.layer!.contentsScale
+        wantsLayer = true
+        guard let layer = self.layer else { return lineID }
+        newLayer.contentsScale = layer.contentsScale
         
         newLayer.frame = CGRect(x: 0, y: 0, width: frame.width, height: frame.height)
-        self.layer!.addSublayer(newLayer)
+        layer.addSublayer(newLayer)
         newLayer.display()
         
         return lineID
@@ -118,14 +120,16 @@ class GraphView: NSView {
         newLayer.dataMin = dataMin
         newLayer.dataDiff = dataDiff
         newLayer.dataY = CGFloat(v)
-        newLayer.contentsScale = self.layer!.contentsScale
+        wantsLayer = true
+        guard let layer = self.layer else { return }
+        newLayer.contentsScale = layer.contentsScale
         
         gridLines.sort { (a, b) -> Bool in
             return a.dataY > b.dataY
         }
         
         newLayer.frame = CGRect(x: 0, y: 0, width: frame.width, height: frame.height)
-        self.layer!.addSublayer(newLayer)
+        layer.addSublayer(newLayer)
         newLayer.display()
     }
     
@@ -167,12 +171,13 @@ class GraphView: NSView {
                 return
         }
         
-        let startPoint = CGPoint(x: rect.size.height / 2, y: 0)
-        let endPoint = CGPoint(x: rect.size.height / 2, y: rect.size.width)
+        let startPoint = CGPoint(x: rect.size.width / 2, y: 0)
+        let endPoint = CGPoint(x: rect.size.width / 2, y: rect.size.height)
         context.drawLinearGradient(gradient, start: startPoint, end: endPoint, options: [])
     }
     
     func addData(forline: Int, x: Double, y: Double){
+        guard forline >= 0 && forline < lines.count else { return }
         let line = lines[forline]
         let cgvalue = CGFloat(y)
         

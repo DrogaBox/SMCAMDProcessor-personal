@@ -148,7 +148,9 @@ find_symbol(mach_header_64_t *mh, const char *name)
 
     /* walk the symbol table until we find a match */
 
+#ifdef DEBUG
     print_pointer((void*)linkedit->vmaddr);
+#endif
     uint64_t strtab_addr = linkedit->vmaddr - linkedit->fileoff + (uint64_t)symtab->stroff;
     uint64_t symtab_addr = linkedit->vmaddr - linkedit->fileoff + (uint64_t)symtab->symoff;
     

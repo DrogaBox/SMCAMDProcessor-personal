@@ -22,9 +22,9 @@ class ViewController: NSViewController, NSWindowDelegate {
             vc.view.window?.orderFrontRegardless()
         } else {
             let mainStoryboard = NSStoryboard(name: "Main", bundle: nil)
-            let controller = mainStoryboard.instantiateController(
+            guard let controller = mainStoryboard.instantiateController(
                 withIdentifier: NSStoryboard.SceneIdentifier("AMDPowerGadget")
-            ) as! NSWindowController
+            ) as? NSWindowController else { return }
             controller.showWindow(self)
             if forceFocus { controller.window?.orderFrontRegardless() }
         }
@@ -65,13 +65,15 @@ class ViewController: NSViewController, NSWindowDelegate {
         style.insert(.fullSizeContentView)
         window.styleMask = style
 
-        // Adjust the initial window size to show all dashboard info without scrolling
+        // Adjust the initial window size to show all dashboard info dynamically
         if !hasAdjustedInitialSize {
             hasAdjustedInitialSize = true
-            let targetSize = NSSize(width: 950, height: 830)
+            let screenSize = window.screen?.visibleFrame.size ?? NSSize(width: 1440, height: 900)
+            let targetW = min(950.0, screenSize.width - 40.0)
+            let targetH = min(830.0, screenSize.height - 40.0)
+            let targetSize = NSSize(width: targetW, height: targetH)
             var frame = window.frame
             
-            // Symmetrically adjust origin so the window resizes outwards from its center
             let diffW = targetSize.width - frame.size.width
             let diffH = targetSize.height - frame.size.height
             frame.origin.x -= diffW / 2
@@ -82,16 +84,14 @@ class ViewController: NSViewController, NSWindowDelegate {
         }
 
         // Set min/max size constraints
-        window.minSize = NSSize(width: 850, height: 750)
+        window.minSize = NSSize(width: min(850.0, window.screen?.visibleFrame.width ?? 850), height: min(750.0, window.screen?.visibleFrame.height ?? 750))
         window.maxSize = NSSize(width: 3840, height: 2160)
 
     }
 
     // MARK: - AppDelegate hooks
 
-    func toggleTranslucency(enabled: Bool) {
-        // Translucency is now handled by SwiftUI materials
-    }
+    @objc func toggleTranslucency(enabled: Bool) {}
 
     // MARK: - NSWindowDelegate
 
