@@ -293,9 +293,6 @@ private:
     
     uint64_t xnuTSCFreq = 1;
     int (*wrmsr_carefully)(uint32_t, uint32_t, uint32_t) {nullptr};
-    processor_t(*cpu_to_processor)(int);
-    kern_return_t(*processor_shutdown)(processor_t);
-    kern_return_t(*processor_startup)(processor_t);
     
     CPUInfo::CpuTopology cpuTopology {};
     

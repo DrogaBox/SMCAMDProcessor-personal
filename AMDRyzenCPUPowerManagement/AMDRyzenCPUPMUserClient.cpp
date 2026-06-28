@@ -474,20 +474,23 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint32_t requiredSize = 128;
             uint32_t maxLen = arguments->structureOutputSize;
-            arguments->structureOutputSize = requiredSize;
+            uint32_t copyLen = maxLen < requiredSize ? maxLen : requiredSize;
+            arguments->structureOutputSize = copyLen;
             
-            if (!arguments->structureOutput) {
+            if (!arguments->structureOutput || maxLen == 0) {
                 return kIOReturnBadArgument;
             }
             
             char *dataOut = (char*) arguments->structureOutput;
+            memset(dataOut, 0, maxLen);
             
-            for(uint32_t i = 0; i < requiredSize && i < maxLen; i++){
-                if (i < 64) {
-                    dataOut[i] = fProvider->boardVendor[i];
-                } else {
-                    dataOut[i] = fProvider->boardName[i-64];
-                }
+            if (copyLen > 0) {
+                size_t vendorCopy = copyLen < 64 ? copyLen : 64;
+                strlcpy(dataOut, fProvider->boardVendor, vendorCopy);
+            }
+            if (copyLen > 64) {
+                size_t nameCopy = (copyLen - 64) < 64 ? (copyLen - 64) : 64;
+                strlcpy(dataOut + 64, fProvider->boardName, nameCopy);
             }
             
             break;
@@ -716,18 +719,15 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 str = "";
             }
             
-            uint32_t requiredSize = (uint32_t)strlen(str) + 1;
             uint32_t maxLen = arguments->structureOutputSize;
-            arguments->structureOutputSize = requiredSize - 1; // standard behaviour returns size without null terminator
-            
-            if (!arguments->structureOutput) {
+            if (!arguments->structureOutput || maxLen == 0) {
+                arguments->structureOutputSize = 0;
                 return kIOReturnBadArgument;
             }
             
             char *dataOut = (char*) arguments->structureOutput;
-            if (maxLen > 0) {
-                strlcpy(dataOut, str, maxLen);
-            }
+            strlcpy(dataOut, str, maxLen);
+            arguments->structureOutputSize = (uint32_t)strlen(dataOut);
             
             break;
         }
