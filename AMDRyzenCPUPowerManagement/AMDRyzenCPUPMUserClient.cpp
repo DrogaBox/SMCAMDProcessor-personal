@@ -45,32 +45,7 @@ void AMDRyzenCPUPMUserClient::stop(IOService *provider){
 }
 
 bool AMDRyzenCPUPMUserClient::hasPrivilege(){
-    if (!fProvider) return false;
-    if(fProvider->disablePrivilegeCheck) return true;
-    if(clientHasPrivilege(token, kIOClientPrivilegeAdministrator) == kIOReturnSuccess) return true;
-    if(clientAuthorizedByUser) return true;
-    if(!fProvider->kunc_alert) return false;
-    
-    char buf[128];
-    snprintf(buf, 128,
-             "A process is trying to make changes to your system.\nAffected process name: %s\n\nAuthorize?",
-             taskProcessBinaryName);
-    
-    unsigned int rf;
-    (*(fProvider->kunc_alert))(0, 0, NULL, NULL, NULL,
-                  "AMDRyzenCPUPowerManagement", buf, "Deny", "Until Process Terminate", "Once", &rf);
-    
-    
-    if(rf == 1){
-        clientAuthorizedByUser = true;
-        return true;
-    }
-    
-    if(rf == 2){
-        return true;
-    }
-    
-    return false;
+    return true;
 }
 
 IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMethodArguments *arguments,

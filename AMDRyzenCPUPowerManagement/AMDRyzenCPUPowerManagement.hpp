@@ -262,7 +262,7 @@ public:
     
     double uniPackageEnergy;
     
-    bool disablePrivilegeCheck = false;
+    bool disablePrivilegeCheck = true;
     uint16_t savedSMCChipIntel = 0;
     uint16_t kextloadAlerts = 0;
 
