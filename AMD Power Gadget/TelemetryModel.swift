@@ -260,6 +260,10 @@ final class TelemetryModel: ObservableObject {
         didSet { UserDefaults.standard.set(fanCurveMaxTemp, forKey: "fanCurveMaxTemp") }
     }
     private var lastAppliedFanPWM: UInt8? = nil
+    private var cachedNumPhysicalCores: Int = 0
+    private var cachedNumLogicalCores: Int = 0
+    private var rankedCoreLookupMap: [Int: RankedPhysicalCore] = [:]
+    private var lastHeavySyscallCheck: Date = Date.distantPast
     
     private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
@@ -522,8 +526,12 @@ final class TelemetryModel: ObservableObject {
             initSMC()
         }
 
-        let numPhysicalCores = ProcessorModel.shared.getNumOfCore()
-        let numLogicalCores  = sysInfo.logicalCores > 0 ? sysInfo.logicalCores : numPhysicalCores
+        if cachedNumPhysicalCores == 0 {
+            cachedNumPhysicalCores = ProcessorModel.shared.getNumOfCore()
+            cachedNumLogicalCores = sysInfo.logicalCores > 0 ? sysInfo.logicalCores : cachedNumPhysicalCores
+        }
+        let numPhysicalCores = cachedNumPhysicalCores
+        let numLogicalCores = cachedNumLogicalCores
         let metric   = ProcessorModel.shared.getMetric(forced: true)
         let loadIndex = ProcessorModel.shared.getLoadIndex()
 
@@ -601,7 +609,7 @@ final class TelemetryModel: ObservableObject {
             
             var cppcVal: UInt8? = nil
             var rRank: Int? = nil
-            if let r = rankedPhysicalCores.first(where: { $0.id == physicalIdx + 1 }) {
+            if let r = rankedCoreLookupMap[physicalIdx + 1] {
                 rRank = r.rank
                 if cppcSupported && cppcScoresEstimated {
                     cppcVal = r.score
@@ -633,10 +641,13 @@ final class TelemetryModel: ObservableObject {
             evaluateAutoFanCurve()
         }
         
-        ramUsagePct = getRAMUsagePct()
-        diskUsagePct = getDiskUsagePct()
-        
         let now = Date()
+        if lastHeavySyscallCheck == Date.distantPast || now.timeIntervalSince(lastHeavySyscallCheck) >= 1.0 {
+            lastHeavySyscallCheck = now
+            ramUsagePct = getRAMUsagePct()
+            diskUsagePct = getDiskUsagePct()
+        }
+        
         let diskIO = getDiskIOBytes()
         if lastDiskCheck != Date.distantPast {
             let elapsed = now.timeIntervalSince(lastDiskCheck)
@@ -1286,9 +1297,15 @@ final class TelemetryModel: ObservableObject {
             list.append(RankedPhysicalCore(id: physIdx + 1, score: score, rank: 0, isEstimated: !cppcHasReal))
         }
         let sorted = list.sorted { $0.score != $1.score ? $0.score > $1.score : $0.id < $1.id }
-        rankedPhysicalCores = sorted.enumerated().map {
+        let ranked = sorted.enumerated().map {
             RankedPhysicalCore(id: $1.id, score: $1.score, rank: $0 + 1, isEstimated: $1.isEstimated)
         }
+        var map: [Int: RankedPhysicalCore] = [:]
+        for r in ranked {
+            map[r.id] = r
+        }
+        rankedCoreLookupMap = map
+        rankedPhysicalCores = ranked
     }
 }
 
