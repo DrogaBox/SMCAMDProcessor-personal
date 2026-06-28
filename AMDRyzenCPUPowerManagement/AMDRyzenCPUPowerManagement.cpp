@@ -279,10 +279,9 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
 }
 
 void AMDRyzenCPUPowerManagement::stopWorkLoop() {
-//    IOLog("AMDCPUSupport::startWorkLoop stopping timer");
-
-    
-    workLoop->disableAllEventSources();
+    if (timerEvent_main) timerEvent_main->cancelTimeout();
+    if (timerEvent_tempe) timerEvent_tempe->cancelTimeout();
+    if (workLoop) workLoop->disableAllEventSources();
     serviceInitialized = false;
 }
 

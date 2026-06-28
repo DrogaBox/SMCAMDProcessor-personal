@@ -6,3 +6,5 @@ SMCAMDProcessor.xcodeproj/
 
 cleanup.py
 build/
+*.zip
+Binaries_Release/*.zip
