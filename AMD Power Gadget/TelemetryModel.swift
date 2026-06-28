@@ -786,6 +786,8 @@ final class TelemetryModel: ObservableObject {
         netActiveInterface = ipInfo.interface
         
         systemUptimeFormatted = getSystemUptime()
+        
+        NotificationCenter.default.post(name: .init("TelemetryDataUpdated"), object: nil)
     }
 
     // Format instruction count with suffix like original: K, M, G, T, P, E
