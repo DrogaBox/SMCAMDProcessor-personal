@@ -2219,14 +2219,14 @@ struct MenuBarPreview: View {
                 // Fan Column
                 if cfg.showFanRPM {
                     let fanVal = model.fans.first?.rpm ?? 0
-                    let fan = fanVal > 0 ? String(fanVal) : "—"
+                    let fan = String(fanVal)
                     
                     HStack(spacing: 2) {
                         VerticalLabelView(text: "FAN")
                         
                         VStack(alignment: .leading, spacing: 0) {
                             if cfg.showGPU && cfg.showGPUfan {
-                                let gFanStr = model.gpuFanRPM > 0 ? String(format: "G:%.0f", model.gpuFanRPM) : "G:—"
+                                let gFanStr = String(format: "G:%.0f", model.gpuFanRPM)
                                 Text("C:\(fan)").font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                                 Text(gFanStr).font(.system(size: 9, weight: .semibold)).foregroundColor(.white)
                             } else {
@@ -3024,7 +3024,7 @@ struct MenuBarPopoverView: View {
                             Spacer()
                             if model.gpuTempC > 0 {
                                 let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
-                                let fanRPMStr = model.gpuFanRPM > 0 ? String(format: " • %.0f RPM", model.gpuFanRPM) : ""
+                                let fanRPMStr = String(format: " • %.0f RPM", model.gpuFanRPM)
                                 Text(String(format: "%.0f°C • %.0fW • %.2fG%@", model.gpuTempC, model.gpuPowerW, vramGB, fanRPMStr))
                                     .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.white.opacity(0.8))
