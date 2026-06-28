@@ -2,16 +2,16 @@
 triple:          'x86_64-apple-darwin'
 binary-path:     '/Users/droga/Desktop/SMCAMDProcessor/Binaries_Release/v3.3.1/AMDRyzenCPUPowerManagement.kext/Contents/MacOS/AMDRyzenCPUPowerManagement'
 relocations:
-  - { offset: 0x33, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagementVersionString, symObjAddr: 0x0, symBinAddr: 0x7FA0, symSize: 0x0 }
-  - { offset: 0x67, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagementVersionNumber, symObjAddr: 0x48, symBinAddr: 0x7FE8, symSize: 0x0 }
+  - { offset: 0x33, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagementVersionString, symObjAddr: 0x0, symBinAddr: 0x8030, symSize: 0x0 }
+  - { offset: 0x67, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagementVersionNumber, symObjAddr: 0x48, symBinAddr: 0x8078, symSize: 0x0 }
   - { offset: 0xAF, size: 0x8, addend: 0x0, symName: _kmod_info, symObjAddr: 0x0, symBinAddr: 0xB630, symSize: 0x0 }
   - { offset: 0x25D, size: 0x8, addend: 0x0, symName: __realmain, symObjAddr: 0xC8, symBinAddr: 0xB6F8, symSize: 0x0 }
   - { offset: 0x272, size: 0x8, addend: 0x0, symName: __antimain, symObjAddr: 0xD0, symBinAddr: 0xB700, symSize: 0x0 }
   - { offset: 0x287, size: 0x8, addend: 0x0, symName: __kext_apple_cc, symObjAddr: 0xD8, symBinAddr: 0xB708, symSize: 0x0 }
   - { offset: 0x2B6, size: 0x8, addend: 0x0, symName: __ZN16ISSuperIONCT668XC2Eitt, symObjAddr: 0x0, symBinAddr: 0x520, symSize: 0x20 }
   - { offset: 0x2DD, size: 0x8, addend: 0x0, symName: __ZTV16ISSuperIONCT668X, symObjAddr: 0x580, symBinAddr: 0xA080, symSize: 0x0 }
-  - { offset: 0x73F, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort15kREGISTER_PORTSE, symObjAddr: 0x680, symBinAddr: 0x7FF0, symSize: 0x0 }
-  - { offset: 0x82D, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort12kVALUE_PORTSE, symObjAddr: 0x684, symBinAddr: 0x7FF4, symSize: 0x0 }
+  - { offset: 0x73F, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort15kREGISTER_PORTSE, symObjAddr: 0x680, symBinAddr: 0x8080, symSize: 0x0 }
+  - { offset: 0x82D, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort12kVALUE_PORTSE, symObjAddr: 0x684, symBinAddr: 0x8084, symSize: 0x0 }
   - { offset: 0x83A, size: 0x8, addend: 0x0, symName: __ZN16ISSuperIONCT668XC2Eitt, symObjAddr: 0x0, symBinAddr: 0x520, symSize: 0x20 }
   - { offset: 0x8A9, size: 0x8, addend: 0x0, symName: __ZN16ISSuperIONCT668XC1Eitt, symObjAddr: 0x20, symBinAddr: 0x540, symSize: 0x20 }
   - { offset: 0xA1D, size: 0x8, addend: 0x0, symName: __ZN16ISSuperIONCT668X9getDeviceEPt, symObjAddr: 0x40, symBinAddr: 0x560, symSize: 0x220 }
@@ -62,12 +62,12 @@ relocations:
   - { offset: 0x3034, size: 0x8, addend: 0x0, symName: _pmRyzen_get_processor, symObjAddr: 0x890, symBinAddr: 0x1330, symSize: 0x16 }
   - { offset: 0x3088, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamilyC2Eitt, symObjAddr: 0x0, symBinAddr: 0x1350, symSize: 0x90 }
   - { offset: 0x30AF, size: 0x8, addend: 0x0, symName: __ZTV22ISSuperIOIT86XXEFamily, symObjAddr: 0x790, symBinAddr: 0xA0F0, symSize: 0x0 }
-  - { offset: 0x33B9, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily18kFAN_PWM_CTRL_REGSE, symObjAddr: 0x800, symBinAddr: 0x8054, symSize: 0x0 }
-  - { offset: 0x33CC, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily22kFAN_PWM_CTRL_EXT_REGSE, symObjAddr: 0x80A, symBinAddr: 0x805E, symSize: 0x0 }
-  - { offset: 0x33DF, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort15kREGISTER_PORTSE, symObjAddr: 0x814, symBinAddr: 0x8068, symSize: 0x0 }
-  - { offset: 0x33F2, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort12kVALUE_PORTSE, symObjAddr: 0x840, symBinAddr: 0x8094, symSize: 0x0 }
-  - { offset: 0x3405, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily13kFAN_RPM_REGSE, symObjAddr: 0x82C, symBinAddr: 0x8080, symSize: 0x0 }
-  - { offset: 0x3418, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily17kFAN_RPM_EXT_REGSE, symObjAddr: 0x836, symBinAddr: 0x808A, symSize: 0x0 }
+  - { offset: 0x33B9, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily18kFAN_PWM_CTRL_REGSE, symObjAddr: 0x800, symBinAddr: 0x80E4, symSize: 0x0 }
+  - { offset: 0x33CC, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily22kFAN_PWM_CTRL_EXT_REGSE, symObjAddr: 0x80A, symBinAddr: 0x80EE, symSize: 0x0 }
+  - { offset: 0x33DF, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort15kREGISTER_PORTSE, symObjAddr: 0x814, symBinAddr: 0x80F8, symSize: 0x0 }
+  - { offset: 0x33F2, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort12kVALUE_PORTSE, symObjAddr: 0x840, symBinAddr: 0x8124, symSize: 0x0 }
+  - { offset: 0x3405, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily13kFAN_RPM_REGSE, symObjAddr: 0x82C, symBinAddr: 0x8110, symSize: 0x0 }
+  - { offset: 0x3418, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily17kFAN_RPM_EXT_REGSE, symObjAddr: 0x836, symBinAddr: 0x811A, symSize: 0x0 }
   - { offset: 0x3490, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamilyC2Eitt, symObjAddr: 0x0, symBinAddr: 0x1350, symSize: 0x90 }
   - { offset: 0x35AB, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamily8readByteEt, symObjAddr: 0x90, symBinAddr: 0x13E0, symSize: 0x20 }
   - { offset: 0x3663, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIOIT86XXEFamilyC1Eitt, symObjAddr: 0xB0, symBinAddr: 0x1400, symSize: 0x90 }
@@ -123,17 +123,17 @@ relocations:
   - { offset: 0x1549B, size: 0x8, addend: 0x0, symName: __GLOBAL__sub_I_AMDRyzenCPUPMUserClient.cpp, symObjAddr: 0x1EB0, symBinAddr: 0x3CE0, symSize: 0x40 }
   - { offset: 0x15501, size: 0x8, addend: 0x0, symName: __GLOBAL__D_a, symObjAddr: 0x1EF0, symBinAddr: 0x3D20, symSize: 0x11 }
   - { offset: 0x1558C, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9MetaClassC1Ev, symObjAddr: 0x0, symBinAddr: 0x3D40, symSize: 0x40 }
-  - { offset: 0x1559F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10gMetaClassE, symObjAddr: 0x3CC28, symBinAddr: 0xD770, symSize: 0x0 }
-  - { offset: 0x1FDBB, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9metaClassE, symObjAddr: 0x3940, symBinAddr: 0xABD0, symSize: 0x0 }
-  - { offset: 0x1FDCE, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10superClassE, symObjAddr: 0x3948, symBinAddr: 0xABD8, symSize: 0x0 }
-  - { offset: 0x1FDE8, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagement_debugEnabled, symObjAddr: 0x3CC50, symBinAddr: 0xD798, symSize: 0x0 }
-  - { offset: 0x1FDFE, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagement_debugPrintDelay, symObjAddr: 0x3CC54, symBinAddr: 0xD79C, symSize: 0x0 }
-  - { offset: 0x1FE14, size: 0x8, addend: 0x0, symName: _pmRyzen_symtable, symObjAddr: 0x3CC58, symBinAddr: 0xD7A0, symSize: 0x0 }
-  - { offset: 0x1FEAC, size: 0x8, addend: 0x0, symName: _pmRyzen_symtable_ready, symObjAddr: 0x3CCA0, symBinAddr: 0xD7E8, symSize: 0x0 }
-  - { offset: 0x1FEC8, size: 0x8, addend: 0x0, symName: __ZTVN26AMDRyzenCPUPowerManagement9MetaClassE, symObjAddr: 0x41B8, symBinAddr: 0xB448, symSize: 0x0 }
-  - { offset: 0x1FEDC, size: 0x8, addend: 0x0, symName: __ZTV26AMDRyzenCPUPowerManagement, symObjAddr: 0x3950, symBinAddr: 0xABE0, symSize: 0x0 }
-  - { offset: 0x1FEF6, size: 0x8, addend: 0x0, symName: __ZL17tctl_offset_table, symObjAddr: 0x42A0, symBinAddr: 0xB530, symSize: 0x0 }
-  - { offset: 0x1FF50, size: 0x8, addend: 0x0, symName: __ZL11powerStates, symObjAddr: 0x4F10, symBinAddr: 0xB800, symSize: 0x0 }
+  - { offset: 0x1559F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10gMetaClassE, symObjAddr: 0x3CB00, symBinAddr: 0xD770, symSize: 0x0 }
+  - { offset: 0x1FDBB, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9metaClassE, symObjAddr: 0x39D0, symBinAddr: 0xABD0, symSize: 0x0 }
+  - { offset: 0x1FDCE, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10superClassE, symObjAddr: 0x39D8, symBinAddr: 0xABD8, symSize: 0x0 }
+  - { offset: 0x1FDE8, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagement_debugEnabled, symObjAddr: 0x3CB28, symBinAddr: 0xD798, symSize: 0x0 }
+  - { offset: 0x1FDFE, size: 0x8, addend: 0x0, symName: _AMDRyzenCPUPowerManagement_debugPrintDelay, symObjAddr: 0x3CB2C, symBinAddr: 0xD79C, symSize: 0x0 }
+  - { offset: 0x1FE14, size: 0x8, addend: 0x0, symName: _pmRyzen_symtable, symObjAddr: 0x3CB30, symBinAddr: 0xD7A0, symSize: 0x0 }
+  - { offset: 0x1FEAC, size: 0x8, addend: 0x0, symName: _pmRyzen_symtable_ready, symObjAddr: 0x3CB78, symBinAddr: 0xD7E8, symSize: 0x0 }
+  - { offset: 0x1FEC8, size: 0x8, addend: 0x0, symName: __ZTVN26AMDRyzenCPUPowerManagement9MetaClassE, symObjAddr: 0x4248, symBinAddr: 0xB448, symSize: 0x0 }
+  - { offset: 0x1FEDC, size: 0x8, addend: 0x0, symName: __ZTV26AMDRyzenCPUPowerManagement, symObjAddr: 0x39E0, symBinAddr: 0xABE0, symSize: 0x0 }
+  - { offset: 0x1FEF6, size: 0x8, addend: 0x0, symName: __ZL17tctl_offset_table, symObjAddr: 0x4330, symBinAddr: 0xB530, symSize: 0x0 }
+  - { offset: 0x1FF50, size: 0x8, addend: 0x0, symName: __ZL11powerStates, symObjAddr: 0x4FE0, symBinAddr: 0xB800, symSize: 0x0 }
   - { offset: 0x1FFAA, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9MetaClassC1Ev, symObjAddr: 0x0, symBinAddr: 0x3D40, symSize: 0x40 }
   - { offset: 0x20001, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9MetaClassD1Ev, symObjAddr: 0x40, symBinAddr: 0x3D80, symSize: 0x10 }
   - { offset: 0x2003C, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagementC2EPK11OSMetaClass, symObjAddr: 0x50, symBinAddr: 0x3D90, symSize: 0x5C0 }
@@ -146,74 +146,74 @@ relocations:
   - { offset: 0x20217, size: 0x8, addend: 0x0, symName: __ZNK26AMDRyzenCPUPowerManagement9MetaClass5allocEv, symObjAddr: 0x6C0, symBinAddr: 0x4400, symSize: 0x30 }
   - { offset: 0x20263, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagementC2Ev, symObjAddr: 0x700, symBinAddr: 0x4440, symSize: 0x5D0 }
   - { offset: 0x2028E, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagementC1Ev, symObjAddr: 0x6F0, symBinAddr: 0x4430, symSize: 0x10 }
-  - { offset: 0x20339, size: 0x8, addend: 0x0, symName: _pmRyzen_wrmsr_safe, symObjAddr: 0xCD0, symBinAddr: 0x4A10, symSize: 0x30 }
-  - { offset: 0x203FF, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9write_msrEjy, symObjAddr: 0xD00, symBinAddr: 0x4A40, symSize: 0x30 }
-  - { offset: 0x204E2, size: 0x8, addend: 0x0, symName: _pmRyzen_rdmsr_safe, symObjAddr: 0xD30, symBinAddr: 0x4A70, symSize: 0x50 }
-  - { offset: 0x205A0, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement8read_msrEjPy, symObjAddr: 0xD80, symBinAddr: 0x4AC0, symSize: 0x50 }
-  - { offset: 0x2060F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement4initEP12OSDictionary, symObjAddr: 0xDD0, symBinAddr: 0x4B10, symSize: 0x1A0 }
-  - { offset: 0x207D0, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement4freeEv, symObjAddr: 0xF70, symBinAddr: 0x4CB0, symSize: 0x20 }
-  - { offset: 0x20809, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement13getPCIServiceEv, symObjAddr: 0xF90, symBinAddr: 0x4CD0, symSize: 0xB0 }
-  - { offset: 0x20934, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement12initWorkLoopEv, symObjAddr: 0x1040, symBinAddr: 0x4D80, symSize: 0x180 }
-  - { offset: 0x20B3B, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement12stopWorkLoopEv, symObjAddr: 0x11C0, symBinAddr: 0x4F00, symSize: 0x30 }
-  - { offset: 0x20B67, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement14resumeWorkLoopEv, symObjAddr: 0x11F0, symBinAddr: 0x4F30, symSize: 0x60 }
-  - { offset: 0x20C4B, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement5startEP9IOService, symObjAddr: 0x1250, symBinAddr: 0x4F90, symSize: 0x9C0 }
-  - { offset: 0x21530, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement21fetchOEMBaseBoardInfoEv, symObjAddr: 0x1C10, symBinAddr: 0x5950, symSize: 0x2C0 }
-  - { offset: 0x217EA, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10getCCDTempEh, symObjAddr: 0x1ED0, symBinAddr: 0x5C10, symSize: 0x90 }
-  - { offset: 0x2187C, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement4stopEP9IOService, symObjAddr: 0x1F60, symBinAddr: 0x5CA0, symSize: 0x180 }
-  - { offset: 0x219D6, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement13setPowerStateEmP9IOService, symObjAddr: 0x20E0, symBinAddr: 0x5E20, symSize: 0xC0 }
-  - { offset: 0x21AAD, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement15registerRequestEv, symObjAddr: 0x21A0, symBinAddr: 0x5EE0, symSize: 0x50 }
-  - { offset: 0x21B28, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement16updateClockSpeedEh, symObjAddr: 0x21F0, symBinAddr: 0x5F30, symSize: 0xA0 }
-  - { offset: 0x21C59, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement27calculateEffectiveFrequencyEh, symObjAddr: 0x2290, symBinAddr: 0x5FD0, symSize: 0xC0 }
-  - { offset: 0x21CE1, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement22updateInstructionDeltaEh, symObjAddr: 0x2350, symBinAddr: 0x6090, symSize: 0x80 }
-  - { offset: 0x21D7E, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement17applyPowerControlEv, symObjAddr: 0x23D0, symBinAddr: 0x6110, symSize: 0x30 }
-  - { offset: 0x21E1F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement15applyEPPControlEv, symObjAddr: 0x2400, symBinAddr: 0x6140, symSize: 0x30 }
-  - { offset: 0x21E59, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11setCPBStateEb, symObjAddr: 0x2430, symBinAddr: 0x6170, symSize: 0xD0 }
-  - { offset: 0x21F76, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11getCPBStateEv, symObjAddr: 0x2500, symBinAddr: 0x6240, symSize: 0x50 }
-  - { offset: 0x22068, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement17updatePackageTempEv, symObjAddr: 0x2550, symBinAddr: 0x6290, symSize: 0xF0 }
-  - { offset: 0x2210F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement19updatePackageEnergyEv, symObjAddr: 0x2640, symBinAddr: 0x6380, symSize: 0x120 }
-  - { offset: 0x221F8, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10dumpPstateEv, symObjAddr: 0x2760, symBinAddr: 0x64A0, symSize: 0x100 }
-  - { offset: 0x22323, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11writePstateEPKy, symObjAddr: 0x2860, symBinAddr: 0x65A0, symSize: 0x60 }
-  - { offset: 0x223B4, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11initSuperIOEPt, symObjAddr: 0x28C0, symBinAddr: 0x6600, symSize: 0x90 }
-  - { offset: 0x223F9, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement16getPMPStateLimitEv, symObjAddr: 0x2950, symBinAddr: 0x6690, symSize: 0x10 }
-  - { offset: 0x22420, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement16setPMPStateLimitEj, symObjAddr: 0x2960, symBinAddr: 0x66A0, symSize: 0x30 }
-  - { offset: 0x2246C, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9getHPcpusEv, symObjAddr: 0x2990, symBinAddr: 0x66D0, symSize: 0x10 }
-  - { offset: 0x22493, size: 0x8, addend: 0x0, symName: _amdryzencpupm_kern_start, symObjAddr: 0x29A0, symBinAddr: 0x66E0, symSize: 0xB0 }
-  - { offset: 0x22520, size: 0x8, addend: 0x0, symName: _amdryzencpupm_kern_stop, symObjAddr: 0x2A50, symBinAddr: 0x6790, symSize: 0x10 }
-  - { offset: 0x2256B, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9MetaClassD0Ev, symObjAddr: 0x2A60, symBinAddr: 0x67A0, symSize: 0x10 }
-  - { offset: 0x226ED, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvEN3$_08__invokeEP8OSObjectP18IOTimerEventSource', symObjAddr: 0x2A70, symBinAddr: 0x67B0, symSize: 0x250 }
-  - { offset: 0x22AF2, size: 0x8, addend: 0x0, symName: '__ZZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvENK3$_0clEP8OSObjectP18IOTimerEventSourceENUlPvE_8__invokeES5_', symObjAddr: 0x2CC0, symBinAddr: 0x6A00, symSize: 0x340 }
-  - { offset: 0x2325E, size: 0x8, addend: 0x0, symName: '__ZZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvENK3$_0clEP8OSObjectP18IOTimerEventSourceENUlPvE0_8__invokeES5_', symObjAddr: 0x3000, symBinAddr: 0x6D40, symSize: 0x150 }
-  - { offset: 0x2345A, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvEN3$_18__invokeEP8OSObjectP18IOTimerEventSource', symObjAddr: 0x3150, symBinAddr: 0x6E90, symSize: 0x190 }
-  - { offset: 0x23612, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement17applyPowerControlEvEN3$_08__invokeEPv', symObjAddr: 0x32E0, symBinAddr: 0x7020, symSize: 0x40 }
-  - { offset: 0x23771, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement15applyEPPControlEvEN3$_08__invokeEPv', symObjAddr: 0x3320, symBinAddr: 0x7060, symSize: 0xD0 }
-  - { offset: 0x239CC, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement11setCPBStateEbEN3$_08__invokeEPv', symObjAddr: 0x33F0, symBinAddr: 0x7130, symSize: 0x40 }
-  - { offset: 0x23B34, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement11writePstateEPKyEN3$_08__invokeEPv', symObjAddr: 0x3430, symBinAddr: 0x7170, symSize: 0x420 }
-  - { offset: 0x23E6D, size: 0x8, addend: 0x0, symName: __GLOBAL__sub_I_AMDRyzenCPUPowerManagement.cpp, symObjAddr: 0x3850, symBinAddr: 0x7590, symSize: 0x40 }
-  - { offset: 0x23ED3, size: 0x8, addend: 0x0, symName: __GLOBAL__D_a, symObjAddr: 0x3890, symBinAddr: 0x75D0, symSize: 0x11 }
-  - { offset: 0x2412D, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC2Eitt, symObjAddr: 0x0, symBinAddr: 0x75F0, symSize: 0xA0 }
-  - { offset: 0x24154, size: 0x8, addend: 0x0, symName: __ZTV22ISSuperIONCT67XXFamily, symObjAddr: 0x950, symBinAddr: 0xB5C0, symSize: 0x0 }
-  - { offset: 0x2443B, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily19kFAN_CTRL_MODE_REGSE, symObjAddr: 0x9C0, symBinAddr: 0x80F8, symSize: 0x0 }
-  - { offset: 0x2444E, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort15kREGISTER_PORTSE, symObjAddr: 0x9CE, symBinAddr: 0x8106, symSize: 0x0 }
-  - { offset: 0x24461, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort12kVALUE_PORTSE, symObjAddr: 0xA0C, symBinAddr: 0x8144, symSize: 0x0 }
-  - { offset: 0x24474, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily13kFAN_RPM_REGSE, symObjAddr: 0x9F0, symBinAddr: 0x8128, symSize: 0x0 }
-  - { offset: 0x24487, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily16kFAN_PWMCMD_REGSE, symObjAddr: 0x9FE, symBinAddr: 0x8136, symSize: 0x0 }
-  - { offset: 0x244FF, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC2Eitt, symObjAddr: 0x0, symBinAddr: 0x75F0, symSize: 0xA0 }
-  - { offset: 0x245FB, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily8readByteEt, symObjAddr: 0xA0, symBinAddr: 0x7690, symSize: 0x30 }
-  - { offset: 0x246F6, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC1Eitt, symObjAddr: 0xD0, symBinAddr: 0x76C0, symSize: 0xA0 }
-  - { offset: 0x24733, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC1Eitt, symObjAddr: 0xD0, symBinAddr: 0x76C0, symSize: 0xA0 }
-  - { offset: 0x248EE, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily9getDeviceEPt, symObjAddr: 0x170, symBinAddr: 0x7760, symSize: 0x480 }
-  - { offset: 0x25070, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily8readWordEt, symObjAddr: 0x5F0, symBinAddr: 0x7BE0, symSize: 0x70 }
-  - { offset: 0x251EF, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily9writeByteEth, symObjAddr: 0x660, symBinAddr: 0x7C50, symSize: 0x30 }
-  - { offset: 0x252A9, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily15getNumberOfFansEv, symObjAddr: 0x690, symBinAddr: 0x7C80, symSize: 0x10 }
-  - { offset: 0x252CE, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily23getReadableStringForFanEi, symObjAddr: 0x6A0, symBinAddr: 0x7C90, symSize: 0x20 }
-  - { offset: 0x25300, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily12getRPMForFanEi, symObjAddr: 0x6C0, symBinAddr: 0x7CB0, symSize: 0x20 }
-  - { offset: 0x25332, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily21getFanAutoControlModeEi, symObjAddr: 0x6E0, symBinAddr: 0x7CD0, symSize: 0x20 }
-  - { offset: 0x25364, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily14getFanThrottleEi, symObjAddr: 0x700, symBinAddr: 0x7CF0, symSize: 0x20 }
-  - { offset: 0x253B7, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily13updateFanRPMSEv, symObjAddr: 0x720, symBinAddr: 0x7D10, symSize: 0xA0 }
-  - { offset: 0x253DB, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily13updateFanRPMSEv, symObjAddr: 0x720, symBinAddr: 0x7D10, symSize: 0xA0 }
-  - { offset: 0x2558E, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily16updateFanControlEv, symObjAddr: 0x7C0, symBinAddr: 0x7DB0, symSize: 0xA0 }
-  - { offset: 0x2574E, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily18overrideFanControlEih, symObjAddr: 0x860, symBinAddr: 0x7E50, symSize: 0x80 }
-  - { offset: 0x258EB, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily20setDefaultFanControlEi, symObjAddr: 0x8E0, symBinAddr: 0x7ED0, symSize: 0x50 }
-  - { offset: 0x259CD, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyD1Ev, symObjAddr: 0x930, symBinAddr: 0x7F20, symSize: 0x10 }
-  - { offset: 0x259F4, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyD0Ev, symObjAddr: 0x940, symBinAddr: 0x7F30, symSize: 0xA }
+  - { offset: 0x20310, size: 0x8, addend: 0x0, symName: _pmRyzen_wrmsr_safe, symObjAddr: 0xCD0, symBinAddr: 0x4A10, symSize: 0x30 }
+  - { offset: 0x203D0, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9write_msrEjy, symObjAddr: 0xD00, symBinAddr: 0x4A40, symSize: 0x50 }
+  - { offset: 0x20499, size: 0x8, addend: 0x0, symName: _pmRyzen_rdmsr_safe, symObjAddr: 0xD50, symBinAddr: 0x4A90, symSize: 0x50 }
+  - { offset: 0x20557, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement8read_msrEjPy, symObjAddr: 0xDA0, symBinAddr: 0x4AE0, symSize: 0x50 }
+  - { offset: 0x205C6, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement4initEP12OSDictionary, symObjAddr: 0xDF0, symBinAddr: 0x4B30, symSize: 0x1A0 }
+  - { offset: 0x20778, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement4freeEv, symObjAddr: 0xF90, symBinAddr: 0x4CD0, symSize: 0x20 }
+  - { offset: 0x207B1, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement13getPCIServiceEv, symObjAddr: 0xFB0, symBinAddr: 0x4CF0, symSize: 0xB0 }
+  - { offset: 0x208DC, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement12initWorkLoopEv, symObjAddr: 0x1060, symBinAddr: 0x4DA0, symSize: 0x180 }
+  - { offset: 0x20AE3, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement12stopWorkLoopEv, symObjAddr: 0x11E0, symBinAddr: 0x4F20, symSize: 0x30 }
+  - { offset: 0x20B0F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement14resumeWorkLoopEv, symObjAddr: 0x1210, symBinAddr: 0x4F50, symSize: 0x60 }
+  - { offset: 0x20BF3, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement5startEP9IOService, symObjAddr: 0x1270, symBinAddr: 0x4FB0, symSize: 0x9C0 }
+  - { offset: 0x214C9, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement21fetchOEMBaseBoardInfoEv, symObjAddr: 0x1C30, symBinAddr: 0x5970, symSize: 0x2C0 }
+  - { offset: 0x21783, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10getCCDTempEh, symObjAddr: 0x1EF0, symBinAddr: 0x5C30, symSize: 0x90 }
+  - { offset: 0x21815, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement4stopEP9IOService, symObjAddr: 0x1F80, symBinAddr: 0x5CC0, symSize: 0x180 }
+  - { offset: 0x2196F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement13setPowerStateEmP9IOService, symObjAddr: 0x2100, symBinAddr: 0x5E40, symSize: 0xC0 }
+  - { offset: 0x21A46, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement15registerRequestEv, symObjAddr: 0x21C0, symBinAddr: 0x5F00, symSize: 0x50 }
+  - { offset: 0x21AC1, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement16updateClockSpeedEh, symObjAddr: 0x2210, symBinAddr: 0x5F50, symSize: 0xA0 }
+  - { offset: 0x21BF2, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement27calculateEffectiveFrequencyEh, symObjAddr: 0x22B0, symBinAddr: 0x5FF0, symSize: 0xC0 }
+  - { offset: 0x21C7A, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement22updateInstructionDeltaEh, symObjAddr: 0x2370, symBinAddr: 0x60B0, symSize: 0x80 }
+  - { offset: 0x21D17, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement17applyPowerControlEv, symObjAddr: 0x23F0, symBinAddr: 0x6130, symSize: 0x30 }
+  - { offset: 0x21DB8, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement15applyEPPControlEv, symObjAddr: 0x2420, symBinAddr: 0x6160, symSize: 0x30 }
+  - { offset: 0x21DF2, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11setCPBStateEb, symObjAddr: 0x2450, symBinAddr: 0x6190, symSize: 0xD0 }
+  - { offset: 0x21F0F, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11getCPBStateEv, symObjAddr: 0x2520, symBinAddr: 0x6260, symSize: 0x50 }
+  - { offset: 0x22001, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement17updatePackageTempEv, symObjAddr: 0x2570, symBinAddr: 0x62B0, symSize: 0xF0 }
+  - { offset: 0x220A8, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement19updatePackageEnergyEv, symObjAddr: 0x2660, symBinAddr: 0x63A0, symSize: 0x120 }
+  - { offset: 0x22191, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement10dumpPstateEv, symObjAddr: 0x2780, symBinAddr: 0x64C0, symSize: 0x100 }
+  - { offset: 0x222BC, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11writePstateEPKy, symObjAddr: 0x2880, symBinAddr: 0x65C0, symSize: 0x60 }
+  - { offset: 0x2234D, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement11initSuperIOEPt, symObjAddr: 0x28E0, symBinAddr: 0x6620, symSize: 0x90 }
+  - { offset: 0x22392, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement16getPMPStateLimitEv, symObjAddr: 0x2970, symBinAddr: 0x66B0, symSize: 0x10 }
+  - { offset: 0x223B9, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement16setPMPStateLimitEj, symObjAddr: 0x2980, symBinAddr: 0x66C0, symSize: 0x30 }
+  - { offset: 0x22405, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9getHPcpusEv, symObjAddr: 0x29B0, symBinAddr: 0x66F0, symSize: 0x10 }
+  - { offset: 0x2242C, size: 0x8, addend: 0x0, symName: _amdryzencpupm_kern_start, symObjAddr: 0x29C0, symBinAddr: 0x6700, symSize: 0xB0 }
+  - { offset: 0x224B9, size: 0x8, addend: 0x0, symName: _amdryzencpupm_kern_stop, symObjAddr: 0x2A70, symBinAddr: 0x67B0, symSize: 0x10 }
+  - { offset: 0x22504, size: 0x8, addend: 0x0, symName: __ZN26AMDRyzenCPUPowerManagement9MetaClassD0Ev, symObjAddr: 0x2A80, symBinAddr: 0x67C0, symSize: 0x10 }
+  - { offset: 0x22686, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvEN3$_08__invokeEP8OSObjectP18IOTimerEventSource', symObjAddr: 0x2A90, symBinAddr: 0x67D0, symSize: 0x250 }
+  - { offset: 0x22A8B, size: 0x8, addend: 0x0, symName: '__ZZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvENK3$_0clEP8OSObjectP18IOTimerEventSourceENUlPvE_8__invokeES5_', symObjAddr: 0x2CE0, symBinAddr: 0x6A20, symSize: 0x350 }
+  - { offset: 0x231D3, size: 0x8, addend: 0x0, symName: '__ZZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvENK3$_0clEP8OSObjectP18IOTimerEventSourceENUlPvE0_8__invokeES5_', symObjAddr: 0x3030, symBinAddr: 0x6D70, symSize: 0x150 }
+  - { offset: 0x233CF, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement12initWorkLoopEvEN3$_18__invokeEP8OSObjectP18IOTimerEventSource', symObjAddr: 0x3180, symBinAddr: 0x6EC0, symSize: 0x190 }
+  - { offset: 0x23587, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement17applyPowerControlEvEN3$_08__invokeEPv', symObjAddr: 0x3310, symBinAddr: 0x7050, symSize: 0x40 }
+  - { offset: 0x236D5, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement15applyEPPControlEvEN3$_08__invokeEPv', symObjAddr: 0x3350, symBinAddr: 0x7090, symSize: 0xE0 }
+  - { offset: 0x23904, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement11setCPBStateEbEN3$_08__invokeEPv', symObjAddr: 0x3430, symBinAddr: 0x7170, symSize: 0x40 }
+  - { offset: 0x23A56, size: 0x8, addend: 0x0, symName: '__ZZN26AMDRyzenCPUPowerManagement11writePstateEPKyEN3$_08__invokeEPv', symObjAddr: 0x3470, symBinAddr: 0x71B0, symSize: 0x470 }
+  - { offset: 0x23E56, size: 0x8, addend: 0x0, symName: __GLOBAL__sub_I_AMDRyzenCPUPowerManagement.cpp, symObjAddr: 0x38E0, symBinAddr: 0x7620, symSize: 0x40 }
+  - { offset: 0x23EBC, size: 0x8, addend: 0x0, symName: __GLOBAL__D_a, symObjAddr: 0x3920, symBinAddr: 0x7660, symSize: 0x11 }
+  - { offset: 0x24116, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC2Eitt, symObjAddr: 0x0, symBinAddr: 0x7680, symSize: 0xA0 }
+  - { offset: 0x2413D, size: 0x8, addend: 0x0, symName: __ZTV22ISSuperIONCT67XXFamily, symObjAddr: 0x950, symBinAddr: 0xB5C0, symSize: 0x0 }
+  - { offset: 0x24424, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily19kFAN_CTRL_MODE_REGSE, symObjAddr: 0x9C0, symBinAddr: 0x8188, symSize: 0x0 }
+  - { offset: 0x24437, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort15kREGISTER_PORTSE, symObjAddr: 0x9CE, symBinAddr: 0x8196, symSize: 0x0 }
+  - { offset: 0x2444A, size: 0x8, addend: 0x0, symName: __ZN9ISLPCPort12kVALUE_PORTSE, symObjAddr: 0xA0C, symBinAddr: 0x81D4, symSize: 0x0 }
+  - { offset: 0x2445D, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily13kFAN_RPM_REGSE, symObjAddr: 0x9F0, symBinAddr: 0x81B8, symSize: 0x0 }
+  - { offset: 0x24470, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily16kFAN_PWMCMD_REGSE, symObjAddr: 0x9FE, symBinAddr: 0x81C6, symSize: 0x0 }
+  - { offset: 0x244E8, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC2Eitt, symObjAddr: 0x0, symBinAddr: 0x7680, symSize: 0xA0 }
+  - { offset: 0x245E4, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily8readByteEt, symObjAddr: 0xA0, symBinAddr: 0x7720, symSize: 0x30 }
+  - { offset: 0x246DF, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC1Eitt, symObjAddr: 0xD0, symBinAddr: 0x7750, symSize: 0xA0 }
+  - { offset: 0x2471C, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyC1Eitt, symObjAddr: 0xD0, symBinAddr: 0x7750, symSize: 0xA0 }
+  - { offset: 0x248D7, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily9getDeviceEPt, symObjAddr: 0x170, symBinAddr: 0x77F0, symSize: 0x480 }
+  - { offset: 0x25059, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily8readWordEt, symObjAddr: 0x5F0, symBinAddr: 0x7C70, symSize: 0x70 }
+  - { offset: 0x251D8, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily9writeByteEth, symObjAddr: 0x660, symBinAddr: 0x7CE0, symSize: 0x30 }
+  - { offset: 0x25292, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily15getNumberOfFansEv, symObjAddr: 0x690, symBinAddr: 0x7D10, symSize: 0x10 }
+  - { offset: 0x252B7, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily23getReadableStringForFanEi, symObjAddr: 0x6A0, symBinAddr: 0x7D20, symSize: 0x20 }
+  - { offset: 0x252E9, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily12getRPMForFanEi, symObjAddr: 0x6C0, symBinAddr: 0x7D40, symSize: 0x20 }
+  - { offset: 0x2531B, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily21getFanAutoControlModeEi, symObjAddr: 0x6E0, symBinAddr: 0x7D60, symSize: 0x20 }
+  - { offset: 0x2534D, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily14getFanThrottleEi, symObjAddr: 0x700, symBinAddr: 0x7D80, symSize: 0x20 }
+  - { offset: 0x253A0, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily13updateFanRPMSEv, symObjAddr: 0x720, symBinAddr: 0x7DA0, symSize: 0xA0 }
+  - { offset: 0x253C4, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily13updateFanRPMSEv, symObjAddr: 0x720, symBinAddr: 0x7DA0, symSize: 0xA0 }
+  - { offset: 0x25577, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily16updateFanControlEv, symObjAddr: 0x7C0, symBinAddr: 0x7E40, symSize: 0xA0 }
+  - { offset: 0x25737, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily18overrideFanControlEih, symObjAddr: 0x860, symBinAddr: 0x7EE0, symSize: 0x80 }
+  - { offset: 0x258D4, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamily20setDefaultFanControlEi, symObjAddr: 0x8E0, symBinAddr: 0x7F60, symSize: 0x50 }
+  - { offset: 0x259B6, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyD1Ev, symObjAddr: 0x930, symBinAddr: 0x7FB0, symSize: 0x10 }
+  - { offset: 0x259DD, size: 0x8, addend: 0x0, symName: __ZN22ISSuperIONCT67XXFamilyD0Ev, symObjAddr: 0x940, symBinAddr: 0x7FC0, symSize: 0xA }
 ...

@@ -59,18 +59,18 @@ class ProcessorModel {
                                       &outputStr, &outputStrCount)
         AMDRyzenCPUPowerManagementVersion = String(cString: Array(outputStr[0...outputStrCount-1]))
 
-        let compatVers = ["0.6.3", "0.6.4", "0.6.5", "0.6.6", "0.7", "0.7.1", "0.7.2"]
+        let compatVers = ["3.0.0", "3.1.0", "3.2.0", "3.3.0", "3.3.1"]
 
         var isCompatible = compatVers.contains(AMDRyzenCPUPowerManagementVersion)
         if !isCompatible {
-            // Dynamically allow any version >= 0.7.2 for compatibility with 2026 standards
-            if AMDRyzenCPUPowerManagementVersion.compare("0.7.2", options: .numeric) != .orderedAscending {
+            // Dynamically allow any version >= 3.0.0 for compatibility with 2026 standards
+            if AMDRyzenCPUPowerManagementVersion.compare("3.0.0", options: .numeric) != .orderedAscending {
                 isCompatible = true
             }
         }
 
         if !isCompatible {
-            alertAndQuit(message: "Your AMDRyzenCPUPowerManagement version (\(AMDRyzenCPUPowerManagementVersion)) is outdated and no longer API compatible. Please use version 0.7.2 or newer and start this application again.")
+            alertAndQuit(message: "Your AMDRyzenCPUPowerManagement version (\(AMDRyzenCPUPowerManagementVersion)) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.")
         }
 
         loadCPUID()
