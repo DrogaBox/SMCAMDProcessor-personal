@@ -421,6 +421,17 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private var peakFreq: Float = 0
     private var peakFan: UInt64 = 0
 
+    // Diff-based rendering snapshot tracking
+    private var lastReportedMeanFreq: Float = -1
+    private var lastReportedMaxFreq: Float = -1
+    private var lastReportedTemp: Float = -1
+    private var lastReportedPwr: Float = -1
+    private var lastReportedGpuTemp: Float = -1
+    private var lastReportedGpuPwr: Float = -1
+    private var lastReportedFanRPM: UInt64 = 0
+    private var lastReportedNetUp: Double = -1
+    private var lastReportedNetDown: Double = -1
+
     override init() {
         super.init()
 
@@ -476,6 +487,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let w = MenuBarConfig.shared.totalWidth
         statusItem.length = w
         view?.frame = statusItem.button?.bounds ?? NSRect(x: 0, y: 0, width: w, height: 22)
+        lastReportedTemp = -1 // Reset snapshot to force redraw on layout change
         update()
     }
 
@@ -496,28 +508,49 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let temperature = Float(tm.cpuTempC)
         let meanFre = Float(tm.cpuFreqAvgGHz * 1000.0)
         let maxFre = Float(tm.cpuFreqMaxGHz * 1000.0)
+        let gpuTempVal = Float(tm.gpuTempC)
+        let gpuPwrVal = Float(tm.gpuPowerW)
 
         if temperature > peakTemp { peakTemp = temperature }
         if power > peakPower { peakPower = power }
         if maxFre > peakFreq { peakFreq = maxFre }
 
+        let fanIdx = max(0, MenuBarConfig.shared.fanIndex)
+        let currentFan: UInt64 = (fanIdx < tm.fans.count) ? tm.fans[fanIdx].rpm : 0
+        if currentFan > peakFan { peakFan = currentFan }
+
+        // Diff-based Rendering guard (Skip redraw if change is insignificant)
+        let tempDiff = abs(temperature - lastReportedTemp) >= 0.5
+        let pwrDiff = abs(power - lastReportedPwr) >= 0.5
+        let meanFreqDiff = abs(meanFre - lastReportedMeanFreq) >= 10.0
+        let maxFreqDiff = abs(maxFre - lastReportedMaxFreq) >= 10.0
+        let gpuTempDiff = abs(gpuTempVal - lastReportedGpuTemp) >= 0.5
+        let fanDiff = (currentFan >= lastReportedFanRPM ? currentFan - lastReportedFanRPM : lastReportedFanRPM - currentFan) >= 20
+        let netDiff = abs(tm.netUploadMBps - lastReportedNetUp) >= 0.05 || abs(tm.netDownloadMBps - lastReportedNetDown) >= 0.05
+
+        guard tempDiff || pwrDiff || meanFreqDiff || maxFreqDiff || gpuTempDiff || fanDiff || netDiff || lastReportedTemp < 0 else {
+            return
+        }
+
+        lastReportedMeanFreq = meanFre
+        lastReportedMaxFreq = maxFre
+        lastReportedTemp = temperature
+        lastReportedPwr = power
+        lastReportedGpuTemp = gpuTempVal
+        lastReportedGpuPwr = gpuPwrVal
+        lastReportedFanRPM = currentFan
+        lastReportedNetUp = tm.netUploadMBps
+        lastReportedNetDown = tm.netDownloadMBps
+
         view?.meanFreq = meanFre
         view?.maxFreq = maxFre
         view?.temp = temperature
         view?.pwr = power
-        view?.gpuTemp = Float(tm.gpuTempC)
-        view?.gpuPwr = Float(tm.gpuPowerW)
+        view?.gpuTemp = gpuTempVal
+        view?.gpuPwr = gpuPwrVal
         view?.gpuVram = tm.gpuVramUsedBytes
         view?.gpuFanRPM = Float(tm.gpuFanRPM)
-
-        let fanIdx = max(0, MenuBarConfig.shared.fanIndex)
-        if fanIdx < tm.fans.count {
-            let currentFan = tm.fans[fanIdx].rpm
-            view?.fanRPM = currentFan
-            if currentFan > peakFan { peakFan = currentFan }
-        } else {
-            view?.fanRPM = 0
-        }
+        view?.fanRPM = currentFan
 
         view?.memoryUsed = Float((tm.ramUsagePct / 100.0) * Double(tm.sysInfo.ramGB))
         view?.totalMemory = "\(tm.sysInfo.ramGB)G"
