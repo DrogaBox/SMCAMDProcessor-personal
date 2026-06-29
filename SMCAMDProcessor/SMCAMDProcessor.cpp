@@ -41,11 +41,14 @@ bool SMCAMDProcessor::setupKeysVsmc(){
     //    VirtualSMCAPI::addKey(KeyPCGM, vsmcPlugin.data, VirtualSMCAPI::valueWithFlt(0, new EnergyPackage(this, 0)));
     //    VirtualSMCAPI::addKey(KeyPCPG, vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, new EnergyPackage(this, 0)));
     
-    //Since AMD cpu dont have temperature MSR for each core, we simply report the same package temperature for all cores.
-    //    for(int core = 0; core < totalNumberOfPhysicalCores; core++){
-    //        VirtualSMCAPI::addKey(KeyTCxC(core), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(this, 0, core)));
-    //        VirtualSMCAPI::addKey(KeyTCxc(core), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(this, 0, core)));
-    //    }
+    // Register VirtualSMC TempCore keys per CCD
+    if (fProvider) {
+        uint8_t count = fProvider->ccdCount > 0 ? fProvider->ccdCount : 1;
+        for (size_t ccd = 0; ccd < count; ccd++) {
+            suc &= VirtualSMCAPI::addKey(KeyTCxC(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(fProvider, 0, ccd)));
+            suc &= VirtualSMCAPI::addKey(KeyTCxc(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(fProvider, 0, ccd)));
+        }
+    }
     
     if(!suc){
         IOLog("SMCAMDProcessor::setupKeysVsmc: VirtualSMCAPI::addKey returned false. \n");
