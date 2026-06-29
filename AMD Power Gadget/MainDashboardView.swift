@@ -62,12 +62,29 @@ enum AppTheme: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
 
+    static var current: AppTheme {
+        if let raw = UserDefaults.standard.string(forKey: "app_theme_preset"), let theme = AppTheme(rawValue: raw) {
+            return theme
+        }
+        return .tahoe
+    }
+
+    var card: Color {
+        switch self {
+        case .tahoe: return Color(red: 0.10, green: 0.12, blue: 0.17).opacity(0.82)
+        case .cyberpunk: return Color(red: 0.12, green: 0.08, blue: 0.22).opacity(0.85)
+        case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(0.85)
+        case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(0.85)
+        case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(0.85)
+        }
+    }
+
     var accentCyan: Color {
         switch self {
         case .tahoe: return Color(red: 0.0, green: 0.85, blue: 0.95)
         case .cyberpunk: return Color(red: 0.0, green: 0.96, blue: 1.0)
         case .solarized: return Color(red: 0.16, green: 0.63, blue: 0.60)
-        case .monochrome: return Color(white: 0.85)
+        case .monochrome: return Color(white: 0.90)
         case .nordic: return Color(red: 0.53, green: 0.75, blue: 0.82)
         }
     }
@@ -77,26 +94,46 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .tahoe: return Color(red: 1.0, green: 0.55, blue: 0.10)
         case .cyberpunk: return Color(red: 1.0, green: 0.16, blue: 0.43)
         case .solarized: return Color(red: 0.80, green: 0.29, blue: 0.09)
-        case .monochrome: return Color(white: 0.65)
+        case .monochrome: return Color(white: 0.70)
         case .nordic: return Color(red: 0.82, green: 0.53, blue: 0.44)
+        }
+    }
+
+    var accentGreen: Color {
+        switch self {
+        case .tahoe: return Color(red: 0.1, green: 0.95, blue: 0.45)
+        case .cyberpunk: return Color(red: 0.0, green: 1.0, blue: 0.5)
+        case .solarized: return Color(red: 0.52, green: 0.60, blue: 0.0)
+        case .monochrome: return Color(white: 0.80)
+        case .nordic: return Color(red: 0.64, green: 0.75, blue: 0.55)
+        }
+    }
+
+    var accentPurple: Color {
+        switch self {
+        case .tahoe: return Color(red: 0.65, green: 0.40, blue: 1.0)
+        case .cyberpunk: return Color(red: 0.75, green: 0.0, blue: 1.0)
+        case .solarized: return Color(red: 0.82, green: 0.21, blue: 0.51)
+        case .monochrome: return Color(white: 0.60)
+        case .nordic: return Color(red: 0.71, green: 0.55, blue: 0.66)
         }
     }
 }
 
 private extension Color {
-    static let tahoeBackground   = Color(red: 0.06, green: 0.07, blue: 0.10).opacity(0.72)
-    static let tahoeSidebar      = Color(red: 0.08, green: 0.09, blue: 0.13).opacity(0.25)
-    static let tahoeCard         = Color(red: 0.10, green: 0.12, blue: 0.17).opacity(0.82)
-    static let tahoeCardBorder   = Color(white: 1.0, opacity: 0.07)
-    static let tahoeAccentCyan   = Color(red: 0.0,  green: 0.85, blue: 0.95)
-    static let tahoeAccentOrange = Color(red: 1.0,  green: 0.55, blue: 0.10)
-    static let tahoeAccentGreen  = Color(red: 0.1,  green: 0.95, blue: 0.45)
-    static let tahoeAccentPurple = Color(red: 0.65, green: 0.40, blue: 1.0)
-    static let tahoeAccentRed    = Color(red: 1.0,  green: 0.30, blue: 0.30)
-    static let tahoeAccentBlue   = Color(red: 0.35, green: 0.55, blue: 1.0)
-    static let tahoeText         = Color(white: 0.90)
-    static let tahoeSubtext      = Color(white: 0.50)
-    static let tahoeSidebarActive = Color(red: 0.12, green: 0.15, blue: 0.24)
+    static var tahoeBackground   : Color { Color(red: 0.06, green: 0.07, blue: 0.10).opacity(0.72) }
+    static var tahoeSidebar      : Color { Color(red: 0.08, green: 0.09, blue: 0.13).opacity(0.25) }
+    static var tahoeCard         : Color { AppTheme.current.card }
+    static var tahoeCardBorder   : Color { Color(white: 1.0, opacity: 0.07) }
+    static var tahoeAccentCyan   : Color { AppTheme.current.accentCyan }
+    static var tahoeAccentOrange : Color { AppTheme.current.accentOrange }
+    static var tahoeAccentGreen  : Color { AppTheme.current.accentGreen }
+    static var tahoeAccentPurple : Color { AppTheme.current.accentPurple }
+    static var tahoeAccentRed    : Color { Color(red: 1.0,  green: 0.30, blue: 0.30) }
+    static var tahoeAccentBlue   : Color { Color(red: 0.35, green: 0.55, blue: 1.0) }
+    static var tahoeText         : Color { Color(white: 0.90) }
+    static var tahoeSubtext      : Color { Color(white: 0.50) }
+    static var tahoeSidebarActive : Color { Color(red: 0.12, green: 0.15, blue: 0.24) }
 }
 
 enum DashboardTab: String, CaseIterable, Identifiable {
