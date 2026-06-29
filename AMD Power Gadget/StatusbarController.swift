@@ -1376,6 +1376,8 @@ struct DesktopWidgetView: View {
     @AppStorage("widget_united_show_disk") private var unitedShowDisk = true
     @AppStorage("widget_united_show_net") private var unitedShowNet = false
     @AppStorage("widget_united_show_fan") private var unitedShowFan = false
+    @AppStorage("widget_united_chart_style") private var unitedChartStyle = 0
+    @AppStorage("widget_united_chart_metric") private var unitedChartMetric = "all"
     
     struct UnitedItem: Identifiable {
         let id: String
@@ -1623,6 +1625,43 @@ struct DesktopWidgetView: View {
                     }
                 }
             }
+            if type == .united && style == .proMonitor {
+                Divider()
+                Menu("Chart Metric") {
+                    Button(action: { unitedChartMetric = "all" }) {
+                        HStack { Text("All Combined"); if unitedChartMetric == "all" { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartMetric = "cpu" }) {
+                        HStack { Text("CPU Load"); if unitedChartMetric == "cpu" { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartMetric = "gpu" }) {
+                        HStack { Text("GPU Load"); if unitedChartMetric == "gpu" { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartMetric = "ram" }) {
+                        HStack { Text("RAM Usage"); if unitedChartMetric == "ram" { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartMetric = "disk" }) {
+                        HStack { Text("Disk I/O"); if unitedChartMetric == "disk" { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartMetric = "net" }) {
+                        HStack { Text("Network Speed"); if unitedChartMetric == "net" { Image(systemName: "checkmark") } }
+                    }
+                }
+                Menu("Chart Type") {
+                    Button(action: { unitedChartStyle = 0 }) {
+                        HStack { Text("Smooth Curves"); if unitedChartStyle == 0 { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartStyle = 1 }) {
+                        HStack { Text("Filled Area"); if unitedChartStyle == 1 { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartStyle = 2 }) {
+                        HStack { Text("Column Bars"); if unitedChartStyle == 2 { Image(systemName: "checkmark") } }
+                    }
+                    Button(action: { unitedChartStyle = 3 }) {
+                        HStack { Text("Line Only"); if unitedChartStyle == 3 { Image(systemName: "checkmark") } }
+                    }
+                }
+            }
         }
     }
     
@@ -1729,30 +1768,57 @@ struct DesktopWidgetView: View {
                             }
                         }()
                         let yMin: Double = 0.0
-                        let xMin = model.history.first?.time ?? 0.0
-                        let xMax = model.history.last?.time ?? 1.0
+                        let indexedData = Array(model.history.enumerated())
+                        let maxIndex = Double(max(1, indexedData.count - 1))
                         
                         Chart {
                             if type == .united {
-                                ForEach(activeUnitedItems) { item in
-                                    ForEach(model.history) { point in
-                                        LineMark(
-                                            x: .value("Time", point.time),
-                                            y: .value(item.title, item.historyValue(point))
-                                        )
-                                        .interpolationMethod(.catmullRom)
-                                        .foregroundStyle(item.colors[0])
-
-                                        AreaMark(
-                                            x: .value("Time", point.time),
-                                            y: .value(item.title, item.historyValue(point))
-                                        )
-                                        .interpolationMethod(.catmullRom)
-                                        .foregroundStyle(item.colors[0].opacity(0.08))
+                                let chartItems = unitedChartMetric == "all" ? activeUnitedItems : activeUnitedItems.filter { $0.id == unitedChartMetric }
+                                ForEach(chartItems) { item in
+                                    ForEach(indexedData, id: \.offset) { index, point in
+                                        let val = item.historyValue(point)
+                                        if unitedChartStyle == 2 {
+                                            BarMark(
+                                                x: .value("Index", Double(index)),
+                                                y: .value("Value", val)
+                                            )
+                                            .foregroundStyle(by: .value("Series", item.title))
+                                        } else if unitedChartStyle == 1 {
+                                            AreaMark(
+                                                x: .value("Index", Double(index)),
+                                                y: .value("Value", val)
+                                            )
+                                            .interpolationMethod(.catmullRom)
+                                            .foregroundStyle(by: .value("Series", item.title))
+                                        } else if unitedChartStyle == 3 {
+                                            LineMark(
+                                                x: .value("Index", Double(index)),
+                                                y: .value("Value", val)
+                                            )
+                                            .interpolationMethod(.catmullRom)
+                                            .foregroundStyle(by: .value("Series", item.title))
+                                            .lineStyle(StrokeStyle(lineWidth: 1.5))
+                                        } else {
+                                            LineMark(
+                                                x: .value("Index", Double(index)),
+                                                y: .value("Value", val)
+                                            )
+                                            .interpolationMethod(.catmullRom)
+                                            .foregroundStyle(by: .value("Series", item.title))
+                                            .lineStyle(StrokeStyle(lineWidth: 1.5))
+                                            
+                                            AreaMark(
+                                                x: .value("Index", Double(index)),
+                                                y: .value("Value", val)
+                                            )
+                                            .interpolationMethod(.catmullRom)
+                                            .foregroundStyle(by: .value("Series", item.title))
+                                            .opacity(0.12)
+                                        }
                                     }
                                 }
                             } else {
-                                ForEach(model.history) { point in
+                                ForEach(indexedData, id: \.offset) { index, point in
                                     let val: Double = {
                                         switch type {
                                         case .cpu: return point.cpuLoad
@@ -1766,14 +1832,15 @@ struct DesktopWidgetView: View {
                                     }()
                                     
                                     LineMark(
-                                        x: .value("Time", point.time),
+                                        x: .value("Index", Double(index)),
                                         y: .value("Value", val)
                                     )
                                     .interpolationMethod(.catmullRom)
                                     .foregroundStyle(LinearGradient(gradient: Gradient(colors: [type.color1, type.color2]), startPoint: .leading, endPoint: .trailing))
+                                    .lineStyle(StrokeStyle(lineWidth: 1.5))
                                     
                                     AreaMark(
-                                        x: .value("Time", point.time),
+                                        x: .value("Index", Double(index)),
                                         y: .value("Value", val)
                                     )
                                     .interpolationMethod(.catmullRom)
@@ -1781,7 +1848,15 @@ struct DesktopWidgetView: View {
                                 }
                             }
                         }
-                        .chartXScale(domain: xMin...xMax)
+                        .chartForegroundStyleScale([
+                            "CPU": DesktopWidgetType.cpu.color1,
+                            "GPU": DesktopWidgetType.gpu.color1,
+                            "RAM": DesktopWidgetType.ram.color1,
+                            "Disk": DesktopWidgetType.disk.color1,
+                            "Net": DesktopWidgetType.net.color1,
+                            "Fan": DesktopWidgetType.fan.color1
+                        ])
+                        .chartXScale(domain: 0...maxIndex)
                         .chartXAxis(.hidden)
                         .chartYAxis {
                             let values: [Double] = [0.0, yMax / 2.0, yMax]
