@@ -69,6 +69,7 @@ class GraphView: NSView {
         viewHeight = viewTop - viewBottom
 
         wantsLayer = true
+        layer?.drawsAsynchronously = true
         layer?.cornerRadius = 20
         layer?.masksToBounds = true
     }
