@@ -2853,7 +2853,7 @@ struct MenuBarPopoverView: View {
                         .foregroundColor(.white)
                 }
                 Spacer()
-                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.5.0")")
+                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.10.0")")
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundColor(.white.opacity(0.4))
             }
