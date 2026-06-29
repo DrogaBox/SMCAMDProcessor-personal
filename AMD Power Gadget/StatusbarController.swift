@@ -1561,14 +1561,14 @@ struct DesktopWidgetView: View {
     
     private func symbolForType(_ type: DesktopWidgetType) -> String {
         switch type {
-        case .cpu: return "cpu"
+        case .cpu: return "cpu.fill"
         case .gpu: return "display"
-        case .ram: return "memorycard"
-        case .disk: return "internaldrive"
+        case .ram: return "memorycard.fill"
+        case .disk: return "internaldrive.fill"
         case .net: return "network"
-        case .fan: return "fan"
-        case .clock: return "clock"
-        case .united: return "square.grid.2x2"
+        case .fan: return "fan.fill"
+        case .clock: return "clock.fill"
+        case .united: return "square.grid.2x2.fill"
         }
     }
     
@@ -1813,7 +1813,7 @@ struct DesktopWidgetView: View {
     private var coreMatrixStyle: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: "cpu")
+                Image(systemName: "cpu.fill")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(type.color1)
                 Text(NSLocalizedString("AMD CPU Cores", comment: ""))
