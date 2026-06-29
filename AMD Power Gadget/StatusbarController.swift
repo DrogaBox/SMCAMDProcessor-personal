@@ -1733,17 +1733,26 @@ struct DesktopWidgetView: View {
                         let xMax = model.history.last?.time ?? 1.0
                         
                         Chart {
-                            ForEach(model.history) { point in
-                                if type == .united {
-                                    ForEach(activeUnitedItems) { item in
+                            if type == .united {
+                                ForEach(activeUnitedItems) { item in
+                                    ForEach(model.history) { point in
                                         LineMark(
                                             x: .value("Time", point.time),
                                             y: .value(item.title, item.historyValue(point))
                                         )
                                         .interpolationMethod(.catmullRom)
                                         .foregroundStyle(item.colors[0])
+
+                                        AreaMark(
+                                            x: .value("Time", point.time),
+                                            y: .value(item.title, item.historyValue(point))
+                                        )
+                                        .interpolationMethod(.catmullRom)
+                                        .foregroundStyle(item.colors[0].opacity(0.08))
                                     }
-                                } else {
+                                }
+                            } else {
+                                ForEach(model.history) { point in
                                     let val: Double = {
                                         switch type {
                                         case .cpu: return point.cpuLoad
