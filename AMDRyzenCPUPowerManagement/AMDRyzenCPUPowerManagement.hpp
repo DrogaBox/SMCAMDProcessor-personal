@@ -267,6 +267,8 @@ public:
         float packagePowerW;
         float packageTempC;
         uint32_t numLogicalCores;
+        uint32_t ccdCount;
+        float ccdTemperatures[8];
         float coreFrequenciesMHz[64];
     };
 #pragma pack(pop)

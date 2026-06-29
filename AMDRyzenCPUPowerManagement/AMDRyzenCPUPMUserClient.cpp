@@ -358,6 +358,10 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             packet->packagePowerW = (float)fProvider->uniPackageEnergy;
             packet->packageTempC = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
             packet->numLogicalCores = fProvider->totalNumberOfPhysicalCores;
+            packet->ccdCount = fProvider->ccdCount;
+            for (uint32_t i = 0; i < 8; i++) {
+                packet->ccdTemperatures[i] = (i < fProvider->ccdCount) ? fProvider->ccdTemperatures[i] : 0.0f;
+            }
             for (uint32_t i = 0; i < 64 && i < fProvider->totalNumberOfPhysicalCores; i++) {
                 packet->coreFrequenciesMHz[i] = fProvider->effFreq_perCore[i];
             }
