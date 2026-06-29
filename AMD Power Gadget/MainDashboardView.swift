@@ -345,9 +345,21 @@ private struct InfoRow: View {
 private struct TahoeCard<Content: View>: View {
     let accent: Color
     @ViewBuilder let content: Content
+    @AppStorage("theme_glass_material") private var glassMaterial: Int = 0
+
     init(accent: Color = .tahoeCardBorder, @ViewBuilder content: () -> Content) {
         self.accent = accent; self.content = content()
     }
+
+    private var materialStyle: Material {
+        switch glassMaterial {
+        case 1: return .thinMaterial
+        case 2: return .regularMaterial
+        case 3: return .thickMaterial
+        default: return .ultraThinMaterial
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) { content }
             .padding(16)
@@ -357,7 +369,7 @@ private struct TahoeCard<Content: View>: View {
                     .fill(Color.tahoeCard)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(.ultraThinMaterial)
+                            .fill(materialStyle)
                     )
             )
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(accent, lineWidth: 1))
@@ -670,6 +682,14 @@ struct OriginalLineChartCard: View {
                         .foregroundStyle(accent)
                         .lineStyle(StrokeStyle(lineWidth: 1.5))
                         .interpolationMethod(.catmullRom)
+                    } else if selectedChartStyleRaw == AppChartStyle.steppedLine.rawValue {
+                        LineMark(
+                            x: .value("Index", Double(index)),
+                            y: .value(line1Label, line1(pt))
+                        )
+                        .foregroundStyle(accent)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .interpolationMethod(.stepCenter)
                     } else {
                         LineMark(
                             x: .value("Index", Double(index)),
@@ -1110,10 +1130,11 @@ struct NetworkLineChartCard: View {
                             Text(label)
                                 .font(.system(size: 9, weight: .semibold, design: .rounded))
                                 .foregroundColor(chartStyle == styleIdx ? .white : .tahoeSubtext)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
                                 .background(chartStyle == styleIdx ? Color.tahoeSidebarActive : Color.clear)
                                 .cornerRadius(5)
+                                .contentShape(Rectangle())
                                 .onTapGesture {
                                     withAnimation(.easeOut(duration: 0.2)) {
                                         chartStyle = styleIdx
@@ -1124,29 +1145,20 @@ struct NetworkLineChartCard: View {
                     .padding(2)
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(6)
-                    
-                    Spacer()
-                        .frame(width: 8)
-                    
+
+                    Spacer().frame(width: 12)
+
+                    // Upload Speed on far right of header (fixed width container prevents button jitter)
                     if let last = model.history.last {
-                        HStack(spacing: 8) {
-                            HStack(spacing: 3) {
-                                Image(systemName: "arrow.down")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.tahoeAccentBlue)
-                                Text(formatSpeed(last.netDownloadMBps))
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.tahoeAccentBlue)
-                            }
-                            HStack(spacing: 3) {
-                                Image(systemName: "arrow.up")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.tahoeAccentPurple)
-                                Text(formatSpeed(last.netUploadMBps))
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.tahoeAccentPurple)
-                            }
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.tahoeAccentPurple)
+                            Text(formatSpeed(last.netUploadMBps))
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(.tahoeAccentPurple)
                         }
+                        .frame(minWidth: 95, alignment: .trailing)
                     }
                 }
 
@@ -1981,6 +1993,35 @@ struct AdvancedContentView: View {
                     HStack(spacing: 10) {
                         TahoeButton(label: "All Fans Auto", icon: "arrow.circlepath", accent: .tahoeAccentCyan) { model.setAllFansAuto() }
                         TahoeButton(label: "Max Speed", icon: "wind", accent: .tahoeAccentOrange) { model.setAllFansTakeOff() }
+                    }
+                }
+
+                Divider().background(Color.tahoeCardBorder)
+                SectionTitle("Software Updates")
+                Text("Check for new releases of SMCAMDProcessor and AMD Power Gadget on GitHub.")
+                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Check for Updates").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text(model.updateCheckMessage.isEmpty ? "Current installed version: v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3")" : model.updateCheckMessage)
+                                    .font(.system(size: 10))
+                                    .foregroundColor(model.updateAvailable ? .tahoeAccentGreen : .tahoeSubtext)
+                            }
+                            Spacer()
+                            if model.isCheckingForUpdates {
+                                ProgressView().scaleEffect(0.8)
+                            } else {
+                                TahoeButton(label: model.updateAvailable ? "Download Update" : "Check Now", icon: model.updateAvailable ? "arrow.down.circle" : "arrow.triangle.2.circlepath", accent: model.updateAvailable ? .tahoeAccentGreen : .tahoeAccentCyan) {
+                                    if model.updateAvailable {
+                                        if let u = URL(string: model.releaseURLString) { NSWorkspace.shared.open(u) }
+                                    } else {
+                                        model.checkForUpdates(manual: true)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2924,55 +2965,54 @@ private struct CPPCCoreGrid: View {
 
 struct ThemeSelectorGrid: View {
     @AppStorage("app_theme_preset") private var selectedThemeRaw: String = AppTheme.tahoe.rawValue
-    private let columns = [GridItem(.adaptive(minimum: 100), spacing: 12)]
+    private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
+        LazyVGrid(columns: columns, spacing: 14) {
             ForEach(AppTheme.allCases) { theme in
+                let isSelected = selectedThemeRaw == theme.rawValue
                 Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         selectedThemeRaw = theme.rawValue
                     }
                 }) {
-                    VStack(spacing: 6) {
-                        ZStack {
-                            Circle()
-                                .fill(LinearGradient(
-                                    colors: [theme.accentCyan, theme.accentOrange],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .frame(width: 36, height: 36)
-                                .overlay(
-                                    Circle()
-                                        .stroke(selectedThemeRaw == theme.rawValue ? Color.white : Color.clear, lineWidth: 2)
-                                )
-                            if selectedThemeRaw == theme.rawValue {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 14, weight: .bold))
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text(theme.rawValue)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(isSelected ? .white : .tahoeText)
+                            Spacer()
+                            if isSelected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(theme.accentCyan)
                             }
                         }
-                        Text(theme.rawValue)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(selectedThemeRaw == theme.rawValue ? .white : .tahoeSubtext)
+                        
+                        // Mini Live Palette Preview Card
+                        HStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 4).fill(theme.accentCyan).frame(height: 12)
+                            RoundedRectangle(cornerRadius: 4).fill(theme.accentOrange).frame(height: 12)
+                            RoundedRectangle(cornerRadius: 4).fill(theme.accentGreen).frame(height: 12)
+                            RoundedRectangle(cornerRadius: 4).fill(theme.accentPurple).frame(height: 12)
+                        }
+                        .padding(6)
+                        .background(theme.card)
+                        .cornerRadius(6)
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.1), lineWidth: 1))
                     }
-                    .padding(8)
-                    .frame(maxWidth: .infinity)
-                    .background(selectedThemeRaw == theme.rawValue ? Color.white.opacity(0.08) : Color.clear)
-                    .cornerRadius(10)
+                    .padding(14)
+                    .background(theme.card.opacity(isSelected ? 1.0 : 0.6))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? theme.accentCyan : Color.white.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+                    )
+                    .shadow(color: isSelected ? theme.accentCyan.opacity(0.3) : Color.clear, radius: 8)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.tahoeCard)
-                .background(RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial))
-        )
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.tahoeCardBorder, lineWidth: 1))
-        .cornerRadius(14)
     }
 }
 
@@ -2980,6 +3020,7 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
     case line = "Línea Suave (Spline)"
     case filledArea = "Área Rellena (Gradient)"
     case bar = "Histograma de Barras"
+    case steppedLine = "Línea Escalonada (Step)"
     
     var id: String { rawValue }
     var icon: String {
@@ -2987,6 +3028,7 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
         case .line: return "waveform.path.ecg"
         case .filledArea: return "chart.area.fill"
         case .bar: return "chart.bar.fill"
+        case .steppedLine: return "chart.line.uptrend.xyaxis"
         }
     }
 }
@@ -3072,6 +3114,31 @@ struct ThemePresetPack: Codable {
     var purpleHex: String
 }
 
+struct ColorTokenEditorSlot: View {
+    let title: String
+    let colorHex: String
+    @Binding var selection: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.tahoeSubtext)
+            HStack(spacing: 8) {
+                ColorPicker("", selection: $selection)
+                    .labelsHidden()
+                Text(colorHex)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.04))
+            .cornerRadius(8)
+        }
+    }
+}
+
 struct CustomThemeStudio: View {
     @AppStorage("custom_hex_card") private var cardHex: String = "#16213E"
     @AppStorage("custom_hex_cyan") private var cyanHex: String = "#4CC9F0"
@@ -3096,21 +3163,41 @@ struct CustomThemeStudio: View {
         Binding(get: { Color(hexString: purpleHex) ?? .purple }, set: { purpleHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
     }
 
+    private func copyCurrentThemeToCustom() {
+        let curr = AppTheme.current
+        cardHex = curr.card.toHexString
+        cyanHex = curr.accentCyan.toHexString
+        orangeHex = curr.accentOrange.toHexString
+        greenHex = curr.accentGreen.toHexString
+        purpleHex = curr.accentPurple.toHexString
+        selectedThemeRaw = AppTheme.custom.rawValue
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Estudio de Creación de Tema Personalizado")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.white)
-            
-            HStack(spacing: 16) {
-                ColorPicker("Tarjeta", selection: cardColorBinding)
-                ColorPicker("Acento Cian", selection: cyanColorBinding)
-                ColorPicker("Acento Naranja", selection: orangeColorBinding)
-                ColorPicker("Acento Verde", selection: greenColorBinding)
-                ColorPicker("Acento Púrpura", selection: purpleColorBinding)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Editor de Tema Personalizado")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Mostrando los colores actuales del tema activo. Ajustá cualquier color para personalizar.")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeSubtext)
+                }
+                Spacer()
+                TahoeButton(label: "Editar Tema Activo", icon: "doc.on.doc", accent: .tahoeAccentOrange) {
+                    copyCurrentThemeToCustom()
+                }
             }
-            .font(.system(size: 11))
-            .foregroundColor(.tahoeSubtext)
+
+            // Grid of Color Token Editors showing active colors & HEX
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
+                ColorTokenEditorSlot(title: "Fondo Tarjeta", colorHex: AppTheme.current.card.toHexString, selection: cardColorBinding)
+                ColorTokenEditorSlot(title: "Acento Cian", colorHex: AppTheme.current.accentCyan.toHexString, selection: cyanColorBinding)
+                ColorTokenEditorSlot(title: "Acento Naranja", colorHex: AppTheme.current.accentOrange.toHexString, selection: orangeColorBinding)
+                ColorTokenEditorSlot(title: "Acento Verde", colorHex: AppTheme.current.accentGreen.toHexString, selection: greenColorBinding)
+                ColorTokenEditorSlot(title: "Acento Púrpura", colorHex: AppTheme.current.accentPurple.toHexString, selection: purpleColorBinding)
+            }
 
             Divider().background(Color.tahoeCardBorder)
 
@@ -3123,7 +3210,7 @@ struct CustomThemeStudio: View {
                 }
             }
         }
-        .padding(14)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color.tahoeCard)
@@ -3171,10 +3258,10 @@ struct CustomThemeStudio: View {
 struct ThemesContentView: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SectionTitle("Motor de Temas y Paletas")
+            VStack(alignment: .leading, spacing: 22) {
+                SectionTitle("Seleccionar Tema Visual (Cambio Instantáneo)")
                 ThemeSelectorGrid()
-                
+
                 SectionTitle("Creador e Intercambio de Temas Custom (JSON)")
                 CustomThemeStudio()
 

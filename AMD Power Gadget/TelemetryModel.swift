@@ -335,9 +335,17 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
+    // Software Update properties
+    @Published var isCheckingForUpdates: Bool = false
+    @Published var updateAvailable: Bool = false
+    @Published var updateCheckMessage: String = ""
+    @Published var latestVersionTag: String = ""
+    @Published var releaseURLString: String = ""
+
     private var lastTempAlertTime: Date?
     private var lastPowerAlertTime: Date?
     private var powerViolationStartTime: Date?
+    private var stabilizedEstimatedScores: [Int: UInt8] = [:]
 
     @Published var smcDriverLoaded: Bool = false
     @Published var sysInfo: SystemInfo = SystemInfo()
@@ -528,8 +536,10 @@ final class TelemetryModel: ObservableObject {
     func restartTimer() {
         timer?.cancel()
         let interval: Double
-        if activeWindows || popoverVisible || isAnyWidgetHovered {
+        if activeWindows {
             interval = RefreshRateConfig.shared.interval
+        } else if popoverVisible || isAnyWidgetHovered {
+            interval = 1.2 // Throttled 1.2s refresh when popover is open to keep CPU usage < 1.5%
         } else if DesktopWidgetManager.shared.hasActiveWidgets {
             interval = 2.0 // Slow refresh when widgets are in background to conserve resources
         } else {
@@ -754,7 +764,7 @@ final class TelemetryModel: ObservableObject {
         lastDiskCheck = now
         
         if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
-            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 3.0 {
+            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 4.0 {
                 lastProcessFetchTime = now
                 Task.detached(priority: .background) {
                     let list = self.fetchTopProcesses()
@@ -1411,6 +1421,80 @@ final class TelemetryModel: ObservableObject {
         UNUserNotificationCenter.current().add(request)
     }
     
+    // MARK: - Software Updates Helper
+    func checkForUpdates(manual: Bool = true) {
+        guard !isCheckingForUpdates else { return }
+        isCheckingForUpdates = true
+        updateCheckMessage = manual ? "Buscando actualizaciones..." : ""
+        
+        let urlString = "https://api.github.com/repos/DrogaBox/SMCAMDProcessor-personal/releases/latest"
+        guard let url = URL(string: urlString) else {
+            isCheckingForUpdates = false
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 10.0
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isCheckingForUpdates = false
+                
+                if let error = error {
+                    if manual { self.updateCheckMessage = "Error de conexión: \(error.localizedDescription)" }
+                    return
+                }
+                
+                guard let data = data,
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let tagName = json["tag_name"] as? String else {
+                    if manual { self.updateCheckMessage = "No se pudo obtener información del release." }
+                    return
+                }
+                
+                let bodyText = (json["body"] as? String) ?? "Sin notas de versión disponibles."
+                let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
+                let cleanTag = tagName.replacingOccurrences(of: "v", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let cleanCurrent = currentVersion.replacingOccurrences(of: "v", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                self.latestVersionTag = tagName
+                self.releaseURLString = (json["html_url"] as? String) ?? "https://github.com/DrogaBox/SMCAMDProcessor-personal/releases"
+                
+                if cleanTag.compare(cleanCurrent, options: .numeric) == .orderedDescending {
+                    self.updateAvailable = true
+                    self.updateCheckMessage = "¡Nueva versión \(tagName) disponible!"
+                    if manual {
+                        let alert = NSAlert()
+                        alert.messageText = "Nueva Versión Disponible: \(tagName)"
+                        let previewBody = bodyText.count > 300 ? String(bodyText.prefix(300)) + "..." : bodyText
+                        alert.informativeText = "Versión actual: v\(currentVersion)\nNueva versión: \(tagName)\n\nNotas del Release:\n\(previewBody)"
+                        alert.alertStyle = .informational
+                        alert.addButton(withTitle: "Descargar en GitHub")
+                        alert.addButton(withTitle: "Más Tarde")
+                        if alert.runModal() == .alertFirstButtonReturn {
+                            if let openUrl = URL(string: self.releaseURLString) {
+                                NSWorkspace.shared.open(openUrl)
+                            }
+                        }
+                    }
+                } else {
+                    self.updateAvailable = false
+                    if manual {
+                        self.updateCheckMessage = "Tenés la última versión instalada (v\(currentVersion))."
+                        let alert = NSAlert()
+                        alert.messageText = "Sistema Actualizado"
+                        alert.informativeText = "Estás ejecutando la versión más reciente de AMD Power Gadget (v\(currentVersion))."
+                        alert.alertStyle = .informational
+                        alert.addButton(withTitle: "Aceptar")
+                        alert.runModal()
+                    }
+                }
+            }
+        }.resume()
+    }
+    
     // MARK: - Physical Core Ranking
     
     /// Recomputes rankedPhysicalCores from CPPC scores or max-observed frequencies.
@@ -1434,11 +1518,17 @@ final class TelemetryModel: ObservableObject {
                 let f1 = maxObservedFreq_perCore[t1] ?? 0
                 let m = max(f0, f1)
                 
+                let rawScore: UInt8
                 if maxFreqOverall > 0 && m > 0 {
-                    score = UInt8(min(255, Int(round((m / maxFreqOverall) * 255.0))))
+                    rawScore = UInt8(min(255, Int(round((m / maxFreqOverall) * 255.0))))
                 } else {
-                    score = 0
+                    rawScore = 0
                 }
+                
+                // Monotonic caching to freeze rankings and prevent jittering
+                let prevScore = stabilizedEstimatedScores[physIdx] ?? 0
+                score = max(prevScore, rawScore)
+                stabilizedEstimatedScores[physIdx] = score
             }
             list.append(RankedPhysicalCore(id: physIdx + 1, score: score, rank: 0, isEstimated: !cppcHasReal))
         }
