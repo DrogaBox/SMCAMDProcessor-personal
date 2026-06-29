@@ -15,7 +15,17 @@ jobs:
         with: { submodules: recursive }
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
+        run: |
+          if [ -d "/Applications/Xcode.app" ]; then
+            sudo xcode-select -s /Applications/Xcode.app
+          else
+            XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | tail -n1)
+            if [ -n "$XCODE_PATH" ]; then
+              sudo xcode-select -s "$XCODE_PATH"
+            fi
+          fi
+          xcode-select -p
+          xcodebuild -version
 
       - name: Fetch Dependencies 
         run: |
