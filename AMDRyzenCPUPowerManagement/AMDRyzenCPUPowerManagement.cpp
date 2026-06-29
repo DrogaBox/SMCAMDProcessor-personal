@@ -127,9 +127,9 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
 
 void AMDRyzenCPUPowerManagement::initWorkLoop() {
     IOLog("AMDCPUSupport::startWorkLoop setting up timer");
-    
     timerEvent_main = IOTimerEventSource::timerEventSource(this, [](OSObject *object, IOTimerEventSource *sender) {
         AMDRyzenCPUPowerManagement *provider = OSDynamicCast(AMDRyzenCPUPowerManagement, object);
+        if (!provider) return;
 
         //Run initialization
         if(!provider->serviceInitialized){
@@ -141,13 +141,6 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                 
                 provider->write_msr(kMSR_CSTATE_ADDR, 0xf0);
                 
-//                uint64_t val = 0;
-//                provider->read_msr(0xC0010292, &val);
-//                provider->write_msr(0xC0010292, val | ((uint64_t)1 << 32));
-//
-//                provider->read_msr(0xC0010296, &val);
-//                provider->write_msr(0xC0010296, val | (1 << 22) | (1 << 14) | (1 << 6));
-
                 uint64_t hwConfig;
                 if(!provider->read_msr(kMSR_HWCR, &hwConfig)) {
                     IOLog("AMDCPUSupport::startWorkLoop: failed to read kMSR_HWCR, skipping init.\n");
@@ -218,6 +211,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
             return;
         }
         
+        if (!provider->serviceInitialized) return;
         
         mp_rendezvous_no_intrs([](void *obj) {
             auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
@@ -261,6 +255,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
     
     timerEvent_tempe = IOTimerEventSource::timerEventSource(this, [](OSObject *object, IOTimerEventSource *sender) {
         AMDRyzenCPUPowerManagement *provider = OSDynamicCast(AMDRyzenCPUPowerManagement, object);
+        if (!provider || !provider->serviceInitialized) return;
         
         int next_samp = provider->tempNextSample;
         float t = provider->getPackageTemp();
@@ -294,6 +289,8 @@ void AMDRyzenCPUPowerManagement::stopWorkLoop() {
 void AMDRyzenCPUPowerManagement::resumeWorkLoop() {
     if (!workLoop) return;
     workLoop->enableAllEventSources();
+    serviceInitialized = true;
+    pwrLastTSC = rdtsc64();
     if (timerEvent_main) timerEvent_main->setTimeoutMS(1);
     if (timerEvent_tempe) timerEvent_tempe->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
 }
