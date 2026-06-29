@@ -44,7 +44,7 @@ class NetworkStats {
         // No-op: no background threads to tear down
     }
     
-    func update() -> NetworkSnapshot? {
+    func update(lowFrequency: Bool = false) -> NetworkSnapshot? {
         return queue.sync {
             if Date().timeIntervalSince(cacheLastCleared) > 30 {
                 physicalInterfaceCache.removeAll()
@@ -52,12 +52,13 @@ class NetworkStats {
             }
             let now = Date()
             
-            // Rate limit the sysctl call to once every 200ms to prevent jitter and minimize overhead
-            if lastCheck != Date.distantPast && now.timeIntervalSince(lastCheck) < 0.2 {
+            // Rate limit sysctl call: 0.2s for active monitoring, 5.0s when network tab/window is not active
+            let minInterval: Double = lowFrequency ? 5.0 : 0.2
+            if lastCheck != Date.distantPast && now.timeIntervalSince(lastCheck) < minInterval {
                 return currentSnapshot
             }
             
-            // Fetch total bytes from sysctl (summing all physical en* interfaces)
+            // Fetch total bytes from sysctl (summing all physical en* / bridge / bond interfaces)
             var bytesIn: UInt64 = 0
             var bytesOut: UInt64 = 0
             
@@ -65,10 +66,11 @@ class NetworkStats {
             var len: size_t = 0
             var mibCopy = mib
             
-            if sysctl(&mibCopy, 6, nil, &len, nil, 0) == 0 {
+            if sysctl(&mibCopy, 6, nil, &len, nil, 0) == 0 && len > 0 {
                 let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: len)
                 defer { buffer.deallocate() }
                 
+                mibCopy = mib
                 if sysctl(&mibCopy, 6, buffer, &len, nil, 0) == 0 {
                     var ptr = buffer
                     let end = buffer.advanced(by: len)
@@ -84,12 +86,14 @@ class NetworkStats {
                             if isPhysical == nil {
                                 var nameBuffer = [CChar](repeating: 0, count: 16) // 16 is IF_NAMESIZE
                                 if if_indextoname(index, &nameBuffer) != nil {
-                                    let ifName = String(cString: nameBuffer)
-                                    // Include Ethernet (en0/en1...), bridged (bridge0), bonded (bond0)
-                                    // Exclude loopback (lo0), tunnel (utun, llw, ipsec, awdl, gif, stf)
-                                    isPhysical = ifName.hasPrefix("en") ||
-                                                 ifName.hasPrefix("bridge") ||
-                                                 ifName.hasPrefix("bond")
+                                    let b0 = nameBuffer[0]
+                                    let b1 = nameBuffer[1]
+                                    let b2 = nameBuffer[2]
+                                    let b3 = nameBuffer[3]
+                                    let isEn = (b0 == 101 && b1 == 110) // "en" (101='e', 110='n')
+                                    let isBond = (b0 == 98 && b1 == 111 && b2 == 110 && b3 == 100) // "bond"
+                                    let isBridge = (b0 == 98 && b1 == 114 && b2 == 105 && b3 == 100 && nameBuffer[4] == 103 && nameBuffer[5] == 101) // "bridge"
+                                    isPhysical = isEn || isBond || isBridge
                                 } else {
                                     isPhysical = false
                                 }

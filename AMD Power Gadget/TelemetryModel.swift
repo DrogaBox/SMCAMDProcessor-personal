@@ -767,7 +767,8 @@ final class TelemetryModel: ObservableObject {
 
         var netUp: Double = 0
         var netDown: Double = 0
-        if let netSnap = NetworkStats.shared.update() {
+        let isNetActive = (selectedTab == .dashboard || selectedTab == .telemetry || popoverVisible)
+        if let netSnap = NetworkStats.shared.update(lowFrequency: !isNetActive) {
             netUp = netSnap.uploadMBps
             netDown = netSnap.downloadMBps
         }
