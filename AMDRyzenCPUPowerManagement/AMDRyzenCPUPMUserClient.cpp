@@ -45,7 +45,11 @@ void AMDRyzenCPUPMUserClient::stop(IOService *provider){
 }
 
 bool AMDRyzenCPUPMUserClient::hasPrivilege(){
-    return true;
+    if (clientAuthorizedByUser) return true;
+    if (fProvider && fProvider->disablePrivilegeCheck) return true; // -amdpnopchk
+    proc_t proc = (proc_t)get_bsdtask_info(current_task());
+    if (proc && (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0)) return true;
+    return false;
 }
 
 IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMethodArguments *arguments,

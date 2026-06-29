@@ -1,5 +1,7 @@
 #include "AMDRyzenCPUPowerManagement.hpp"
 #include <string.h>
+#include <mach/mach_time.h>
+#include <kern/clock.h>
 #include <IOKit/IOPlatformExpert.h>
 #include <libkern/c++/OSString.h>
 #include <libkern/c++/OSData.h>
@@ -45,22 +47,23 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     IOLog("AMDCPUSupport::enter dlinking..\n");
     
     pmRyzen_symtable_ready = 0;
-    int symbolRetries = 0;
-    
-retry:
-    find_mach_header_addr(getKernelVersion() >= KernelVersion::BigSur);
-    pmRyzen_symtable._wrmsr_carefully = lookup_symbol("_wrmsr_carefully");
-    
-    if(!pmRyzen_symtable._wrmsr_carefully){
-        kextloadAlerts++;
-        if (++symbolRetries > 50) {
-            IOLog("SMCAMDProcessor::init symbol resolution for _wrmsr_carefully failed after 50 retries\n");
-            return false;
+    bool resolved = false;
+    for (int symbolRetries = 0; symbolRetries < 50; symbolRetries++) {
+        find_mach_header_addr(getKernelVersion() >= KernelVersion::BigSur);
+        pmRyzen_symtable._wrmsr_carefully = lookup_symbol("_wrmsr_carefully");
+        if (pmRyzen_symtable._wrmsr_carefully) {
+            resolved = true;
+            break;
         }
         IOSleep(10);
-        goto retry;
+    }
+    if (!resolved) {
+        kextloadAlerts++;
+        IOLog("SMCAMDProcessor::init symbol resolution for _wrmsr_carefully failed after 50 retries\n");
+        return false;
     }
     
+    pciConfigLock = IOSimpleLockAlloc();
     
     pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
     pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
@@ -115,7 +118,9 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
     }
     
     IOLog("AMDCPUSupport::getPCIService: succeed!\n");
+    // Retain PCI device reference to guarantee pointer outlives both telemetry timer event sources
     fIOPCIDevice = service;
+    fIOPCIDevice->retain();
     
     return true;
 }
@@ -287,6 +292,7 @@ void AMDRyzenCPUPowerManagement::stopWorkLoop() {
 }
 
 void AMDRyzenCPUPowerManagement::resumeWorkLoop() {
+    if (!workLoop) return;
     workLoop->enableAllEventSources();
     if (timerEvent_main) timerEvent_main->setTimeoutMS(1);
     if (timerEvent_tempe) timerEvent_tempe->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
@@ -507,6 +513,13 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 
     if (pmRyzen_symtable._tscFreq != nullptr) {
         xnuTSCFreq = *((uint64_t*)pmRyzen_symtable._tscFreq);
+    } else {
+        struct mach_timebase_info tbInfoData;
+        clock_timebase_info(&tbInfoData);
+        if (tbInfoData.numer != 0) {
+            xnuTSCFreq = (1000000000ULL * (uint64_t)tbInfoData.denom) / (uint64_t)tbInfoData.numer;
+            IOLog("AMDCPUSupport::start WARN: _tscFreq symbol null, using mach_timebase_info fallback TSC frequency (%llu Hz)\n", xnuTSCFreq);
+        }
     }
     if (xnuTSCFreq == 0) {
         xnuTSCFreq = 1000000000u; // Fallback default 1GHz calibration
@@ -532,48 +545,49 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 }
 
 void AMDRyzenCPUPowerManagement::stop(IOService *provider){
+    IOLog("AMDCPUSupport stopping...\n");
+
+    // 1. Stop accepting new work timers.
+    if (timerEvent_main)  timerEvent_main->cancelTimeout();
+    if (timerEvent_tempe) timerEvent_tempe->cancelTimeout();
+
+    // 2. Quiesce the workloop to drain any in-flight callback.
+    if (workLoop) workLoop->disableAllEventSources();
+    serviceInitialized = false;
+
+    // 3. Safe to unhook pmDispatch now.
     pmRyzen_stop();
-    
-    IOLog("AMDCPUSupport stopped\n");
-    
-    stopWorkLoop();
-    
-    if (timerEvent_main) {
-        timerEvent_main->cancelTimeout();
-        if (workLoop) {
-            workLoop->removeEventSource(timerEvent_main);
-        }
-        timerEvent_main->release();
-        timerEvent_main = nullptr;
-    }
-    
-    if (timerEvent_tempe) {
-        timerEvent_tempe->cancelTimeout();
-        if (workLoop) {
-            workLoop->removeEventSource(timerEvent_tempe);
-        }
-        timerEvent_tempe->release();
-        timerEvent_tempe = nullptr;
-    }
-    
-    if (workLoop) {
-        workLoop->release();
-        workLoop = nullptr;
-    }
-    
-    if(superIO){
+
+    // 4. Remove and release event sources.
+    if (timerEvent_main && workLoop)  workLoop->removeEventSource(timerEvent_main);
+    if (timerEvent_tempe && workLoop) workLoop->removeEventSource(timerEvent_tempe);
+    if (timerEvent_main) { timerEvent_main->release(); timerEvent_main = nullptr; }
+    if (timerEvent_tempe) { timerEvent_tempe->release(); timerEvent_tempe = nullptr; }
+
+    // 5. Release PCI device (retained in getPCIService).
+    if (fIOPCIDevice) { fIOPCIDevice->release(); fIOPCIDevice = nullptr; }
+
+    // 6. SuperIO defaults + delete.
+    if (superIO) {
         for (int i = 0; i < superIO->getNumberOfFans(); i++) {
             superIO->setDefaultFanControl(i);
         }
-
         delete superIO;
         superIO = nullptr;
     }
 
+    // 7. Free PCI lock and release workloop last.
+    if (pciConfigLock) {
+        IOSimpleLockFree(pciConfigLock);
+        pciConfigLock = nullptr;
+    }
+    if (workLoop) {
+        workLoop->release();
+        workLoop = nullptr;
+    }
+
     PMstop();
-
     IOService::stop(provider);
-
 }
 
 IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdinal, IOService* provider) {
@@ -586,7 +600,9 @@ IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdin
         // Waking up
         IOLog("AMDCPUSupport::setPowerState preparing for wakeup\n");
         wentToSleep = false;
-        resumeWorkLoop();
+        if (workLoop) {
+            resumeWorkLoop();
+        }
     }
 
     return kIOPMAckImplied;
@@ -714,7 +730,16 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
         // CurCpuFid [7:0]
         float curCpuDfsId = (float)((eax >> 8) & 0x3f);
         float curCpuFid = (float)(eax & 0xff);
-        clock = curCpuFid / curCpuDfsId * 200.0f;
+        if (curCpuDfsId == 0.0f) {
+            static bool loggedUpdateClockDfsZero = false;
+            if (!loggedUpdateClockDfsZero) {
+                loggedUpdateClockDfsZero = true;
+                IOLog("AMDCPUSupport::updateClockSpeed: curCpuDfsId is zero, clamping clock to 0\n");
+            }
+            clock = 0.0f;
+        } else {
+            clock = curCpuFid / curCpuDfsId * 200.0f;
+        }
     }
     
 //    PStateCur_perCore[physical] = curHwPstate;
@@ -858,9 +883,10 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
     IOPCIAddressSpace space;
     space.bits = 0x00;
     
+    IOInterruptState is = IOSimpleLockLockDisableInterrupt(pciConfigLock);
     fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)kF17H_M01H_THM_TCON_CUR_TMP);
     uint32_t temperature = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
-    
+    IOSimpleLockUnlockEnableInterrupt(pciConfigLock, is);
     
     // Note: kF17H_TEMP_OFFSET_FLAG (bit 19, 0x80000) is correct for Family 17h/19h (Zen 2/3).
     // Family 1Ah (Zen 5) may require different offset logic — verify against k10temp.c if adding support.
@@ -887,8 +913,10 @@ float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
     // Base (0x59800) + ccdOffset (0x154 or 0x308) + (ccd_index * 4)
     uint32_t ccdRegAddr = kF17H_M01H_THM_TCON_CUR_TMP + ccdOffset + (ccd * 4);
     
+    IOInterruptState is = IOSimpleLockLockDisableInterrupt(pciConfigLock);
     fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)ccdRegAddr);
     uint32_t regVal = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
+    IOSimpleLockUnlockEnableInterrupt(pciConfigLock, is);
     
     // Check CCD valid bit (bit 11) — if not set, CCD is not present
     if (!(regVal & kZEN_CCD_TEMP_VALID_BIT)) return 0.0f;
@@ -897,6 +925,7 @@ float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
     // temp = (regVal & 0x7FF) * 125 - 49000 (in millidegrees)
     // We convert to float degrees Celsius:
     float temp = (float)(regVal & kZEN_CCD_TEMP_MASK) * 0.125f - 49.0f;
+    temp -= tempOffset;
     
     return temp;
 }
@@ -973,7 +1002,16 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
             // CpuFid [7:0]
             int curCpuDfsId = (int)((eax >> 8) & 0x3f);
             int curCpuFid = (int)(eax & 0xff);
-            clock = (float)((float)curCpuFid / (float)curCpuDfsId * 200.0);
+            if (curCpuDfsId == 0) {
+                static bool loggedDumpPstateDfsZero = false;
+                if (!loggedDumpPstateDfsZero) {
+                    loggedDumpPstateDfsZero = true;
+                    IOLog("AMDCPUSupport::dumpPstate: curCpuDfsId is zero, clamping clock to 0\n");
+                }
+                clock = 0.0f;
+            } else {
+                clock = (float)((float)curCpuFid / (float)curCpuDfsId * 200.0);
+            }
         }
         
         PStateDef_perCore[i] = msr_value_buf;

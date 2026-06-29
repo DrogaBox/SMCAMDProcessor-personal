@@ -266,7 +266,7 @@ public:
     struct CPUSensorPacket {
         float packagePowerW;
         float packageTempC;
-        uint32_t numLogicalCores;
+        uint32_t numLogicalCores; // Assigned total logical cores count per ABI spec
         uint32_t ccdCount;
         float ccdTemperatures[8];
         float coreFrequenciesMHz[64];
@@ -324,6 +324,7 @@ private:
     CPUInfo::CpuTopology cpuTopology {};
     
     IOPCIDevice *fIOPCIDevice;
+    IOSimpleLock *pciConfigLock{nullptr};
     
     KernelPatcher *liluKernelPatcher;
     

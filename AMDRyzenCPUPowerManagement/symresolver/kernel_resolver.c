@@ -36,6 +36,10 @@ void find_mach_header_addr(uint8_t kc){
     }
     
     mach_header_64_t* mach_header = (mach_header_64_t*)base_address;
+    if (mach_header->magic != MH_MAGIC_64) {
+        mh_base_addr = base_address;
+        return;
+    }
     
     load_command_t* lcp = (load_command_t*)(base_address + sizeof(mach_header_64_t));
     for (uint32_t i = 0; i < mach_header->ncmds; i++) {
@@ -155,10 +159,19 @@ find_symbol(mach_header_64_t *mh, const char *name)
     uint64_t symtab_addr = linkedit->vmaddr - linkedit->fileoff + (uint64_t)symtab->symoff;
     
     strtab = (char *)strtab_addr;
+    uint64_t strtab_size = (uint64_t)symtab->strsize;
+    char *strtab_end = strtab + strtab_size;
 
     for (i = 0, nl = (nlist_64_t*)symtab_addr; i < symtab->nsyms; i++, nl++)
     {
+        if (nl->n_un.n_strx >= strtab_size) {
+            continue;
+        }
         char *str = strtab + nl->n_un.n_strx;
+        size_t maxcmp = (size_t)(strtab_end - str);
+        if (maxcmp < symlen) {
+            continue;
+        }
         if (strncmp(str, name, symlen) == 0) {
             addr = (void *)nl->n_value;
             break;
