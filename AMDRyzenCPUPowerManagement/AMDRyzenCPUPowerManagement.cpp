@@ -547,27 +547,29 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     IOLog("AMDCPUSupport stopping...\n");
 
-    // 1. Stop accepting new work timers.
+    // 1. Cancel all timerEventSource (cancelTimeout)
     if (timerEvent_main)  timerEvent_main->cancelTimeout();
     if (timerEvent_tempe) timerEvent_tempe->cancelTimeout();
 
-    // 2. Quiesce the workloop to drain any in-flight callback.
-    if (workLoop) workLoop->disableAllEventSources();
+    // 2. workLoop->removeEventSource() for each timer
+    if (workLoop) {
+        workLoop->disableAllEventSources();
+        if (timerEvent_main)  workLoop->removeEventSource(timerEvent_main);
+        if (timerEvent_tempe) workLoop->removeEventSource(timerEvent_tempe);
+    }
     serviceInitialized = false;
 
-    // 3. Safe to unhook pmDispatch now.
-    pmRyzen_stop();
-
-    // 4. Remove and release event sources.
-    if (timerEvent_main && workLoop)  workLoop->removeEventSource(timerEvent_main);
-    if (timerEvent_tempe && workLoop) workLoop->removeEventSource(timerEvent_tempe);
-    if (timerEvent_main) { timerEvent_main->release(); timerEvent_main = nullptr; }
+    // 3. release() and null each timer
+    if (timerEvent_main)  { timerEvent_main->release();  timerEvent_main = nullptr; }
     if (timerEvent_tempe) { timerEvent_tempe->release(); timerEvent_tempe = nullptr; }
 
-    // 5. Release PCI device (retained in getPCIService).
+    // 4. pmRyzen_stop() after timers are completely drained and unlinked
+    pmRyzen_stop();
+
+    // 5. release() of fIOPCIDevice and null
     if (fIOPCIDevice) { fIOPCIDevice->release(); fIOPCIDevice = nullptr; }
 
-    // 6. SuperIO defaults + delete.
+    // 6. SuperIO defaults + delete and workloop release before super::stop()
     if (superIO) {
         for (int i = 0; i < superIO->getNumberOfFans(); i++) {
             superIO->setDefaultFanControl(i);
@@ -576,7 +578,6 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
         superIO = nullptr;
     }
 
-    // 7. Free PCI lock and release workloop last.
     if (pciConfigLock) {
         IOSimpleLockFree(pciConfigLock);
         pciConfigLock = nullptr;
@@ -883,10 +884,10 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
     IOPCIAddressSpace space;
     space.bits = 0x00;
     
-    IOInterruptState is = IOSimpleLockLockDisableInterrupt(pciConfigLock);
+    IOSimpleLockLock(pciConfigLock);
     fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)kF17H_M01H_THM_TCON_CUR_TMP);
     uint32_t temperature = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
-    IOSimpleLockUnlockEnableInterrupt(pciConfigLock, is);
+    IOSimpleLockUnlock(pciConfigLock);
     
     // Note: kF17H_TEMP_OFFSET_FLAG (bit 19, 0x80000) is correct for Family 17h/19h (Zen 2/3).
     // Family 1Ah (Zen 5) may require different offset logic — verify against k10temp.c if adding support.
@@ -913,10 +914,10 @@ float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
     // Base (0x59800) + ccdOffset (0x154 or 0x308) + (ccd_index * 4)
     uint32_t ccdRegAddr = kF17H_M01H_THM_TCON_CUR_TMP + ccdOffset + (ccd * 4);
     
-    IOInterruptState is = IOSimpleLockLockDisableInterrupt(pciConfigLock);
+    IOSimpleLockLock(pciConfigLock);
     fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)ccdRegAddr);
     uint32_t regVal = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
-    IOSimpleLockUnlockEnableInterrupt(pciConfigLock, is);
+    IOSimpleLockUnlock(pciConfigLock);
     
     // Check CCD valid bit (bit 11) — if not set, CCD is not present
     if (!(regVal & kZEN_CCD_TEMP_VALID_BIT)) return 0.0f;
@@ -1021,10 +1022,27 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
         //        IOLog("a: %llu", msr_value_buf);
     }
     
+    if (len > kMSR_PSTATE_LEN) {
+        static bool loggedPStateLenExceeded = false;
+        if (!loggedPStateLenExceeded) {
+            loggedPStateLenExceeded = true;
+            IOLog("AMDCPUSupport::dumpPstate WARN: Enabled P-States count (%u) exceeds AMD architectural limit (8). Clamping to 8.\n", len);
+        }
+        len = kMSR_PSTATE_LEN;
+    }
+    
     PStateEnabledLen = len;
 }
 
 void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
+    if (!buf) {
+        static bool loggedNullBuf = false;
+        if (!loggedNullBuf) {
+            loggedNullBuf = true;
+            IOLog("AMDCPUSupport::writePstate WARN: Null buffer passed\n");
+        }
+        return;
+    }
     
     PStateEnabledLen = 0;
     
@@ -1036,18 +1054,40 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
         auto v = static_cast<uint64_t*>(((uint64_t**)obj)[1]);
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(*((AMDRyzenCPUPowerManagement**)obj));
 
-        for (uint32_t i = 0; i < kMSR_PSTATE_LEN; i++) {
+        for (uint32_t i = 0; i < provider->kMSR_PSTATE_LEN; i++) {
+            if (i >= 8) {
+                static bool loggedIndexBound = false;
+                if (!loggedIndexBound) {
+                    loggedIndexBound = true;
+                    IOLog("AMDCPUSupport::writePstate WARN: P-state index %u out of bounds [0, 7]\n", i);
+                }
+                break;
+            }
             uint64_t def = v[i];
             
             if (provider->cpuFamily >= 0x1A) {
                 uint64_t curCpuFid = (def & 0xfff);
-                if (!def || !curCpuFid)
+                uint64_t curCpuVid = ((def >> 14) & 0xff);
+                if (!def || curCpuFid == 0 || curCpuVid > 0xFF) {
+                    static bool loggedInvalidZen5Vals = false;
+                    if (!loggedInvalidZen5Vals) {
+                        loggedInvalidZen5Vals = true;
+                        IOLog("AMDCPUSupport::writePstate WARN: Invalid Zen 5 P-state values (def=0x%llx, Fid=%llu, Vid=%llu)\n", def, curCpuFid, curCpuVid);
+                    }
                     continue;
+                }
             } else {
                 uint64_t curCpuDfsId = ((def >> 8) & 0x3f);
                 uint64_t curCpuFid = (def & 0xff);
-                if (!def || !curCpuDfsId || !curCpuFid)
+                uint64_t curCpuVid = ((def >> 14) & 0xff);
+                if (!def || curCpuDfsId == 0 || curCpuFid == 0 || curCpuVid > 0xFF) {
+                    static bool loggedInvalidVals = false;
+                    if (!loggedInvalidVals) {
+                        loggedInvalidVals = true;
+                        IOLog("AMDCPUSupport::writePstate WARN: Invalid P-state values (def=0x%llx, DfsId=%llu, Fid=%llu, Vid=%llu)\n", def, curCpuDfsId, curCpuFid, curCpuVid);
+                    }
                     continue;
+                }
             }
             
             provider->write_msr(provider->kMSR_PSTATE_0 + i, def);
