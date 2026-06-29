@@ -147,6 +147,7 @@ private extension Color {
     static var tahoeAccentPurple : Color { AppTheme.current.accentPurple }
     static var tahoeAccentRed    : Color { Color(red: 1.0,  green: 0.30, blue: 0.30) }
     static var tahoeAccentBlue   : Color { Color(red: 0.35, green: 0.55, blue: 1.0) }
+    static var tahoeAccentYellow : Color { Color(red: 1.0,  green: 0.80, blue: 0.20) }
     static var tahoeText         : Color { Color(white: 0.90) }
     static var tahoeSubtext      : Color { Color(white: 0.50) }
     static var tahoeSidebarActive : Color { Color(red: 0.12, green: 0.15, blue: 0.24) }
@@ -709,6 +710,15 @@ struct OriginalLineChartCard: View {
 struct TelemetryContentView: View {
     @ObservedObject var model: TelemetryModel
 
+    @AppStorage("tele_show_cputemp") private var showCpuTemp = true
+    @AppStorage("tele_show_gputemp") private var showGpuTemp = true
+    @AppStorage("tele_show_cpupwr") private var showCpuPwr = true
+    @AppStorage("tele_show_gpupwr") private var showGpuPwr = true
+    @AppStorage("tele_show_ram") private var showRam = true
+    @AppStorage("tele_show_disk") private var showDisk = true
+    @AppStorage("tele_show_net") private var showNet = true
+    @AppStorage("tele_show_fan") private var showFan = true
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -717,25 +727,88 @@ struct TelemetryContentView: View {
                     PowerToolBarChart(model: model, height: height)
                 }
 
-                SectionTitle("Live Telemetry History")
-                ResizableChart(chartId: "tele_cputemp", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "CPU Temperature", unit: "°C", color: .tahoeAccentOrange, data: model.history, value: { $0.cpuTempC }, height: height)
+                HStack {
+                    SectionTitle("Live Telemetry History")
+                    Spacer()
+                    Menu {
+                        Toggle("CPU Temperature", isOn: $showCpuTemp)
+                        Toggle("GPU Temperature", isOn: $showGpuTemp)
+                        Toggle("CPU Package Power", isOn: $showCpuPwr)
+                        Toggle("GPU Power", isOn: $showGpuPwr)
+                        Toggle("RAM Utilization", isOn: $showRam)
+                        Toggle("Disk Activity", isOn: $showDisk)
+                        Toggle("Network Speed", isOn: $showNet)
+                        Toggle("Fan Speed", isOn: $showFan)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "slider.horizontal.3")
+                                .font(.system(size: 11))
+                            Text("Configure Charts")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundColor(.tahoeText)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(6)
+                    }
+                    .menuStyle(BorderlessButtonMenuStyle())
+                }
+
+                if showCpuTemp {
+                    ResizableChart(chartId: "tele_cputemp", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "CPU Temperature", unit: "°C", color: .tahoeAccentOrange, data: model.history, value: { $0.cpuTempC }, height: height)
+                        }
                     }
                 }
-                ResizableChart(chartId: "tele_gputemp", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "GPU Temperature", unit: "°C", color: Color(red: 0.8, green: 0.5, blue: 1.0), data: model.history, value: { $0.gpuTempC }, height: height)
+                if showGpuTemp {
+                    ResizableChart(chartId: "tele_gputemp", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "GPU Temperature", unit: "°C", color: Color(red: 0.8, green: 0.5, blue: 1.0), data: model.history, value: { $0.gpuTempC }, height: height)
+                        }
                     }
                 }
-                ResizableChart(chartId: "tele_cpupwr", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "CPU Package Power", unit: "W", color: .tahoeAccentGreen, data: model.history, value: { $0.cpuWatts }, height: height)
+                if showCpuPwr {
+                    ResizableChart(chartId: "tele_cpupwr", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "CPU Package Power", unit: "W", color: .tahoeAccentGreen, data: model.history, value: { $0.cpuWatts }, height: height)
+                        }
                     }
                 }
-                ResizableChart(chartId: "tele_gpupwr", small: 50, medium: 80, large: 120) { height in
-                    TahoeCard {
-                        SimpleLineChart(title: "GPU Power", unit: "W", color: .tahoeAccentPurple, data: model.history, value: { $0.gpuWatts }, height: height)
+                if showGpuPwr {
+                    ResizableChart(chartId: "tele_gpupwr", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "GPU Power", unit: "W", color: .tahoeAccentPurple, data: model.history, value: { $0.gpuWatts }, height: height)
+                        }
+                    }
+                }
+                if showRam {
+                    ResizableChart(chartId: "tele_ram", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "RAM Utilization", unit: "%", color: .tahoeAccentYellow, data: model.history, value: { $0.ramUsagePct }, height: height)
+                        }
+                    }
+                }
+                if showDisk {
+                    ResizableChart(chartId: "tele_disk", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "Disk Activity (Read+Write)", unit: "MB/s", color: .tahoeAccentBlue, data: model.history, value: { $0.diskReadMBps + $0.diskWriteMBps }, height: height)
+                        }
+                    }
+                }
+                if showNet {
+                    ResizableChart(chartId: "tele_net", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "Network Total Speed", unit: "MB/s", color: .tahoeAccentCyan, data: model.history, value: { $0.netDownloadMBps + $0.netUploadMBps }, height: height)
+                        }
+                    }
+                }
+                if showFan {
+                    ResizableChart(chartId: "tele_fan", small: 50, medium: 80, large: 120) { height in
+                        TahoeCard {
+                            SimpleLineChart(title: "Fan Speed", unit: "RPM", color: Color(red: 0.2, green: 0.8, blue: 0.6), data: model.history, value: { $0.fanRPM }, height: height)
+                        }
                     }
                 }
 
@@ -1056,13 +1129,23 @@ struct NetworkLineChartCard: View {
                         .frame(width: 8)
                     
                     if let last = model.history.last {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.tahoeAccentPurple)
-                            Text(formatSpeed(last.netUploadMBps))
-                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                .foregroundColor(.tahoeAccentPurple)
+                        HStack(spacing: 8) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.down")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.tahoeAccentBlue)
+                                Text(formatSpeed(last.netDownloadMBps))
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.tahoeAccentBlue)
+                            }
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(.tahoeAccentPurple)
+                                Text(formatSpeed(last.netUploadMBps))
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.tahoeAccentPurple)
+                            }
                         }
                     }
                 }
@@ -1118,47 +1201,41 @@ struct NetworkLineChartCard: View {
                             ForEach(indexedData, id: \.offset) { index, pt in
                                 AreaMark(
                                     x: .value("Index", Double(index)),
-                                    y: .value("Download", pt.netDownloadMBps)
+                                    y: .value("Speed", pt.netDownloadMBps)
                                 )
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.tahoeAccentBlue.opacity(0.25), Color.tahoeAccentBlue.opacity(0.0)],
-                                        startPoint: .top, endPoint: .bottom
-                                    )
-                                )
+                                .foregroundStyle(by: .value("Series", "Download"))
+                                .opacity(0.25)
                                 .interpolationMethod(.catmullRom)
 
                                 LineMark(
                                     x: .value("Index", Double(index)),
-                                    y: .value("Download", pt.netDownloadMBps)
+                                    y: .value("Speed", pt.netDownloadMBps)
                                 )
-                                .foregroundStyle(Color.tahoeAccentBlue)
+                                .foregroundStyle(by: .value("Series", "Download"))
                                 .lineStyle(StrokeStyle(lineWidth: 2))
                                 .interpolationMethod(.catmullRom)
-                            }
 
-                            ForEach(indexedData, id: \.offset) { index, pt in
                                 AreaMark(
                                     x: .value("Index", Double(index)),
-                                    y: .value("Upload", pt.netUploadMBps)
+                                    y: .value("Speed", pt.netUploadMBps)
                                 )
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.tahoeAccentPurple.opacity(0.20), Color.tahoeAccentPurple.opacity(0.0)],
-                                        startPoint: .top, endPoint: .bottom
-                                    )
-                                )
+                                .foregroundStyle(by: .value("Series", "Upload"))
+                                .opacity(0.20)
                                 .interpolationMethod(.catmullRom)
 
                                 LineMark(
                                     x: .value("Index", Double(index)),
-                                    y: .value("Upload", pt.netUploadMBps)
+                                    y: .value("Speed", pt.netUploadMBps)
                                 )
-                                .foregroundStyle(Color.tahoeAccentPurple)
+                                .foregroundStyle(by: .value("Series", "Upload"))
                                 .lineStyle(StrokeStyle(lineWidth: 1.5))
                                 .interpolationMethod(.catmullRom)
                             }
                         }
+                        .chartForegroundStyleScale([
+                            "Download": Color.tahoeAccentBlue,
+                            "Upload": Color.tahoeAccentPurple
+                        ])
                         .chartYScale(domain: 0.0...yLimitMax)
                         .chartXScale(domain: 0...maxIndex)
                         .chartYAxis {
@@ -1177,7 +1254,7 @@ struct NetworkLineChartCard: View {
                         .chartXAxis(.hidden)
                         .frame(height: height)
                     } else {
-                        // Style 2: Total & Average (Glowing area with dotted rule indicator)
+                        // Style 2: Total & Split (Layered Download & Upload with Total Line)
                         let maxTotal = model.history.map { $0.netUploadMBps + $0.netDownloadMBps }.max() ?? 0.05
                         let yLimitMax = maxTotal * 1.15
                         let yAxisVals = [0.0, maxTotal / 2.0, maxTotal]
@@ -1185,25 +1262,28 @@ struct NetworkLineChartCard: View {
 
                         Chart {
                             ForEach(indexedData, id: \.offset) { index, pt in
-                                let total = pt.netUploadMBps + pt.netDownloadMBps
                                 AreaMark(
                                     x: .value("Index", Double(index)),
-                                    y: .value("Total", total)
+                                    y: .value("Speed", pt.netDownloadMBps)
                                 )
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.tahoeAccentOrange.opacity(0.28), Color.tahoeAccentOrange.opacity(0.0)],
-                                        startPoint: .top, endPoint: .bottom
-                                    )
+                                .foregroundStyle(by: .value("Series", "Download"))
+                                .opacity(0.30)
+                                .interpolationMethod(.catmullRom)
+
+                                AreaMark(
+                                    x: .value("Index", Double(index)),
+                                    y: .value("Speed", pt.netDownloadMBps + pt.netUploadMBps)
                                 )
+                                .foregroundStyle(by: .value("Series", "Upload"))
+                                .opacity(0.20)
                                 .interpolationMethod(.catmullRom)
 
                                 LineMark(
                                     x: .value("Index", Double(index)),
-                                    y: .value("Total", total)
+                                    y: .value("Speed", pt.netDownloadMBps + pt.netUploadMBps)
                                 )
                                 .foregroundStyle(Color.tahoeAccentOrange)
-                                .lineStyle(StrokeStyle(lineWidth: 2.5))
+                                .lineStyle(StrokeStyle(lineWidth: 2.0))
                                 .interpolationMethod(.catmullRom)
                             }
 
@@ -1220,6 +1300,10 @@ struct NetworkLineChartCard: View {
                                         .cornerRadius(4)
                                 }
                         }
+                        .chartForegroundStyleScale([
+                            "Download": Color.tahoeAccentBlue,
+                            "Upload": Color.tahoeAccentPurple
+                        ])
                         .chartYScale(domain: 0.0...yLimitMax)
                         .chartXScale(domain: 0...maxIndex)
                         .chartYAxis {
@@ -4320,16 +4404,22 @@ struct AnalysisContentView: View {
                                 Chart(data) { point in
                                     LineMark(
                                         x: .value("Time", point.timestamp),
-                                        y: .value("CPU Temp", point.cpuTemp)
+                                        y: .value("Temperature", point.cpuTemp)
                                     )
-                                    .foregroundStyle(Color.tahoeAccentOrange)
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(by: .value("Series", "CPU Temp"))
                                     
                                     LineMark(
                                         x: .value("Time", point.timestamp),
-                                        y: .value("GPU Temp", point.gpuTemp)
+                                        y: .value("Temperature", point.gpuTemp)
                                     )
-                                    .foregroundStyle(Color.tahoeAccentPurple)
+                                    .interpolationMethod(.catmullRom)
+                                    .foregroundStyle(by: .value("Series", "GPU Temp"))
                                 }
+                                .chartForegroundStyleScale([
+                                    "CPU Temp": Color.tahoeAccentOrange,
+                                    "GPU Temp": Color.tahoeAccentPurple
+                                ])
                                 .chartYScale(domain: 20...110)
                                 .frame(height: 150)
                             } else {
