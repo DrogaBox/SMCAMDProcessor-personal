@@ -64,15 +64,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @IBAction func changeAppearance(_ sender: Any) {
-        applyAppearanceSwitch(translucency: appearanceToggle.state == .off)
+        applyAppearanceSwitch(translucency: (appearanceToggle?.state ?? .off) == .off)
     }
 
     @IBAction func toggleStatusBar(_ sender: Any) {
-        applyStatusBarSwitch(enabled: statusbarToggle.state == .off)
+        applyStatusBarSwitch(enabled: (statusbarToggle?.state ?? .off) == .off)
     }
 
     @IBAction func startAtLogin(_ sender: Any) {
-        applyStartAtLogin(enabled: startAtLoginToggle.state == .off)
+        applyStartAtLogin(enabled: (startAtLoginToggle?.state ?? .off) == .off)
     }
 
     @IBAction func sysmonitor(_ sender: Any) {
