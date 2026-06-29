@@ -1,10 +1,11 @@
 # Change Summary & Release Changelog
 
-## v3.13.3  Tahoe Edition: Comprehensive Hardening & Telemetry Performance
-* **Security & Kernel Panic Protections**: Replaced mock privilege checks with authentic `proc_suser` root verification, enforced strict string table bounds checking, added Mach-O 64-bit magic validation, and implemented bound-checked process binary verification (`proc_name`) in `initWithTask`.
-* **HEDT Performance & Memory Hardening**: Optimized `pmProcessor_t` alignment to `alignas(64)` (reducing RAM footprint from 265KB to 4KB for 32 threads), added `XNU_MAX_CPU` perimeter guards, and prevented power state change timer race conditions.
-* **Granular CCD Sensors & RAPL Scaling**: Integrated dynamic RAPL Power Unit MSR (`0xC0010299`) decoding for accurate wattage calculations across Zen 3 and Zen 5, and enabled individual CCD thermal monitoring in VirtualSMC `TempCore` keys.
-* **App Architecture & Tahoe UI**: Offloaded kernel sampling off `MainActor` to a serial `ioQueue`, zeroed heap allocations during network interface polling, added diff-based status bar redraws, and modernized UI widgets with hierarchical filled SF Symbols (`cpu.fill`, `fan.fill`).
+## v3.13.3  Tahoe Edition: Multi-Series Telemetry Charts, Network Legend & Dynamic CSV Logging
+* **Multi-Series Chart Rendering Fix**: Resolved Swift Charts 2D dimensional binding bugs across Desktop Widgets (United Pro Monitor), Thermal History, and Network cards by unifying Y-axis dimension names (`Value`, `Temperature`, `Speed`) and binding series with explicit `.foregroundStyle(by: .value("Series", name))` and Catmull-Rom interpolation, eliminating all diagonal zig-zag string loops.
+* **United Widget Customization**: Added interactive right-click context menu options to Desktop Widgets for selecting metric isolation (All Combined, CPU, GPU, RAM, Disk, Net, Fan) and chart rendering styles (Smooth Curves, Filled Area, Column Bars, Line Only).
+* **Network Dashboard Card Enhancements**: Added real-time Download (↓ Blue) and Upload (↑ Purple) speed indicators and legend markers in the card header, and updated the "Total" chart style to render stacked Download/Upload layers with an orange total bandwidth boundary line.
+* **Configurable Telemetry Tab & 8 Dynamic Graphs**: Introduced interactive "Configure Charts" toggle menu to Telemetry tab with persistent `@AppStorage` preferences. Expanded available live telemetry history charts from 4 to 8, adding RAM Utilization (%), Disk Activity (MB/s), Network Total Speed (MB/s), and Fan Speed (RPM).
+* **Dynamic CSV Logging Engine**: Upgraded both manual CSV Export and background `CSVLogger` to dynamically generate headers and data columns matching active user-selected telemetry graphs.
 
 ## v3.13.0  Custom Theme Creator & JSON Sharing Studio
 * **Custom Theme Creator Studio**: Integrated interactive `ColorPicker` suite (`CustomThemeStudio`) allowing users to design and save personalized themes.
