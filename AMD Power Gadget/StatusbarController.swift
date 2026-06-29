@@ -1077,7 +1077,7 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         widgetWindow.contentView = hostingView
         widgetWindow.isOpaque = false
         widgetWindow.backgroundColor = .clear
-        widgetWindow.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        widgetWindow.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         widgetWindow.hasShadow = true
         widgetWindow.delegate = self
         
