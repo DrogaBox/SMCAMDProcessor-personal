@@ -183,7 +183,15 @@ void pmRyzen_init(void *handle){
             
             while (lcpu) {
                 pmRyzen_num_logi++;
-//                IOLog("LCPU: %u master:%u, primary:%u\n", lcpu->cpu_num, lcpu->master, lcpu->primary);
+                if (lcpu->cpu_num >= XNU_MAX_CPU) {
+                    static boolean_t loggedMaxCpu = FALSE;
+                    if (!loggedMaxCpu) {
+                        loggedMaxCpu = TRUE;
+                        IOLog("AMDCPUSupport ERR: System has CPU %u beyond limit %u. Cores beyond limit will not be managed.\n", lcpu->cpu_num, XNU_MAX_CPU);
+                    }
+                    lcpu = lcpu->next_in_core;
+                    continue;
+                }
                 
                 pmRyzen_cpunum_to_lcpu[lcpu->cpu_num] = lcpu;
                 
@@ -218,8 +226,9 @@ void pmRyzen_stop(){
     
     (*pmRyzen_pmUnRegister)(&pmRyzen_cpuFuncs);
     
-    //Make sure all cores exited idle thread.
-    for (int i = 0; i < pmRyzen_num_logi; i++) {
+    //Make sure all managed cores exited idle thread.
+    for (int i = 0; i < pmRyzen_num_logi && i < XNU_MAX_CPU; i++) {
+        if (!pmRyzen_cpunum_to_lcpu[i]) continue;
         int retries = 0;
         while(pmRyzen_exit_idle(pmRyzen_cpunum_to_lcpu[i])){
             (*pmRyzen_cpu_IPI)(i);
@@ -234,17 +243,19 @@ void pmRyzen_stop(){
 
 
 float pmRyzen_avgload_pcpu(uint32_t cpu){
+    if (cpu >= XNU_MAX_CPU || !pmRyzen_cpunum_to_lcpu[cpu]) return 0.0f;
     float loadacc = 0;
     int num_lcpus = 0;
     
     x86_lcpu_t *lcpu = pmRyzen_cpunum_to_lcpu[cpu]->core->lcpus;
     while (lcpu) {
-        float idle_ratio = (pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd > 0)
-            ? (float)pmRyzen_cpus[lcpu->cpu_num].eff_idleaccd / (float)pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd
-            : 0.0f;
-        loadacc += 1.0f - idle_ratio;
-        num_lcpus++;
-        
+        if (lcpu->cpu_num < XNU_MAX_CPU) {
+            float idle_ratio = (pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd > 0)
+                ? (float)pmRyzen_cpus[lcpu->cpu_num].eff_idleaccd / (float)pmRyzen_cpus[lcpu->cpu_num].eff_timeaccd
+                : 0.0f;
+            loadacc += 1.0f - idle_ratio;
+            num_lcpus++;
+        }
         lcpu = lcpu->next_in_core;
     }
     
@@ -260,7 +271,10 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
     __asm__ volatile("cli;");
     
     uint32_t cn = cpu_number();
-//    pmRyzen_last_idle_cpu = cn;
+    if (cn >= XNU_MAX_CPU) {
+        __asm__ volatile("sti;hlt;");
+        return 0;
+    }
     pmProcessor_t *self = &pmRyzen_cpus[cn];
     
     
@@ -362,22 +376,14 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
 }
 
 boolean_t pmRyzen_exit_idle(x86_lcpu_t *lcpu){
-    
-
+    if (!lcpu || lcpu->cpu_num >= XNU_MAX_CPU) return false;
     pmProcessor_t *target = &pmRyzen_cpus[lcpu->cpu_num];
 
-    // Exit if cpu is already awake.
-//    if(target->cpu_awake) return false;
-    
-//    pmRyzen_exit_idle_c++;
-    
 #ifdef PMRYZEN_IDLE_MWAIT
     uint64_t start_tsc = rdtsc64();
     do {
         target->arm_flag = 1;
         __asm__ volatile("pause;");
-//        asm volatile("clflushopt %0" : "+m" (*(volatile char *)&target->arm_flag));
-//        __asm__ volatile("mfence;");
 
         if(rdtsc64() - start_tsc > 0x6000){
             //If we still unable to wake up the processor, send an IPI.
@@ -395,25 +401,16 @@ boolean_t pmRyzen_exit_idle(x86_lcpu_t *lcpu){
 }
 
 int pmRyzen_choose_cpu(int startCPU, int endCPU, int preferredCPU){
-    
-    //We only provide a hint as scheduler will make the final decision anyway.
-  
-//    return preferredCPU;
-    
-    if(pmRyzen_cpus[preferredCPU].cpu_awake)
+    if (preferredCPU >= 0 && preferredCPU < XNU_MAX_CPU && pmRyzen_cpus[preferredCPU].cpu_awake)
         return preferredCPU;
 
-    if(pmRyzen_cpus[pmRyzen_last_woken_cpu].cpu_awake)
+    if (pmRyzen_last_woken_cpu < XNU_MAX_CPU && pmRyzen_cpus[pmRyzen_last_woken_cpu].cpu_awake)
         return pmRyzen_last_woken_cpu;
-    
-//    for(int i = startCPU; i < endCPU; i++){
-//        if(i != pmRyzen_last_idle_cpu && pmRyzen_cpus[i].cpu_awake)
-//            return i;
-//    }
-    
+        
     return preferredCPU;
 }
 
 pmProcessor_t* pmRyzen_get_processor(uint32_t cpu){
+    if (cpu >= XNU_MAX_CPU) return NULL;
     return &pmRyzen_cpus[cpu];
 }
