@@ -12,3 +12,7 @@ Binaries_*/
 *.dSYM
 Tools/
 dSYM/
+.opencode/
+AGENTS.md
+CONTEXT.md
+.agents/
