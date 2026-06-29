@@ -1,5 +1,9 @@
 # Change Summary & Release Changelog
 
+## v3.11.0 — Async Telemetry & Codebase Quality Sweep
+* **Joint Codebase Audit with Mistral Large**: Conducted deep architectural sweep across C++ kernel headers and Swift AppKit/SwiftUI layers.
+* **Async Kext Sensor Sampling**: Offloaded synchronous `IOConnectCallStructMethod` hardware polling in `TelemetryModel.swift` off the main thread to ensure 100% smooth UI under heavy sensor polling.
+
 ## v3.10.0 — Next-Gen Swift GUI & Liquid Glass Material Vibrancy
 * **macOS 26 Tahoe Liquid Glass Material Integration**: Configured dynamic `NSVisualEffectView` materials (`.hudWindow` / `.underWindowBackground`) and active vibrancy blending modes in `MainDashboardView.swift` for native macOS Tahoe UI integration.
 * **Kernel Driver Code Freeze**: Officially locked kernel extensions (`AMDRyzenCPUPowerManagement.kext` and `SMCAMDProcessor.kext`) at 100% production stability.
