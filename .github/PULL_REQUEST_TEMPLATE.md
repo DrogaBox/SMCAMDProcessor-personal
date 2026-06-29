@@ -1,4 +1,4 @@
-# Pull Request: SMCAMDProcessor & AMD Power Gadget v3.13.1 Release
+# Pull Request: SMCAMDProcessor & AMD Power Gadget v3.13.3 Release
 
 ## Summary of Changes
 This PR merges the completed Phase A through Phase E hardening and optimization DAG into `main`.
