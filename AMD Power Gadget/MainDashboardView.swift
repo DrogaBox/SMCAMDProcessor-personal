@@ -52,7 +52,37 @@ struct VisualEffectNSView: NSViewRepresentable {
     }
 }
 
-// MARK: - Design Tokens
+// MARK: - Design Tokens & Themes Engine
+enum AppTheme: String, CaseIterable, Identifiable {
+    case tahoe = "Tahoe Glass"
+    case cyberpunk = "Cyberpunk Neon"
+    case solarized = "Solarized Amber"
+    case monochrome = "Monochrome Stealth"
+    case nordic = "Nordic Frost"
+    
+    var id: String { rawValue }
+
+    var accentCyan: Color {
+        switch self {
+        case .tahoe: return Color(red: 0.0, green: 0.85, blue: 0.95)
+        case .cyberpunk: return Color(red: 0.0, green: 0.96, blue: 1.0)
+        case .solarized: return Color(red: 0.16, green: 0.63, blue: 0.60)
+        case .monochrome: return Color(white: 0.85)
+        case .nordic: return Color(red: 0.53, green: 0.75, blue: 0.82)
+        }
+    }
+
+    var accentOrange: Color {
+        switch self {
+        case .tahoe: return Color(red: 1.0, green: 0.55, blue: 0.10)
+        case .cyberpunk: return Color(red: 1.0, green: 0.16, blue: 0.43)
+        case .solarized: return Color(red: 0.80, green: 0.29, blue: 0.09)
+        case .monochrome: return Color(white: 0.65)
+        case .nordic: return Color(red: 0.82, green: 0.53, blue: 0.44)
+        }
+    }
+}
+
 private extension Color {
     static let tahoeBackground   = Color(red: 0.06, green: 0.07, blue: 0.10).opacity(0.72)
     static let tahoeSidebar      = Color(red: 0.08, green: 0.09, blue: 0.13).opacity(0.25)
@@ -2864,7 +2894,7 @@ struct MenuBarPopoverView: View {
                         .foregroundColor(.white)
                 }
                 Spacer()
-                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.11.0")")
+                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.12.0")")
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundColor(.white.opacity(0.4))
             }
