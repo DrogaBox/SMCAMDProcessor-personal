@@ -13,6 +13,7 @@ import Metal
 import VideoToolbox
 import CoreMedia
 import UserNotifications
+import IOKit.ps
 
 // MARK: - Data Structures
 
@@ -246,6 +247,22 @@ final class TelemetryModel: ObservableObject {
         }
     }
     private var lastAutoEPPApplied: UInt8? = nil
+    
+    @Published var autoPowerSourceSwitchingEnabled: Bool = false {
+        didSet {
+            UserDefaults.standard.set(autoPowerSourceSwitchingEnabled, forKey: "autoPowerSourceSwitchingEnabled")
+            if autoPowerSourceSwitchingEnabled {
+                evaluatePowerSourceSwitching()
+            }
+        }
+    }
+    @Published var batteryEPPValue: UInt8 = 0xC0 {
+        didSet { UserDefaults.standard.set(Int(batteryEPPValue), forKey: "batteryEPPValue") }
+    }
+    @Published var acEPPValue: UInt8 = 0x3F {
+        didSet { UserDefaults.standard.set(Int(acEPPValue), forKey: "acEPPValue") }
+    }
+    private var lastPowerSourceIsAC: Bool? = nil
     
     @Published var autoFanCurveEnabled: Bool = false {
         didSet {
@@ -641,7 +658,9 @@ final class TelemetryModel: ObservableObject {
         let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
         cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
         
-        if autoEPPEnabled && cppcActiveMode {
+        if autoPowerSourceSwitchingEnabled && cppcActiveMode {
+            evaluatePowerSourceSwitching()
+        } else if autoEPPEnabled && cppcActiveMode {
             evaluateAutoEPP(currentLoad: cpuLoadAvg)
         }
         if autoFanCurveEnabled {
@@ -895,6 +914,30 @@ final class TelemetryModel: ObservableObject {
             lastAutoEPPApplied = targetEPP
             _ = ProcessorModel.shared.setCPPCEPPValue(epp: targetEPP)
             cppcEPPValue = targetEPP
+        }
+    }
+
+    func isCurrentlyOnACPower() -> Bool {
+        guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue() else { return true }
+        guard let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef] else { return true }
+        for source in sources {
+            if let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any] {
+                if let powerSource = description[kIOPSPowerSourceStateKey] as? String {
+                    if powerSource == kIOPSBatteryPowerValue {
+                        return false
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+    private func evaluatePowerSourceSwitching() {
+        let isOnAC = isCurrentlyOnACPower()
+        if lastPowerSourceIsAC != isOnAC {
+            lastPowerSourceIsAC = isOnAC
+            let targetEPP = isOnAC ? acEPPValue : batteryEPPValue
+            setCPPCEPPValue(epp: targetEPP)
         }
     }
 
