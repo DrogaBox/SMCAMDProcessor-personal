@@ -1,58 +1,58 @@
 # Change Summary & Release Changelog
 
-## v3.13.1 — Tahoe Edition: Comprehensive Hardening & Telemetry Performance
+## v3.13.1  Tahoe Edition: Comprehensive Hardening & Telemetry Performance
 * **Security & Kernel Panic Protections**: Replaced mock privilege checks with authentic `proc_suser` root verification, enforced strict string table bounds checking, added Mach-O 64-bit magic validation, and implemented bound-checked process binary verification (`proc_name`) in `initWithTask`.
 * **HEDT Performance & Memory Hardening**: Optimized `pmProcessor_t` alignment to `alignas(64)` (reducing RAM footprint from 265KB to 4KB for 32 threads), added `XNU_MAX_CPU` perimeter guards, and prevented power state change timer race conditions.
 * **Granular CCD Sensors & RAPL Scaling**: Integrated dynamic RAPL Power Unit MSR (`0xC0010299`) decoding for accurate wattage calculations across Zen 3 and Zen 5, and enabled individual CCD thermal monitoring in VirtualSMC `TempCore` keys.
 * **App Architecture & Tahoe UI**: Offloaded kernel sampling off `MainActor` to a serial `ioQueue`, zeroed heap allocations during network interface polling, added diff-based status bar redraws, and modernized UI widgets with hierarchical filled SF Symbols (`cpu.fill`, `fan.fill`).
 
-## v3.13.0 — Custom Theme Creator & JSON Sharing Studio
+## v3.13.0  Custom Theme Creator & JSON Sharing Studio
 * **Custom Theme Creator Studio**: Integrated interactive `ColorPicker` suite (`CustomThemeStudio`) allowing users to design and save personalized themes.
 * **JSON Theme Export & Import**: Added native `NSSavePanel` and `NSOpenPanel` file sharing for exporting `.json` themes and importing community presets.
 * **Network Chart Scaling Fix**: Standardized quantitative Double X-axis indexing across bidirectional network bars to eliminate scaling artifacts and chaotic band shifts.
 
-## v3.12.0 — Customization & Themes Engine Architecture
+## v3.12.0  Customization & Themes Engine Architecture
 * **AppTheme Preset System**: Architected extensible `AppTheme` presets (`Tahoe Glass`, `Cyberpunk Neon`, `Solarized Amber`, `Monochrome Stealth`, `Nordic Frost`) with dynamic color token bindings.
 * **Support Audio Feedback Integration**: Added compressed audio playback for community support interactions.
 
-## v3.11.0 — Async Telemetry & Codebase Quality Sweep
+## v3.11.0  Async Telemetry & Codebase Quality Sweep
 * **Joint Codebase Audit with Mistral Large**: Conducted deep architectural sweep across C++ kernel headers and Swift AppKit/SwiftUI layers.
 * **Async Kext Sensor Sampling**: Offloaded synchronous `IOConnectCallStructMethod` hardware polling in `TelemetryModel.swift` off the main thread to ensure 100% smooth UI under heavy sensor polling.
 
-## v3.10.0 — Next-Gen Swift GUI & Liquid Glass Material Vibrancy
+## v3.10.0  Next-Gen Swift GUI & Liquid Glass Material Vibrancy
 * **macOS 26 Tahoe Liquid Glass Material Integration**: Configured dynamic `NSVisualEffectView` materials (`.hudWindow` / `.underWindowBackground`) and active vibrancy blending modes in `MainDashboardView.swift` for native macOS Tahoe UI integration.
 * **Kernel Driver Code Freeze**: Officially locked kernel extensions (`AMDRyzenCPUPowerManagement.kext` and `SMCAMDProcessor.kext`) at 100% production stability.
 
-## v3.9.0 — Automatic Power Source EPP Profile Switching
+## v3.9.0  Automatic Power Source EPP Profile Switching
 * **Automatic AC/Battery Power Source Switching**: Integrated IOKit `IOPSCopyPowerSourcesInfo` callbacks into `TelemetryModel.swift` (`autoPowerSourceSwitchingEnabled`). Automatically transitions between Battery EPP profile (Power Save `0xC0`) and AC Power EPP profile (Performance `0x00` / Balanced `0x3F`) without requiring manual toggling.
 
-## v3.8.0 — High-Performance Micro-Architecture Optimization
+## v3.8.0  High-Performance Micro-Architecture Optimization
 * **64-Byte Cache Line Alignment**: Applied `__attribute__((aligned(64)))` alignment to `pmProcessor_t` in `pmAMDRyzen.h`, isolating per-thread state to L1 cache lines and eliminating false sharing across all 32 logical threads of the Ryzen 9 5900XT.
 * **LPC Port Delay Minimization**: Replaced 100ms blocking thread sleeps (`IOSleep(100)`) in SuperIO controllers with non-blocking 10-microsecond hardware delays (`IODelay(10)`), reducing driver blocking latency by 10,000x.
 
-## v3.7.0 — Zero-Copy IPC & Structured Telemetry Streaming
+## v3.7.0  Zero-Copy IPC & Structured Telemetry Streaming
 * **Structured Sensor Streaming**: Defined packed `CPUSensorPacket` structure and implemented UserClient `case 100` (`GetCPUSensorPacket`), streaming complete package power, temperature, and per-core frequencies in a single un-marshaled physical memory transaction.
 
-## v3.6.0 — Modular Zen Multi-Generation Detection & IOKit Synchronization
+## v3.6.0  Modular Zen Multi-Generation Detection & IOKit Synchronization
 * **Dynamic Zen 1-5 Identification**: Implemented dynamic CPU family/model resolution in `AMDRyzenCPUPowerManagement.cpp` supporting Zen 1, Zen+, Zen 2, Zen 3, Zen 4, and Zen 5 architectures at runtime via native XNU CPUID queries.
 * **IOKit WorkLoop Synchronization**: Ensured driver state transitions execute synchronized inside `IOWorkLoop`.
 
-## v3.5.0 — Comprehensive Hardening & Quality Sweep
+## v3.5.0  Comprehensive Hardening & Quality Sweep
 * **Kernel Panic & Null Dereference Prevention**: Fixed infinite retry loops during driver unload (`pmRyzen_stop`), guarded NULL pointers in UserClient initialization and `kunc_alert` privilege checks, guarded `_tscFreq` dereferences, and implemented AMD host bridge PCI vendor matching.
 * **Swift App Stability Hardening**: Resolved out-of-bounds array slicing in `ProcessorModel`, added safe font fallback for Monaco, guarded layer unwrapping in `GraphView`, and guarded array indexing across all view models.
 * **CI/CD & Repository Security**: Removed remote script execution via eval, pinned dependencies to stable release branches, removed tracked binary assets and proprietary font binaries, and restricted GitHub workflow write permissions to release jobs.
 
-## v3.4.2 — Popover Menu CPU Optimization
+## v3.4.2  Popover Menu CPU Optimization
 * **Throttled Sub-Process Spawning**: Regulated external `/bin/ps` process fetching in popover views to update at most once every 1.5 seconds, eliminating high-frequency process spawning CPU spikes.
 * **Status Bar Topography Caching**: Cached status bar core counts to prevent redundant IOKit kernel calls.
 
-## v3.4.1 — Minimal Resource Consumption & Performance Optimization
+## v3.4.1  Minimal Resource Consumption & Performance Optimization
 * **O(1) Ranked Core Lookup Table**: Replaced linear array searches with a high-performance dictionary lookup map (`rankedCoreLookupMap`).
 * **Regulated Heavy Syscalls**: Throttled memory and disk I/O sysctl calls to sample once per second (1.0s).
 
-## v3.4.0 — Ultimate AMD Ryzen Thermal & Energy Suite
+## v3.4.0  Ultimate AMD Ryzen Thermal & Energy Suite
 * **Dynamic Auto-EPP Workload Engine**: Automated dynamic EPP profile switching based on real-time CPU utilization thresholds.
-* **Closed-Loop Thermal Fan Curve & Guard**: Dynamic SuperIO fan PWM scaling with an autonomous 80% PWM (`0xC8`) hardware thermal safety trigger at 85°C.
+* **Closed-Loop Thermal Fan Curve & Guard**: Dynamic SuperIO fan PWM scaling with an autonomous 80% PWM (`0xC8`) hardware thermal safety trigger at 85C.
 
 ---
 
@@ -151,7 +151,7 @@ To prevent kernel panics and ensure driver stability:
 
 ## 11. Repository Links in the Application
 * **About Panel**: Customized the `orderFrontStandardAboutPanel(_:)` method in `AppDelegate.swift` so that clicking "About AMD Power Gadget" displays a direct, clickable link to the repository.
-* **Dashboard Footer (Sidebar)**: Modified the version label in the sidebar of `MainDashboardView.swift` to be an interactive link. Clicking the version text (v2.1.3 · macOS Tahoe) opens the repository in a web browser.
+* **Dashboard Footer (Sidebar)**: Modified the version label in the sidebar of `MainDashboardView.swift` to be an interactive link. Clicking the version text (v2.1.3  macOS Tahoe) opens the repository in a web browser.
 
 ---
 
