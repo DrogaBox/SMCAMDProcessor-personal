@@ -59,6 +59,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
     case solarized = "Solarized Amber"
     case monochrome = "Monochrome Stealth"
     case nordic = "Nordic Frost"
+    case custom = "Personalizado"
     
     var id: String { rawValue }
 
@@ -76,6 +77,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(0.85)
         case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(0.85)
         case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(0.85)
+        case .custom:
+            let hex = UserDefaults.standard.string(forKey: "custom_hex_card") ?? "#16213E"
+            return Color(hexString: hex) ?? Color(red: 0.10, green: 0.12, blue: 0.17).opacity(0.82)
         }
     }
 
@@ -86,6 +90,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .solarized: return Color(red: 0.16, green: 0.63, blue: 0.60)
         case .monochrome: return Color(white: 0.90)
         case .nordic: return Color(red: 0.53, green: 0.75, blue: 0.82)
+        case .custom:
+            let hex = UserDefaults.standard.string(forKey: "custom_hex_cyan") ?? "#4CC9F0"
+            return Color(hexString: hex) ?? Color(red: 0.0, green: 0.85, blue: 0.95)
         }
     }
 
@@ -96,6 +103,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .solarized: return Color(red: 0.80, green: 0.29, blue: 0.09)
         case .monochrome: return Color(white: 0.70)
         case .nordic: return Color(red: 0.82, green: 0.53, blue: 0.44)
+        case .custom:
+            let hex = UserDefaults.standard.string(forKey: "custom_hex_orange") ?? "#FF8C00"
+            return Color(hexString: hex) ?? Color(red: 1.0, green: 0.55, blue: 0.10)
         }
     }
 
@@ -106,6 +116,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .solarized: return Color(red: 0.52, green: 0.60, blue: 0.0)
         case .monochrome: return Color(white: 0.80)
         case .nordic: return Color(red: 0.64, green: 0.75, blue: 0.55)
+        case .custom:
+            let hex = UserDefaults.standard.string(forKey: "custom_hex_green") ?? "#00FF7F"
+            return Color(hexString: hex) ?? Color(red: 0.1, green: 0.95, blue: 0.45)
         }
     }
 
@@ -116,6 +129,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .solarized: return Color(red: 0.82, green: 0.21, blue: 0.51)
         case .monochrome: return Color(white: 0.60)
         case .nordic: return Color(red: 0.71, green: 0.55, blue: 0.66)
+        case .custom:
+            let hex = UserDefaults.standard.string(forKey: "custom_hex_purple") ?? "#A020F0"
+            return Color(hexString: hex) ?? Color(red: 0.65, green: 0.40, blue: 1.0)
         }
     }
 }
@@ -1057,28 +1073,26 @@ struct NetworkLineChartCard: View {
                     let maxIndex = Double(max(1, indexedData.count - 1))
 
                     if chartStyle == 0 {
-                        // Style 0: Bidirectional Bars (Categorical X-axis for dense layout)
+                        // Style 0: Bidirectional Bars (Quantitative X-axis)
                         Chart {
                             ForEach(indexedData, id: \.offset) { index, pt in
                                 BarMark(
-                                    x: .value("Index", "\(index)"),
-                                    y: .value("Upload", pt.netUploadMBps),
-                                    width: .ratio(0.9)
+                                    x: .value("Index", Double(index)),
+                                    y: .value("Upload", pt.netUploadMBps)
                                 )
                                 .foregroundStyle(Color.tahoeAccentPurple)
                             }
 
                             ForEach(indexedData, id: \.offset) { index, pt in
                                 BarMark(
-                                    x: .value("Index", "\(index)"),
-                                    y: .value("Download", -pt.netDownloadMBps),
-                                    width: .ratio(0.9)
+                                    x: .value("Index", Double(index)),
+                                    y: .value("Download", -pt.netDownloadMBps)
                                 )
                                 .foregroundStyle(Color.tahoeAccentBlue)
                             }
                         }
                         .chartYScale(domain: yDomainMin...yDomainMax)
-                        .chartXScale(domain: indexedData.map { "\($0.offset)" })
+                        .chartXScale(domain: 0...maxIndex)
                         .chartYAxis {
                             AxisMarks(position: .leading, values: [yMin, 0.0, yMax]) { val in
                                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
@@ -2935,6 +2949,135 @@ struct ChartStyleSelectorGrid: View {
     }
 }
 
+extension Color {
+    init?(hexString: String) {
+        let hex = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default: return nil
+        }
+        self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255, opacity: Double(a) / 255)
+    }
+
+    var toHexString: String {
+        guard let nsColor = NSColor(self).usingColorSpace(.sRGB) else { return "#000000" }
+        let r = Int(nsColor.redComponent * 255)
+        let g = Int(nsColor.greenComponent * 255)
+        let b = Int(nsColor.blueComponent * 255)
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+
+struct ThemePresetPack: Codable {
+    var name: String
+    var cardHex: String
+    var cyanHex: String
+    var orangeHex: String
+    var greenHex: String
+    var purpleHex: String
+}
+
+struct CustomThemeStudio: View {
+    @AppStorage("custom_hex_card") private var cardHex: String = "#16213E"
+    @AppStorage("custom_hex_cyan") private var cyanHex: String = "#4CC9F0"
+    @AppStorage("custom_hex_orange") private var orangeHex: String = "#FF8C00"
+    @AppStorage("custom_hex_green") private var greenHex: String = "#00FF7F"
+    @AppStorage("custom_hex_purple") private var purpleHex: String = "#A020F0"
+    @AppStorage("app_theme_preset") private var selectedThemeRaw: String = AppTheme.tahoe.rawValue
+
+    private var cardColorBinding: Binding<Color> {
+        Binding(get: { Color(hexString: cardHex) ?? .blue }, set: { cardHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
+    }
+    private var cyanColorBinding: Binding<Color> {
+        Binding(get: { Color(hexString: cyanHex) ?? .cyan }, set: { cyanHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
+    }
+    private var orangeColorBinding: Binding<Color> {
+        Binding(get: { Color(hexString: orangeHex) ?? .orange }, set: { orangeHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
+    }
+    private var greenColorBinding: Binding<Color> {
+        Binding(get: { Color(hexString: greenHex) ?? .green }, set: { greenHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
+    }
+    private var purpleColorBinding: Binding<Color> {
+        Binding(get: { Color(hexString: purpleHex) ?? .purple }, set: { purpleHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Estudio de Creación de Tema Personalizado")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.white)
+            
+            HStack(spacing: 16) {
+                ColorPicker("Tarjeta", selection: cardColorBinding)
+                ColorPicker("Acento Cian", selection: cyanColorBinding)
+                ColorPicker("Acento Naranja", selection: orangeColorBinding)
+                ColorPicker("Acento Verde", selection: greenColorBinding)
+                ColorPicker("Acento Púrpura", selection: purpleColorBinding)
+            }
+            .font(.system(size: 11))
+            .foregroundColor(.tahoeSubtext)
+
+            Divider().background(Color.tahoeCardBorder)
+
+            HStack(spacing: 12) {
+                TahoeButton(label: "Exportar Tema (JSON)", icon: "square.and.arrow.up", accent: .tahoeAccentCyan) {
+                    exportTheme()
+                }
+                TahoeButton(label: "Importar Tema (JSON)", icon: "square.and.arrow.down", accent: .tahoeAccentGreen) {
+                    importTheme()
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.tahoeCard)
+                .background(RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.tahoeCardBorder, lineWidth: 1))
+        .cornerRadius(14)
+    }
+
+    private func exportTheme() {
+        let pack = ThemePresetPack(name: "Mi Tema Custom", cardHex: cardHex, cyanHex: cyanHex, orangeHex: orangeHex, greenHex: greenHex, purpleHex: purpleHex)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        if let data = try? encoder.encode(pack) {
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.json]
+            panel.nameFieldStringValue = "MiTemaCustom.json"
+            panel.begin { resp in
+                if resp == .OK, let url = panel.url {
+                    try? data.write(to: url)
+                }
+            }
+        }
+    }
+
+    private func importTheme() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.begin { resp in
+            if resp == .OK, let url = panel.url, let data = try? Data(contentsOf: url) {
+                if let pack = try? JSONDecoder().decode(ThemePresetPack.self, from: data) {
+                    cardHex = pack.cardHex
+                    cyanHex = pack.cyanHex
+                    orangeHex = pack.orangeHex
+                    greenHex = pack.greenHex
+                    purpleHex = pack.purpleHex
+                    selectedThemeRaw = AppTheme.custom.rawValue
+                }
+            }
+        }
+    }
+}
+
 struct ThemesContentView: View {
     var body: some View {
         ScrollView {
@@ -2942,6 +3085,9 @@ struct ThemesContentView: View {
                 SectionTitle("Motor de Temas y Paletas")
                 ThemeSelectorGrid()
                 
+                SectionTitle("Creador e Intercambio de Temas Custom (JSON)")
+                CustomThemeStudio()
+
                 SectionTitle("Estilo de Renderizado de Gráficas")
                 ChartStyleSelectorGrid()
             }
@@ -3078,7 +3224,7 @@ struct MenuBarPopoverView: View {
                         .foregroundColor(.white)
                 }
                 Spacer()
-                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.12.0")")
+                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.0")")
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundColor(.white.opacity(0.4))
             }

@@ -1,5 +1,10 @@
 # Change Summary & Release Changelog
 
+## v3.13.0 — Custom Theme Creator & JSON Sharing Studio
+* **Custom Theme Creator Studio**: Integrated interactive `ColorPicker` suite (`CustomThemeStudio`) allowing users to design and save personalized themes.
+* **JSON Theme Export & Import**: Added native `NSSavePanel` and `NSOpenPanel` file sharing for exporting `.json` themes and importing community presets.
+* **Network Chart Scaling Fix**: Standardized quantitative Double X-axis indexing across bidirectional network bars to eliminate scaling artifacts and chaotic band shifts.
+
 ## v3.12.0 — Customization & Themes Engine Architecture
 * **AppTheme Preset System**: Architected extensible `AppTheme` presets (`Tahoe Glass`, `Cyberpunk Neon`, `Solarized Amber`, `Monochrome Stealth`, `Nordic Frost`) with dynamic color token bindings.
 * **Support Audio Feedback Integration**: Added compressed audio playback for community support interactions.
