@@ -2805,10 +2805,13 @@ struct SystemInfoContentView: View {
                 }
 
                 Divider().background(Color.tahoeCardBorder)
-                SectionTitle("Links")
+                SectionTitle("Links & Support")
                 HStack(spacing: 10) {
                     TahoeButton(label: "GitHub Repository", icon: "link", accent: .tahoeAccentCyan) {
                         NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
+                    }
+                    TahoeButton(label: "Donate (PayPal)", icon: "heart.fill", accent: .tahoeAccentOrange) {
+                        NSWorkspace.shared.open(URL(string: "https://www.paypal.com/donate/?business=mrleisures@gmail.com")!)
                     }
                 }
             }
