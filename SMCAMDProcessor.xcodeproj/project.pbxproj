@@ -36,6 +36,7 @@
 		B5920B9424FFBB9B006C6DFF /* pmRyzenSymbolTable.h in Sources */ = {isa = PBXBuildFile; fileRef = B5920B9324FFBB9B006C6DFF /* pmRyzenSymbolTable.h */; };
 		B595D3E42416701D00B704F7 /* SF-Pro-Rounded-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = B595D3E32416700800B704F7 /* SF-Pro-Rounded-Medium.otf */; };
 		B595D3E52416702000B704F7 /* SF-Pro-Rounded-Semibold.otf in Resources */ = {isa = PBXBuildFile; fileRef = B595D3E22416700700B704F7 /* SF-Pro-Rounded-Semibold.otf */; };
+		B595D3E62416702100B704F7 /* bravo.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B595D3E62416700900B704F7 /* bravo.mp3 */; };
 		B59762382472A1FE0074E0B5 /* GraphViewGridLineLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59762372472A1FE0074E0B5 /* GraphViewGridLineLayer.swift */; };
 		B5CA7D662AC2DE73005FEE73 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B5CA7D652AC2DE73005FEE73 /* libkmod.a */; };
 		B5CA7D672AC306B3005FEE73 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B5CA7D652AC2DE73005FEE73 /* libkmod.a */; };
@@ -103,6 +104,7 @@
 		B5920B9324FFBB9B006C6DFF /* pmRyzenSymbolTable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pmRyzenSymbolTable.h; sourceTree = "<group>"; };
 		B595D3E22416700700B704F7 /* SF-Pro-Rounded-Semibold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SF-Pro-Rounded-Semibold.otf"; sourceTree = "<group>"; };
 		B595D3E32416700800B704F7 /* SF-Pro-Rounded-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SF-Pro-Rounded-Medium.otf"; sourceTree = "<group>"; };
+		B595D3E62416700900B704F7 /* bravo.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bravo.mp3; sourceTree = "<group>"; };
 		B59762372472A1FE0074E0B5 /* GraphViewGridLineLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphViewGridLineLayer.swift; sourceTree = "<group>"; };
 		B5CA7D652AC2DE73005FEE73 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/universal/libkmod.a; sourceTree = "<group>"; };
 		B5CE1F7C26B4271800DBF70A /* APGLaunchHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = APGLaunchHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -308,6 +310,7 @@
 			children = (
 				B595D3E32416700800B704F7 /* SF-Pro-Rounded-Medium.otf */,
 				B595D3E22416700700B704F7 /* SF-Pro-Rounded-Semibold.otf */,
+				B595D3E62416700900B704F7 /* bravo.mp3 */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -504,6 +507,7 @@
 				B5F3A1032B7C010300ABCDEF /* Localizable.strings in Resources */,
 				B595D3E52416702000B704F7 /* SF-Pro-Rounded-Semibold.otf in Resources */,
 				B595D3E42416701D00B704F7 /* SF-Pro-Rounded-Medium.otf in Resources */,
+				B595D3E62416702100B704F7 /* bravo.mp3 in Resources */,
 				B56162CB2400EF780006A7D8 /* Assets.xcassets in Resources */,
 				B56162CE2400EF780006A7D8 /* Main.storyboard in Resources */,
 			);
