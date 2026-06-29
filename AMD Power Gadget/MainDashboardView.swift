@@ -2811,6 +2811,13 @@ struct SystemInfoContentView: View {
                         NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
                     }
                     TahoeButton(label: "Donate (PayPal)", icon: "heart.fill", accent: .tahoeAccentOrange) {
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            if let url = Bundle.main.url(forResource: "bravo", withExtension: "mp3") {
+                                if let sound = NSSound(contentsOf: url, byReference: true) {
+                                    sound.play()
+                                }
+                            }
+                        }
                         NSWorkspace.shared.open(URL(string: "https://www.paypal.com/donate/?business=mrleisures@gmail.com")!)
                     }
                 }
