@@ -84,7 +84,7 @@ typedef struct pmProcessor{
     uint32_t ll_count;
     uint8_t PState;
     
-} pmProcessor_t;
+} __attribute__((aligned(64))) pmProcessor_t;
 
 void pmRyzen_init(void*);
 void pmRyzen_stop(void);

@@ -71,7 +71,7 @@ ISSuperIONCT668X* ISSuperIONCT668X::getDevice(uint16_t *chipIntel){
     
     IOLog("Chip address: 0x%X\n", devAddr);
     
-    IOSleep(100);
+    IODelay(10);
     uint16_t devAddrVerify = ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) & (~7);
     if (devAddrVerify != devAddr) {
         IOLog("NCT668X address verification failed: 0x%X != 0x%X\n", devAddrVerify, devAddr);
