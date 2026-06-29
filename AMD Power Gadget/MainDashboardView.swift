@@ -2860,12 +2860,72 @@ struct ThemeSelectorGrid: View {
     }
 }
 
+enum AppChartStyle: String, CaseIterable, Identifiable {
+    case line = "Línea Suave (Spline)"
+    case filledArea = "Área Rellena (Gradient)"
+    case bar = "Histograma de Barras"
+    
+    var id: String { rawValue }
+    var icon: String {
+        switch self {
+        case .line: return "waveform.path.ecg"
+        case .filledArea: return "chart.area.fill"
+        case .bar: return "chart.bar.fill"
+        }
+    }
+}
+
+struct ChartStyleSelectorGrid: View {
+    @AppStorage("app_chart_style") private var selectedStyleRaw: String = AppChartStyle.line.rawValue
+    private let columns = [GridItem(.adaptive(minimum: 140), spacing: 12)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(AppChartStyle.allCases) { style in
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selectedStyleRaw = style.rawValue
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: style.icon)
+                            .foregroundColor(selectedStyleRaw == style.rawValue ? Color.tahoeAccentCyan : .tahoeSubtext)
+                        Text(style.rawValue)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(selectedStyleRaw == style.rawValue ? .white : .tahoeSubtext)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(selectedStyleRaw == style.rawValue ? Color.white.opacity(0.1) : Color.white.opacity(0.03))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(selectedStyleRaw == style.rawValue ? Color.tahoeAccentCyan : Color.clear, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.tahoeCard)
+                .background(RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.tahoeCardBorder, lineWidth: 1))
+        .cornerRadius(14)
+    }
+}
+
 struct ThemesContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                SectionTitle("Motor de Temas y Personalización")
+                SectionTitle("Motor de Temas y Paletas")
                 ThemeSelectorGrid()
+                
+                SectionTitle("Estilo de Renderizado de Gráficas")
+                ChartStyleSelectorGrid()
             }
             .padding(20)
         }
