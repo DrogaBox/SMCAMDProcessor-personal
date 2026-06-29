@@ -1,5 +1,9 @@
 # Change Summary & Release Changelog
 
+## v3.10.0 — Next-Gen Swift GUI & Liquid Glass Material Vibrancy
+* **macOS 26 Tahoe Liquid Glass Material Integration**: Configured dynamic `NSVisualEffectView` materials (`.hudWindow` / `.underWindowBackground`) and active vibrancy blending modes in `MainDashboardView.swift` for native macOS Tahoe UI integration.
+* **Kernel Driver Code Freeze**: Officially locked kernel extensions (`AMDRyzenCPUPowerManagement.kext` and `SMCAMDProcessor.kext`) at 100% production stability.
+
 ## v3.9.0 — Automatic Power Source EPP Profile Switching
 * **Automatic AC/Battery Power Source Switching**: Integrated IOKit `IOPSCopyPowerSourcesInfo` callbacks into `TelemetryModel.swift` (`autoPowerSourceSwitchingEnabled`). Automatically transitions between Battery EPP profile (Power Save `0xC0`) and AC Power EPP profile (Performance `0x00` / Balanced `0x3F`) without requiring manual toggling.
 
