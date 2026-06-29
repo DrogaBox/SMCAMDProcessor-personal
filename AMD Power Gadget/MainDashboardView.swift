@@ -3500,26 +3500,37 @@ struct MenuBarPopoverView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if cfg.popoverShowGPU {
                         // GPU Row
-                        HStack(spacing: 6) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 10))
-                                .foregroundColor(.purple)
-                                .frame(width: 14)
-                            Text(model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.9))
-                                .fixedSize(horizontal: true, vertical: false)
-                            Spacer()
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.purple)
+                                    .frame(width: 14)
+                                Text(model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                Spacer()
+                                if model.gpuTempC > 0 {
+                                    Text(String(format: "%.0f°C • %.0fW", model.gpuTempC, model.gpuPowerW))
+                                        .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.85))
+                                } else {
+                                    Text("Inactive")
+                                        .font(.system(size: 9.5, weight: .semibold))
+                                        .foregroundColor(.white.opacity(0.4))
+                                }
+                            }
                             if model.gpuTempC > 0 {
-                                let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
-                                let fanRPMStr = String(format: " • %.0f RPM", model.gpuFanRPM)
-                                Text(String(format: "%.0f°C • %.0fW • %.2fG%@", model.gpuTempC, model.gpuPowerW, vramGB, fanRPMStr))
-                                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
-                            } else {
-                                Text("Inactive")
-                                    .font(.system(size: 9.5, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.4))
+                                HStack {
+                                    Spacer()
+                                    let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
+                                    let fanRPMStr = model.gpuFanRPM > 0 ? String(format: " • %.0f RPM", model.gpuFanRPM) : ""
+                                    Text(String(format: "VRAM: %.2fG%@", vramGB, fanRPMStr))
+                                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
                             }
                         }
                     }
