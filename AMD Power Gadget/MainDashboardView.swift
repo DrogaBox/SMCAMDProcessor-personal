@@ -141,6 +141,7 @@ enum DashboardTab: String, CaseIterable, Identifiable {
     case dashboard  = "Dashboard"
     case telemetry  = "Telemetry"
     case fanControl = "Fan Control"
+    case themes     = "Temas & Apariencia"
     case profiles   = "Profiles"
     case advanced   = "Advanced"
     case menuBar    = "Menu Bar"
@@ -154,6 +155,7 @@ enum DashboardTab: String, CaseIterable, Identifiable {
         case .dashboard:  return "gauge.medium"
         case .telemetry:  return "waveform.path.ecg"
         case .fanControl: return "fan"
+        case .themes:     return "paintpalette"
         case .profiles:   return "slider.horizontal.3"
         case .advanced:   return "gearshape.2"
         case .menuBar:    return "menubar.rectangle"
@@ -202,10 +204,11 @@ struct MainDashboardView: View {
         case .dashboard:  DashboardContentView(model: model)
         case .telemetry:  TelemetryContentView(model: model)
         case .fanControl: FanControlContentView(model: model)
+        case .themes:     ThemesContentView()
         case .profiles:   ProfilesContentView(model: model)
         case .advanced:   AdvancedContentView(model: model)
         case .menuBar:    MenuBarConfigView(model: model)
-                case .popover:    PopoverConfigView(model: model)
+        case .popover:    PopoverConfigView(model: model)
         case .desktopWidgets: DesktopWidgetsConfigView(model: model)
         case .systemInfo: SystemInfoContentView(model: model)
         case .analysis:   AnalysisContentView()
@@ -474,9 +477,6 @@ struct DashboardContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                SectionTitle("Appearance & Themes Engine")
-                ThemeSelectorGrid()
-                
                 HStack(spacing: 12) {
                     StatCard(label: "CPU Temp",  value: String(format: "%.1f°C",   model.cpuTempC),     accent: .tahoeAccentCyan,   icon: "thermometer.medium")
                     StatCard(label: "CPU Power", value: String(format: "%.1fW",    model.cpuWatts),     accent: .tahoeAccentOrange, icon: "bolt.fill")
@@ -2860,15 +2860,24 @@ struct ThemeSelectorGrid: View {
     }
 }
 
+struct ThemesContentView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                SectionTitle("Motor de Temas y Personalización")
+                ThemeSelectorGrid()
+            }
+            .padding(20)
+        }
+    }
+}
+
 struct SystemInfoContentView: View {
     @ObservedObject var model: TelemetryModel
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                SectionTitle("Appearance & Themes Engine")
-                ThemeSelectorGrid()
-                
                 SectionTitle("Processor")
                 TahoeCard {
                     InfoRow(label: "CPU Model",      value: model.sysInfo.cpuBrand)
