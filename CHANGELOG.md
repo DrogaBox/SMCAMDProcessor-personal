@@ -1,5 +1,11 @@
 # Change Summary & Release Changelog
 
+## v3.13.1 — Tahoe Edition: Comprehensive Hardening & Telemetry Performance
+* **Security & Kernel Panic Protections**: Replaced mock privilege checks with authentic `proc_suser` root verification, enforced strict string table bounds checking, added Mach-O 64-bit magic validation, and implemented bound-checked process binary verification (`proc_name`) in `initWithTask`.
+* **HEDT Performance & Memory Hardening**: Optimized `pmProcessor_t` alignment to `alignas(64)` (reducing RAM footprint from 265KB to 4KB for 32 threads), added `XNU_MAX_CPU` perimeter guards, and prevented power state change timer race conditions.
+* **Granular CCD Sensors & RAPL Scaling**: Integrated dynamic RAPL Power Unit MSR (`0xC0010299`) decoding for accurate wattage calculations across Zen 3 and Zen 5, and enabled individual CCD thermal monitoring in VirtualSMC `TempCore` keys.
+* **App Architecture & Tahoe UI**: Offloaded kernel sampling off `MainActor` to a serial `ioQueue`, zeroed heap allocations during network interface polling, added diff-based status bar redraws, and modernized UI widgets with hierarchical filled SF Symbols (`cpu.fill`, `fan.fill`).
+
 ## v3.13.0 — Custom Theme Creator & JSON Sharing Studio
 * **Custom Theme Creator Studio**: Integrated interactive `ColorPicker` suite (`CustomThemeStudio`) allowing users to design and save personalized themes.
 * **JSON Theme Export & Import**: Added native `NSSavePanel` and `NSOpenPanel` file sharing for exporting `.json` themes and importing community presets.
