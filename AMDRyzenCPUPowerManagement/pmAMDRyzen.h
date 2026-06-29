@@ -56,35 +56,27 @@ extern uint64_t pmRyzen_rdmsr_safe(void *, uint32_t);
 extern pmRyzen_symtable_t pmRyzen_symtable;
 
 
-typedef struct pmProcessor{
+typedef struct __attribute__((aligned(64))) pmProcessor {
+    // Cache Line 1 (64 bytes): Hot Idle & TSC tracking
     x86_lcpu_t *lcpu;
-
     uint64_t stat_exit_idle;
-#ifdef PMRYZEN_IDLE_MWAIT
-    char pad1[64*64];
-#endif
     uint64_t arm_flag;
-#ifdef PMRYZEN_IDLE_MWAIT
-    char pad2[64*64];
-#endif
     uint64_t cpu_awake;
-    
     uint64_t last_idle_tsc;
     uint64_t last_start_tsc;
     uint64_t last_idle_length;
     uint64_t last_running_time;
-    
+
+    // Cache Line 2 (64 bytes): Hot Load accumulators & P-state control
     uint64_t eff_timeacc;
     uint64_t eff_idleacc;
-    
-    float eff_load;
     uint64_t eff_timeaccd;
     uint64_t eff_idleaccd;
-    
+    float eff_load;
     uint32_t ll_count;
     uint8_t PState;
-    
-} __attribute__((aligned(64))) pmProcessor_t;
+    uint8_t _reserved[23]; // Align total structure size to exactly 128 bytes (2 cache lines)
+} pmProcessor_t;
 
 void pmRyzen_init(void*);
 void pmRyzen_stop(void);

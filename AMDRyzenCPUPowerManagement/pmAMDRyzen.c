@@ -148,6 +148,7 @@ void pmRyzen_PState_reset(){
 void pmRyzen_init(void *handle){
     
     pmRyzen_io_service_handle = handle;
+    IOLog("AMDCPUSupport::pmRyzen_init sizeof(pmProcessor_t) = %lu bytes (cacheline aligned)\n", (unsigned long)sizeof(pmProcessor_t));
     
     
     void **kernelDisp = pmRyzen_symtable._pmDispatch;
