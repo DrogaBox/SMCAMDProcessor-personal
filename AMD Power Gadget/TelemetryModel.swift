@@ -1273,11 +1273,42 @@ final class TelemetryModel: ObservableObject {
     }
 
     private func startLoggingSession() {
-        logger.start(path: logFilePath, delimiter: csvDelimiter)
+        let headers = getActiveCSVHeaders(includeTimestamp: true)
+        logger.start(path: logFilePath, delimiter: csvDelimiter, headers: headers)
     }
     
     private func stopLoggingSession() {
         logger.stop()
+    }
+
+    private func getActiveCSVHeaders(includeTimestamp: Bool) -> [String] {
+        var headers: [String] = []
+        if includeTimestamp { headers.append("Timestamp") }
+        headers.append("Relative Time (s)")
+        headers.append("CPU Freq Avg (GHz)")
+        headers.append("CPU Load (%)")
+        
+        let showCpuTemp = UserDefaults.standard.object(forKey: "tele_show_cputemp") as? Bool ?? true
+        let showGpuTemp = UserDefaults.standard.object(forKey: "tele_show_gputemp") as? Bool ?? true
+        let showCpuPwr  = UserDefaults.standard.object(forKey: "tele_show_cpupwr") as? Bool ?? true
+        let showGpuPwr  = UserDefaults.standard.object(forKey: "tele_show_gpupwr") as? Bool ?? true
+        let showRam     = UserDefaults.standard.object(forKey: "tele_show_ram") as? Bool ?? true
+        let showDisk    = UserDefaults.standard.object(forKey: "tele_show_disk") as? Bool ?? true
+        let showNet     = UserDefaults.standard.object(forKey: "tele_show_net") as? Bool ?? true
+        let showFan     = UserDefaults.standard.object(forKey: "tele_show_fan") as? Bool ?? true
+        
+        if showCpuTemp { headers.append("CPU Temp (°C)") }
+        if showCpuPwr  { headers.append("CPU Power (W)") }
+        if showGpuTemp { headers.append("GPU Temp (°C)") }
+        if showGpuPwr  { headers.append("GPU Power (W)") }
+        if showRam     { headers.append("RAM Usage (%)") }
+        if showDisk    { headers.append("Disk Activity (MB/s)") }
+        if showNet     {
+            headers.append("Net Download (MB/s)")
+            headers.append("Net Upload (MB/s)")
+        }
+        if showFan     { headers.append("Fan Speed (RPM)") }
+        return headers
     }
 
     private static let isoFormatter = ISO8601DateFormatter()
@@ -1288,33 +1319,34 @@ final class TelemetryModel: ObservableObject {
         let locale = Locale.current
         let dateString = TelemetryModel.isoFormatter.string(from: Date())
         
-        let format = [
-            "%@", // Timestamp
-            "%.3f", // Relative Time (s)
-            "%.3f", // CPU Freq Avg (GHz)
-            "%.3f", // CPU Freq Max (GHz)
-            "%.2f", // CPU Temp (°C)
-            "%.2f", // CPU Power (W)
-            "%.2f", // GPU Temp (°C)
-            "%.2f", // GPU Power (W)
-            "%.0f", // GPU Fan (RPM)
-            "%.3f", // GPU VRAM (GB)
-            "%.1f"  // GPU Load (%)
-        ].joined(separator: delim) + "\n"
+        let showCpuTemp = UserDefaults.standard.object(forKey: "tele_show_cputemp") as? Bool ?? true
+        let showGpuTemp = UserDefaults.standard.object(forKey: "tele_show_gputemp") as? Bool ?? true
+        let showCpuPwr  = UserDefaults.standard.object(forKey: "tele_show_cpupwr") as? Bool ?? true
+        let showGpuPwr  = UserDefaults.standard.object(forKey: "tele_show_gpupwr") as? Bool ?? true
+        let showRam     = UserDefaults.standard.object(forKey: "tele_show_ram") as? Bool ?? true
+        let showDisk    = UserDefaults.standard.object(forKey: "tele_show_disk") as? Bool ?? true
+        let showNet     = UserDefaults.standard.object(forKey: "tele_show_net") as? Bool ?? true
+        let showFan     = UserDefaults.standard.object(forKey: "tele_show_fan") as? Bool ?? true
+
+        var cols: [String] = []
+        cols.append(dateString)
+        cols.append(String(format: "%.3f", locale: locale, point.time))
+        cols.append(String(format: "%.3f", locale: locale, point.cpuFreqGHz))
+        cols.append(String(format: "%.1f", locale: locale, point.cpuLoad))
         
-        let line = String(format: format, locale: locale,
-                          dateString,
-                          point.time,
-                          point.cpuFreqGHz,
-                          point.cpuFreqMaxGHz,
-                          point.cpuTempC,
-                          point.cpuWatts,
-                          point.gpuTempC,
-                          point.gpuWatts,
-                          gpuFanRPM,
-                          gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0),
-                          gpuLoadPct)
-        
+        if showCpuTemp { cols.append(String(format: "%.2f", locale: locale, point.cpuTempC)) }
+        if showCpuPwr  { cols.append(String(format: "%.2f", locale: locale, point.cpuWatts)) }
+        if showGpuTemp { cols.append(String(format: "%.2f", locale: locale, point.gpuTempC)) }
+        if showGpuPwr  { cols.append(String(format: "%.2f", locale: locale, point.gpuWatts)) }
+        if showRam     { cols.append(String(format: "%.1f", locale: locale, point.ramUsagePct)) }
+        if showDisk    { cols.append(String(format: "%.2f", locale: locale, point.diskReadMBps + point.diskWriteMBps)) }
+        if showNet     {
+            cols.append(String(format: "%.3f", locale: locale, point.netDownloadMBps))
+            cols.append(String(format: "%.3f", locale: locale, point.netUploadMBps))
+        }
+        if showFan     { cols.append(String(format: "%.0f", locale: locale, point.fanRPM)) }
+
+        let line = cols.joined(separator: delim) + "\n"
         logger.write(line: line)
     }
 
@@ -1322,38 +1354,37 @@ final class TelemetryModel: ObservableObject {
         let delim = csvDelimiter
         let locale = Locale.current
         
-        let headers = [
-            "Relative Time (s)", "CPU Freq Avg (GHz)", "CPU Freq Max (GHz)",
-            "CPU Temp (°C)", "CPU Power (W)", "GPU Temp (°C)", "GPU Power (W)",
-            "GPU Fan (RPM)", "GPU VRAM (GB)", "GPU Load (%)"
-        ]
+        let headers = getActiveCSVHeaders(includeTimestamp: false)
         var csvText = headers.joined(separator: delim) + "\n"
         
-        let format = [
-            "%.3f", // Relative Time (s)
-            "%.3f", // CPU Freq Avg (GHz)
-            "%.3f", // CPU Freq Max (GHz)
-            "%.2f", // CPU Temp (°C)
-            "%.2f", // CPU Power (W)
-            "%.2f", // GPU Temp (°C)
-            "%.2f", // GPU Power (W)
-            "%.0f", // GPU Fan (RPM)
-            "%.3f", // GPU VRAM (GB)
-            "%.1f"  // GPU Load (%)
-        ].joined(separator: delim) + "\n"
-        
+        let showCpuTemp = UserDefaults.standard.object(forKey: "tele_show_cputemp") as? Bool ?? true
+        let showGpuTemp = UserDefaults.standard.object(forKey: "tele_show_gputemp") as? Bool ?? true
+        let showCpuPwr  = UserDefaults.standard.object(forKey: "tele_show_cpupwr") as? Bool ?? true
+        let showGpuPwr  = UserDefaults.standard.object(forKey: "tele_show_gpupwr") as? Bool ?? true
+        let showRam     = UserDefaults.standard.object(forKey: "tele_show_ram") as? Bool ?? true
+        let showDisk    = UserDefaults.standard.object(forKey: "tele_show_disk") as? Bool ?? true
+        let showNet     = UserDefaults.standard.object(forKey: "tele_show_net") as? Bool ?? true
+        let showFan     = UserDefaults.standard.object(forKey: "tele_show_fan") as? Bool ?? true
+
         for point in history {
-            csvText += String(format: format, locale: locale,
-                              point.time,
-                              point.cpuFreqGHz,
-                              point.cpuFreqMaxGHz,
-                              point.cpuTempC,
-                              point.cpuWatts,
-                              point.gpuTempC,
-                              point.gpuWatts,
-                              gpuFanRPM,
-                              gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0),
-                              gpuLoadPct)
+            var cols: [String] = []
+            cols.append(String(format: "%.3f", locale: locale, point.time))
+            cols.append(String(format: "%.3f", locale: locale, point.cpuFreqGHz))
+            cols.append(String(format: "%.1f", locale: locale, point.cpuLoad))
+            
+            if showCpuTemp { cols.append(String(format: "%.2f", locale: locale, point.cpuTempC)) }
+            if showCpuPwr  { cols.append(String(format: "%.2f", locale: locale, point.cpuWatts)) }
+            if showGpuTemp { cols.append(String(format: "%.2f", locale: locale, point.gpuTempC)) }
+            if showGpuPwr  { cols.append(String(format: "%.2f", locale: locale, point.gpuWatts)) }
+            if showRam     { cols.append(String(format: "%.1f", locale: locale, point.ramUsagePct)) }
+            if showDisk    { cols.append(String(format: "%.2f", locale: locale, point.diskReadMBps + point.diskWriteMBps)) }
+            if showNet     {
+                cols.append(String(format: "%.3f", locale: locale, point.netDownloadMBps))
+                cols.append(String(format: "%.3f", locale: locale, point.netUploadMBps))
+            }
+            if showFan     { cols.append(String(format: "%.0f", locale: locale, point.fanRPM)) }
+
+            csvText += cols.joined(separator: delim) + "\n"
         }
         
         try? csvText.write(to: url, atomically: true, encoding: .utf8)
@@ -1429,18 +1460,13 @@ private class CSVLogger {
     private var fileHandle: FileHandle?
     private let queue = DispatchQueue(label: "wtf.spinach.CSVLogger", qos: .background)
     
-    func start(path: String, delimiter: String) {
+    func start(path: String, delimiter: String, headers: [String]) {
         queue.async {
             guard !path.isEmpty else { return }
             let fileURL = URL(fileURLWithPath: path)
             
             // Create file if it doesn't exist
             if !FileManager.default.fileExists(atPath: fileURL.path) {
-                let headers = [
-                    "Timestamp", "Relative Time (s)", "CPU Freq Avg (GHz)", "CPU Freq Max (GHz)",
-                    "CPU Temp (°C)", "CPU Power (W)", "GPU Temp (°C)", "GPU Power (W)",
-                    "GPU Fan (RPM)", "GPU VRAM (GB)", "GPU Load (%)"
-                ]
                 let header = headers.joined(separator: delimiter) + "\n"
                 try? header.write(to: fileURL, atomically: true, encoding: .utf8)
             }
