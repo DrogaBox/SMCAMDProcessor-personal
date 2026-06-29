@@ -151,14 +151,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applyAppearanceSwitch(translucency : Bool) {
-        appearanceToggle.state = translucency ? .on : .off
+        appearanceToggle?.state = translucency ? .on : .off
         ViewController.activeSelf?.toggleTranslucency(enabled: translucency)
 
         UserDefaults.standard.set(translucency, forKey: "usetranslucency")
     }
 
     func applyStatusBarSwitch(enabled: Bool) {
-        statusbarToggle.state = enabled ? .on : .off
+        statusbarToggle?.state = enabled ? .on : .off
         if enabled {
             if mbController == nil {
                 mbController = StatusbarController()
