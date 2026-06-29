@@ -103,7 +103,7 @@ ISSuperIOIT86XXEFamily* ISSuperIOIT86XXEFamily::getDevice(uint16_t* chipIntel)
     uint16_t devAddr = ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER);
 
     // verify addr
-    IOSleep(100);
+    IODelay(10);
     if (ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) != devAddr)
     {
         IOLog("IT%X%XE address verify failed", deviceID, revision);
@@ -114,7 +114,7 @@ ISSuperIOIT86XXEFamily* ISSuperIOIT86XXEFamily::getDevice(uint16_t* chipIntel)
     uint16_t gpioAddress = ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER + 2);
 
     // verify gpio addr
-    IOSleep(100);
+    IODelay(10);
     if (ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER + 2) != gpioAddress)
     {
         IOLog("IT%X%XE gpio address verify failed", deviceID, revision);
