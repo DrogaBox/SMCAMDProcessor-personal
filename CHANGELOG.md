@@ -1,5 +1,19 @@
 # Change Summary & Release Changelog
 
+## v3.9.0 — Automatic Power Source EPP Profile Switching
+* **Automatic AC/Battery Power Source Switching**: Integrated IOKit `IOPSCopyPowerSourcesInfo` callbacks into `TelemetryModel.swift` (`autoPowerSourceSwitchingEnabled`). Automatically transitions between Battery EPP profile (Power Save `0xC0`) and AC Power EPP profile (Performance `0x00` / Balanced `0x3F`) without requiring manual toggling.
+
+## v3.8.0 — High-Performance Micro-Architecture Optimization
+* **64-Byte Cache Line Alignment**: Applied `__attribute__((aligned(64)))` alignment to `pmProcessor_t` in `pmAMDRyzen.h`, isolating per-thread state to L1 cache lines and eliminating false sharing across all 32 logical threads of the Ryzen 9 5900XT.
+* **LPC Port Delay Minimization**: Replaced 100ms blocking thread sleeps (`IOSleep(100)`) in SuperIO controllers with non-blocking 10-microsecond hardware delays (`IODelay(10)`), reducing driver blocking latency by 10,000x.
+
+## v3.7.0 — Zero-Copy IPC & Structured Telemetry Streaming
+* **Structured Sensor Streaming**: Defined packed `CPUSensorPacket` structure and implemented UserClient `case 100` (`GetCPUSensorPacket`), streaming complete package power, temperature, and per-core frequencies in a single un-marshaled physical memory transaction.
+
+## v3.6.0 — Modular Zen Multi-Generation Detection & IOKit Synchronization
+* **Dynamic Zen 1-5 Identification**: Implemented dynamic CPU family/model resolution in `AMDRyzenCPUPowerManagement.cpp` supporting Zen 1, Zen+, Zen 2, Zen 3, Zen 4, and Zen 5 architectures at runtime via native XNU CPUID queries.
+* **IOKit WorkLoop Synchronization**: Ensured driver state transitions execute synchronized inside `IOWorkLoop`.
+
 ## v3.5.0 — Comprehensive Hardening & Quality Sweep
 * **Kernel Panic & Null Dereference Prevention**: Fixed infinite retry loops during driver unload (`pmRyzen_stop`), guarded NULL pointers in UserClient initialization and `kunc_alert` privilege checks, guarded `_tscFreq` dereferences, and implemented AMD host bridge PCI vendor matching.
 * **Swift App Stability Hardening**: Resolved out-of-bounds array slicing in `ProcessorModel`, added safe font fallback for Monaco, guarded layer unwrapping in `GraphView`, and guarded array indexing across all view models.
