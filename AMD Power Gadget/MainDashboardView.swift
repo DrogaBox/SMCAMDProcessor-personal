@@ -4306,6 +4306,8 @@ struct HistoryDataPoint: Codable, Identifiable {
     let ramUsage: Double
     let gpuTemp: Double
     let gpuLoad: Double
+    var cpuWatts: Double? = nil
+    var cpuFreqAvg: Double? = nil
 }
 
 class HistoryManager: ObservableObject {
@@ -4369,7 +4371,9 @@ class HistoryManager: ObservableObject {
                 cpuTemp: model.cpuTempC,
                 ramUsage: model.ramUsagePct,
                 gpuTemp: model.gpuTempC,
-                gpuLoad: model.gpuLoadPct
+                gpuLoad: model.gpuLoadPct,
+                cpuWatts: model.cpuWatts,
+                cpuFreqAvg: model.cpuFreqAvgGHz
             )
             
             self.historyData.append(point)
@@ -4382,44 +4386,63 @@ class HistoryManager: ObservableObject {
         let cutoff = Date().addingTimeInterval(Double(-hours * 60 * 60))
         let filtered = historyData.filter { $0.timestamp >= cutoff }
         
-        // If it's a short period (1h or 24h), return as is (max 1440 points is fine for SwiftUI Charts)
-        if hours <= 24 {
+        if hours <= 24 || filtered.isEmpty {
             return filtered
         }
         
-        // Downsample to ~1 point per hour for 7 days / 30 days
         var downsampled: [HistoryDataPoint] = []
-        var currentBucketStart: Date?
-        var currentBucketPoints: [HistoryDataPoint] = []
+        var bucketStart = filtered[0].timestamp
+        var sumLoad: Double = 0
+        var sumTemp: Double = 0
+        var sumRam: Double = 0
+        var sumGpuTemp: Double = 0
+        var sumGpuLoad: Double = 0
+        var sumWatts: Double = 0
+        var sumFreq: Double = 0
+        var wattsCount: Int = 0
+        var freqCount: Int = 0
+        var count: Int = 0
         
         for point in filtered {
-            if currentBucketStart == nil {
-                currentBucketStart = point.timestamp
-            }
-            
-            if point.timestamp.timeIntervalSince(currentBucketStart!) > 3600 {
-                // Average the bucket
-                if !currentBucketPoints.isEmpty {
-                    let avgCpuLoad = currentBucketPoints.map { $0.cpuLoad }.reduce(0, +) / Double(currentBucketPoints.count)
-                    let avgCpuTemp = currentBucketPoints.map { $0.cpuTemp }.reduce(0, +) / Double(currentBucketPoints.count)
-                    let avgRamUsage = currentBucketPoints.map { $0.ramUsage }.reduce(0, +) / Double(currentBucketPoints.count)
-                    let avgGpuTemp = currentBucketPoints.map { $0.gpuTemp }.reduce(0, +) / Double(currentBucketPoints.count)
-                    let avgGpuLoad = currentBucketPoints.map { $0.gpuLoad }.reduce(0, +) / Double(currentBucketPoints.count)
-                    
+            if point.timestamp.timeIntervalSince(bucketStart) >= 3600 {
+                if count > 0 {
                     downsampled.append(HistoryDataPoint(
-                        timestamp: currentBucketStart!.addingTimeInterval(1800), // Midpoint of hour
-                        cpuLoad: avgCpuLoad,
-                        cpuTemp: avgCpuTemp,
-                        ramUsage: avgRamUsage,
-                        gpuTemp: avgGpuTemp,
-                        gpuLoad: avgGpuLoad
+                        timestamp: bucketStart.addingTimeInterval(1800),
+                        cpuLoad: sumLoad / Double(count),
+                        cpuTemp: sumTemp / Double(count),
+                        ramUsage: sumRam / Double(count),
+                        gpuTemp: sumGpuTemp / Double(count),
+                        gpuLoad: sumGpuLoad / Double(count),
+                        cpuWatts: wattsCount > 0 ? sumWatts / Double(wattsCount) : nil,
+                        cpuFreqAvg: freqCount > 0 ? sumFreq / Double(freqCount) : nil
                     ))
                 }
-                currentBucketStart = point.timestamp
-                currentBucketPoints = [point]
-            } else {
-                currentBucketPoints.append(point)
+                bucketStart = point.timestamp
+                sumLoad = 0; sumTemp = 0; sumRam = 0; sumGpuTemp = 0; sumGpuLoad = 0; sumWatts = 0; sumFreq = 0
+                count = 0; wattsCount = 0; freqCount = 0
             }
+            
+            sumLoad += point.cpuLoad
+            sumTemp += point.cpuTemp
+            sumRam += point.ramUsage
+            sumGpuTemp += point.gpuTemp
+            sumGpuLoad += point.gpuLoad
+            if let w = point.cpuWatts { sumWatts += w; wattsCount += 1 }
+            if let f = point.cpuFreqAvg { sumFreq += f; freqCount += 1 }
+            count += 1
+        }
+        
+        if count > 0 {
+            downsampled.append(HistoryDataPoint(
+                timestamp: bucketStart.addingTimeInterval(1800),
+                cpuLoad: sumLoad / Double(count),
+                cpuTemp: sumTemp / Double(count),
+                ramUsage: sumRam / Double(count),
+                gpuTemp: sumGpuTemp / Double(count),
+                gpuLoad: sumGpuLoad / Double(count),
+                cpuWatts: wattsCount > 0 ? sumWatts / Double(wattsCount) : nil,
+                cpuFreqAvg: freqCount > 0 ? sumFreq / Double(freqCount) : nil
+            ))
         }
         
         return downsampled
@@ -4429,12 +4452,32 @@ class HistoryManager: ObservableObject {
 struct AnalysisContentView: View {
     @ObservedObject var historyManager = HistoryManager.shared
     @State private var selectedTimeframe: Int = 1 // Hours
+    @State private var displayData: [HistoryDataPoint] = []
+    @State private var isLoadingData: Bool = false
+    @AppStorage("analysis_show_cpuload") private var showCpuLoad: Bool = true
+    @AppStorage("analysis_show_thermals") private var showThermals: Bool = true
+    @AppStorage("analysis_show_ram") private var showRam: Bool = true
+    @AppStorage("analysis_show_gpuload") private var showGpuLoad: Bool = true
+    @AppStorage("analysis_show_cpuwatts") private var showCpuWatts: Bool = true
+    @AppStorage("analysis_show_cpufreq") private var showCpuFreq: Bool = true
+
+    private func loadChartData() {
+        isLoadingData = true
+        let tf = selectedTimeframe
+        Task.detached(priority: .userInitiated) {
+            let pts = historyManager.downsampledData(for: tf)
+            await MainActor.run {
+                self.displayData = pts
+                self.isLoadingData = false
+            }
+        }
+    }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Header & Filters
             HStack {
-                SectionTitle("System History & Trends")
+                SectionTitle("Histórico y Tendencias")
                 Spacer()
                 Picker("Timeframe", selection: $selectedTimeframe) {
                     Text("1h").tag(1)
@@ -4444,96 +4487,305 @@ struct AnalysisContentView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 250)
+                .onChange(of: selectedTimeframe) { _ in
+                    loadChartData()
+                }
             }
             .padding(.horizontal)
+
+            // Dynamic Chart Selectors / Toggles
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    Text("Gráficas visibles:")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                    
+                    Button(action: { showCpuLoad.toggle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: showCpuLoad ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(showCpuLoad ? Color.tahoeAccentCyan : .tahoeSubtext)
+                            Text("Carga CPU")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(showCpuLoad ? .white : .tahoeSubtext)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(showCpuLoad ? Color.tahoeAccentCyan.opacity(0.15) : Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(showCpuLoad ? Color.tahoeAccentCyan.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: { showThermals.toggle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: showThermals ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(showThermals ? Color.tahoeAccentRed : .tahoeSubtext)
+                            Text("Temperaturas")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(showThermals ? .white : .tahoeSubtext)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(showThermals ? Color.tahoeAccentRed.opacity(0.15) : Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(showThermals ? Color.tahoeAccentRed.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: { showRam.toggle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: showRam ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(showRam ? Color.tahoeAccentGreen : .tahoeSubtext)
+                            Text("Uso RAM")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(showRam ? .white : .tahoeSubtext)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(showRam ? Color.tahoeAccentGreen.opacity(0.15) : Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(showRam ? Color.tahoeAccentGreen.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: { showGpuLoad.toggle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: showGpuLoad ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(showGpuLoad ? Color.tahoeAccentPurple : .tahoeSubtext)
+                            Text("Carga GPU")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(showGpuLoad ? .white : .tahoeSubtext)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(showGpuLoad ? Color.tahoeAccentPurple.opacity(0.15) : Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(showGpuLoad ? Color.tahoeAccentPurple.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: { showCpuWatts.toggle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: showCpuWatts ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(showCpuWatts ? Color.tahoeAccentOrange : .tahoeSubtext)
+                            Text("Potencia CPU")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(showCpuWatts ? .white : .tahoeSubtext)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(showCpuWatts ? Color.tahoeAccentOrange.opacity(0.15) : Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(showCpuWatts ? Color.tahoeAccentOrange.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Button(action: { showCpuFreq.toggle() }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: showCpuFreq ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(showCpuFreq ? Color.tahoeAccentCyan : .tahoeSubtext)
+                            Text("Frecuencia CPU")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(showCpuFreq ? .white : .tahoeSubtext)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(showCpuFreq ? Color.tahoeAccentCyan.opacity(0.15) : Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(showCpuFreq ? Color.tahoeAccentCyan.opacity(0.4) : Color.white.opacity(0.1), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.horizontal)
+            }
             
             ScrollView {
                 VStack(spacing: 20) {
-                    let data = historyManager.downsampledData(for: selectedTimeframe)
+                    let data = displayData
                     
-                    if data.isEmpty {
+                    if isLoadingData {
+                        VStack {
+                            Spacer(minLength: 80)
+                            ProgressView()
+                                .scaleEffect(0.9)
+                            Text("Cargando tendencias de telemetría...")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.tahoeSubtext)
+                                .padding(.top, 6)
+                            Spacer()
+                        }
+                    } else if data.isEmpty {
                         VStack {
                             Spacer(minLength: 100)
-                            Text("Not enough data collected yet.")
+                            Text("No hay suficientes datos recolectados aún.")
+                               .foregroundColor(Color.tahoeSubtext)
+                            Text("AMD Power Gadget recolecta datos automáticamente cada minuto.")
+                                .font(.system(size: 11))
+                                .foregroundColor(Color.tahoeSubtext.opacity(0.7))
+                            Spacer()
+                        }
+                    } else if !showCpuLoad && !showThermals && !showRam && !showGpuLoad && !showCpuWatts && !showCpuFreq {
+                        VStack {
+                            Spacer(minLength: 80)
+                            Text("Todas las gráficas están ocultas.")
                                 .foregroundColor(Color.tahoeSubtext)
-                            Text("AMD Power Gadget samples data every minute in the background.")
+                            Text("Seleccioná una gráfica en el panel superior para visualizar su histórico.")
                                 .font(.system(size: 11))
                                 .foregroundColor(Color.tahoeSubtext.opacity(0.7))
                             Spacer()
                         }
                     } else {
                         // CPU Load Chart
-                        HistoryCard(title: "CPU Load", subtitle: "Average utilization over time", accent: Color.tahoeAccentCyan) {
-                            if #available(macOS 13.0, *) {
-                                Chart(data) { point in
-                                    LineMark(
-                                        x: .value("Time", point.timestamp),
-                                        y: .value("Load %", point.cpuLoad)
-                                    )
-                                    .foregroundStyle(Color.tahoeAccentCyan)
-                                    
-                                    AreaMark(
-                                        x: .value("Time", point.timestamp),
-                                        y: .value("Load %", point.cpuLoad)
-                                    )
-                                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentCyan.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                        if showCpuLoad {
+                            HistoryCard(title: "CPU Load", subtitle: "Average utilization over time", accent: Color.tahoeAccentCyan) {
+                                if #available(macOS 13.0, *) {
+                                    Chart(data) { point in
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("Load %", point.cpuLoad)
+                                        )
+                                        .foregroundStyle(Color.tahoeAccentCyan)
+                                        
+                                        AreaMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("Load %", point.cpuLoad)
+                                        )
+                                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentCyan.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                    }
+                                    .chartYScale(domain: 0...100)
+                                    .frame(height: 150)
+                                } else {
+                                    Text("Charts require macOS 13.0+")
                                 }
-                                .chartYScale(domain: 0...100)
-                                .frame(height: 150)
-                            } else {
-                                Text("Charts require macOS 13.0+")
                             }
                         }
                         
                         // Temperatures Chart (CPU & GPU)
-                        HistoryCard(title: "Thermal History", subtitle: "CPU and GPU temperatures", accent: Color.tahoeAccentRed) {
-                            if #available(macOS 13.0, *) {
-                                Chart(data) { point in
-                                    LineMark(
-                                        x: .value("Time", point.timestamp),
-                                        y: .value("Temperature", point.cpuTemp)
-                                    )
-                                    .interpolationMethod(.catmullRom)
-                                    .foregroundStyle(by: .value("Series", "CPU Temp"))
-                                    
-                                    LineMark(
-                                        x: .value("Time", point.timestamp),
-                                        y: .value("Temperature", point.gpuTemp)
-                                    )
-                                    .interpolationMethod(.catmullRom)
-                                    .foregroundStyle(by: .value("Series", "GPU Temp"))
+                        if showThermals {
+                            HistoryCard(title: "Thermal History", subtitle: "CPU and GPU temperatures", accent: Color.tahoeAccentRed) {
+                                if #available(macOS 13.0, *) {
+                                    Chart(data) { point in
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("Temperature", point.cpuTemp)
+                                        )
+                                        .interpolationMethod(.catmullRom)
+                                        .foregroundStyle(by: .value("Series", "CPU Temp"))
+                                        
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("Temperature", point.gpuTemp)
+                                        )
+                                        .interpolationMethod(.catmullRom)
+                                        .foregroundStyle(by: .value("Series", "GPU Temp"))
+                                    }
+                                    .chartForegroundStyleScale([
+                                        "CPU Temp": Color.tahoeAccentOrange,
+                                        "GPU Temp": Color.tahoeAccentPurple
+                                    ])
+                                    .chartYScale(domain: 20...110)
+                                    .frame(height: 150)
+                                } else {
+                                    Text("Charts require macOS 13.0+")
                                 }
-                                .chartForegroundStyleScale([
-                                    "CPU Temp": Color.tahoeAccentOrange,
-                                    "GPU Temp": Color.tahoeAccentPurple
-                                ])
-                                .chartYScale(domain: 20...110)
-                                .frame(height: 150)
-                            } else {
-                                Text("Charts require macOS 13.0+")
                             }
                         }
                         
                         // RAM Usage Chart
-                        HistoryCard(title: "Memory Usage", subtitle: "RAM utilization percentage", accent: Color.tahoeAccentGreen) {
-                            if #available(macOS 13.0, *) {
-                                Chart(data) { point in
-                                    LineMark(
-                                        x: .value("Time", point.timestamp),
-                                        y: .value("RAM %", point.ramUsage)
-                                    )
-                                    .foregroundStyle(Color.tahoeAccentGreen)
-                                    
-                                    AreaMark(
-                                        x: .value("Time", point.timestamp),
-                                        y: .value("RAM %", point.ramUsage)
-                                    )
-                                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentGreen.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                        if showRam {
+                            HistoryCard(title: "Memory Usage", subtitle: "RAM utilization percentage", accent: Color.tahoeAccentGreen) {
+                                if #available(macOS 13.0, *) {
+                                    Chart(data) { point in
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("RAM %", point.ramUsage)
+                                        )
+                                        .foregroundStyle(Color.tahoeAccentGreen)
+                                        
+                                        AreaMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("RAM %", point.ramUsage)
+                                        )
+                                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentGreen.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                    }
+                                    .chartYScale(domain: 0...100)
+                                    .frame(height: 150)
+                                } else {
+                                    Text("Charts require macOS 13.0+")
                                 }
-                                .chartYScale(domain: 0...100)
-                                .frame(height: 150)
-                            } else {
-                                Text("Charts require macOS 13.0+")
+                            }
+                        }
+
+                        // GPU Load Chart
+                        if showGpuLoad {
+                            HistoryCard(title: "GPU Load", subtitle: "Radeon Graphics utilization percentage", accent: Color.tahoeAccentPurple) {
+                                if #available(macOS 13.0, *) {
+                                    Chart(data) { point in
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("GPU %", point.gpuLoad)
+                                        )
+                                        .foregroundStyle(Color.tahoeAccentPurple)
+                                        
+                                        AreaMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("GPU %", point.gpuLoad)
+                                        )
+                                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentPurple.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                    }
+                                    .chartYScale(domain: 0...100)
+                                    .frame(height: 150)
+                                } else {
+                                    Text("Charts require macOS 13.0+")
+                                }
+                            }
+                        }
+
+                        // CPU Power Chart (Watts)
+                        if showCpuWatts {
+                            HistoryCard(title: "CPU Package Power", subtitle: "Real-time energy consumption in Watts", accent: Color.tahoeAccentOrange) {
+                                if #available(macOS 13.0, *) {
+                                    Chart(data) { point in
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("Watts", point.cpuWatts ?? 0)
+                                        )
+                                        .foregroundStyle(Color.tahoeAccentOrange)
+                                        
+                                        AreaMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("Watts", point.cpuWatts ?? 0)
+                                        )
+                                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentOrange.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                    }
+                                    .frame(height: 150)
+                                } else {
+                                    Text("Charts require macOS 13.0+")
+                                }
+                            }
+                        }
+
+                        // CPU Average Frequency Chart (GHz)
+                        if showCpuFreq {
+                            HistoryCard(title: "CPU Average Frequency", subtitle: "Average core frequency in GHz", accent: Color.tahoeAccentCyan) {
+                                if #available(macOS 13.0, *) {
+                                    Chart(data) { point in
+                                        LineMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("GHz", point.cpuFreqAvg ?? 0)
+                                        )
+                                        .foregroundStyle(Color.tahoeAccentCyan)
+                                        
+                                        AreaMark(
+                                            x: .value("Time", point.timestamp),
+                                            y: .value("GHz", point.cpuFreqAvg ?? 0)
+                                        )
+                                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentCyan.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                                    }
+                                    .frame(height: 150)
+                                } else {
+                                    Text("Charts require macOS 13.0+")
+                                }
                             }
                         }
                     }
@@ -4544,6 +4796,7 @@ struct AnalysisContentView: View {
         }
         .onAppear {
             historyManager.sampleCurrentTelemetry()
+            loadChartData()
         }
     }
 }
