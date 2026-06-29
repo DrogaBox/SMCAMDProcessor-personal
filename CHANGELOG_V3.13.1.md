@@ -1,7 +1,7 @@
-# CHANGELOG v3.13.0 (2026)
+# CHANGELOG v3.13.1 (2026)
 
 ## Overview
-Release v3.13.0 represents a comprehensive architectural hardening, memory optimization, and modern UI enhancement for the AMD Ryzen macOS telemetry stack (Zen 1 through Zen 5, HEDT Threadripper, and macOS 13 Ventura up to macOS 26 Tahoe).
+Release v3.13.1 represents a comprehensive architectural hardening, memory optimization, and modern UI enhancement for the AMD Ryzen macOS telemetry stack (Zen 1 through Zen 5, HEDT Threadripper, and macOS 13 Ventura up to macOS 26 Tahoe).
 
 ---
 
