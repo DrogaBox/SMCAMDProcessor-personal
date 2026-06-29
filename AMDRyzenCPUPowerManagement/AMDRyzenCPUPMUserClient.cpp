@@ -20,11 +20,23 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     }
     
     token = securityToken;
+    clientAuthorizedByUser = false;
     
     proc_t proc = (proc_t)get_bsdtask_info(owningTask);
     if (!proc) return false;
-    proc_name(proc_pid(proc), taskProcessBinaryName, 32);
-    clientAuthorizedByUser = false;
+    
+    proc_name(proc_pid(proc), taskProcessBinaryName, sizeof(taskProcessBinaryName));
+    taskProcessBinaryName[sizeof(taskProcessBinaryName) - 1] = '\0';
+    
+    bool isRoot = (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0);
+    bool isKnownApp = (strncmp(taskProcessBinaryName, "AMD Power Gadget", 16) == 0 ||
+                       strncmp(taskProcessBinaryName, "SMCAMDProcessor", 15) == 0);
+                       
+    if (isRoot || isKnownApp) {
+        clientAuthorizedByUser = true;
+    } else {
+        IOLog("AMDCPUSupport: Connection attempt from unauthorized process: %s\n", taskProcessBinaryName);
+    }
     
     return true;
 }
