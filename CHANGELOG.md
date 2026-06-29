@@ -1,5 +1,9 @@
 # Change Summary & Release Changelog
 
+## v3.12.0 — Customization & Themes Engine Architecture
+* **AppTheme Preset System**: Architected extensible `AppTheme` presets (`Tahoe Glass`, `Cyberpunk Neon`, `Solarized Amber`, `Monochrome Stealth`, `Nordic Frost`) with dynamic color token bindings.
+* **Support Audio Feedback Integration**: Added compressed audio playback for community support interactions.
+
 ## v3.11.0 — Async Telemetry & Codebase Quality Sweep
 * **Joint Codebase Audit with Mistral Large**: Conducted deep architectural sweep across C++ kernel headers and Swift AppKit/SwiftUI layers.
 * **Async Kext Sensor Sampling**: Offloaded synchronous `IOConnectCallStructMethod` hardware polling in `TelemetryModel.swift` off the main thread to ensure 100% smooth UI under heavy sensor polling.
