@@ -450,15 +450,20 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     
     uint64_t rapl = 0;
-    if(!read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
-        IOLog("AMDCPUSupport::start: failed to read kMSR_RAPL_PWR_UNIT, aborting start.\n");
-        return false;
+    if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
+        uint8_t energyStatusUnits = (rapl >> 8) & 0x1f;
+        uint8_t timeUnits = (rapl >> 16) & 0x0f;
+        pwrEnergyUnit = 1.0 / (double)(1ULL << energyStatusUnits);
+        pwrTimeUnit = 1.0 / (double)(1ULL << timeUnits);
+    } else {
+        static bool loggedRaplFallback = false;
+        if (!loggedRaplFallback) {
+            loggedRaplFallback = true;
+            IOLog("AMDCPUSupport::start WARN: failed to read MSR_RAPL_POWER_UNIT, using default 1/2^16 energy unit\n");
+        }
+        pwrEnergyUnit = 1.0 / (double)(1ULL << 16);
+        pwrTimeUnit = 1.0 / (double)(1ULL << 10);
     }
-    
-    pwrTimeUnit = pow((double)0.5, (double)((rapl >> 16) & 0xf));
-    pwrEnergyUnit = pow((double)0.5, (double)((rapl >> 8) & 0x1f));
-//    IOLog("a %lld\n", (long long)(pwrTimeUnit * 10000000000));
-//    IOLog("b %lld\n", (long long)(pwrEnergyUnit * 10000000000));
     
     fetchOEMBaseBoardInfo();
     
@@ -970,8 +975,7 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
 
     double seconds = (ctsc - pwrLastTSC) / (double)(xnuTSCFreq);
     if (seconds <= 0.0) { pwrLastTSC = ctsc; return; }
-    double e = (pwrEnergyUnit * energyDelta) / (seconds);
-    e *= pwrTimeUnit * 1000;
+    double e = (pwrEnergyUnit * (double)energyDelta) / seconds;
     uniPackageEnergy = e;
 
 
