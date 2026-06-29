@@ -588,6 +588,8 @@ struct OriginalLineChartCard: View {
     let line2Label: LocalizedStringKey?
     let height: CGFloat
 
+    @AppStorage("app_chart_style") private var selectedChartStyleRaw: String = AppChartStyle.line.rawValue
+
     private var yMin: Double {
         var vals = data.map(line1)
         if let l2 = line2 { vals.append(contentsOf: data.map(l2)) }
@@ -625,25 +627,41 @@ struct OriginalLineChartCard: View {
                 let maxIndex = Double(indexedData.count - 1)
 
                 Chart(indexedData, id: \.offset) { index, pt in
-                    LineMark(
-                        x: .value("Index", Double(index)),
-                        y: .value(line1Label, line1(pt))
-                    )
-                    .foregroundStyle(accent)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    .interpolationMethod(.catmullRom)
-
-                    AreaMark(
-                        x: .value("Index", Double(index)),
-                        y: .value(line1Label, line1(pt))
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [accent.opacity(0.15), accent.opacity(0.0)],
-                            startPoint: .top, endPoint: .bottom
+                    if selectedChartStyleRaw == AppChartStyle.bar.rawValue {
+                        BarMark(
+                            x: .value("Index", Double(index)),
+                            y: .value(line1Label, line1(pt))
                         )
-                    )
-                    .interpolationMethod(.catmullRom)
+                        .foregroundStyle(accent)
+                    } else if selectedChartStyleRaw == AppChartStyle.filledArea.rawValue {
+                        AreaMark(
+                            x: .value("Index", Double(index)),
+                            y: .value(line1Label, line1(pt))
+                        )
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [accent.opacity(0.65), accent.opacity(0.05)],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+                        .interpolationMethod(.catmullRom)
+
+                        LineMark(
+                            x: .value("Index", Double(index)),
+                            y: .value(line1Label, line1(pt))
+                        )
+                        .foregroundStyle(accent)
+                        .lineStyle(StrokeStyle(lineWidth: 1.5))
+                        .interpolationMethod(.catmullRom)
+                    } else {
+                        LineMark(
+                            x: .value("Index", Double(index)),
+                            y: .value(line1Label, line1(pt))
+                        )
+                        .foregroundStyle(accent)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .interpolationMethod(.catmullRom)
+                    }
                 }
                 .chartYScale(domain: yMin...yMax)
                 .chartXScale(domain: 0...maxIndex)
