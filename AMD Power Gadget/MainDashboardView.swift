@@ -2766,12 +2766,69 @@ private struct CPPCCoreGrid: View {
     }
 }
 
+struct ThemeSelectorGrid: View {
+    @AppStorage("app_theme_preset") private var selectedThemeRaw: String = AppTheme.tahoe.rawValue
+    private let columns = [GridItem(.adaptive(minimum: 100), spacing: 12)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(AppTheme.allCases) { theme in
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selectedThemeRaw = theme.rawValue
+                    }
+                }) {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(LinearGradient(
+                                    colors: [theme.accentCyan, theme.accentOrange],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ))
+                                .frame(width: 36, height: 36)
+                                .overlay(
+                                    Circle()
+                                        .stroke(selectedThemeRaw == theme.rawValue ? Color.white : Color.clear, lineWidth: 2)
+                                )
+                            if selectedThemeRaw == theme.rawValue {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 14, weight: .bold))
+                            }
+                        }
+                        Text(theme.rawValue)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(selectedThemeRaw == theme.rawValue ? .white : .tahoeSubtext)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity)
+                    .background(selectedThemeRaw == theme.rawValue ? Color.white.opacity(0.08) : Color.clear)
+                    .cornerRadius(10)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.tahoeCard)
+                .background(RoundedRectangle(cornerRadius: 14).fill(.ultraThinMaterial))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.tahoeCardBorder, lineWidth: 1))
+        .cornerRadius(14)
+    }
+}
+
 struct SystemInfoContentView: View {
     @ObservedObject var model: TelemetryModel
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                SectionTitle("Appearance & Themes Engine")
+                ThemeSelectorGrid()
+                
                 SectionTitle("Processor")
                 TahoeCard {
                     InfoRow(label: "CPU Model",      value: model.sysInfo.cpuBrand)
