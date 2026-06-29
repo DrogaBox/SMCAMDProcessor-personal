@@ -1,0 +1,54 @@
+name: CI
+on:
+  push: { branches: [master] }
+  pull_request: { branches: [master] }
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build AMDRyzenCPUPowerManagement
+        run: |
+          xcodebuild -project SMCAMDProcessor.xcodeproj \
+            -target AMDRyzenCPUPowerManagement -configuration Release \
+            ARCHS="x86_64 arm64" ONLY_ACTIVE_ARCH=NO clean build analyze
+
+      - name: Build SMCAMDProcessor
+        run: |
+          xcodebuild -project SMCAMDProcessor.xcodeproj \
+            -target SMCAMDProcessor -configuration Release \
+            ARCHS="x86_64 arm64" ONLY_ACTIVE_ARCH=NO clean build analyze
+
+      - name: Build AMD Power Gadget
+        run: |
+          xcodebuild -project SMCAMDProcessor.xcodeproj \
+            -target "AMD Power Gadget" -configuration Release \
+            ARCHS="x86_64 arm64" ONLY_ACTIVE_ARCH=NO clean build analyze
+
+      - name: Run unit tests
+        run: |
+          xcodebuild test -project SMCAMDProcessor.xcodeproj \
+            -scheme AMDPowerGadgetTests \
+            -destination "platform=macOS"
+
+      - name: Lint Swift
+        run: |
+          brew install swift-format
+          swift-format lint --strict --recursive "AMD Power Gadget"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: |
+            build/Release/*.kext
+            build/Release/AMD Power Gadget.app

@@ -13,6 +13,7 @@
 #include "Headers/LegacyHeaders/LegacyIOUserClient.h"
 
 #include <sys/proc.h>
+#include <sys/kauth.h>
 
 //#include <IOKit/IOService.h>
 //#include <IOKit/IOUserClient.h>

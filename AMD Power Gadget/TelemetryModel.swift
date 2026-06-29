@@ -816,7 +816,7 @@ final class TelemetryModel: ObservableObject {
     }
 
     // Format instruction count with suffix like original: K, M, G, T, P, E
-    private func formatInstRetired(_ number: UInt64) -> String {
+    func formatInstRetired(_ number: UInt64) -> String {
         var num: Double = Double(number)
         let sign = (num < 0) ? "-" : ""
         num = abs(num)
