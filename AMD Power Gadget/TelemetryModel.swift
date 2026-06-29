@@ -357,6 +357,8 @@ final class TelemetryModel: ObservableObject {
     private var lastDiskReadBytes: UInt64 = 0
     private var lastDiskWriteBytes: UInt64 = 0
     private var lastDiskCheck: Date = Date.distantPast
+    private let ioQueue = DispatchQueue(label: "com.drogabox.SMCAMDProcessor.io", qos: .userInteractive)
+    private var isSampling = false
 
     func setPopoverVisible(_ visible: Bool) {
         popoverVisible = visible
@@ -546,18 +548,84 @@ final class TelemetryModel: ObservableObject {
     }
 
     private func sample() {
-        if !smcDriverLoaded {
-            initSMC()
-        }
+        guard !isSampling else { return }
+        isSampling = true
 
+        ioQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            if !self.smcDriverLoaded {
+                self.initSMC()
+            }
+
+            let pm = ProcessorModel.shared
+            var numPhys = self.cachedNumPhysicalCores
+            if numPhys == 0 {
+                numPhys = pm.getNumOfCore()
+            }
+            let numLogi = self.sysInfo.logicalCores > 0 ? self.sysInfo.logicalCores : numPhys
+
+            let metric   = pm.getMetric(forced: true)
+            let loadIndex = pm.getLoadIndex()
+            let rawGPUTemp = pm.getGPUTemp()
+            let rawGPUPower = pm.getGPUPower()
+            let rawGPULoad = pm.getGPUUtilization()
+            let rawGPUVram = pm.getGPUVramUsed()
+            let rawGPUFan = pm.getGPUFanRPM()
+            let ccdTemps = pm.getCCDTemperatures()
+            let instDelta = pm.getInstructionDelta()
+
+            let numFansCount = self.numFans
+            var fanRpms: [UInt64] = []
+            var fanCtrls: [UInt64] = []
+            if self.smcDriverLoaded && numFansCount > 0 {
+                fanRpms  = pm.kernelGetUInt64(count: numFansCount, selector: 93)
+                fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.isSampling = false
+                self.processSampleData(
+                    numPhys: numPhys,
+                    numLogi: numLogi,
+                    metric: metric,
+                    loadIndex: loadIndex,
+                    rawGPUTemp: rawGPUTemp,
+                    rawGPUPower: rawGPUPower,
+                    rawGPULoad: rawGPULoad,
+                    rawGPUVram: rawGPUVram,
+                    rawGPUFan: rawGPUFan,
+                    ccdTemps: ccdTemps,
+                    instDelta: instDelta,
+                    fanRpms: fanRpms,
+                    fanCtrls: fanCtrls
+                )
+            }
+        }
+    }
+
+    private func processSampleData(
+        numPhys: Int,
+        numLogi: Int,
+        metric: [Float],
+        loadIndex: [Float],
+        rawGPUTemp: Float,
+        rawGPUPower: Float,
+        rawGPULoad: Float,
+        rawGPUVram: Float,
+        rawGPUFan: Float,
+        ccdTemps: [Float],
+        instDelta: [UInt64],
+        fanRpms: [UInt64],
+        fanCtrls: [UInt64]
+    ) {
         if cachedNumPhysicalCores == 0 {
-            cachedNumPhysicalCores = ProcessorModel.shared.getNumOfCore()
-            cachedNumLogicalCores = sysInfo.logicalCores > 0 ? sysInfo.logicalCores : cachedNumPhysicalCores
+            cachedNumPhysicalCores = numPhys
+            cachedNumLogicalCores = numLogi
         }
         let numPhysicalCores = cachedNumPhysicalCores
         let numLogicalCores = cachedNumLogicalCores
-        let metric   = ProcessorModel.shared.getMetric(forced: true)
-        let loadIndex = ProcessorModel.shared.getLoadIndex()
 
         guard numPhysicalCores > 0 && numLogicalCores > 0 && metric.count > numPhysicalCores + 2 else { return }
 
@@ -574,11 +642,6 @@ final class TelemetryModel: ObservableObject {
         cpuFreqAvgGHz = Double(avgMHz) * 0.001
         cpuFreqMaxGHz = Double(maxMHz) * 0.001
 
-        let rawGPUTemp = ProcessorModel.shared.getGPUTemp()
-        let rawGPUPower = ProcessorModel.shared.getGPUPower()
-        let rawGPULoad = ProcessorModel.shared.getGPUUtilization()
-        let rawGPUVram = ProcessorModel.shared.getGPUVramUsed()
-        let rawGPUFan = ProcessorModel.shared.getGPUFanRPM()
         gpuTempC = Double(rawGPUTemp)
         gpuPowerW = Double(rawGPUPower)
         
@@ -591,10 +654,8 @@ final class TelemetryModel: ObservableObject {
 
         gpuVramUsedBytes = Double(rawGPUVram)
         gpuFanRPM = Double(rawGPUFan)
-        ccdTemperatures = ProcessorModel.shared.getCCDTemperatures()
+        ccdTemperatures = ccdTemps
 
-        // Inst Retired: read from getInstructionDelta() like original Power Tool
-        let instDelta = ProcessorModel.shared.getInstructionDelta()
         let instSum = instDelta.reduce(0, +)
         instAccumulated += instSum
         instElapsedTime += RefreshRateConfig.shared.interval
@@ -717,8 +778,7 @@ final class TelemetryModel: ObservableObject {
         
         var firstFanRPM: Double = 0
         if smcDriverLoaded && numFans > 0 {
-            let rpms = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 93)
-            if let firstRpm = rpms.first {
+            if let firstRpm = fanRpms.first {
                 firstFanRPM = Double(firstRpm)
             }
         }
@@ -746,12 +806,10 @@ final class TelemetryModel: ObservableObject {
         if history.count > maxHistoryPoints { history.removeFirst() }
 
         if smcDriverLoaded && numFans > 0 {
-            let rpms  = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 93)
-            let ctrls = ProcessorModel.shared.kernelGetUInt64(count: numFans, selector: 94)
             for i in 0..<numFans where i < fans.count {
-                fans[i].rpm        = rpms.count  > i ? rpms[i]                  : 0
-                fans[i].throttle   = ctrls.count > i ? UInt8(ctrls[i] >> 8)     : 0
-                fans[i].isOverrided = ctrls.count > i ? (ctrls[i] & 0xff) == 0  : false
+                fans[i].rpm        = fanRpms.count  > i ? fanRpms[i]                 : 0
+                fans[i].throttle   = fanCtrls.count > i ? UInt8(fanCtrls[i] >> 8)    : 0
+                fans[i].isOverrided = fanCtrls.count > i ? (fanCtrls[i] & 0xff) == 0 : false
             }
         }
 
