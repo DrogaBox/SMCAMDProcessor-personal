@@ -2144,6 +2144,7 @@ private struct PStateRowControlView: View {
                         .foregroundColor(.tahoeSubtext)
                 }
                 .accentColor(.tahoeSubtext)
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isExpanded)
             }
         }
         .padding(10)
