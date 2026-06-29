@@ -33,7 +33,7 @@ class GraphViewGridLineLayer: CALayer {
     }
     
     func setup(){
-
+        drawsAsynchronously = true
     }
     
     override func draw(in ctx: CGContext) {
