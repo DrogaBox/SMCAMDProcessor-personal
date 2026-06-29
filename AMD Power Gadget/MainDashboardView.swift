@@ -437,6 +437,9 @@ struct DashboardContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                SectionTitle("Appearance & Themes Engine")
+                ThemeSelectorGrid()
+                
                 HStack(spacing: 12) {
                     StatCard(label: "CPU Temp",  value: String(format: "%.1f°C",   model.cpuTempC),     accent: .tahoeAccentCyan,   icon: "thermometer.medium")
                     StatCard(label: "CPU Power", value: String(format: "%.1fW",    model.cpuWatts),     accent: .tahoeAccentOrange, icon: "bolt.fill")
