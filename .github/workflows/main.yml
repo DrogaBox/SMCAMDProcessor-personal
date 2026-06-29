@@ -65,7 +65,8 @@ jobs:
 
       - name: Extract Release Notes
         if: startsWith(github.ref, 'refs/tags/')
-        run: awk '/^## v/{count++} count==1{print}' CHANGELOG.md > build/release_notes.md
+        run: |
+          awk -v tag="## ${{ github.ref_name }}" '$0 ~ tag {flag=1; print; next} /^## v/ {flag=0} flag' CHANGELOG.md > build/release_notes.md
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
