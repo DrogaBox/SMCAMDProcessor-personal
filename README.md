@@ -43,6 +43,15 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
 
 ---
 
+## Architectural Evolution & Upgrades
+
+This project represents a major evolutionary leap over the original `wtf.spinach.SMCAMDProcessor` implementation by spinach, addressing critical bottlenecks in hardware access latency, power efficiency, UI performance, and memory leak vulnerabilities.
+
+For a detailed comparative breakdown of features, APIs, and low-level improvements, see:
+👉 **[COMPARISON.md](COMPARISON.md)**
+
+---
+
 ## Supported AMD Processors
 
 Full compatibility with all AMD Zen architectures supported by the AMD Vanilla kernel patches:
