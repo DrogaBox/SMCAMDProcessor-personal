@@ -3627,7 +3627,7 @@ struct MenuBarPopoverView: View {
             // 2. Render Vertical List for Bars and Sparklines (style > 0)
             // 2. Render Vertical List for Bars and Sparklines (style > 0 or sparkline enabled)
             let showLinearOrGraphs = rings.contains(where: { ring in
-                if ring == "cpu" && cfg.popoverShowCPU && (cfg.popoverCPUStyle == 1 || cfg.popoverShowCPUSparkline) { return true }
+                if ring == "cpu" && cfg.popoverShowCPU && (cfg.popoverCPUStyle == 1 || cfg.popoverShowCPUSparkline || cfg.popoverShowCores) { return true }
                 if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 1 { return true }
                 if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 1 { return true }
                 if ring == "gpu" && cfg.popoverShowGPURing && (cfg.popoverGPUStyle == 1 || cfg.popoverShowGPUSparkline) { return true }
@@ -3660,6 +3660,10 @@ struct MenuBarPopoverView: View {
                                     value: { $0.cpuTempC },
                                     filterZeros: true
                                 )
+                            }
+                            if cfg.popoverShowCores {
+                                PopoverCoreGridView(model: model)
+                                    .padding(.top, 2)
                             }
                         } else if ring == "ram" && cfg.popoverShowRAM {
                             if cfg.popoverRAMStyle == 1 {
@@ -3994,15 +3998,27 @@ struct PopoverConfigView: View {
                                 .foregroundColor(.tahoeSubtext)
                             if cfg.popoverShowCPU {
                                 Divider().background(Color.white.opacity(0.1)).padding(.vertical, 2)
-                                Toggle(isOn: .init(
-                                    get: { cfg.popoverShowCPUSparkline },
-                                    set: { cfg.popoverShowCPUSparkline = $0; notify(widthChanged: false) }
-                                )) {
-                                    Text("Show Temperature Sparkline Graph below")
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(.tahoeText)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Toggle(isOn: .init(
+                                        get: { cfg.popoverShowCPUSparkline },
+                                        set: { cfg.popoverShowCPUSparkline = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Show Temperature Sparkline Graph below")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(.tahoeText)
+                                    }
+                                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
+                                    
+                                    Toggle(isOn: .init(
+                                        get: { cfg.popoverShowCores },
+                                        set: { cfg.popoverShowCores = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Show Per-Core Utilization Grid below")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(.tahoeText)
+                                    }
+                                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
                                 }
-                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
                             }
                         }
                         .padding(12)
@@ -4255,6 +4271,72 @@ struct PopoverConfigView: View {
     private func notify(widthChanged: Bool = true) {
         cfg = MenuBarConfig()
         NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
+    }
+}
+
+// MARK: - Popover CPU Per-Core Thread Load Grid Widget
+struct PopoverCoreGridView: View {
+    @ObservedObject var model: TelemetryModel
+    
+    private var columns: [GridItem] {
+        let count = model.cores.count
+        let colCount = count > 16 ? 8 : (count > 8 ? 6 : 4)
+        return Array(repeating: GridItem(.flexible(), spacing: 4), count: colCount)
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("CPU Per-Core Thread Load")
+                .font(.system(size: 9.5, weight: .bold))
+                .foregroundColor(.white.opacity(0.6))
+                .padding(.horizontal, 4)
+            
+            LazyVGrid(columns: columns, spacing: 4) {
+                ForEach(model.cores) { core in
+                    GeometryReader { geo in
+                        ZStack(alignment: .bottom) {
+                            RoundedRectangle(cornerRadius: 3.5)
+                                .fill(Color.black.opacity(0.25))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3.5)
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                                )
+                            
+                            // Fill
+                            RoundedRectangle(cornerRadius: 3.5)
+                                .fill(LinearGradient(
+                                    gradient: Gradient(colors: [Color.cyan.opacity(0.8), Color.purple.opacity(0.9)]),
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                ))
+                                .frame(height: geo.size.height * CGFloat(core.loadPct / 100.0))
+                            
+                            // Labels
+                            VStack(spacing: 0) {
+                                HStack {
+                                    Text("\(core.id)")
+                                        .font(.system(size: 7, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.35))
+                                        .padding(.leading, 3)
+                                        .padding(.top, 1)
+                                    Spacer()
+                                }
+                                Spacer()
+                                Text(String(format: "%.0f%%", core.loadPct))
+                                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .padding(.bottom, 1.5)
+                            }
+                        }
+                    }
+                    .frame(height: 24)
+                }
+            }
+        }
+        .padding(8)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(6)
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.06), lineWidth: 0.5))
     }
 }
 
