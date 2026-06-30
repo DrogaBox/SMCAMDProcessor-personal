@@ -4295,10 +4295,28 @@ struct PopoverConfigView: View {
 struct PopoverCoreGridView: View {
     @ObservedObject var model: TelemetryModel
     
-    private var columns: [GridItem] {
+    private var colCount: Int {
         let count = model.cores.count
-        let colCount = count > 16 ? 8 : (count > 8 ? 6 : 4)
-        return Array(repeating: GridItem(.flexible(), spacing: 4), count: colCount)
+        if count > 64 { return 12 }
+        if count > 32 { return 10 }
+        if count > 16 { return 8 }
+        if count > 8  { return 6 }
+        return 4
+    }
+    
+    private var columns: [GridItem] {
+        return Array(repeating: GridItem(.flexible(), spacing: 3), count: colCount)
+    }
+    
+    private var cellHeight: CGFloat {
+        let count = model.cores.count
+        if count > 64 { return 14 }
+        if count > 32 { return 18 }
+        return 24
+    }
+    
+    private var showTextLabels: Bool {
+        return model.cores.count <= 32
     }
     
     var body: some View {
@@ -4308,7 +4326,7 @@ struct PopoverCoreGridView: View {
                 .foregroundColor(.white.opacity(0.6))
                 .padding(.horizontal, 4)
             
-            LazyVGrid(columns: columns, spacing: 4) {
+            LazyVGrid(columns: columns, spacing: 3) {
                 ForEach(model.cores) { core in
                     GeometryReader { geo in
                         ZStack(alignment: .bottom) {
@@ -4328,25 +4346,28 @@ struct PopoverCoreGridView: View {
                                 ))
                                 .frame(height: geo.size.height * CGFloat(core.loadPct / 100.0))
                             
-                            // Labels
-                            VStack(spacing: 0) {
-                                HStack {
-                                    Text("\(core.id)")
-                                        .font(.system(size: 7, weight: .bold))
-                                        .foregroundColor(.white.opacity(0.35))
-                                        .padding(.leading, 3)
-                                        .padding(.top, 1)
+                            // Labels (adaptive visibility for dense core layouts)
+                            if showTextLabels {
+                                VStack(spacing: 0) {
+                                    HStack {
+                                        Text("\(core.id)")
+                                            .font(.system(size: 7, weight: .bold))
+                                            .foregroundColor(.white.opacity(0.35))
+                                            .padding(.leading, 3)
+                                            .padding(.top, 1)
+                                        Spacer()
+                                    }
                                     Spacer()
+                                    Text(String(format: "%.0f%%", core.loadPct))
+                                        .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.white)
+                                        .padding(.bottom, 1.5)
                                 }
-                                Spacer()
-                                Text(String(format: "%.0f%%", core.loadPct))
-                                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.white)
-                                    .padding(.bottom, 1.5)
                             }
                         }
                     }
-                    .frame(height: 24)
+                    .frame(height: cellHeight)
+                    .help(String(format: "Thread %d: %.1f%%", core.id, core.loadPct))
                 }
             }
         }
