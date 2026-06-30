@@ -283,8 +283,10 @@ private struct SidebarView: View {
                 }
                 Spacer()
                 Link(destination: URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!) {
-                    Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0") · macOS Tahoe")
-                        .font(.system(size: 9, weight: .regular))
+                    let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
+                    let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
+                    Text("App: v\(appVer) • Kext: v\(kextVer) · macOS Tahoe")
+                        .font(.system(size: 8.5, weight: .regular, design: .monospaced))
                         .foregroundColor(Color(white: 0.35))
                 }
                 .padding(.horizontal, 18)
@@ -3392,34 +3394,42 @@ struct MenuBarPopoverView: View {
     var body: some View {
         VStack(spacing: 12) {
             // Header Section
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "cpu")
-                        .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))
-                        .font(.system(size: 13, weight: .bold))
-                    Text("AMD Power Gadget")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                Spacer()
-                HStack(spacing: 8) {
+            VStack(spacing: 4) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "cpu")
+                            .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))
+                            .font(.system(size: 13, weight: .bold))
+                        Text("AMD Power Gadget")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
                     Button(action: {
                         MenuBarConfig.shared.popoverPinOpen.toggle()
                         NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
                     }) {
                         Image(systemName: MenuBarConfig.shared.popoverPinOpen ? "pin.fill" : "pin")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(MenuBarConfig.shared.popoverPinOpen ? .tahoeAccentGreen : .white.opacity(0.4))
                     }
                     .buttonStyle(.plain)
                     .help("Pin Popover Open")
-                    
+                }
+                
+                HStack {
                     let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
                     let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
-                    Text("App: v\(appVer) • Kext: v\(kextVer)")
-                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.45))
+                    
+                    Text("App Version: v\(appVer)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.4))
+                    Spacer()
+                    Text("Kext Version: v\(kextVer)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.4))
                 }
+                .padding(.top, 2)
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
