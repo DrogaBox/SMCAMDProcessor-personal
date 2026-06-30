@@ -66,6 +66,7 @@ struct MenuBarConfig {
     var popoverShowGPU:       Bool { get { ud.bool(forKey: "pop_showGPU")       } set { ud.set(newValue, forKey: "pop_showGPU")       } }
     var popoverShowGPURing:   Bool { get { ud.bool(forKey: "pop_showGPURing")   } set { ud.set(newValue, forKey: "pop_showGPURing")   } }
     var popoverShowVRAM:      Bool { get { ud.bool(forKey: "pop_showVRAM")      } set { ud.set(newValue, forKey: "pop_showVRAM")      } }
+    var popoverShowCores:     Bool { get { ud.bool(forKey: "pop_showCores")     } set { ud.set(newValue, forKey: "pop_showCores")     } }
     var popoverShowNetwork:   Bool { get { ud.bool(forKey: "pop_showNetwork")   } set { ud.set(newValue, forKey: "pop_showNetwork")   } }
     var popoverShowProcesses: Bool { get { ud.bool(forKey: "pop_showProcesses") } set { ud.set(newValue, forKey: "pop_showProcesses") } }
     var popoverRingShowLabels:Bool { get { ud.bool(forKey: "pop_ringShowLabels") } set { ud.set(newValue, forKey: "pop_ringShowLabels") } }
@@ -112,6 +113,7 @@ struct MenuBarConfig {
         if ud.object(forKey: "pop_showGPU")       == nil { ud.set(true, forKey: "pop_showGPU")       }
         if ud.object(forKey: "pop_showGPURing")   == nil { ud.set(true, forKey: "pop_showGPURing")   }
         if ud.object(forKey: "pop_showVRAM")      == nil { ud.set(true, forKey: "pop_showVRAM")      }
+        if ud.object(forKey: "pop_showCores")     == nil { ud.set(false, forKey: "pop_showCores")     }
         if ud.object(forKey: "pop_showNetwork")   == nil { ud.set(true, forKey: "pop_showNetwork")   }
         if ud.object(forKey: "pop_showProcesses") == nil { ud.set(true, forKey: "pop_showProcesses") }
         if ud.object(forKey: "pop_ringShowLabels") == nil { ud.set(true, forKey: "pop_ringShowLabels") }
