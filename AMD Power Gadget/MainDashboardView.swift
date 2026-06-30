@@ -4308,6 +4308,9 @@ struct HistoryDataPoint: Codable, Identifiable {
     let gpuLoad: Double
     var cpuWatts: Double? = nil
     var cpuFreqAvg: Double? = nil
+    
+    var safeCpuWatts: Double { cpuWatts ?? 0.0 }
+    var safeCpuFreqAvg: Double { cpuFreqAvg ?? 0.0 }
 }
 
 class HistoryManager: ObservableObject {
@@ -4748,13 +4751,13 @@ struct AnalysisContentView: View {
                                     Chart(data) { point in
                                         LineMark(
                                             x: .value("Time", point.timestamp),
-                                            y: .value("Watts", point.cpuWatts ?? 0)
+                                            y: .value("Watts", point.safeCpuWatts)
                                         )
                                         .foregroundStyle(Color.tahoeAccentOrange)
                                         
                                         AreaMark(
                                             x: .value("Time", point.timestamp),
-                                            y: .value("Watts", point.cpuWatts ?? 0)
+                                            y: .value("Watts", point.safeCpuWatts)
                                         )
                                         .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentOrange.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
                                     }
@@ -4772,13 +4775,13 @@ struct AnalysisContentView: View {
                                     Chart(data) { point in
                                         LineMark(
                                             x: .value("Time", point.timestamp),
-                                            y: .value("GHz", point.cpuFreqAvg ?? 0)
+                                            y: .value("GHz", point.safeCpuFreqAvg)
                                         )
                                         .foregroundStyle(Color.tahoeAccentCyan)
                                         
                                         AreaMark(
                                             x: .value("Time", point.timestamp),
-                                            y: .value("GHz", point.cpuFreqAvg ?? 0)
+                                            y: .value("GHz", point.safeCpuFreqAvg)
                                         )
                                         .foregroundStyle(LinearGradient(gradient: Gradient(colors: [Color.tahoeAccentCyan.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
                                     }
