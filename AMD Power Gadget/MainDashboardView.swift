@@ -4385,9 +4385,9 @@ class HistoryManager: ObservableObject {
         }
     }
     
-    func downsampledData(for hours: Int) -> [HistoryDataPoint] {
+    nonisolated static func performDownsample(data: [HistoryDataPoint], hours: Int) -> [HistoryDataPoint] {
         let cutoff = Date().addingTimeInterval(Double(-hours * 60 * 60))
-        let filtered = historyData.filter { $0.timestamp >= cutoff }
+        let filtered = data.filter { $0.timestamp >= cutoff }
         
         if hours <= 24 || filtered.isEmpty {
             return filtered
@@ -4450,6 +4450,10 @@ class HistoryManager: ObservableObject {
         
         return downsampled
     }
+    
+    func downsampledData(for hours: Int) -> [HistoryDataPoint] {
+        return Self.performDownsample(data: historyData, hours: hours)
+    }
 }
 
 struct AnalysisContentView: View {
@@ -4467,8 +4471,9 @@ struct AnalysisContentView: View {
     private func loadChartData() {
         isLoadingData = true
         let tf = selectedTimeframe
+        let rawData = historyManager.historyData
         Task.detached(priority: .userInitiated) {
-            let pts = historyManager.downsampledData(for: tf)
+            let pts = HistoryManager.performDownsample(data: rawData, hours: tf)
             await MainActor.run {
                 self.displayData = pts
                 self.isLoadingData = false
