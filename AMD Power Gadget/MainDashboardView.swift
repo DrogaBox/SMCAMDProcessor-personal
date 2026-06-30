@@ -3402,9 +3402,22 @@ struct MenuBarPopoverView: View {
                         .foregroundColor(.white)
                 }
                 Spacer()
-                Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3")")
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.4))
+                HStack(spacing: 8) {
+                    Button(action: {
+                        MenuBarConfig.shared.popoverPinOpen.toggle()
+                        NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
+                    }) {
+                        Image(systemName: MenuBarConfig.shared.popoverPinOpen ? "pin.fill" : "pin")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(MenuBarConfig.shared.popoverPinOpen ? .tahoeAccentGreen : .white.opacity(0.4))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Pin Popover Open")
+                    
+                    Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3")")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.4))
+                }
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
@@ -4184,6 +4197,10 @@ struct PopoverConfigView: View {
                     ToggleRow(label: "Show Ring Details", detail: "Display temperatures/GB usage inside rings", isOn: .init(
                         get: { cfg.popoverRingShowTemp }, set: { cfg.popoverRingShowTemp = $0; notify(widthChanged: false) }
                     ), accent: .tahoeAccentOrange) { _ in }
+
+                    ToggleRow(label: "Pin Popover Open", detail: "Prevent the popover from closing when clicking outside", isOn: .init(
+                        get: { cfg.popoverPinOpen }, set: { cfg.popoverPinOpen = $0; notify(widthChanged: false) }
+                    ), accent: .tahoeAccentCyan) { _ in }
 
                     Divider().background(Color.tahoeCardBorder)
 
