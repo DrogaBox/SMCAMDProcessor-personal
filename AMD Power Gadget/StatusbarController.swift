@@ -80,6 +80,7 @@ struct MenuBarConfig {
     var popoverShowCPUSparkline: Bool { get { ud.bool(forKey: "pop_showCPUSparkline") } set { ud.set(newValue, forKey: "pop_showCPUSparkline") } }
     var popoverShowGPUSparkline: Bool { get { ud.bool(forKey: "pop_showGPUSparkline") } set { ud.set(newValue, forKey: "pop_showGPUSparkline") } }
     var popoverShowNetSparkline: Bool { get { ud.bool(forKey: "pop_showNetSparkline") } set { ud.set(newValue, forKey: "pop_showNetSparkline") } }
+    var popoverPinOpen:          Bool { get { ud.bool(forKey: "pop_pinOpen")          } set { ud.set(newValue, forKey: "pop_pinOpen")          } }
 
     private let ud = UserDefaults.standard
 
@@ -114,6 +115,7 @@ struct MenuBarConfig {
         if ud.object(forKey: "pop_showGPURing")   == nil { ud.set(true, forKey: "pop_showGPURing")   }
         if ud.object(forKey: "pop_showVRAM")      == nil { ud.set(true, forKey: "pop_showVRAM")      }
         if ud.object(forKey: "pop_showCores")     == nil { ud.set(false, forKey: "pop_showCores")     }
+        if ud.object(forKey: "pop_pinOpen")       == nil { ud.set(false, forKey: "pop_pinOpen")       }
         if ud.object(forKey: "pop_showNetwork")   == nil { ud.set(true, forKey: "pop_showNetwork")   }
         if ud.object(forKey: "pop_showProcesses") == nil { ud.set(true, forKey: "pop_showProcesses") }
         if ud.object(forKey: "pop_ringShowLabels") == nil { ud.set(true, forKey: "pop_ringShowLabels") }
@@ -465,7 +467,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
         // Setup NSPopover with MenuBarPopoverView
         popover = NSPopover()
-        popover.behavior = .transient
+        popover.behavior = MenuBarConfig.shared.popoverPinOpen ? .applicationDefined : .transient
         popover.appearance = NSAppearance(named: .vibrantDark)
         popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView())
         popover.delegate = self
@@ -498,6 +500,9 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         statusItem.length = w
         view?.frame = statusItem.button?.bounds ?? NSRect(x: 0, y: 0, width: w, height: 22)
         lastReportedTemp = -1 // Reset snapshot to force redraw on layout change
+        if popover != nil {
+            popover.behavior = MenuBarConfig.shared.popoverPinOpen ? .applicationDefined : .transient
+        }
         update()
     }
 
@@ -593,6 +598,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
                         let edge: NSRectEdge = button.isFlipped ? .maxY : .minY
                         let rect = NSRect(x: clampedX - 5, y: bottomY, width: 10, height: 1)
                         
+                        popover.behavior = MenuBarConfig.shared.popoverPinOpen ? .applicationDefined : .transient
                         popover.show(relativeTo: rect, of: button, preferredEdge: edge)
                         
                         // Force the popover window to align perfectly below the status bar button in screen coordinates
