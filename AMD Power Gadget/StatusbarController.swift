@@ -65,6 +65,7 @@ struct MenuBarConfig {
     var popoverShowDisk:      Bool { get { ud.bool(forKey: "pop_showDisk")      } set { ud.set(newValue, forKey: "pop_showDisk")      } }
     var popoverShowGPU:       Bool { get { ud.bool(forKey: "pop_showGPU")       } set { ud.set(newValue, forKey: "pop_showGPU")       } }
     var popoverShowGPURing:   Bool { get { ud.bool(forKey: "pop_showGPURing")   } set { ud.set(newValue, forKey: "pop_showGPURing")   } }
+    var popoverShowVRAM:      Bool { get { ud.bool(forKey: "pop_showVRAM")      } set { ud.set(newValue, forKey: "pop_showVRAM")      } }
     var popoverShowNetwork:   Bool { get { ud.bool(forKey: "pop_showNetwork")   } set { ud.set(newValue, forKey: "pop_showNetwork")   } }
     var popoverShowProcesses: Bool { get { ud.bool(forKey: "pop_showProcesses") } set { ud.set(newValue, forKey: "pop_showProcesses") } }
     var popoverRingShowLabels:Bool { get { ud.bool(forKey: "pop_ringShowLabels") } set { ud.set(newValue, forKey: "pop_ringShowLabels") } }
@@ -73,7 +74,7 @@ struct MenuBarConfig {
     var popoverRAMStyle:  Int { get { ud.integer(forKey: "pop_ramStyle")  } set { ud.set(newValue, forKey: "pop_ramStyle")  } }
     var popoverDiskStyle: Int { get { ud.integer(forKey: "pop_diskStyle") } set { ud.set(newValue, forKey: "pop_diskStyle") } }
     var popoverGPUStyle:  Int { get { ud.integer(forKey: "pop_gpuStyle")  } set { ud.set(newValue, forKey: "pop_gpuStyle")  } }
-    var popoverRingOrder: String { get { ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,disk,gpu" } set { ud.set(newValue, forKey: "pop_ringOrder") } }
+    var popoverRingOrder: String { get { ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,gpu,vram,disk" } set { ud.set(newValue, forKey: "pop_ringOrder") } }
 
     var popoverShowCPUSparkline: Bool { get { ud.bool(forKey: "pop_showCPUSparkline") } set { ud.set(newValue, forKey: "pop_showCPUSparkline") } }
     var popoverShowGPUSparkline: Bool { get { ud.bool(forKey: "pop_showGPUSparkline") } set { ud.set(newValue, forKey: "pop_showGPUSparkline") } }
@@ -110,6 +111,7 @@ struct MenuBarConfig {
         if ud.object(forKey: "pop_showDisk")      == nil { ud.set(true, forKey: "pop_showDisk")      }
         if ud.object(forKey: "pop_showGPU")       == nil { ud.set(true, forKey: "pop_showGPU")       }
         if ud.object(forKey: "pop_showGPURing")   == nil { ud.set(true, forKey: "pop_showGPURing")   }
+        if ud.object(forKey: "pop_showVRAM")      == nil { ud.set(true, forKey: "pop_showVRAM")      }
         if ud.object(forKey: "pop_showNetwork")   == nil { ud.set(true, forKey: "pop_showNetwork")   }
         if ud.object(forKey: "pop_showProcesses") == nil { ud.set(true, forKey: "pop_showProcesses") }
         if ud.object(forKey: "pop_ringShowLabels") == nil { ud.set(true, forKey: "pop_ringShowLabels") }
@@ -139,6 +141,12 @@ struct MenuBarConfig {
         }
         if ud.object(forKey: "pop_showNetSparkline") == nil {
             ud.set(false, forKey: "pop_showNetSparkline")
+        }
+        
+        // Force migration to CPU, RAM, GPU, VRAM, DISK layout
+        let currentOrder = ud.string(forKey: "pop_ringOrder") ?? ""
+        if !currentOrder.contains("vram") {
+            ud.set("cpu,ram,gpu,vram,disk", forKey: "pop_ringOrder")
         }
     }
 
