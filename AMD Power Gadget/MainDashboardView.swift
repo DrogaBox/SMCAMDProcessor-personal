@@ -3414,9 +3414,11 @@ struct MenuBarPopoverView: View {
                     .buttonStyle(.plain)
                     .help("Pin Popover Open")
                     
-                    Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3")")
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.4))
+                    let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
+                    let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
+                    Text("App: v\(appVer) • Kext: v\(kextVer)")
+                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.45))
                 }
             }
             .padding(.horizontal, 12)
