@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Charts
+import Metal
 
 // MARK: - Visual Effect Blur Background (macOS)
 struct VisualEffectBackground: View {
@@ -3417,6 +3418,7 @@ struct MenuBarPopoverView: View {
                 if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 0 { return true }
                 if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 0 { return true }
                 if ring == "gpu" && cfg.popoverShowGPURing && cfg.popoverGPUStyle == 0 { return true }
+                if ring == "vram" && cfg.popoverShowVRAM && cfg.popoverGPUStyle == 0 { return true }
                 return false
             })
             
@@ -3574,6 +3576,48 @@ struct MenuBarPopoverView: View {
                                         .foregroundColor(.white.opacity(0.6))
                                 }
                             }
+                        } else if ring == "vram" && cfg.popoverShowVRAM && cfg.popoverGPUStyle == 0 {
+                            // VRAM Ring
+                            VStack(spacing: 4) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .frame(width: 46, height: 46)
+                                    let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
+                                    let recommendedSize = MTLCreateSystemDefaultDevice()?.recommendedMaxWorkingSetSize
+                                    let totalVramBytes = Double(recommendedSize ?? 17179869184)
+                                    let totalVramGB = totalVramBytes / 1073741824.0
+                                    let vramPct = (vramGB / totalVramGB) * 100.0
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(min(1.0, max(0.0, vramPct / 100.0))))
+                                        .stroke(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [Color.purple.opacity(0.8), Color.pink.opacity(0.8)]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            style: StrokeStyle(lineWidth: 4.5, lineCap: .round)
+                                        )
+                                        .rotationEffect(Angle(degrees: -90))
+                                        .frame(width: 46, height: 46)
+                                    
+                                    VStack(spacing: 0) {
+                                        Text(String(format: "%.0f%%", vramPct))
+                                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.white)
+                                        if cfg.popoverRingShowTemp {
+                                            Text(String(format: "%.0fG", vramGB))
+                                                .font(.system(size: 7.5, weight: .semibold))
+                                                .foregroundColor(.white.opacity(0.7))
+                                        }
+                                    }
+                                }
+                                if cfg.popoverRingShowLabels {
+                                    Text("VRAM")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
                         }
                     }
                 }
@@ -3587,6 +3631,7 @@ struct MenuBarPopoverView: View {
                 if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 1 { return true }
                 if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 1 { return true }
                 if ring == "gpu" && cfg.popoverShowGPURing && (cfg.popoverGPUStyle == 1 || cfg.popoverShowGPUSparkline) { return true }
+                if ring == "vram" && cfg.popoverShowVRAM && cfg.popoverGPUStyle == 1 { return true }
                 return false
             })
             
@@ -3657,6 +3702,21 @@ struct MenuBarPopoverView: View {
                                     filterZeros: true
                                 )
                                 .padding(.top, 2)
+                            }
+                        } else if ring == "vram" && cfg.popoverShowVRAM {
+                            if cfg.popoverGPUStyle == 1 {
+                                let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
+                                let recommendedSize = MTLCreateSystemDefaultDevice()?.recommendedMaxWorkingSetSize
+                                let totalVramBytes = Double(recommendedSize ?? 17179869184)
+                                let totalVramGB = totalVramBytes / 1073741824.0
+                                let vramPct = (vramGB / totalVramGB) * 100.0
+                                let vramStr = cfg.popoverRingShowTemp ? String(format: " • %.2fG", vramGB) : ""
+                                LinearProgressBar(
+                                    label: "VRAM",
+                                    pct: vramPct,
+                                    detailText: String(format: "%.0f%%%@", vramPct, vramStr),
+                                    color: .purple.opacity(0.8)
+                                )
                             }
                         }
                     }
@@ -4060,6 +4120,39 @@ struct PopoverConfigView: View {
                         .background(Color.tahoeCard)
                         .cornerRadius(8)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+
+                        // VRAM style selection
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Toggle("", isOn: .init(
+                                    get: { cfg.popoverShowVRAM },
+                                    set: { cfg.popoverShowVRAM = $0; notify(widthChanged: false) }
+                                ))
+                                .labelsHidden()
+                                Text("VRAM Tracker")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                if cfg.popoverShowVRAM {
+                                    Picker("Style", selection: .init(
+                                        get: { cfg.popoverGPUStyle },
+                                        set: { cfg.popoverGPUStyle = $0; notify(widthChanged: false) }
+                                    )) {
+                                        Text("Circular Ring").tag(0)
+                                        Text("Progress Bar").tag(1)
+                                    }
+                                    .pickerStyle(.menu)
+                                    .frame(width: 140)
+                                }
+                            }
+                            Text("Tracks graphics memory (VRAM) utilization.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.tahoeSubtext)
+                        }
+                        .padding(12)
+                        .background(Color.tahoeCard)
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
                     }
 
                     Divider().background(Color.tahoeCardBorder)
@@ -4125,15 +4218,17 @@ struct PopoverConfigView: View {
             if key == "ram" { loadedItems.append(RingOrderItem(id: "ram", name: "RAM Tracker", color: .tahoeAccentOrange)) }
             if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
             if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
+            if key == "vram" { loadedItems.append(RingOrderItem(id: "vram", name: "VRAM Tracker", color: .tahoeAccentPurple.opacity(0.8))) }
         }
         
-        let allKeys = ["cpu", "ram", "disk", "gpu"]
+        let allKeys = ["cpu", "ram", "gpu", "vram", "disk"]
         for key in allKeys {
             if !loadedItems.contains(where: { $0.id == key }) {
                 if key == "cpu" { loadedItems.append(RingOrderItem(id: "cpu", name: "CPU Tracker", color: .tahoeAccentCyan)) }
                 if key == "ram" { loadedItems.append(RingOrderItem(id: "ram", name: "RAM Tracker", color: .tahoeAccentOrange)) }
-                if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
                 if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
+                if key == "vram" { loadedItems.append(RingOrderItem(id: "vram", name: "VRAM Tracker", color: .tahoeAccentPurple.opacity(0.8))) }
+                if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
             }
         }
         self.items = loadedItems
