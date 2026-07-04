@@ -14,6 +14,8 @@ permissions:
 
 env:
   PROJECT_TYPE: KEXT
+  LILU_VERSION: "1.7.2"
+  VSMC_VERSION: "1.3.7"
 
 jobs:
   build:
@@ -30,10 +32,10 @@ jobs:
           
       - name: Fetch Dependencies 
         run: |
-          curl -LfsO https://github.com/acidanthera/Lilu/releases/download/1.7.2/Lilu-1.7.2-DEBUG.zip
-          unzip -q -o Lilu-1.7.2-DEBUG.zip
-          curl -LfsO https://github.com/acidanthera/VirtualSMC/releases/download/1.3.7/VirtualSMC-1.3.7-DEBUG.zip
-          unzip -q -o VirtualSMC-1.3.7-DEBUG.zip
+          curl -LfsO https://github.com/acidanthera/Lilu/releases/download/${{ env.LILU_VERSION }}/Lilu-${{ env.LILU_VERSION }}-DEBUG.zip
+          unzip -q -o Lilu-${{ env.LILU_VERSION }}-DEBUG.zip
+          curl -LfsO https://github.com/acidanthera/VirtualSMC/releases/download/${{ env.VSMC_VERSION }}/VirtualSMC-${{ env.VSMC_VERSION }}-DEBUG.zip
+          unzip -q -o VirtualSMC-${{ env.VSMC_VERSION }}-DEBUG.zip
           cp -R Kexts/VirtualSMC.kext ./ 2>/dev/null || true
           [ -d MacKernelSDK/Headers ] || git clone --depth 1 https://github.com/acidanthera/MacKernelSDK.git
           
