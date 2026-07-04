@@ -42,7 +42,7 @@ uint8_t pmRyzen_symtable_ready = 0;
 bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     strncpy(kMODULE_VERSION, xStringify(MODULE_VERSION), sizeof(kMODULE_VERSION) - 1);
     kMODULE_VERSION[sizeof(kMODULE_VERSION) - 1] = '\0';
-    IOLog("AMDCPUSupport v%s, init\n", xStringify(MODULE_VERSION));
+    IOLog("AMDRyzenCPUPowerManagement v%s, init\n", xStringify(MODULE_VERSION));
     
     IOLog("AMDRyzenCPUPowerManagement::enter dlinking..\n");
     
@@ -59,7 +59,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     }
     if (!resolved) {
         kextloadAlerts++;
-        IOLog("SMCAMDProcessor::init symbol resolution for _wrmsr_carefully failed after 50 retries\n");
+        IOLog("AMDRyzenCPUPowerManagement::init symbol resolution for _wrmsr_carefully failed after 50 retries\n");
         return false;
     }
     
@@ -464,16 +464,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     
     fetchOEMBaseBoardInfo();
-    
-//    if(!CPUInfo::getCpuTopology(cpuTopology)){
-//        IOLog("AMDRyzenCPUPowerManagement::start unable to get CPU Topology.\n");
-//    }
-//    IOLog("AMDRyzenCPUPowerManagement::start got %hhu CPU(s): Physical Count: %hhu, Logical Count %hhu.\n",
-//          cpuTopology.packageCount, cpuTopology.totalPhysical(), cpuTopology.totalLogical());
-//
-//    totalNumberOfPhysicalCores = cpuTopology.totalPhysical();
-//    totalNumberOfLogicalCores = cpuTopology.totalLogical();
-    
+        
     
     IOLog("AMDRyzenCPUPowerManagement::start trying to init PCI service...\n");
     if(!getPCIService()){
@@ -505,7 +496,6 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
 
     void *_kunc_alert = pmRyzen_symtable._KUNCUserNotificationDisplayAlert;
-    IOLog("kunc_alert %p\n", kunc_alert);
     if(!_kunc_alert){
         IOLog("AMDRyzenCPUPowerManagement::start WARN: Can't find _KUNCUserNotificationDisplayAlert.\n");
     } else {
@@ -548,7 +538,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 }
 
 void AMDRyzenCPUPowerManagement::stop(IOService *provider){
-    IOLog("AMDCPUSupport stopping...\n");
+    IOLog("AMDRyzenCPUPowerManagement stopping...\n");
 
     // 1. Cancel all timerEventSource (cancelTimeout)
     if (timerEvent_main)  timerEvent_main->cancelTimeout();
@@ -701,7 +691,7 @@ bool AMDRyzenCPUPowerManagement::write_msr(uint32_t addr, uint64_t value){
         return (*wrmsr_carefully)(addr, lo, hi) == 0;
     }
     
-    IOLog("SMCAMDProcessor::write_msr safe wrapper unavailable for MSR 0x%X\n", addr);
+    IOLog("AMDRyzenCPUPowerManagement::write_msr safe wrapper unavailable for MSR 0x%X\n", addr);
     return false;
 }
 
@@ -948,11 +938,11 @@ void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     if (cppcActiveMode) {
         if (!cppcThrottled && currentTemp > 95.0f) {
             cppcThrottled = true;
-            IOLog("AMDCPUSupport: Thermal limit reached (%.1f°C). Throttling CPPC EPP to Power Save.\n", currentTemp);
+            IOLog("AMDRyzenCPUPowerManagement: Thermal limit reached (%.1f°C). Throttling CPPC EPP to Power Save.\n", currentTemp);
             applyEPPControl();
         } else if (cppcThrottled && currentTemp < 85.0f) {
             cppcThrottled = false;
-            IOLog("AMDCPUSupport: Thermal condition cleared (%.1f°C). Restoring CPPC EPP.\n", currentTemp);
+            IOLog("AMDRyzenCPUPowerManagement: Thermal condition cleared (%.1f°C). Restoring CPPC EPP.\n", currentTemp);
             applyEPPControl();
         }
     }

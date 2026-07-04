@@ -821,11 +821,13 @@ final class TelemetryModel: ObservableObject {
         }
 
         if smcDriverLoaded && numFans > 0 {
-            for i in 0..<numFans where i < fans.count {
-                fans[i].rpm        = fanRpms.count  > i ? fanRpms[i]                 : 0
-                fans[i].throttle   = fanCtrls.count > i ? UInt8(fanCtrls[i] >> 8)    : 0
-                fans[i].isOverrided = fanCtrls.count > i ? (fanCtrls[i] & 0xff) == 0 : false
+            var updatedFans = fans
+            for i in 0..<numFans where i < updatedFans.count {
+                updatedFans[i].rpm        = fanRpms.count  > i ? fanRpms[i]                 : 0
+                updatedFans[i].throttle   = fanCtrls.count > i ? UInt8(fanCtrls[i] >> 8)    : 0
+                updatedFans[i].isOverrided = fanCtrls.count > i ? (fanCtrls[i] & 0xff) == 0 : false
             }
+            self.fans = updatedFans
         }
 
         // Background CSV logging

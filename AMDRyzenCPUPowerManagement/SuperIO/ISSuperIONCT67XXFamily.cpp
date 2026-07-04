@@ -72,10 +72,6 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
             case CHIP_NCT6796DR:
             case CHIP_NCT6797D:
             case CHIP_NCT6798D:
-                found = true;
-                IOLog("NCT67XX chip identified\n");
-                break;
-                
             case CHIP_NCT6799D:
             case CHIP_NCT6701D:
                 found = true;
@@ -125,12 +121,6 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
         case CHIP_NCT6796DR:
         case CHIP_NCT6797D:
         case CHIP_NCT6798D:
-            conf = ISLPCPort::readByte(portSel, CHIP_IO_SPACE_LOCK);
-            if(conf & 0x10){
-                ISLPCPort::writeByte(portSel, CHIP_IO_SPACE_LOCK, conf & ~0x10);
-            }
-            break; 
-            
         case CHIP_NCT6799D:
         case CHIP_NCT6701D:
             conf = ISLPCPort::readByte(portSel, CHIP_IO_SPACE_LOCK);

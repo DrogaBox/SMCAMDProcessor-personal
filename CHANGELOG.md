@@ -1,5 +1,18 @@
 # Change Summary & Release Changelog
 
+## v3.14.3  IT86XXE 16-bit Fan Fix, SwiftUI UI Lag Optimization & Quality Audit
+* **16-bit Fan Tachometer Mode Enable**: Writes `0x3f` to IT86XXE Environmental Controller register `0x0C` on initialization, forcing 16-bit tachometer mode on all 6 fan channels. This resolves the `0 RPM` reading on System 2 Fan and the incorrect readings on System 3 Fan.
+* **SwiftUI Fan Array Publishing Optimization**: Refactored `TelemetryModel.self.fans` updates to perform element-by-element changes on a local array copy, assigning to the `@Published` variable once. This avoids up to 18 UI body redraw evaluations per sample, eliminating the lag on the Fan Control tab.
+* **Audit Renames & NULL Checks (Super Z Review)**:
+  - F-01: Renamed remaining `AMDCPUSupport` and `SMCAMDProcessor::` class names in IOLogs to `AMDRyzenCPUPowerManagement`.
+  - F-04: Fixed Case 100 logical core frequency mapping to populate all 64 elements with SMT mapping.
+  - F-05: Added NULL guards to `pmRyzen_pmUnRegister` and `pmRyzen_cpu_IPI` in `pmRyzen_stop()` to prevent early panic.
+  - F-06: Removed premature kunc_alert log statement.
+  - F-07: Hardened default configuration by setting `disablePrivilegeCheck = false`.
+  - F-09: Consolidated duplicate switch-case statements in `ISSuperIONCT67XXFamily.cpp`.
+  - F-10: Cleaned up legacy commented-out codes in `pmAMDRyzen.c` and `AMDRyzenCPUPowerManagement.cpp`.
+  - F-11: Updated `README.md` to list Nuvoton and ITE SuperIO chip families.
+
 ## v3.14.2  ITE IT86XXE 6-Fan Support
 * **ITE IT86XXE 6th Fan support**: Expanded IT86XXE family drivers (including IT8689E and IT8686E) from 5 to 6 active fan channels. Added register offsets for the 6th channel and mapped the "System 3 Fan" label.
 
