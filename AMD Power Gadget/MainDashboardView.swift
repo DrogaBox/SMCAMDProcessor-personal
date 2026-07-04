@@ -1565,7 +1565,6 @@ private struct GPUFanControlGuideView: View {
                         .font(.system(size: 11.5))
                         .foregroundColor(.tahoeSubtext)
                         .lineSpacing(4)
-                        .fixedSize(horizontal: false, vertical: true)
                     
                     Text("Standard Hackintosh Solution:")
                         .font(.system(size: 12, weight: .semibold))
@@ -1575,7 +1574,6 @@ private struct GPUFanControlGuideView: View {
                         .font(.system(size: 11.5))
                         .foregroundColor(.tahoeSubtext)
                         .lineSpacing(4)
-                        .fixedSize(horizontal: false, vertical: true)
                     
                     HStack(spacing: 10) {
                         TahoeButton(label: "Open SPPT Guide", icon: "safari", accent: .tahoeAccentCyan) {
