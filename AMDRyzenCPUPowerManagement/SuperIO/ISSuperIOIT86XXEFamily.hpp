@@ -20,7 +20,7 @@
 #define CHIP_IT8665E 0x8665
 #define CHIP_IT8689E 0x8689
 
-#define IT86XXE_MAX_NUMFAN 5
+#define IT86XXE_MAX_NUMFAN 6
 
 #define CHIP_ENVIRONMENT_CONTROLLER_LDN 0x04
 #define CHIP_GPIO_LDN 0x07
@@ -38,6 +38,7 @@ class ISSuperIOIT86XXEFamily : public ISSuperIOSMCFamily
         "System 2 Fan",
         "PCH Fan",
         "CPU OPT Fan",
+        "System 3 Fan",
     };
 
     static ISSuperIOIT86XXEFamily* getDevice(uint16_t* chipIntel);
@@ -65,10 +66,10 @@ class ISSuperIOIT86XXEFamily : public ISSuperIOSMCFamily
 
   private:
     static constexpr uint16_t kFAN_MAIN_CTRL_REG = 0x13;
-    static constexpr uint16_t kFAN_RPM_REGS[] = {0x0d, 0x0e, 0x0f, 0x80, 0x82};
-    static constexpr uint16_t kFAN_RPM_EXT_REGS[] = {0x18, 0x19, 0x1a, 0x81, 0x83};
-    static constexpr uint16_t kFAN_PWM_CTRL_REGS[] = {0x15, 0x16, 0x17, 0x7f, 0xa7};
-    static constexpr uint16_t kFAN_PWM_CTRL_EXT_REGS[] = {0x63, 0x6b, 0x73, 0x7b, 0xa3};
+    static constexpr uint16_t kFAN_RPM_REGS[] = {0x0d, 0x0e, 0x0f, 0x80, 0x82, 0x4c};
+    static constexpr uint16_t kFAN_RPM_EXT_REGS[] = {0x18, 0x19, 0x1a, 0x81, 0x83, 0x4d};
+    static constexpr uint16_t kFAN_PWM_CTRL_REGS[] = {0x15, 0x16, 0x17, 0x7f, 0xa7, 0xaf};
+    static constexpr uint16_t kFAN_PWM_CTRL_EXT_REGS[] = {0x63, 0x6b, 0x73, 0x7b, 0xa3, 0xab};
 
     int lpcPortSel = 0;
 

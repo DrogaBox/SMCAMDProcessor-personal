@@ -19,7 +19,7 @@ ISSuperIOIT86XXEFamily::ISSuperIOIT86XXEFamily(int psel, uint16_t addr, uint16_t
         case CHIP_IT8665E:
         case CHIP_IT8689E:
         default:
-            activeFansOnSystem = 5;
+            activeFansOnSystem = 6;
             break;
     }
 
