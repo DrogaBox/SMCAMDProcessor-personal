@@ -44,7 +44,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     kMODULE_VERSION[sizeof(kMODULE_VERSION) - 1] = '\0';
     IOLog("AMDCPUSupport v%s, init\n", xStringify(MODULE_VERSION));
     
-    IOLog("AMDCPUSupport::enter dlinking..\n");
+    IOLog("AMDRyzenCPUPowerManagement::enter dlinking..\n");
     
     pmRyzen_symtable_ready = 0;
     bool resolved = false;
@@ -74,7 +74,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     pmRyzen_symtable._NMIPI_enable = lookup_symbol("_NMIPI_enable");
     pmRyzen_symtable._i386_cpu_IPI = lookup_symbol("_i386_cpu_IPI");
     pmRyzen_symtable_ready = 1;
-    IOLog("AMDCPUSupport::enter link finished.\n");
+    IOLog("AMDRyzenCPUPowerManagement::enter link finished.\n");
     return IOService::init(dictionary);
 }
 
@@ -86,7 +86,7 @@ void AMDRyzenCPUPowerManagement::free(){
 bool AMDRyzenCPUPowerManagement::getPCIService(){
     OSDictionary *matching_dict = serviceMatching("IOPCIDevice");
     if(!matching_dict){
-        IOLog("AMDCPUSupport::getPCIService: serviceMatching unable to generate matching dictonary.\n");
+        IOLog("AMDRyzenCPUPowerManagement::getPCIService: serviceMatching unable to generate matching dictonary.\n");
         return false;
     }
     
@@ -97,7 +97,7 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
     IOPCIDevice *service = nullptr;
     
     if(!service_iter){
-        IOLog("AMDCPUSupport::getPCIService: unable to find a matching IOPCIDevice.\n");
+        IOLog("AMDRyzenCPUPowerManagement::getPCIService: unable to find a matching IOPCIDevice.\n");
         return false;
     }
     
@@ -114,11 +114,11 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
     service_iter->release();
     
     if(!service){
-        IOLog("AMDCPUSupport::getPCIService: unable to get AMD IOPCIDevice on host system.\n");
+        IOLog("AMDRyzenCPUPowerManagement::getPCIService: unable to get AMD IOPCIDevice on host system.\n");
         return false;
     }
     
-    IOLog("AMDCPUSupport::getPCIService: succeed!\n");
+    IOLog("AMDRyzenCPUPowerManagement::getPCIService: succeed!\n");
     // Retain PCI device reference to guarantee pointer outlives both telemetry timer event sources
     fIOPCIDevice = service;
     fIOPCIDevice->retain();
@@ -127,14 +127,14 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
 }
 
 void AMDRyzenCPUPowerManagement::initWorkLoop() {
-    IOLog("AMDCPUSupport::startWorkLoop setting up timer");
+    IOLog("AMDRyzenCPUPowerManagement::startWorkLoop setting up timer");
     timerEvent_main = IOTimerEventSource::timerEventSource(this, [](OSObject *object, IOTimerEventSource *sender) {
         AMDRyzenCPUPowerManagement *provider = OSDynamicCast(AMDRyzenCPUPowerManagement, object);
         if (!provider) return;
 
         //Run initialization
         if(!provider->serviceInitialized){
-            IOLog("AMDCPUSupport::startWorkLoop initialize service");
+            IOLog("AMDRyzenCPUPowerManagement::startWorkLoop initialize service");
             
             //Disable interrupts and sync all processor cores.
             mp_rendezvous_no_intrs([](void *obj) {
@@ -144,7 +144,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                 
                 uint64_t hwConfig;
                 if(!provider->read_msr(kMSR_HWCR, &hwConfig)) {
-                    IOLog("AMDCPUSupport::startWorkLoop: failed to read kMSR_HWCR, skipping init.\n");
+                    IOLog("AMDRyzenCPUPowerManagement::startWorkLoop: failed to read kMSR_HWCR, skipping init.\n");
                     return;
                 }
 
@@ -163,7 +163,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                     provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
                     uint64_t cppcCap = 0;
                     bool msrSuccess = provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap);
-                    IOLog("AMDCPUSupport::startWorkLoop Core %d CPPC MSR read: %d, value: 0x%llX\n", cpu_num, msrSuccess, cppcCap);
+                    IOLog("AMDRyzenCPUPowerManagement::startWorkLoop Core %d CPPC MSR read: %d, value: 0x%llX\n", cpu_num, msrSuccess, cppcCap);
                     if (msrSuccess) {
                         // AMD PPR states bits 7:0 are HighestPerformance. The original code incorrectly read 31:24 (LowestPerformance)
                         provider->cppcHighestPerf_perCore[cpu_num] = cppcCap & 0xFF;
@@ -189,7 +189,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                 //Init performance frequency counter.
                 uint64_t APERF, MPERF;
                 if(!provider->read_msr(kMSR_APERF, &APERF) || !provider->read_msr(kMSR_MPERF, &MPERF)) {
-                    IOLog("AMDCPUSupport::startWorkLoop: failed to read APERF/MPERF, skipping core init.\n");
+                    IOLog("AMDRyzenCPUPowerManagement::startWorkLoop: failed to read APERF/MPERF, skipping core init.\n");
                     return;
                 }
 
@@ -201,7 +201,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
             uint64_t cstateAddr = 0;
             if (provider->read_msr(kMSR_CSTATE_ADDR, &cstateAddr)) {
                 provider->cstateAddrConfig = cstateAddr;
-                IOLog("AMDCPUSupport::startWorkLoop: C-State address configuration: 0x%llX\n", cstateAddr);
+                IOLog("AMDRyzenCPUPowerManagement::startWorkLoop: C-State address configuration: 0x%llX\n", cstateAddr);
             }
             
             //Make all cores P0 state by default.
@@ -300,7 +300,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     bool success = IOService::start(provider);
     if(!success){
-        IOLog("AMDCPUSupport::start failed to start. :(\n");
+        IOLog("AMDRyzenCPUPowerManagement::start failed to start. :(\n");
         return false;
     }
     
@@ -311,12 +311,12 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     uint32_t cpuid_ecx = 0;
     uint32_t cpuid_edx = 0;
     CPUInfo::getCpuid(0, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    IOLog("AMDCPUSupport::start got CPUID: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
+    IOLog("AMDRyzenCPUPowerManagement::start got CPUID: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
     
     if(cpuid_ebx != CPUInfo::signature_AMD_ebx
        || cpuid_ecx != CPUInfo::signature_AMD_ecx
        || cpuid_edx != CPUInfo::signature_AMD_edx){
-        IOLog("AMDCPUSupport::start no AMD signature detected, failing..\n");
+        IOLog("AMDRyzenCPUPowerManagement::start no AMD signature detected, failing..\n");
         
         return false;
     }
@@ -327,7 +327,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     // Support for Zen (17h), Zen 2/3/4 (19h), and Zen 5 (1Ah)
     cpuSupportedByCurrentVersion = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A)? 1 : 0;
-    IOLog("AMDCPUSupport::start Family %02Xh, Model %02Xh\n", cpuFamily, cpuModel);
+    IOLog("AMDRyzenCPUPowerManagement::start Family %02Xh, Model %02Xh\n", cpuFamily, cpuModel);
     
     // Determine architecture name for logging and app display
     if (cpuFamily == 0x17) {
@@ -351,7 +351,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     } else {
         strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
     }
-    IOLog("AMDCPUSupport::start Architecture: %s\n", cpuArchName);
+    IOLog("AMDRyzenCPUPowerManagement::start Architecture: %s\n", cpuArchName);
     
     // Determine CCD temperature register offset based on CPU family/model.
     // Sourced from Linux kernel drivers/hwmon/k10temp.c:
@@ -372,7 +372,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         // Family 17h all models (Zen 1/1+/2) and Family 19h models 00-0Fh/40-5Fh (Zen 3/3+)
         ccdOffset = kZEN_CCD_OFFSET_LEGACY;
     }
-    IOLog("AMDCPUSupport::start CCD temperature offset: 0x%X\n", ccdOffset);
+    IOLog("AMDRyzenCPUPowerManagement::start CCD temperature offset: 0x%X\n", ccdOffset);
     
     if (cpuFamily == 0x1A) {
         zenGeneration = 5;
@@ -385,7 +385,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     } else {
         zenGeneration = 1;
     }
-    IOLog("AMDCPUSupport::start Detected Zen Generation: %u\n", zenGeneration);
+    IOLog("AMDRyzenCPUPowerManagement::start Detected Zen Generation: %u\n", zenGeneration);
     
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     // L1-D size in bits [31:24] of ECX, L1-I size in bits [31:24] of EDX (CPUID 0x80000005)
@@ -395,7 +395,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     CPUInfo::getCpuid(0x80000006, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpuCacheL2_perCore = (cpuid_ecx >> 16);
     cpuCacheL3 = (cpuid_edx >> 18) * 512;
-    IOLog("AMDCPUSupport::start L1: %u, L2: %u, L3: %u\n",
+    IOLog("AMDRyzenCPUPowerManagement::start L1: %u, L2: %u, L3: %u\n",
           cpuCacheL1_perCore, cpuCacheL2_perCore, cpuCacheL3);
     
     
@@ -406,7 +406,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     uint64_t cppcVal = 0;
     bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
     
-    IOLog("AMDCPUSupport::start CPPC MSR 0xC00102B0 read success: %d, value: 0x%llX\n", msrSuccess, cppcVal);
+    IOLog("AMDRyzenCPUPowerManagement::start CPPC MSR 0xC00102B0 read success: %d, value: 0x%llX\n", msrSuccess, cppcVal);
     
     if (msrSuccess && cppcVal != 0) {
         cppcSupported = true;
@@ -421,11 +421,11 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     cppcActiveMode = checkKernelArgument("-amdcppcactive");
     
-    IOLog("AMDCPUSupport::start CPPC supported: %d, Active Mode: %d\n", cppcSupported, cppcActiveMode);
+    IOLog("AMDRyzenCPUPowerManagement::start CPPC supported: %d, Active Mode: %d\n", cppcSupported, cppcActiveMode);
 
     
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    IOLog("AMDCPUSupport::start CPUID MWait: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
+    IOLog("AMDRyzenCPUPowerManagement::start CPUID MWait: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
     
     uint32_t nameString[12]{};
     CPUInfo::getCpuid(0x80000002, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
@@ -435,7 +435,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     CPUInfo::getCpuid(0x80000004, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     nameString[8] = cpuid_eax; nameString[9] = cpuid_ebx; nameString[10] = cpuid_ecx; nameString[11] = cpuid_edx;
     
-    IOLog("AMDCPUSupport::start Processor: %s))\n", (char*)nameString);
+    IOLog("AMDRyzenCPUPowerManagement::start Processor: %s))\n", (char*)nameString);
     
     //Check tctl temperature offset
     for(int i = 0; i < TCTL_OFFSET_TABLE_LEN; i++){
@@ -457,7 +457,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         static bool loggedRaplFallback = false;
         if (!loggedRaplFallback) {
             loggedRaplFallback = true;
-            IOLog("AMDCPUSupport::start WARN: failed to read MSR_RAPL_POWER_UNIT, using default 1/2^16 energy unit\n");
+            IOLog("AMDRyzenCPUPowerManagement::start WARN: failed to read MSR_RAPL_POWER_UNIT, using default 1/2^16 energy unit\n");
         }
         pwrEnergyUnit = 1.0 / (double)(1ULL << 16);
         pwrTimeUnit = 1.0 / (double)(1ULL << 10);
@@ -466,18 +466,18 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     fetchOEMBaseBoardInfo();
     
 //    if(!CPUInfo::getCpuTopology(cpuTopology)){
-//        IOLog("AMDCPUSupport::start unable to get CPU Topology.\n");
+//        IOLog("AMDRyzenCPUPowerManagement::start unable to get CPU Topology.\n");
 //    }
-//    IOLog("AMDCPUSupport::start got %hhu CPU(s): Physical Count: %hhu, Logical Count %hhu.\n",
+//    IOLog("AMDRyzenCPUPowerManagement::start got %hhu CPU(s): Physical Count: %hhu, Logical Count %hhu.\n",
 //          cpuTopology.packageCount, cpuTopology.totalPhysical(), cpuTopology.totalLogical());
 //
 //    totalNumberOfPhysicalCores = cpuTopology.totalPhysical();
 //    totalNumberOfLogicalCores = cpuTopology.totalLogical();
     
     
-    IOLog("AMDCPUSupport::start trying to init PCI service...\n");
+    IOLog("AMDRyzenCPUPowerManagement::start trying to init PCI service...\n");
     if(!getPCIService()){
-        IOLog("AMDCPUSupport::start no PCI support found, failing...\n");
+        IOLog("AMDRyzenCPUPowerManagement::start no PCI support found, failing...\n");
         return false;
     }
     
@@ -488,10 +488,10 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         float t = getCCDTemp(i);
         if (t > 0.0f) {
             ccdCount = i + 1;
-            IOLog("AMDCPUSupport::start CCD%u detected, temp: %.1f°C\n", i, t);
+            IOLog("AMDRyzenCPUPowerManagement::start CCD%u detected, temp: %.1f°C\n", i, t);
         }
     }
-    IOLog("AMDCPUSupport::start Total CCDs detected: %u\n", ccdCount);
+    IOLog("AMDRyzenCPUPowerManagement::start Total CCDs detected: %u\n", ccdCount);
     
 //    while (!pmRyzen_symtable_ready) {
 //        IOSleep(200);
@@ -499,7 +499,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     void *safe_wrmsr = pmRyzen_symtable._wrmsr_carefully;
     if(!safe_wrmsr){
-        IOLog("AMDCPUSupport::start WARN: Can't find _wrmsr_carefully, proceeding with unsafe wrmsr\n");
+        IOLog("AMDRyzenCPUPowerManagement::start WARN: Can't find _wrmsr_carefully, proceeding with unsafe wrmsr\n");
     } else {
         wrmsr_carefully = (int(*)(uint32_t,uint32_t,uint32_t)) safe_wrmsr;
     }
@@ -507,7 +507,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     void *_kunc_alert = pmRyzen_symtable._KUNCUserNotificationDisplayAlert;
     IOLog("kunc_alert %p\n", kunc_alert);
     if(!_kunc_alert){
-        IOLog("AMDCPUSupport::start WARN: Can't find _KUNCUserNotificationDisplayAlert.\n");
+        IOLog("AMDRyzenCPUPowerManagement::start WARN: Can't find _KUNCUserNotificationDisplayAlert.\n");
     } else {
         kunc_alert =
         (kern_return_t(*)(int,unsigned,const char*,const char*,const char*,
@@ -521,7 +521,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         clock_timebase_info(&tbInfoData);
         if (tbInfoData.numer != 0) {
             xnuTSCFreq = (1000000000ULL * (uint64_t)tbInfoData.denom) / (uint64_t)tbInfoData.numer;
-            IOLog("AMDCPUSupport::start WARN: _tscFreq symbol null, using mach_timebase_info fallback TSC frequency (%llu Hz)\n", xnuTSCFreq);
+            IOLog("AMDRyzenCPUPowerManagement::start WARN: _tscFreq symbol null, using mach_timebase_info fallback TSC frequency (%llu Hz)\n", xnuTSCFreq);
         }
     }
     if (xnuTSCFreq == 0) {
@@ -533,7 +533,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     totalNumberOfLogicalCores = pmRyzen_num_logi;
     totalNumberOfPhysicalCores = pmRyzen_num_phys;
 
-    IOLog("AMDCPUSupport::start, Physical Count: %u, Logical Count %u.\n",
+    IOLog("AMDRyzenCPUPowerManagement::start, Physical Count: %u, Logical Count %u.\n",
               totalNumberOfPhysicalCores, totalNumberOfLogicalCores);
 
     workLoop = IOWorkLoop::workLoop();
@@ -601,12 +601,12 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
 IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdinal, IOService* provider) {
     if (0 == powerStateOrdinal) {
         // Going to sleep
-        IOLog("AMDCPUSupport::setPowerState preparing for sleep\n");
+        IOLog("AMDRyzenCPUPowerManagement::setPowerState preparing for sleep\n");
         wentToSleep = true;
         stopWorkLoop();
     } else if (1 == powerStateOrdinal && wentToSleep) {
         // Waking up
-        IOLog("AMDCPUSupport::setPowerState preparing for wakeup\n");
+        IOLog("AMDRyzenCPUPowerManagement::setPowerState preparing for wakeup\n");
         wentToSleep = false;
         if (workLoop) {
             resumeWorkLoop();
@@ -717,7 +717,7 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
     uint64_t msr_value_buf = 0;
     bool err = !read_msr(kMSR_HARDWARE_PSTATE_STATUS, &msr_value_buf);
     if (err) {
-        IOLog("AMDCPUSupport::updateClockSpeed failed to read MSR 0xC0010293\n");
+        IOLog("AMDRyzenCPUPowerManagement::updateClockSpeed failed to read MSR 0xC0010293\n");
         return;
     }
     
@@ -742,7 +742,7 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
             static bool loggedUpdateClockDfsZero = false;
             if (!loggedUpdateClockDfsZero) {
                 loggedUpdateClockDfsZero = true;
-                IOLog("AMDCPUSupport::updateClockSpeed: curCpuDfsId is zero, clamping clock to 0\n");
+                IOLog("AMDRyzenCPUPowerManagement::updateClockSpeed: curCpuDfsId is zero, clamping clock to 0\n");
             }
             clock = 0.0f;
         } else {
@@ -753,7 +753,7 @@ void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
 //    PStateCur_perCore[physical] = curHwPstate;
     effFreq_perCore[physical] = clock;
     
-    //    IOLog("AMDCPUSupport::updateClockSpeed: %u\n", curHwPstate);
+    //    IOLog("AMDRyzenCPUPowerManagement::updateClockSpeed: %u\n", curHwPstate);
 }
 
 void AMDRyzenCPUPowerManagement::calculateEffectiveFrequency(uint8_t physical){
@@ -772,7 +772,7 @@ void AMDRyzenCPUPowerManagement::calculateEffectiveFrequency(uint8_t physical){
     //If an overflow of either the MPERF or APERF register occurs between read of last MPERF and
     //read of last APERF, the effective frequency calculated in is invalid.
     if(APERF <= lastAPERF || MPERF <= lastMPERF) {
-//        IOLog("AMDCPUSupport::calculateEffectiveFrequency: frequency is invalid!!!");
+//        IOLog("AMDRyzenCPUPowerManagement::calculateEffectiveFrequency: frequency is invalid!!!");
         return;
     }
     
@@ -790,7 +790,7 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
     uint64_t insCount;
     
     if(!read_msr(kMSR_PERF_IRPC, &insCount)) {
-        IOLog("AMDCPUSupport::updateInstructionDelta failed to read MSR 0xC00000E9\n");
+        IOLog("AMDRyzenCPUPowerManagement::updateInstructionDelta failed to read MSR 0xC00000E9\n");
         return;
     }
     
@@ -817,7 +817,7 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
 
 void AMDRyzenCPUPowerManagement::applyPowerControl(){
     if (cppcActiveMode) {
-        IOLog("AMDCPUSupport::applyPowerControl ignored since CPPC Active Mode is active\n");
+        IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored since CPPC Active Mode is active\n");
         return;
     }
     mp_rendezvous(nullptr, [](void *obj) {
@@ -856,7 +856,7 @@ void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
     
     uint64_t hwConfig;
     if(!read_msr(kMSR_HWCR, &hwConfig)) {
-        IOLog("AMDCPUSupport::setCPBState failed to read MSR 0xC0010015\n");
+        IOLog("AMDRyzenCPUPowerManagement::setCPBState failed to read MSR 0xC0010015\n");
         return;
     }
     
@@ -880,7 +880,7 @@ void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
 bool AMDRyzenCPUPowerManagement::getCPBState(){
     uint64_t hwConfig;
     if(!read_msr(kMSR_HWCR, &hwConfig)) {
-        IOLog("AMDCPUSupport::getCPBState failed to read MSR 0xC0010015\n");
+        IOLog("AMDRyzenCPUPowerManagement::getCPBState failed to read MSR 0xC0010015\n");
         return false;
     }
     
@@ -964,7 +964,7 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
 
     uint64_t msr_value_buf = 0;
     if (!read_msr(kMSR_PKG_ENERGY_STAT, &msr_value_buf)) {
-        IOLog("AMDCPUSupport::updatePackageEnergy: failed to read MSR 0xC001029B\n");
+        IOLog("AMDRyzenCPUPowerManagement::updatePackageEnergy: failed to read MSR 0xC001029B\n");
         return;
     }
 
@@ -992,7 +992,7 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
         uint64_t msr_value_buf = 0;
         bool err = !read_msr(kMSR_PSTATE_0 + i, &msr_value_buf);
         if (err) {
-            IOLog("AMDCPUSupport::dumpPstate failed to read MSR 0xC0010064\n");
+            IOLog("AMDRyzenCPUPowerManagement::dumpPstate failed to read MSR 0xC0010064\n");
             continue;
         }
         
@@ -1013,7 +1013,7 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
                 static bool loggedDumpPstateDfsZero = false;
                 if (!loggedDumpPstateDfsZero) {
                     loggedDumpPstateDfsZero = true;
-                    IOLog("AMDCPUSupport::dumpPstate: curCpuDfsId is zero, clamping clock to 0\n");
+                    IOLog("AMDRyzenCPUPowerManagement::dumpPstate: curCpuDfsId is zero, clamping clock to 0\n");
                 }
                 clock = 0.0f;
             } else {
@@ -1032,7 +1032,7 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
         static bool loggedPStateLenExceeded = false;
         if (!loggedPStateLenExceeded) {
             loggedPStateLenExceeded = true;
-            IOLog("AMDCPUSupport::dumpPstate WARN: Enabled P-States count (%u) exceeds AMD architectural limit (8). Clamping to 8.\n", len);
+            IOLog("AMDRyzenCPUPowerManagement::dumpPstate WARN: Enabled P-States count (%u) exceeds AMD architectural limit (8). Clamping to 8.\n", len);
         }
         len = kMSR_PSTATE_LEN;
     }
@@ -1045,7 +1045,7 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
         static bool loggedNullBuf = false;
         if (!loggedNullBuf) {
             loggedNullBuf = true;
-            IOLog("AMDCPUSupport::writePstate WARN: Null buffer passed\n");
+            IOLog("AMDRyzenCPUPowerManagement::writePstate WARN: Null buffer passed\n");
         }
         return;
     }
@@ -1065,7 +1065,7 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
                 static bool loggedIndexBound = false;
                 if (!loggedIndexBound) {
                     loggedIndexBound = true;
-                    IOLog("AMDCPUSupport::writePstate WARN: P-state index %u out of bounds [0, 7]\n", i);
+                    IOLog("AMDRyzenCPUPowerManagement::writePstate WARN: P-state index %u out of bounds [0, 7]\n", i);
                 }
                 break;
             }
@@ -1078,7 +1078,7 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
                     static bool loggedInvalidZen5Vals = false;
                     if (!loggedInvalidZen5Vals) {
                         loggedInvalidZen5Vals = true;
-                        IOLog("AMDCPUSupport::writePstate WARN: Invalid Zen 5 P-state values (def=0x%llx, Fid=%llu, Vid=%llu)\n", def, curCpuFid, curCpuVid);
+                        IOLog("AMDRyzenCPUPowerManagement::writePstate WARN: Invalid Zen 5 P-state values (def=0x%llx, Fid=%llu, Vid=%llu)\n", def, curCpuFid, curCpuVid);
                     }
                     continue;
                 }
@@ -1090,7 +1090,7 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
                     static bool loggedInvalidVals = false;
                     if (!loggedInvalidVals) {
                         loggedInvalidVals = true;
-                        IOLog("AMDCPUSupport::writePstate WARN: Invalid P-state values (def=0x%llx, DfsId=%llu, Fid=%llu, Vid=%llu)\n", def, curCpuDfsId, curCpuFid, curCpuVid);
+                        IOLog("AMDRyzenCPUPowerManagement::writePstate WARN: Invalid P-state values (def=0x%llx, DfsId=%llu, Fid=%llu, Vid=%llu)\n", def, curCpuDfsId, curCpuFid, curCpuVid);
                     }
                     continue;
                 }

@@ -814,7 +814,11 @@ final class TelemetryModel: ObservableObject {
             fanRPM: firstFanRPM
         )
         history.append(point)
-        if history.count > maxHistoryPoints { history.removeFirst() }
+        // Keep only the last maxHistoryPoints entries. reserveCapacity avoids repeated heap reallocations
+        // on the append; removeFirst's O(n) memmove is bounded and negligible at 120 entries.
+        if history.count > maxHistoryPoints {
+            history.removeFirst(history.count - maxHistoryPoints)
+        }
 
         if smcDriverLoaded && numFans > 0 {
             for i in 0..<numFans where i < fans.count {
