@@ -160,11 +160,11 @@ void pmRyzen_init(void *handle){
     void **kernelDisp = pmRyzen_symtable._pmDispatch;
     pmRyzen_pmUnRegister = (void(*)(pmDispatch_t*))pmRyzen_symtable._pmUnRegister;
     pmRyzen_cpu_NMI = pmRyzen_symtable._cpu_NMI_interrupt
-        ? (void(*)(int))pmRyzen_symtable._cpu_NMI_interrupt : nullptr;
+        ? (void(*)(int))pmRyzen_symtable._cpu_NMI_interrupt : NULL;
     pmRyzen_NMI_enabled = pmRyzen_symtable._NMIPI_enable
-        ? (void(*)(boolean_t))pmRyzen_symtable._NMIPI_enable : nullptr;
+        ? (void(*)(boolean_t))pmRyzen_symtable._NMIPI_enable : NULL;
     pmRyzen_cpu_IPI = pmRyzen_symtable._i386_cpu_IPI
-        ? (void(*)(int))pmRyzen_symtable._i386_cpu_IPI : nullptr;
+        ? (void(*)(int))pmRyzen_symtable._i386_cpu_IPI : NULL;
     pmRyzen_tsc_freq = *((uint64_t*)pmRyzen_symtable._tscFreq);
     
     
