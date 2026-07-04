@@ -92,14 +92,19 @@ int pmRyzen_choose_cpu(int,int,int);
 pmProcessor_t* pmRyzen_get_processor(uint32_t);
 
 inline uint32_t pmRyzen_cpu_phys_num(uint32_t cpunum){
+    if (cpunum >= XNU_MAX_CPU || !pmRyzen_cpunum_to_lcpu[cpunum] ||
+        !pmRyzen_cpunum_to_lcpu[cpunum]->core) return 0;
     return pmRyzen_cpunum_to_lcpu[cpunum]->core->pcore_num;
 }
 
 inline uint32_t pmRyzen_cpu_primary_in_core(uint32_t cpunum){
+    if (cpunum >= XNU_MAX_CPU || !pmRyzen_cpunum_to_lcpu[cpunum] ||
+        !pmRyzen_cpunum_to_lcpu[cpunum]->core) return 0;
     return pmRyzen_cpunum_to_lcpu[cpunum]->core->lcpus == pmRyzen_cpunum_to_lcpu[cpunum];
 }
 
 inline boolean_t pmRyzen_cpu_is_master(uint32_t cpunum){
+    if (cpunum >= XNU_MAX_CPU || !pmRyzen_cpunum_to_lcpu[cpunum]) return FALSE;
     return pmRyzen_cpunum_to_lcpu[cpunum]->master;
 }
 

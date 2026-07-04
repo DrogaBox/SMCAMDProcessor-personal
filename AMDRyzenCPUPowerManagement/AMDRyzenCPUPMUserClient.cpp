@@ -68,7 +68,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                                                  IOExternalMethodDispatch *dispatch,
                                                    OSObject *target, void *reference){
     
-    if (fProvider->kextloadAlerts) {
+    if (!fProvider) return kIOReturnNotReady;
+    
+    if (fProvider->kextloadAlerts && fProvider->kunc_alert) {
         unsigned int rf;
         
         char buf[128];
@@ -348,6 +350,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //Set PState
         case 10: {
+            if(!hasPrivilege()) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
             
@@ -373,7 +376,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             AMDRyzenCPUPowerManagement::CPUSensorPacket *packet = (AMDRyzenCPUPowerManagement::CPUSensorPacket*) arguments->structureOutput;
             packet->packagePowerW = (float)fProvider->uniPackageEnergy;
             packet->packageTempC = fProvider->PACKAGE_TEMPERATURE_perPackage[0];
-            packet->numLogicalCores = fProvider->totalNumberOfPhysicalCores;
+            packet->numLogicalCores = fProvider->totalNumberOfLogicalCores;
             packet->ccdCount = fProvider->ccdCount;
             for (uint32_t i = 0; i < 8; i++) {
                 packet->ccdTemperatures[i] = (i < fProvider->ccdCount) ? fProvider->ccdTemperatures[i] : 0.0f;
@@ -409,6 +412,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //Set CPB
         case 12: {
+            if(!hasPrivilege()) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
             
@@ -445,6 +449,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
         //Set PPM
         case 14: {
+            if(!hasPrivilege()) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
                 
@@ -546,6 +551,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
         //Set LPM
         case 19: {
+            if(!hasPrivilege()) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
                 

@@ -151,11 +151,20 @@ void pmRyzen_init(void *handle){
     IOLog("AMDCPUSupport::pmRyzen_init sizeof(pmProcessor_t) = %lu bytes (cacheline aligned)\n", (unsigned long)sizeof(pmProcessor_t));
     
     
+    if (!pmRyzen_symtable._pmDispatch || !pmRyzen_symtable._pmUnRegister ||
+        !pmRyzen_symtable._tscFreq) {
+        IOLog("pmRyzen_init: critical symbols not resolved, aborting\n");
+        return;
+    }
+    
     void **kernelDisp = pmRyzen_symtable._pmDispatch;
     pmRyzen_pmUnRegister = (void(*)(pmDispatch_t*))pmRyzen_symtable._pmUnRegister;
-    pmRyzen_cpu_NMI = (void(*)(int))pmRyzen_symtable._cpu_NMI_interrupt;
-    pmRyzen_NMI_enabled = (void(*)(boolean_t))pmRyzen_symtable._NMIPI_enable;
-    pmRyzen_cpu_IPI = (void(*)(int))pmRyzen_symtable._i386_cpu_IPI;
+    pmRyzen_cpu_NMI = pmRyzen_symtable._cpu_NMI_interrupt
+        ? (void(*)(int))pmRyzen_symtable._cpu_NMI_interrupt : nullptr;
+    pmRyzen_NMI_enabled = pmRyzen_symtable._NMIPI_enable
+        ? (void(*)(boolean_t))pmRyzen_symtable._NMIPI_enable : nullptr;
+    pmRyzen_cpu_IPI = pmRyzen_symtable._i386_cpu_IPI
+        ? (void(*)(int))pmRyzen_symtable._i386_cpu_IPI : nullptr;
     pmRyzen_tsc_freq = *((uint64_t*)pmRyzen_symtable._tscFreq);
     
     
