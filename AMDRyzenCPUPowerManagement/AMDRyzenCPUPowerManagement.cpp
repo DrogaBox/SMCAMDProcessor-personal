@@ -64,6 +64,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     }
     
     pciConfigLock = IOSimpleLockAlloc();
+    superIOLock = IOLockAlloc();
     
     pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
     pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
@@ -583,6 +584,10 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     if (pciConfigLock) {
         IOSimpleLockFree(pciConfigLock);
         pciConfigLock = nullptr;
+    }
+    if (superIOLock) {
+        IOLockFree(superIOLock);
+        superIOLock = nullptr;
     }
     if (workLoop) {
         workLoop->release();

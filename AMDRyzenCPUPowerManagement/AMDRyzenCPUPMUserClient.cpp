@@ -765,13 +765,17 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             UInt32 currentCount = OSIncrementAtomic(&fProvider->fanUpdateCounter);
             if ((currentCount % 4) == 0) {
+                IOLockLock(fProvider->superIOLock);
                 fProvider->superIO->updateFanRPMS();
+                IOLockUnlock(fProvider->superIOLock);
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
             
+            IOLockLock(fProvider->superIOLock);
             for (uint32_t i = 0; i < copyCount; i++) {
                 dataOut[i] = fProvider->superIO->getRPMForFan(i);
             }
+            IOLockUnlock(fProvider->superIOLock);
             
             break;
         }
@@ -792,14 +796,19 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            if ((fProvider->fanUpdateCounter % 4) == 0) {
+            UInt32 snap94 = (UInt32)OSAddAtomic(0, (SInt32*)&fProvider->fanUpdateCounter);
+            if ((snap94 % 4) == 0) {
+                IOLockLock(fProvider->superIOLock);
                 fProvider->superIO->updateFanControl();
+                IOLockUnlock(fProvider->superIOLock);
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
             
+            IOLockLock(fProvider->superIOLock);
             for (uint32_t i = 0; i < copyCount; i++) {
                 dataOut[i] = fProvider->superIO->getFanThrottle(i) << 8 | (fProvider->superIO->getFanAutoControlMode(i) ? 1 : 0);
             }
+            IOLockUnlock(fProvider->superIOLock);
             
             break;
         }
@@ -818,7 +827,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             int fanSel = (int)arguments->scalarInput[0];
             uint8_t pwm = (uint8_t)arguments->scalarInput[1];
             
+            IOLockLock(fProvider->superIOLock);
             fProvider->superIO->overrideFanControl(fanSel, pwm);
+            IOLockUnlock(fProvider->superIOLock);
             
             break;
         }
@@ -836,7 +847,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             int fanSel = (int)arguments->scalarInput[0];
             
+            IOLockLock(fProvider->superIOLock);
             fProvider->superIO->setDefaultFanControl(fanSel);
+            IOLockUnlock(fProvider->superIOLock);
             
             break;
         }
@@ -853,12 +866,14 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 return kIOReturnBadArgument;
             
             int numFan = fProvider->superIO->getNumberOfFans();
+            IOLockLock(fProvider->superIOLock);
             for (int i = 0; i < numFan; i++) {
                 if(arguments->scalarInput[0])
                     fProvider->superIO->overrideFanControl(i, 0xC8);
                 else
                     fProvider->superIO->setDefaultFanControl(i);
             }
+            IOLockUnlock(fProvider->superIOLock);
             
             break;
         }
