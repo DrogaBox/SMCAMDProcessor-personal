@@ -22,6 +22,7 @@ ISSuperIONCT67XXFamily::ISSuperIONCT67XXFamily(int psel, uint16_t addr, uint16_t
             break;
             
         case CHIP_NCT6799D:
+        case CHIP_NCT6701D:
             activeFansOnSystem = 7;
             break;
             
@@ -76,6 +77,7 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
                 break;
                 
             case CHIP_NCT6799D:
+            case CHIP_NCT6701D:
                 found = true;
                 IOLog("NCT67XX chip identified\n");
                 break;
@@ -130,6 +132,7 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
             break; 
             
         case CHIP_NCT6799D:
+        case CHIP_NCT6701D:
             conf = ISLPCPort::readByte(portSel, CHIP_IO_SPACE_LOCK);
             if(conf & 0x10){
                 ISLPCPort::writeByte(portSel, CHIP_IO_SPACE_LOCK, conf & ~0x10);
