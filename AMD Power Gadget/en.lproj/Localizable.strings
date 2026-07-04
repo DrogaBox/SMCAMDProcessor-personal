@@ -123,7 +123,7 @@
 "OK" = "OK";
 
 /* Dynamic format strings */
-"Avg: %.2f Ghz, Max: %.2f Ghz" = "Avg: %.2f GHz, Max: %.2f GHz";
+"Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
 "%.2f °C" = "%.2f °C";
 "%.2f Watt" = "%.2f W";
 

@@ -102,7 +102,7 @@ class ProcessorModel {
         }
 
         let status = IOServiceOpen(serviceObject, mach_task_self_, 0, &connect)
-        print(status)
+        IOObjectRelease(serviceObject) // Must be released whether open succeeds or fails
 
         return status == KERN_SUCCESS
     }
@@ -292,7 +292,6 @@ class ProcessorModel {
     private func loadPStateDef(){
 
         PStateDef = kernelGetUInt64(count: 8, selector: 0)
-        print(PStateDef)
         var i = 0
         while i < 8 {
             if (PStateDef[i] & 0x8000000000000000) == 0 { //LOL Swift
