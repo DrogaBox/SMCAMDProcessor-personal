@@ -288,7 +288,7 @@ public:
     bool supportsCPPCv2 = false;
     bool supportsMwait = true;
 
-    bool disablePrivilegeCheck = true;
+    bool disablePrivilegeCheck = false;
     uint16_t savedSMCChipIntel = 0;
     uint16_t kextloadAlerts = 0;
 

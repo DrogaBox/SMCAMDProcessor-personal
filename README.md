@@ -32,7 +32,7 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
 ### 3. Precision RAPL Energy & Sensor Telemetry (SMCAMDProcessor.kext)
 - Dynamic RAPL Power Scaling: Hardware MSR decoding (`0xC0010299`) with `1ULL << energyStatusUnits` exponent math for accurate package wattage calculations across Zen 3 and Zen 5.
 - Granular per-CCD Thermal Monitoring: Direct PCI die register queries exposing individual CCD temperatures (VirtualSMC `TCxC` / `TCxc` keys) with automatic package fallback for multi-die CPUs.
-- Expanded Super I/O Fan Support: Native RPM monitoring and hardware PWM fan curve controls for Nuvoton (NCT668X, NCT6796D, NCT6701D) and ITE (IT8628E, IT8686E, IT8689E) controllers.
+- Expanded Super I/O Fan Support: Native RPM monitoring and hardware PWM fan curve controls for Nuvoton NCT668X/NCT67XX family (including NCT6799D and NCT6701D) and ITE IT86XXE family (including IT8628E, IT8686E, and IT8689E) controllers.
 
 ### 4. High-Performance Dashboard & Menu Bar Extra (AMD Power Gadget.app)
 - MainActor Serial I/O Offloading: Hardware sampling operations are decoupled off the main thread onto a high-priority serial queue (`ioQueue`) with skip-if-busy guards, guaranteeing smooth 60 FPS UI rendering under max load.

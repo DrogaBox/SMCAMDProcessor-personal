@@ -36,36 +36,6 @@ void(*pmRyzen_NMI_enabled)(boolean_t) = 0;
 void(*pmRyzen_cpu_IPI)(int) = 0;
 
 
-//kern_return_t       (*pmCPUStateInit)(void);
-//void                (*cstateInit)(void);
-//uint64_t            (*MachineIdle)(uint64_t maxIdleDuration);
-//uint64_t            (*GetDeadline)(x86_lcpu_t *lcpu);
-//uint64_t            (*SetDeadline)(x86_lcpu_t *lcpu, uint64_t);
-//void                (*Deadline)(x86_lcpu_t *lcpu);
-//boolean_t           (*exitIdle)(x86_lcpu_t *lcpu);
-//void                (*markCPURunning)(x86_lcpu_t *lcpu);
-//int                 (*pmCPUControl)(uint32_t cmd, void *datap);
-//void                (*pmCPUHalt)(void);
-//uint64_t            (*getMaxSnoop)(void);
-//void                (*setMaxBusDelay)(uint64_t time);
-//uint64_t            (*getMaxBusDelay)(void);
-//void                (*setMaxIntDelay)(uint64_t time);
-//uint64_t            (*getMaxIntDelay)(void);
-//void                (*pmCPUSafeMode)(x86_lcpu_t *lcpu, uint32_t flags);
-//void                (*pmTimerStateSave)(void);
-//void                (*pmTimerStateRestore)(void);
-//kern_return_t       (*exitHalt)(x86_lcpu_t *lcpu);
-//kern_return_t       (*exitHaltToOff)(x86_lcpu_t *lcpu);
-//void                (*markAllCPUsOff)(void);
-//void                (*pmSetRunCount)(uint32_t count);
-//boolean_t           (*pmIsCPUUnAvailable)(x86_lcpu_t *lcpu);
-//int                 (*pmChooseCPU)(int startCPU, int endCPU, int preferredCPU);
-//int                 (*pmIPIHandler)(void *state);
-//void                (*pmThreadTellUrgency)(int urgency, uint64_t rt_period, uint64_t rt_deadline);
-//void                (*pmActiveRTThreads)(boolean_t active);
-//boolean_t           (*pmInterruptPrewakeApplicable)(void);
-//void                (*pmThreadGoingOffCore)(thread_t old_thread, boolean_t transfer_load,
-//                                              uint64_t last_dispatch, boolean_t thread_runnable);
 
 pmDispatch_t pmRyzen_cpuFuncs = {
     .pmCPUStateInit = 0,
@@ -148,7 +118,7 @@ void pmRyzen_PState_reset(){
 void pmRyzen_init(void *handle){
     
     pmRyzen_io_service_handle = handle;
-    IOLog("AMDCPUSupport::pmRyzen_init sizeof(pmProcessor_t) = %lu bytes (cacheline aligned)\n", (unsigned long)sizeof(pmProcessor_t));
+    IOLog("AMDRyzenCPUPowerManagement::pmRyzen_init sizeof(pmProcessor_t) = %lu bytes (cacheline aligned)\n", (unsigned long)sizeof(pmProcessor_t));
     
     
     if (!pmRyzen_symtable._pmDispatch || !pmRyzen_symtable._pmUnRegister ||
@@ -196,7 +166,7 @@ void pmRyzen_init(void *handle){
                     static boolean_t loggedMaxCpu = FALSE;
                     if (!loggedMaxCpu) {
                         loggedMaxCpu = TRUE;
-                        IOLog("AMDCPUSupport ERR: System has CPU %u beyond limit %u. Cores beyond limit will not be managed.\n", lcpu->cpu_num, XNU_MAX_CPU);
+                        IOLog("AMDRyzenCPUPowerManagement ERR: System has CPU %u beyond limit %u. Cores beyond limit will not be managed.\n", lcpu->cpu_num, XNU_MAX_CPU);
                     }
                     lcpu = lcpu->next_in_core;
                     continue;
@@ -233,14 +203,18 @@ void pmRyzen_init(void *handle){
 
 void pmRyzen_stop(){
     
-    (*pmRyzen_pmUnRegister)(&pmRyzen_cpuFuncs);
+    if (pmRyzen_pmUnRegister) {
+        (*pmRyzen_pmUnRegister)(&pmRyzen_cpuFuncs);
+    }
     
     //Make sure all managed cores exited idle thread.
     for (int i = 0; i < pmRyzen_num_logi && i < XNU_MAX_CPU; i++) {
         if (!pmRyzen_cpunum_to_lcpu[i]) continue;
         int retries = 0;
         while(pmRyzen_exit_idle(pmRyzen_cpunum_to_lcpu[i])){
-            (*pmRyzen_cpu_IPI)(i);
+            if (pmRyzen_cpu_IPI) {
+                (*pmRyzen_cpu_IPI)(i);
+            }
             if (++retries > 1000) {
                 IOLog("pmRyzen_stop: CPU %d failed to exit idle after 1000 retries\n", i);
                 break;

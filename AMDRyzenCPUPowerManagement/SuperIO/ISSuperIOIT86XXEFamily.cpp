@@ -23,6 +23,9 @@ ISSuperIOIT86XXEFamily::ISSuperIOIT86XXEFamily(int psel, uint16_t addr, uint16_t
             break;
     }
 
+    // Enable 16-bit fan tachometer mode for all 6 fans
+    writeByte(0x0c, readByte(0x0c) | 0x3f);
+
     // backup default ctrl mode
     for (int i = 0; i < activeFansOnSystem; i++)
     {
