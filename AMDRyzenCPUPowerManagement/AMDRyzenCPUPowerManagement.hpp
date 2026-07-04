@@ -297,6 +297,7 @@ public:
     
     
     ISSuperIOSMCFamily *superIO{nullptr};
+    IOLock *superIOLock{nullptr};   // Protects multi-step SuperIO I/O port sequences from concurrent UserClient calls
     
 private:
     IOWorkLoop *workLoop;

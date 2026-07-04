@@ -28,7 +28,7 @@ uint64_t pmRyzen_p_sdtsc;
 uint64_t pmRyzen_p_sutsc;
 
 uint32_t pmRyzen_hpcpus = 0;
-uint32_t pmRyzen_pstatelimit;
+volatile uint32_t pmRyzen_pstatelimit;
 
 void(*pmRyzen_pmUnRegister)(pmDispatch_t*) = 0;
 void(*pmRyzen_cpu_NMI)(int) = 0;
@@ -273,7 +273,7 @@ float pmRyzen_avgload_pcpu(uint32_t cpu){
 }
 
 
-uint32_t pmRyzen_last_woken_cpu=0;
+volatile uint32_t pmRyzen_last_woken_cpu=0;
 //uint32_t pmRyzen_last_idle_cpu=0;
 uint64_t pmRyzen_machine_idle(uint64_t maxDur){
 

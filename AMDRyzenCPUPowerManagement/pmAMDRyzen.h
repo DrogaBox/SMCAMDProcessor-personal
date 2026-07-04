@@ -48,7 +48,7 @@ extern uint64_t pmRyzen_exit_idle_false_c;
 
 extern uint32_t pmRyzen_hpcpus;
 
-extern uint32_t pmRyzen_pstatelimit;
+extern volatile uint32_t pmRyzen_pstatelimit;
 
 
 extern void pmRyzen_wrmsr_safe(void *, uint32_t, uint64_t);
