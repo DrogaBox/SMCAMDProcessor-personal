@@ -102,7 +102,7 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
     
     //verify addr
     IODelay(10);
-    if(ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) != devAddr){
+    if((ISLPCPort::readWord(portSel, ISLPCPort::kBASE_ADDRESS_REGISTER) & (~7)) != devAddr){
         IOLog("NCT67XX address verify failed");
         return nullptr;
     }

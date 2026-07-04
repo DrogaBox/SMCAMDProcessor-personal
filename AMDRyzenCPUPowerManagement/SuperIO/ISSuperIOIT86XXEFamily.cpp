@@ -202,8 +202,10 @@ void ISSuperIOIT86XXEFamily::updateFanControl()
 {
     for (int i = 0; i < activeFansOnSystem; i++)
     {
+        // kFAN_PWM_CTRL_REGS: contains the PWM control mode byte (bit 7 = SmartGuardian/auto)
         fanControlMode[i] = readByte(kFAN_PWM_CTRL_REGS[i]);
-        fanThrottles[i] = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
+        // kFAN_PWM_CTRL_EXT_REGS: contains the actual PWM duty cycle / throttle value
+        fanThrottles[i]   = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
     }
 }
 
