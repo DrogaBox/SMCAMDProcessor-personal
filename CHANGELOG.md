@@ -1,5 +1,9 @@
 # Change Summary & Release Changelog
 
+## v3.14.5  SuperIO Raw Register Diagnostics & Debug Utilities
+* **Added Raw Register Access Selectors**: Implemented user-space connection selectors 98 (read raw register) and 99 (write raw register) in `AMDRyzenCPUPMUserClient.cpp`.
+* **Created ITE Chip Diagnostic Utilities**: Compiled `/Users/droga/Desktop/SMCAMDProcessor/scratch/dump_sio` and `write_sio` binaries to allow scanning the entire 256-byte register map and modifying configurations to identify alternative fan mappings on ASUS Crosshair VII Hero.
+
 ## v3.14.4  SwiftUI Infinite Layout Loop & Main Thread I/O Optimization
 * **Fixed Infinite Layout Recursion Loop**: Removed the `.fixedSize(horizontal: false, vertical: true)` modifiers from the GPU Fan Control guide view. These modifiers were causing SwiftUI to trigger recursive size evaluations on every tick, locking up AppKit/WindowServer and lagging the entire macOS desktop user interface.
 * **Backgrounded Telemetry System Calls**: Offloaded `getDiskIOBytes()`, `getDiskUsagePct()`, and `getRAMUsagePct()` system calls from the main UI thread to the background `ioQueue` thread, preventing any blocking kernel calls from stuttering the user interface.

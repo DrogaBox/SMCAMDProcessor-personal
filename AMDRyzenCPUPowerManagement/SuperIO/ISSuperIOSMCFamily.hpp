@@ -27,7 +27,8 @@ public:
     virtual void overrideFanControl(int fan, uint8_t thr);
     virtual void setDefaultFanControl(int fan);
     
-
+    virtual uint8_t readReg(uint16_t reg) { return 0; }
+    virtual void writeReg(uint16_t reg, uint8_t val) {}
 };
 
 #endif /* ISSuperIOSMCFamily_hpp */

@@ -64,6 +64,9 @@ class ISSuperIOIT86XXEFamily : public ISSuperIOSMCFamily
     void overrideFanControl(int fan, uint8_t thr) override;
     void setDefaultFanControl(int fan) override;
 
+    uint8_t readReg(uint16_t reg) override { return readByte(reg); }
+    void writeReg(uint16_t reg, uint8_t val) override { writeByte(reg, val); }
+
   private:
     static constexpr uint16_t kFAN_MAIN_CTRL_REG = 0x13;
     static constexpr uint16_t kFAN_RPM_REGS[] = {0x0d, 0x0e, 0x0f, 0x80, 0x82, 0x4c};
