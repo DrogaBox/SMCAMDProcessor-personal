@@ -1,5 +1,9 @@
 # Change Summary & Release Changelog
 
+## v3.14.4  SwiftUI Infinite Layout Loop & Main Thread I/O Optimization
+* **Fixed Infinite Layout Recursion Loop**: Removed the `.fixedSize(horizontal: false, vertical: true)` modifiers from the GPU Fan Control guide view. These modifiers were causing SwiftUI to trigger recursive size evaluations on every tick, locking up AppKit/WindowServer and lagging the entire macOS desktop user interface.
+* **Backgrounded Telemetry System Calls**: Offloaded `getDiskIOBytes()`, `getDiskUsagePct()`, and `getRAMUsagePct()` system calls from the main UI thread to the background `ioQueue` thread, preventing any blocking kernel calls from stuttering the user interface.
+
 ## v3.14.3  IT86XXE 16-bit Fan Fix, SwiftUI UI Lag Optimization & Quality Audit
 * **16-bit Fan Tachometer Mode Enable**: Writes `0x3f` to IT86XXE Environmental Controller register `0x0C` on initialization, forcing 16-bit tachometer mode on all 6 fan channels. This resolves the `0 RPM` reading on System 2 Fan and the incorrect readings on System 3 Fan.
 * **SwiftUI Fan Array Publishing Optimization**: Refactored `TelemetryModel.self.fans` updates to perform element-by-element changes on a local array copy, assigning to the `@Published` variable once. This avoids up to 18 UI body redraw evaluations per sample, eliminating the lag on the Fan Control tab.

@@ -593,6 +593,10 @@ final class TelemetryModel: ObservableObject {
                 fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
             }
 
+            let ramUsage = self.getRAMUsagePct()
+            let diskUsage = self.getDiskUsagePct()
+            let diskIO = self.getDiskIOBytes()
+
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.isSampling = false
@@ -609,7 +613,10 @@ final class TelemetryModel: ObservableObject {
                     ccdTemps: ccdTemps,
                     instDelta: instDelta,
                     fanRpms: fanRpms,
-                    fanCtrls: fanCtrls
+                    fanCtrls: fanCtrls,
+                    ramUsage: ramUsage,
+                    diskUsage: diskUsage,
+                    diskIO: diskIO
                 )
             }
         }
@@ -628,7 +635,10 @@ final class TelemetryModel: ObservableObject {
         ccdTemps: [Float],
         instDelta: [UInt64],
         fanRpms: [UInt64],
-        fanCtrls: [UInt64]
+        fanCtrls: [UInt64],
+        ramUsage: Double,
+        diskUsage: Double,
+        diskIO: (read: UInt64, write: UInt64)
     ) {
         if cachedNumPhysicalCores == 0 {
             cachedNumPhysicalCores = numPhys
@@ -738,14 +748,11 @@ final class TelemetryModel: ObservableObject {
             evaluateAutoFanCurve()
         }
         
-        let now = Date()
-        if lastHeavySyscallCheck == Date.distantPast || now.timeIntervalSince(lastHeavySyscallCheck) >= 1.0 {
-            lastHeavySyscallCheck = now
-            ramUsagePct = getRAMUsagePct()
-            diskUsagePct = getDiskUsagePct()
-        }
         
-        let diskIO = getDiskIOBytes()
+        let now = Date()
+        ramUsagePct = ramUsage
+        diskUsagePct = diskUsage
+        
         if lastDiskCheck != Date.distantPast {
             let elapsed = now.timeIntervalSince(lastDiskCheck)
             if elapsed > 0.1 {
