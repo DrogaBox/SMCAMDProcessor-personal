@@ -9,6 +9,7 @@
 
 
 SMC_RESULT TempPackage::readAccess() {
+    if (!provider) return SmcExecutionError;
     uint16_t *ptr = reinterpret_cast<uint16_t *>(data);
     *ptr = VirtualSMCAPI::encodeSp(type, (double)provider->PACKAGE_TEMPERATURE_perPackage[0]);
 
@@ -30,6 +31,7 @@ SMC_RESULT TempCore::readAccess() {
 }
 
 SMC_RESULT EnergyPackage::readAccess(){
+    if (!provider) return SmcExecutionError;
     if (type == SmcKeyTypeFloat)
         *reinterpret_cast<uint32_t *>(data) = VirtualSMCAPI::encodeFlt(provider->uniPackageEnergy);
     else
