@@ -3895,7 +3895,7 @@ struct MenuBarPopoverView: View {
                 .buttonStyle(PlainButtonStyle())
 
                 Button(action: {
-                    exit(0)
+                    NSApplication.shared.terminate(nil)
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "power")
