@@ -35,14 +35,14 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     if (isRoot || isKnownApp) {
         clientAuthorizedByUser = true;
     } else {
-        IOLog("AMDCPUSupport: Connection attempt from unauthorized process: %s\n", taskProcessBinaryName);
+        IOLog("AMDRyzenCPUPMUserClient: Connection attempt from unauthorized process: %s\n", taskProcessBinaryName);
     }
     
     return true;
 }
 
 bool AMDRyzenCPUPMUserClient::start(IOService *provider){
-    IOLog("AMDCPUSupportUserClient::start\n");
+    IOLog("AMDRyzenCPUPMUserClient::start\n");
     bool success = IOService::start(provider);
     if(success){
         fProvider = OSDynamicCast(AMDRyzenCPUPowerManagement, provider);
@@ -51,7 +51,7 @@ bool AMDRyzenCPUPMUserClient::start(IOService *provider){
 }
 
 void AMDRyzenCPUPMUserClient::stop(IOService *provider){
-    IOLog("AMDCPUSupportUserClient::stop\n");
+    IOLog("AMDRyzenCPUPMUserClient::stop\n");
     fProvider = nullptr;
     IOService::stop(provider);
 }
@@ -864,7 +864,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         }
         
         default: {
-            IOLog("AMDCPUSupportUserClient::externalMethod: invalid method.\n");
+            IOLog("AMDRyzenCPUPMUserClient::externalMethod: invalid method.\n");
             break;
         }
     }
