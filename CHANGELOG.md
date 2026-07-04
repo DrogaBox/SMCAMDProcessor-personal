@@ -1,5 +1,8 @@
 # Change Summary & Release Changelog
 
+## v3.14.2  ITE IT86XXE 6-Fan Support
+* **ITE IT86XXE 6th Fan support**: Expanded IT86XXE family drivers (including IT8689E and IT8686E) from 5 to 6 active fan channels. Added register offsets for the 6th channel and mapped the "System 3 Fan" label.
+
 ## v3.14.1  Nuvoton NCT6701D (X870/B850) Support
 * **NCT6701D Hardware Support**: Integrated native identification, probing, configuration registers unlocking, and 7-channel fan configuration for the Nuvoton NCT6701D (0xD806) Super I/O chip commonly found on X870/B850/Z890 motherboards.
 
