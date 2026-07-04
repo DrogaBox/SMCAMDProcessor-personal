@@ -16,3 +16,6 @@ dSYM/
 AGENTS.md
 CONTEXT.md
 .agents/
+*.log
+build_ci/
+build_release/
