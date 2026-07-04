@@ -1,5 +1,8 @@
 # Change Summary & Release Changelog
 
+## v3.14.1  Nuvoton NCT6701D (X870/B850) Support
+* **NCT6701D Hardware Support**: Integrated native identification, probing, configuration registers unlocking, and 7-channel fan configuration for the Nuvoton NCT6701D (0xD806) Super I/O chip commonly found on X870/B850/Z890 motherboards.
+
 ## v3.14.0  Full Security & Stability Hardening Audit (7-Phase)
 
 ### Phase 1 — Kernel Crash Prevention
