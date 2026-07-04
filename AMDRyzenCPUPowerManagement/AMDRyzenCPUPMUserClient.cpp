@@ -880,6 +880,51 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
+        // Read raw SuperIO register
+        case 98: {
+            if(!fProvider || !fProvider->superIO)
+                return kIOReturnNoDevice;
+            
+            if(arguments->scalarInputCount != 1)
+                return kIOReturnBadArgument;
+            
+            uint16_t reg = (uint16_t)arguments->scalarInput[0];
+            uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
+            uint32_t maxLen = arguments->structureOutputSize;
+            
+            if (!arguments->structureOutput || maxLen < sizeof(uint64_t))
+                return kIOReturnBadArgument;
+            
+            IOLockLock(fProvider->superIOLock);
+            uint8_t val = fProvider->superIO->readReg(reg);
+            IOLockUnlock(fProvider->superIOLock);
+            
+            dataOut[0] = val;
+            arguments->structureOutputSize = sizeof(uint64_t);
+            break;
+        }
+        
+        // Write raw SuperIO register
+        case 99: {
+            if(!fProvider || !fProvider->superIO)
+                return kIOReturnNoDevice;
+            
+            if(!hasPrivilege())
+                return kIOReturnNotPrivileged;
+            
+            if(arguments->scalarInputCount != 2)
+                return kIOReturnBadArgument;
+            
+            uint16_t reg = (uint16_t)arguments->scalarInput[0];
+            uint8_t val = (uint8_t)arguments->scalarInput[1];
+            
+            IOLockLock(fProvider->superIOLock);
+            fProvider->superIO->writeReg(reg, val);
+            IOLockUnlock(fProvider->superIOLock);
+            
+            break;
+        }
+        
         default: {
             IOLog("AMDRyzenCPUPMUserClient::externalMethod: invalid method.\n");
             break;
