@@ -1,5 +1,39 @@
 # Change Summary & Release Changelog
 
+## v3.14.0  Full Security & Stability Hardening Audit (7-Phase)
+
+### Phase 1 — Kernel Crash Prevention
+* **NULL Guards on kunc_alert & fProvider**: Added `if (!fProvider) return kIOReturnNotReady;` at the top of `externalMethod` and guarded `fProvider->kunc_alert` before dereferencing, preventing kernel panics if the provider detaches while a UserClient call is in flight.
+* **pmRyzen_symtable Critical Symbol Guards**: Added early-return guard block in `pmRyzen_init` checking `_pmDispatch`, `_pmUnRegister`, and `_tscFreq` before use — prevents null dereference if symbol resolution fails during boot.
+* **pmRyzen Helper Inline Bounds Checks**: Added `cpunum >= XNU_MAX_CPU` and null-pointer guards to `pmRyzen_cpu_phys_num`, `pmRyzen_cpu_primary_in_core`, and `pmRyzen_cpu_is_master` in `pmAMDRyzen.h`.
+* **SMC Key readAccess Provider Guard**: Added `if (!provider) return SmcExecutionError;` to `TempPackage::readAccess` and `EnergyPackage::readAccess` in `Keyimplementations.cpp`.
+
+### Phase 2 — Privilege & Security Hardening
+* **Missing Privilege Checks on Writable Selectors**: Added `hasPrivilege()` guard to UserClient selectors 10 (PState control), 12 (CPB toggle), 14 (PPM limit), and 19 (LPM toggle) — previously any user process could write power management MSRs without root.
+* **NCT67XX Address Mask Consistency**: Applied `& (~7)` mask to the second address read in `ISSuperIONCT67XXFamily::getDevice()` to match the first read, preventing false address verification failures from unmasked reserved bits.
+
+### Phase 3 — Race Condition Elimination
+* **volatile Globals for Interrupt-Context Shared State**: Declared `pmRyzen_pstatelimit` and `pmRyzen_last_woken_cpu` as `volatile uint32_t` to prevent the compiler from caching values in registers across interrupt context switches.
+* **Atomic Read for fanUpdateCounter**: Replaced non-atomic `fanUpdateCounter % 4` read in UserClient case 94 with `OSAddAtomic(0, ...)` atomic load, consistent with the `OSIncrementAtomic` used in case 93.
+* **IOLock for SuperIO I/O Port Sequences**: Added `IOLock *superIOLock` to the main class (allocated in `init()`, freed in `stop()`), protecting all multi-step `outb`/`inb` SuperIO sequences in UserClient cases 93-97 from concurrent UserClient connections. `IOLock` was chosen over `IOSimpleLock` because `overrideFanControl` uses `IOSleep(2)` inside the critical section.
+
+### Phase 4 — Logic Correctness
+* **Packet numLogicalCores Field**: Fixed `CPUSensorPacket.numLogicalCores` in case 100 to use `totalNumberOfLogicalCores` instead of `totalNumberOfPhysicalCores`.
+* **IT86XXE Register Comments**: Clarified `kFAN_PWM_CTRL_REGS` vs `kFAN_PWM_CTRL_EXT_REGS` register roles in `updateFanControl()`.
+* **exit(0) Replacement**: Replaced `exit(0)` with `NSApplication.shared.terminate(nil)` in Quit button handler for proper graceful teardown.
+
+### Phase 5 — Resource Leak Fixes
+* **io_service_t Leak in initDriver**: Added `IOObjectRelease(serviceObject)` after `IOServiceOpen()` in `ProcessorModel.swift` — the io_service_t handle was being leaked on every app launch.
+* **Removed Debug print() Calls**: Removed `print(status)` and `print(PStateDef)` debug output left in `ProcessorModel.swift`.
+
+### Phase 6 — Dead Code & Quality
+* **IOLog Class Name Corrections**: Replaced all 53+ occurrences of `IOLog("AMDCPUSupport::` with `IOLog("AMDRyzenCPUPowerManagement::` throughout `AMDRyzenCPUPowerManagement.cpp` and `AMDRyzenCPUPMUserClient.cpp`.
+* **Format String Typo**: Fixed localization key `"Avg: %.2f Ghz, Max: %.2f Ghz"` → `"Avg: %.2f GHz, Max: %.2f GHz"` in `en.lproj/Localizable.strings`.
+* **nullptr in C File**: Replaced C++-only `nullptr` with ANSI `NULL` in `pmAMDRyzen.c` (compiled as C, not C++).
+
+### Phase 7 — CI/CD
+* **Dependency Version Env Vars**: Extracted `LILU_VERSION` and `VSMC_VERSION` to top-level `env:` block in `.github/workflows/main.yml` — version bumps now require editing one place instead of four hardcoded strings.
+
 ## v3.13.3  Tahoe Edition: Multi-Series Telemetry Charts, Network Legend & Dynamic CSV Logging
 * **Multi-Series Chart Rendering Fix**: Resolved Swift Charts 2D dimensional binding bugs across Desktop Widgets (United Pro Monitor), Thermal History, and Network cards by unifying Y-axis dimension names (`Value`, `Temperature`, `Speed`) and binding series with explicit `.foregroundStyle(by: .value("Series", name))` and Catmull-Rom interpolation, eliminating all diagonal zig-zag string loops.
 * **United Widget Customization**: Added interactive right-click context menu options to Desktop Widgets for selecting metric isolation (All Combined, CPU, GPU, RAM, Disk, Net, Fan) and chart rendering styles (Smooth Curves, Filled Area, Column Bars, Line Only).
