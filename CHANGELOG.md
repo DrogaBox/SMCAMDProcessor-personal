@@ -1,8 +1,12 @@
 # Change Summary & Release Changelog
 
-## v3.14.5  SuperIO Raw Register Diagnostics & Debug Utilities
+## v3.14.5  Next-Gen Custom Fan Curves & Raw Register Diagnostics
+* **Advanced Custom Fan Curve Engine**: Implemented next-generation closed-loop fan curves evaluated directly in the kernel space (kext) using a 256-step LUT, Exponential Moving Average (EMA) smoothing, custom hysteresis, and ramp rate limiting. Includes an 85°C thermal safety guard bypass.
+* **Interactive 2D Graph Editor**: Built a Tahoe-themed SwiftUI coordinate-mapped canvas letting users drag points, double-click to add/delete points, and map individual fans to curves.
 * **Added Raw Register Access Selectors**: Implemented user-space connection selectors 98 (read raw register) and 99 (write raw register) in `AMDRyzenCPUPMUserClient.cpp`.
 * **Created ITE Chip Diagnostic Utilities**: Compiled `/Users/droga/Desktop/SMCAMDProcessor/scratch/dump_sio` and `write_sio` binaries to allow scanning the entire 256-byte register map and modifying configurations to identify alternative fan mappings on ASUS Crosshair VII Hero.
+* **Acoustics & Usability Polish**: Fixed macOS window dragging propagation on point drags and overlapping grid origin labels.
+* *Special thanks to Chiracopolis for the custom fan curve control idea and initial suggestion!*
 
 ## v3.14.4  SwiftUI Infinite Layout Loop & Main Thread I/O Optimization
 * **Fixed Infinite Layout Recursion Loop**: Removed the `.fixedSize(horizontal: false, vertical: true)` modifiers from the GPU Fan Control guide view. These modifiers were causing SwiftUI to trigger recursive size evaluations on every tick, locking up AppKit/WindowServer and lagging the entire macOS desktop user interface.
