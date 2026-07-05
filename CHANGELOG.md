@@ -8,6 +8,19 @@
 * **Acoustics & Usability Polish**: Fixed macOS window dragging propagation on point drags and overlapping grid origin labels.
 * *Special thanks to Chiracopolis for the custom fan curve control idea and initial suggestion!*
 
+### How to Use the Custom Fan Curves Feature:
+1. Open **AMD Power Gadget**.
+2. Turn on the **Dynamic Next-Gen Fan Curves** toggle under the *Closed-Loop Custom Fan Curves & Protection* card.
+3. Configure the custom curves (up to 4 profiles):
+   - Select a profile from the **Curve** dropdown to edit it.
+   - You can rename the curve, select the **Temp Source** (CPU Temp or GPU Temp), and adjust **Hysteresis** (temperature buffer) and **Ramp Rate** (acoustics smoothing).
+   - Drag the control points on the 2D grid to customize the temperature-to-PWM layout.
+   - Double-click empty space to add a point (max 8 points). Double-click a point or right-click to delete it.
+4. Map your fans to the curves:
+   - Go to the **SMC Fan Control** section above the curves card.
+   - For each physical fan, use the **Control Mode** dropdown to select which custom curve controls it (or select *BIOS / Auto* to let the motherboard handle it natively).
+
+
 ## v3.14.4  SwiftUI Infinite Layout Loop & Main Thread I/O Optimization
 * **Fixed Infinite Layout Recursion Loop**: Removed the `.fixedSize(horizontal: false, vertical: true)` modifiers from the GPU Fan Control guide view. These modifiers were causing SwiftUI to trigger recursive size evaluations on every tick, locking up AppKit/WindowServer and lagging the entire macOS desktop user interface.
 * **Backgrounded Telemetry System Calls**: Offloaded `getDiskIOBytes()`, `getDiskUsagePct()`, and `getRAMUsagePct()` system calls from the main UI thread to the background `ioQueue` thread, preventing any blocking kernel calls from stuttering the user interface.
