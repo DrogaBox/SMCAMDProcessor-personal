@@ -9,6 +9,7 @@
 * **Customizable Fan Labels**: Added direct click-to-edit inline text fields for motherboard fan headers (like renaming `AUX_3` to `Pump`), saved automatically to preferences.
 * **Localization Polish**: Translated sidebar tabs "Themes & Appearance" and "Analysis" for English systems, and initialized basic Italian localization (`it.lproj`) with sidebar tab navigation.
 * **Telemetry Performance Optimizations**: Cached and rate-limited heavy main-thread and background system calls (MSR loadCPUControls and swap memory query every 5s, active network IP and disk usage stats every 10s). The GPU temperature kernel write selector now uses change-detection (only writes to the kext if the integer temperature changes, with a 5s heartbeat). This reduces app background CPU footprint to near zero.
+* **Analysis Peak Sessions (Max/Min)**: Added live telemetry session statistics to the "Analysis" page, displaying the maximum (Máx) and minimum (Mín) recorded values for CPU/GPU Load, temperatures, memory usage, CPU package power, and clock frequencies over the selected timeframe.
 * *Special thanks to Chiracopolis for the custom fan curve control idea and initial suggestion, and Kackvogel 4K for the customizable fan labels idea!*
 
 ### How to Use the Custom Fan Curves Feature:

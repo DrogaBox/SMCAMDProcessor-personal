@@ -4896,7 +4896,15 @@ struct AnalysisContentView: View {
                     } else {
                         // CPU Load Chart
                         if showCpuLoad {
-                            HistoryCard(title: "CPU Load", subtitle: "Average utilization over time", accent: Color.tahoeAccentCyan) {
+                            let maxVal = data.map { $0.cpuLoad }.max() ?? 0.0
+                            let minVal = data.map { $0.cpuLoad }.min() ?? 0.0
+                            HistoryCard(
+                                title: "CPU Load",
+                                subtitle: "Average utilization over time",
+                                accent: Color.tahoeAccentCyan,
+                                peakInfo: String(format: "%.1f%%", maxVal),
+                                lowestInfo: String(format: "%.1f%%", minVal)
+                            ) {
                                 if #available(macOS 13.0, *) {
                                     Chart(data) { point in
                                         LineMark(
@@ -4921,7 +4929,17 @@ struct AnalysisContentView: View {
                         
                         // Temperatures Chart (CPU & GPU)
                         if showThermals {
-                            HistoryCard(title: "Thermal History", subtitle: "CPU and GPU temperatures", accent: Color.tahoeAccentRed) {
+                            let maxCpuTemp = data.map { $0.cpuTemp }.max() ?? 0.0
+                            let minCpuTemp = data.map { $0.cpuTemp }.min() ?? 0.0
+                            let maxGpuTemp = data.map { $0.gpuTemp }.max() ?? 0.0
+                            let minGpuTemp = data.map { $0.gpuTemp }.min() ?? 0.0
+                            HistoryCard(
+                                title: "Thermal History",
+                                subtitle: "CPU and GPU temperatures",
+                                accent: Color.tahoeAccentRed,
+                                peakInfo: String(format: "CPU %.0f°C / GPU %.0f°C", maxCpuTemp, maxGpuTemp),
+                                lowestInfo: String(format: "CPU %.0f°C / GPU %.0f°C", minCpuTemp, minGpuTemp)
+                            ) {
                                 if #available(macOS 13.0, *) {
                                     Chart(data) { point in
                                         LineMark(
@@ -4952,7 +4970,15 @@ struct AnalysisContentView: View {
                         
                         // RAM Usage Chart
                         if showRam {
-                            HistoryCard(title: "Memory Usage", subtitle: "RAM utilization percentage", accent: Color.tahoeAccentGreen) {
+                            let maxVal = data.map { $0.ramUsage }.max() ?? 0.0
+                            let minVal = data.map { $0.ramUsage }.min() ?? 0.0
+                            HistoryCard(
+                                title: "Memory Usage",
+                                subtitle: "RAM utilization percentage",
+                                accent: Color.tahoeAccentGreen,
+                                peakInfo: String(format: "%.1f%%", maxVal),
+                                lowestInfo: String(format: "%.1f%%", minVal)
+                            ) {
                                 if #available(macOS 13.0, *) {
                                     Chart(data) { point in
                                         LineMark(
@@ -4977,7 +5003,15 @@ struct AnalysisContentView: View {
 
                         // GPU Load Chart
                         if showGpuLoad {
-                            HistoryCard(title: "GPU Load", subtitle: "Radeon Graphics utilization percentage", accent: Color.tahoeAccentPurple) {
+                            let maxVal = data.map { $0.gpuLoad }.max() ?? 0.0
+                            let minVal = data.map { $0.gpuLoad }.min() ?? 0.0
+                            HistoryCard(
+                                title: "GPU Load",
+                                subtitle: "Radeon Graphics utilization percentage",
+                                accent: Color.tahoeAccentPurple,
+                                peakInfo: String(format: "%.1f%%", maxVal),
+                                lowestInfo: String(format: "%.1f%%", minVal)
+                            ) {
                                 if #available(macOS 13.0, *) {
                                     Chart(data) { point in
                                         LineMark(
@@ -5002,7 +5036,15 @@ struct AnalysisContentView: View {
 
                         // CPU Power Chart (Watts)
                         if showCpuWatts {
-                            HistoryCard(title: "CPU Package Power", subtitle: "Real-time energy consumption in Watts", accent: Color.tahoeAccentOrange) {
+                            let maxVal = data.map { $0.safeCpuWatts }.max() ?? 0.0
+                            let minVal = data.map { $0.safeCpuWatts }.min() ?? 0.0
+                            HistoryCard(
+                                title: "CPU Package Power",
+                                subtitle: "Real-time energy consumption in Watts",
+                                accent: Color.tahoeAccentOrange,
+                                peakInfo: String(format: "%.1fW", maxVal),
+                                lowestInfo: String(format: "%.1fW", minVal)
+                            ) {
                                 if #available(macOS 13.0, *) {
                                     Chart(data) { point in
                                         LineMark(
@@ -5026,7 +5068,15 @@ struct AnalysisContentView: View {
 
                         // CPU Average Frequency Chart (GHz)
                         if showCpuFreq {
-                            HistoryCard(title: "CPU Average Frequency", subtitle: "Average core frequency in GHz", accent: Color.tahoeAccentCyan) {
+                            let maxVal = data.map { $0.safeCpuFreqAvg }.max() ?? 0.0
+                            let minVal = data.map { $0.safeCpuFreqAvg }.min() ?? 0.0
+                            HistoryCard(
+                                title: "CPU Average Frequency",
+                                subtitle: "Average core frequency in GHz",
+                                accent: Color.tahoeAccentCyan,
+                                peakInfo: String(format: "%.2f GHz", maxVal),
+                                lowestInfo: String(format: "%.2f GHz", minVal)
+                            ) {
                                 if #available(macOS 13.0, *) {
                                     Chart(data) { point in
                                         LineMark(
@@ -5064,12 +5114,16 @@ struct HistoryCard<Content: View>: View {
     let title: String
     let subtitle: String
     let accent: Color
+    let peakInfo: String?
+    let lowestInfo: String?
     let content: Content
     
-    init(title: String, subtitle: String, accent: Color, @ViewBuilder content: () -> Content) {
+    init(title: String, subtitle: String, accent: Color, peakInfo: String? = nil, lowestInfo: String? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.subtitle = subtitle
         self.accent = accent
+        self.peakInfo = peakInfo
+        self.lowestInfo = lowestInfo
         self.content = content()
     }
     
@@ -5085,6 +5139,29 @@ struct HistoryCard<Content: View>: View {
                         .foregroundColor(Color.tahoeSubtext)
                 }
                 Spacer()
+                
+                if let peak = peakInfo, let lowest = lowestInfo {
+                    HStack(spacing: 8) {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text("Máx:")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(Color.tahoeSubtext)
+                                Text(peak)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(accent)
+                            }
+                            HStack(spacing: 4) {
+                                Text("Mín:")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(Color.tahoeSubtext)
+                                Text(lowest)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.tahoeSubtext)
+                            }
+                        }
+                    }
+                }
             }
             
             content
