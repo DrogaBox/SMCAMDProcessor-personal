@@ -5520,7 +5520,7 @@ struct InteractiveFanCurveEditor: View {
                                 .frame(width: 10, height: 10)
                                 .position(x: ptX, y: ptY)
                                 .gesture(
-                                    DragGesture()
+                                    DragGesture(minimumDistance: 0)
                                         .onChanged { val in
                                             let newX = max(0, min(w, val.location.x))
                                             let newY = max(0, min(h, val.location.y))
@@ -5531,6 +5531,13 @@ struct InteractiveFanCurveEditor: View {
                                             model.customCurves = updated
                                         }
                                 )
+                                .onTapGesture(count: 2) {
+                                    if curve.points.count > 2 {
+                                        var updated = model.customCurves
+                                        updated[selectedCurveIndex].points.remove(at: ptIdx)
+                                        model.customCurves = updated
+                                    }
+                                }
                                 .onHover { hovering in
                                     hoveredPointIndex = hovering ? ptIdx : nil
                                 }
@@ -5577,7 +5584,7 @@ struct InteractiveFanCurveEditor: View {
                 }
                 .frame(height: 180)
                 
-                Text("Drag control points to edit curve. Double-click/tap empty space to add a point (max 8). Right-click a point to delete it.")
+                Text("Drag control points to edit curve. Double-click empty space to add (max 8). Double-click a point or right-click to delete.")
                     .font(.system(size: 9)).foregroundColor(.tahoeSubtext)
             }
         )
