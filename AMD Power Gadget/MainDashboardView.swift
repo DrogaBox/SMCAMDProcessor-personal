@@ -520,9 +520,8 @@ struct DashboardContentView: View {
                     ResizableChart(chartId: "dash_freq", small: 70, medium: 100, large: 150) { height in
                         OriginalLineChartCard(
                             title: "Frequency",
-                            subtitle: String(format: NSLocalizedString("Avg: %.2f Ghz, Max: %.2f Ghz", comment: ""),
-                                             locale: Locale.current, model.cpuFreqAvgGHz, model.cpuFreqMaxGHz),
                             accent: .tahoeAccentCyan,
+                            unit: "GHz",
                             data: model.history,
                             line1: { $0.cpuFreqGHz },
                             line2: { $0.cpuFreqMaxGHz },
@@ -536,9 +535,8 @@ struct DashboardContentView: View {
                     ResizableChart(chartId: "dash_temp", small: 70, medium: 100, large: 150) { height in
                         OriginalLineChartCard(
                             title: "Temperature",
-                            subtitle: String(format: NSLocalizedString("%.2f °C", comment: ""),
-                                             locale: Locale.current, model.cpuTempC),
                             accent: .tahoeAccentOrange,
+                            unit: "°C",
                             data: model.history,
                             line1: { $0.cpuTempC },
                             line2: nil,
@@ -552,9 +550,8 @@ struct DashboardContentView: View {
                     ResizableChart(chartId: "dash_pwr", small: 70, medium: 100, large: 150) { height in
                         OriginalLineChartCard(
                             title: "Power",
-                            subtitle: String(format: NSLocalizedString("%.2f Watt", comment: ""),
-                                             locale: Locale.current, model.cpuWatts),
                             accent: .tahoeAccentGreen,
+                            unit: "W",
                             data: model.history,
                             line1: { $0.cpuWatts },
                             line2: nil,
@@ -611,8 +608,8 @@ private struct StatCard: View {
 // MARK: - Original-style Line Chart Card
 struct OriginalLineChartCard: View {
     let title: LocalizedStringKey
-    let subtitle: String
     let accent: Color
+    let unit: String
     let data: [TelemetryPoint]
     let line1: (TelemetryPoint) -> Double
     let line2: ((TelemetryPoint) -> Double)?
@@ -621,6 +618,36 @@ struct OriginalLineChartCard: View {
     let height: CGFloat
 
     @AppStorage("app_chart_style") private var selectedChartStyleRaw: String = AppChartStyle.line.rawValue
+
+    private var averageVal: Double {
+        let vals = data.map(line1)
+        guard !vals.isEmpty else { return 0.0 }
+        return vals.reduce(0, +) / Double(vals.count)
+    }
+    
+    private var maxVal: Double {
+        if let l2 = line2 {
+            return data.map(l2).max() ?? 0.0
+        }
+        return data.map(line1).max() ?? 0.0
+    }
+    
+    private var minVal: Double {
+        return data.map(line1).min() ?? 0.0
+    }
+    
+    private var averageString: String {
+        let fmt = (unit == "GHz") ? "%.2f" : "%.1f"
+        return String(format: "\(NSLocalizedString("Prom.", comment: "")): \(fmt) %@", averageVal, unit)
+    }
+    private var maxString: String {
+        let fmt = (unit == "GHz") ? "%.2f" : "%.1f"
+        return String(format: "\(NSLocalizedString("Máx.", comment: "")): \(fmt) %@", maxVal, unit)
+    }
+    private var minString: String {
+        let fmt = (unit == "GHz") ? "%.2f" : "%.1f"
+        return String(format: "\(NSLocalizedString("Mín.", comment: "")): \(fmt) %@", minVal, unit)
+    }
 
     private var yMin: Double {
         var vals = data.map(line1)
@@ -646,11 +673,18 @@ struct OriginalLineChartCard: View {
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.tahoeText)
                     .lineLimit(1)
-                Text(subtitle)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.tahoeSubtext)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(averageString)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                    Text(maxString)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                    Text(minString)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                }
             }
 
             if data.count > 1 {
@@ -706,12 +740,14 @@ struct OriginalLineChartCard: View {
                 .chartYScale(domain: yMin...yMax)
                 .chartXScale(domain: 0...maxIndex)
                 .chartYAxis {
-                    AxisMarks(position: .leading, values: .stride(by: max(1, (yMax - yMin) / 3))) { val in
+                    let strideValue = (unit == "GHz") ? max(0.1, (yMax - yMin) / 3.0) : max(1.0, (yMax - yMin) / 3.0)
+                    AxisMarks(position: .leading, values: .stride(by: strideValue)) { val in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                             .foregroundStyle(Color.white.opacity(0.08))
                         AxisValueLabel {
                             if let v = val.as(Double.self) {
-                                Text(String(format: "%.0f", v))
+                                let fmt = (unit == "GHz") ? "%.2f" : ((unit == "W") ? "%.1f" : "%.0f")
+                                Text(String(format: fmt, v))
                                     .font(.system(size: 9, design: .monospaced))
                                     .foregroundColor(.tahoeSubtext)
                             }

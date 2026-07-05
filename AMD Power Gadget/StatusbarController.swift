@@ -433,6 +433,11 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private var peakFreq: Float = 0
     private var peakFan: UInt64 = 0
 
+    private var lowestTemp: Float = Float.greatestFiniteMagnitude
+    private var lowestPower: Float = Float.greatestFiniteMagnitude
+    private var lowestFreq: Float = Float.greatestFiniteMagnitude
+    private var lowestFan: UInt64 = UInt64.max
+
     // Diff-based rendering snapshot tracking
     private var lastReportedMeanFreq: Float = -1
     private var lastReportedMaxFreq: Float = -1
@@ -527,12 +532,26 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let gpuPwrVal = Float(tm.gpuPowerW)
 
         if temperature > peakTemp { peakTemp = temperature }
+        if lowestTemp == Float.greatestFiniteMagnitude || (temperature > 0 && temperature < lowestTemp) {
+            lowestTemp = temperature
+        }
+        
         if power > peakPower { peakPower = power }
+        if lowestPower == Float.greatestFiniteMagnitude || (power > 0 && power < lowestPower) {
+            lowestPower = power
+        }
+        
         if maxFre > peakFreq { peakFreq = maxFre }
+        if lowestFreq == Float.greatestFiniteMagnitude || (maxFre > 0 && maxFre < lowestFreq) {
+            lowestFreq = maxFre
+        }
 
         let fanIdx = max(0, MenuBarConfig.shared.fanIndex)
         let currentFan: UInt64 = (fanIdx < tm.fans.count) ? tm.fans[fanIdx].rpm : 0
         if currentFan > peakFan { peakFan = currentFan }
+        if lowestFan == UInt64.max || currentFan < lowestFan {
+            lowestFan = currentFan
+        }
 
         // Diff-based Rendering guard (Skip redraw if change is insignificant)
         let tempDiff = abs(temperature - lastReportedTemp) >= 0.5
@@ -724,6 +743,10 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         peakPower = 0
         peakFreq = 0
         peakFan = 0
+        lowestTemp = Float.greatestFiniteMagnitude
+        lowestPower = Float.greatestFiniteMagnitude
+        lowestFreq = Float.greatestFiniteMagnitude
+        lowestFan = UInt64.max
         update()
     }
 
@@ -803,29 +826,37 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let peaksMenu = NSMenu()
         
         var displayPeakTemp = peakTemp
+        var displayLowestTemp = lowestTemp
         var unitStr = "°C"
         if MenuBarConfig.shared.useFahrenheit {
             displayPeakTemp = peakTemp * 9.0 / 5.0 + 32.0
+            if lowestTemp != Float.greatestFiniteMagnitude {
+                displayLowestTemp = lowestTemp * 9.0 / 5.0 + 32.0
+            }
             unitStr = "°F"
         }
         
-        let tempStr = String(format: "Peak Temp: %.1f\(unitStr)", displayPeakTemp)
+        let tempMinStr = lowestTemp == Float.greatestFiniteMagnitude ? "--" : String(format: "%.1f\(unitStr)", displayLowestTemp)
+        let tempStr = "Peak Temp: \(String(format: "%.1f\(unitStr)", displayPeakTemp))  |  Min: \(tempMinStr)"
         let tempItem = NSMenuItem(title: tempStr, action: nil, keyEquivalent: "")
         tempItem.isEnabled = false
         peaksMenu.addItem(tempItem)
 
-        let pwrStr = String(format: "Peak Power: %.1f W", peakPower)
+        let pwrMinStr = lowestPower == Float.greatestFiniteMagnitude ? "--" : String(format: "%.1f W", lowestPower)
+        let pwrStr = "Peak Power: \(String(format: "%.1f W", peakPower))  |  Min: \(pwrMinStr)"
         let pwrItem = NSMenuItem(title: pwrStr, action: nil, keyEquivalent: "")
         pwrItem.isEnabled = false
         peaksMenu.addItem(pwrItem)
 
-        let freqStr = String(format: "Peak Freq: %.2f GHz", peakFreq * 0.001)
+        let freqMinStr = lowestFreq == Float.greatestFiniteMagnitude ? "--" : String(format: "%.2f GHz", lowestFreq * 0.001)
+        let freqStr = "Peak Freq: \(String(format: "%.2f GHz", peakFreq * 0.001))  |  Min: \(freqMinStr)"
         let freqItem = NSMenuItem(title: freqStr, action: nil, keyEquivalent: "")
         freqItem.isEnabled = false
         peaksMenu.addItem(freqItem)
 
-        if numFans > 0 && peakFan > 0 {
-            let fanStr = String(format: "Peak Fan: %d RPM", peakFan)
+        if numFans > 0 {
+            let fanMinStr = lowestFan == UInt64.max ? "--" : String(format: "%d RPM", lowestFan)
+            let fanStr = "Peak Fan: \(peakFan) RPM  |  Min: \(fanMinStr)"
             let fanItem = NSMenuItem(title: fanStr, action: nil, keyEquivalent: "")
             fanItem.isEnabled = false
             peaksMenu.addItem(fanItem)
