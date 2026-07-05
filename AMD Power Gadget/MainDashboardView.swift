@@ -5429,8 +5429,9 @@ struct InteractiveFanCurveEditor: View {
                             }
                         ), in: 1...5, step: 1)
                         .accentColor(.tahoeAccentOrange)
-                        .frame(width: 100)
+                        .frame(width: 120)
                     }
+                    .frame(width: 120)
                     
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
@@ -5447,8 +5448,9 @@ struct InteractiveFanCurveEditor: View {
                             }
                         ), in: 1...20, step: 1)
                         .accentColor(.tahoeAccentOrange)
-                        .frame(width: 100)
+                        .frame(width: 120)
                     }
+                    .frame(width: 120)
                 }
                 
                 // 2D Graph Area
