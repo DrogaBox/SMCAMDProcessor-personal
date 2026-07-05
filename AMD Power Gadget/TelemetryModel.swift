@@ -347,6 +347,14 @@ final class TelemetryModel: ObservableObject {
             updateKextMappings()
         }
     }
+    @Published var customFanNames: [Int: String] = [:] {
+        didSet {
+            if let data = try? JSONEncoder().encode(customFanNames) {
+                UserDefaults.standard.set(data, forKey: "customFanNames")
+            }
+            updateFanNames()
+        }
+    }
     private var lastAppliedFanPWM: UInt8? = nil
     private var cachedNumPhysicalCores: Int = 0
     private var cachedNumLogicalCores: Int = 0
@@ -533,6 +541,13 @@ final class TelemetryModel: ObservableObject {
             self.fanMappings = [:]
         }
 
+        if let data = UserDefaults.standard.data(forKey: "customFanNames"),
+           let decoded = try? JSONDecoder().decode([Int: String].self, from: data) {
+            self.customFanNames = decoded
+        } else {
+            self.customFanNames = [:]
+        }
+
         initSMC()
         applySavedCPUControls()
         loadPStateRows()
@@ -638,8 +653,10 @@ final class TelemetryModel: ObservableObject {
             fanNames.append(ProcessorModel.shared.kernelGetString(selector: 92, args: [UInt64(i)]))
         }
 
-        fans = (0..<numFans).map {
-            FanSnapshot(id: $0, name: fanNames[$0], rpm: 0, throttle: 0, isOverrided: false)
+        fans = (0..<numFans).map { idx in
+            let defaultName = fanNames[idx]
+            let displayName = customFanNames[idx] ?? (defaultName.isEmpty ? "Fan \(idx + 1)" : defaultName)
+            return FanSnapshot(id: idx, name: displayName, rpm: 0, throttle: 0, isOverrided: false)
         }
     }
 
@@ -1248,6 +1265,16 @@ final class TelemetryModel: ObservableObject {
         for (fanIdx, _) in fans.enumerated() {
             _ = ProcessorModel.shared.kernelSetUInt64(selector: 102, args: [UInt64(fanIdx), UInt64(bitPattern: -1)])
         }
+    }
+
+    func updateFanNames() {
+        guard numFans > 0 else { return }
+        var updated = fans
+        for i in 0..<numFans where i < updated.count {
+            let defaultName = fanNames.count > i ? fanNames[i] : "Fan \(i + 1)"
+            updated[i].name = customFanNames[i] ?? (defaultName.isEmpty ? "Fan \(i + 1)" : defaultName)
+        }
+        fans = updated
     }
 
     func exportPStates(to url: URL) {
