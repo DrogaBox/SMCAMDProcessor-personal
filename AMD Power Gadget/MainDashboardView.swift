@@ -5373,14 +5373,16 @@ struct InteractiveFanCurveEditor: View {
         return AnyView(
             VStack(alignment: .leading, spacing: 12) {
                 // Curve Selector and Controls
-                HStack(spacing: 12) {
-                    Picker("Curve", selection: $selectedCurveIndex) {
+                HStack(spacing: 8) {
+                    Text("Curve").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeSubtext)
+                    Picker("", selection: $selectedCurveIndex) {
                         ForEach(0..<model.customCurves.count, id: \.self) { idx in
                             Text(model.customCurves[idx].name).tag(idx)
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(width: 140)
+                    .labelsHidden()
+                    .frame(width: 160)
                     
                     TextField("Name", text: Binding(
                         get: { curve.name },
