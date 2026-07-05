@@ -7,6 +7,7 @@
 * **Created ITE Chip Diagnostic Utilities**: Compiled `/Users/droga/Desktop/SMCAMDProcessor/scratch/dump_sio` and `write_sio` binaries to allow scanning the entire 256-byte register map and modifying configurations to identify alternative fan mappings on ASUS Crosshair VII Hero.
 * **Acoustics & Usability Polish**: Fixed macOS window dragging propagation on point drags and overlapping grid origin labels.
 * **Customizable Fan Labels**: Added direct click-to-edit inline text fields for motherboard fan headers (like renaming `AUX_3` to `Pump`), saved automatically to preferences.
+* **Localization Polish**: Translated sidebar tabs "Themes & Appearance" ("Temas & Apariencia") and "Analysis" ("Análisis") for English systems.
 * *Special thanks to Chiracopolis for the custom fan curve control idea and initial suggestion, and Kackvogel 4K for the customizable fan labels idea!*
 
 ### How to Use the Custom Fan Curves Feature:
