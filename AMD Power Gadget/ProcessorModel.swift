@@ -180,6 +180,14 @@ class ProcessorModel {
         return outputStr
     }
 
+    func kernelSetStruct(selector: UInt32, data: Data) -> Bool {
+        let res = data.withUnsafeBytes { rawBuffer -> kern_return_t in
+            guard let baseAddress = rawBuffer.baseAddress else { return kIOReturnBadArgument }
+            return IOConnectCallMethod(connect, selector, nil, 0, baseAddress, data.count, nil, nil, nil, nil)
+        }
+        return res == KERN_SUCCESS
+    }
+
     func kernelGetString(selector : UInt32, args : [UInt64]) -> String {
 
         var argcpy = args

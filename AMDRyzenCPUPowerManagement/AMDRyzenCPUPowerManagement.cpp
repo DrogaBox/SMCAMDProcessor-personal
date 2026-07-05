@@ -267,6 +267,8 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
             provider->ccdTemperatures[i] = provider->getCCDTemp(i);
         }
         
+        provider->evaluateFanCurves();
+        
         sender->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
     });
     
@@ -525,6 +527,20 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 
     IOLog("AMDRyzenCPUPowerManagement::start, Physical Count: %u, Logical Count %u.\n",
               totalNumberOfPhysicalCores, totalNumberOfLogicalCores);
+
+    for (int i = 0; i < 16; i++) {
+        fanToCurveMap[i] = -1;
+        lastAppliedPWM[i] = 0;
+        lastPWMUpdateTime[i] = 0;
+    }
+    for (int i = 0; i < MAX_FAN_CURVES; i++) {
+        memset(fanCurves[i].lut, 0, 256);
+        fanCurves[i].sourceSensor = 0;
+        fanCurves[i].hysteresis = 2;
+        fanCurves[i].rampRate = 5;
+        curveSmoothedTemp[i] = 40.0f;
+    }
+    gpuTempC = 0.0f;
 
     workLoop = IOWorkLoop::workLoop();
     initWorkLoop();
@@ -1124,6 +1140,88 @@ void AMDRyzenCPUPowerManagement::setPMPStateLimit(uint32_t state){
 
 uint32_t AMDRyzenCPUPowerManagement::getHPcpus(){
     return pmRyzen_hpcpus;
+}
+
+void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
+    if (!superIO) return;
+    
+    // 1. Get raw current temperatures
+    float cpuTemp = getPackageTemp();
+    float gpuTemp = gpuTempC;
+    
+    uint64_t now = getCurrentTimeNs();
+    
+    for (int fanIdx = 0; fanIdx < superIO->getNumberOfFans(); fanIdx++) {
+        int8_t curveIdx = fanToCurveMap[fanIdx];
+        if (curveIdx < 0 || curveIdx >= MAX_FAN_CURVES) {
+            continue; // Default BIOS Auto control
+        }
+        
+        FanCurveConfig &config = fanCurves[curveIdx];
+        
+        // 2. Select temperature source
+        float rawSourceTemp = cpuTemp;
+        if (config.sourceSensor == 1) {
+            rawSourceTemp = gpuTemp > 0.0f ? gpuTemp : cpuTemp; // Fallback to CPU if GPU not updated
+        }
+        
+        // 3. Apply Exponential Moving Average (EMA) for temperature input
+        float alpha = 0.2f;
+        float prevSmoothed = curveSmoothedTemp[curveIdx];
+        float smoothed = (alpha * rawSourceTemp) + ((1.0f - alpha) * prevSmoothed);
+        curveSmoothedTemp[curveIdx] = smoothed;
+        
+        // 4. Map temperature index (0 - 255)
+        int tempIdx = (int)smoothed;
+        if (tempIdx < 0) tempIdx = 0;
+        if (tempIdx > 255) tempIdx = 255;
+        
+        // 5. Look up target PWM from LUT
+        uint8_t targetPWM = config.lut[tempIdx];
+        
+        // 6. Apply Thermal Safety Guard (above 85°C, force at least 80% / value 200)
+        if (rawSourceTemp >= 85.0f && targetPWM < 200) {
+            targetPWM = 200;
+        }
+        
+        uint8_t currentPWM = lastAppliedPWM[fanIdx];
+        uint64_t lastTime = lastPWMUpdateTime[fanIdx];
+        
+        // 7. Enforce Hysteresis and Ramp Rate Limiting
+        if (currentPWM > 0 && targetPWM != 0) {
+            double deltaTime = 0.5; // Default step duration (seconds) if timer just started
+            if (lastTime > 0 && now > lastTime) {
+                deltaTime = (double)(now - lastTime) / 1e9;
+            }
+            
+            // Check temperature delta for hysteresis
+            float tempDelta = rawSourceTemp - prevSmoothed;
+            if (tempDelta < 0.0f && -tempDelta < (float)config.hysteresis) {
+                targetPWM = currentPWM;
+            } else {
+                // Limit the speed change to config.rampRate
+                float deltaPWM = (float)targetPWM - (float)currentPWM;
+                float limit = (float)config.rampRate * (float)deltaTime;
+                if (limit < 1.0f) limit = 1.0f; // Ensure at least 1 PWM step can change
+                
+                if (deltaPWM > limit) {
+                    targetPWM = (uint8_t)(currentPWM + limit);
+                } else if (deltaPWM < -limit) {
+                    targetPWM = (uint8_t)(currentPWM - limit);
+                }
+            }
+        }
+        
+        // 8. Apply PWM override to the Super I/O chip
+        if (targetPWM == 0) {
+            superIO->setDefaultFanControl(fanIdx);
+            lastAppliedPWM[fanIdx] = 0;
+        } else {
+            superIO->overrideFanControl(fanIdx, targetPWM);
+            lastAppliedPWM[fanIdx] = targetPWM;
+        }
+        lastPWMUpdateTime[fanIdx] = now;
+    }
 }
 
 EXPORT extern "C" kern_return_t amdryzencpupm_kern_start(kmod_info_t *, void *) {

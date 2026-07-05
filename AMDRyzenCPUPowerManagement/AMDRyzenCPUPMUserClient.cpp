@@ -925,6 +925,85 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
+        // Update fan curve LUT and parameters
+        case 101: {
+            if(!fProvider)
+                return kIOReturnNoDevice;
+            
+            if(!hasPrivilege())
+                return kIOReturnNotPrivileged;
+                
+            if (!arguments->structureInput || arguments->structureInputSize < 272) {
+                return kIOReturnBadArgument;
+            }
+            
+            struct FanCurveInput {
+                uint32_t curveIndex;
+                uint32_t sourceSensor;
+                uint32_t hysteresis;
+                uint32_t rampRate;
+                uint8_t lut[256];
+            };
+            
+            const FanCurveInput *input = (const FanCurveInput*) arguments->structureInput;
+            uint32_t idx = input->curveIndex;
+            if (idx >= MAX_FAN_CURVES) {
+                return kIOReturnBadArgument;
+            }
+            
+            IOLockLock(fProvider->superIOLock);
+            fProvider->fanCurves[idx].sourceSensor = (uint8_t)input->sourceSensor;
+            fProvider->fanCurves[idx].hysteresis   = (uint8_t)input->hysteresis;
+            fProvider->fanCurves[idx].rampRate     = (uint8_t)input->rampRate;
+            memcpy(fProvider->fanCurves[idx].lut, input->lut, 256);
+            IOLockUnlock(fProvider->superIOLock);
+            
+            break;
+        }
+        
+        // Map physical fan to curve
+        case 102: {
+            if(!fProvider)
+                return kIOReturnNoDevice;
+            
+            if(!hasPrivilege())
+                return kIOReturnNotPrivileged;
+                
+            if (arguments->scalarInputCount != 2) {
+                return kIOReturnBadArgument;
+            }
+            
+            int fanIdx = (int)arguments->scalarInput[0];
+            int curveIdx = (int)arguments->scalarInput[1];
+            
+            if (fanIdx < 0 || fanIdx >= 16 || curveIdx < -1 || curveIdx >= MAX_FAN_CURVES) {
+                return kIOReturnBadArgument;
+            }
+            
+            IOLockLock(fProvider->superIOLock);
+            fProvider->fanToCurveMap[fanIdx] = (int8_t)curveIdx;
+            // If mapping to Auto, restore default fan control
+            if (curveIdx == -1 && fProvider->superIO) {
+                fProvider->superIO->setDefaultFanControl(fanIdx);
+            }
+            IOLockUnlock(fProvider->superIOLock);
+            
+            break;
+        }
+        
+        // Set GPU temperature
+        case 103: {
+            if(!fProvider)
+                return kIOReturnNoDevice;
+            
+            if(arguments->scalarInputCount != 1)
+                return kIOReturnBadArgument;
+            
+            fProvider->gpuTempC = (float)arguments->scalarInput[0];
+            
+            break;
+        }
+        
         default: {
             IOLog("AMDRyzenCPUPMUserClient::externalMethod: invalid method.\n");
             break;

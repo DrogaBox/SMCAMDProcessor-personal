@@ -46,6 +46,55 @@ struct FanSnapshot: Identifiable {
     var isOverrided: Bool
 }
 
+struct FanCurvePoint: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var temp: Double
+    var pwm: Double
+}
+
+struct FanCurve: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var name: String
+    var points: [FanCurvePoint]
+    var sourceSensor: Int // 0 = CPU, 1 = GPU
+    var hysteresis: Double // In °C
+    var rampRate: Double   // In % PWM / sec
+    
+    func generateLUT() -> [UInt8] {
+        var lut = [UInt8](repeating: 0, count: 256)
+        let sortedPoints = points.sorted { $0.temp < $1.temp }
+        guard !sortedPoints.isEmpty else { return lut }
+        
+        for temp in 0...255 {
+            let tempD = Double(temp)
+            if tempD <= sortedPoints.first!.temp {
+                let rawPWM = sortedPoints.first!.pwm
+                let byteVal = UInt8(round((rawPWM / 100.0) * 255.0))
+                lut[temp] = byteVal == 0 ? 1 : byteVal
+                continue
+            }
+            if tempD >= sortedPoints.last!.temp {
+                let rawPWM = sortedPoints.last!.pwm
+                let byteVal = UInt8(round((rawPWM / 100.0) * 255.0))
+                lut[temp] = byteVal == 0 ? 1 : byteVal
+                continue
+            }
+            for i in 0..<(sortedPoints.count - 1) {
+                let p1 = sortedPoints[i]
+                let p2 = sortedPoints[i + 1]
+                if tempD >= p1.temp && tempD <= p2.temp {
+                    let pct = (tempD - p1.temp) / (p2.temp - p1.temp)
+                    let interpPWM = p1.pwm + pct * (p2.pwm - p1.pwm)
+                    let byteVal = UInt8(round((interpPWM / 100.0) * 255.0))
+                    lut[temp] = byteVal == 0 ? 1 : byteVal
+                    break
+                }
+            }
+        }
+        return lut
+    }
+}
+
 struct PStateRow: Identifiable {
     let id: Int
     var enabled: UInt32
@@ -267,7 +316,13 @@ final class TelemetryModel: ObservableObject {
     @Published var autoFanCurveEnabled: Bool = false {
         didSet {
             UserDefaults.standard.set(autoFanCurveEnabled, forKey: "autoFanCurveEnabled")
-            if !autoFanCurveEnabled { setAllFansAuto() }
+            if autoFanCurveEnabled {
+                updateKextCurves()
+                updateKextMappings()
+            } else {
+                releaseAllKextMappings()
+                setAllFansAuto()
+            }
         }
     }
     @Published var fanCurveMinTemp: Double = 40.0 {
@@ -275,6 +330,22 @@ final class TelemetryModel: ObservableObject {
     }
     @Published var fanCurveMaxTemp: Double = 75.0 {
         didSet { UserDefaults.standard.set(fanCurveMaxTemp, forKey: "fanCurveMaxTemp") }
+    }
+    @Published var customCurves: [FanCurve] = [] {
+        didSet {
+            if let data = try? JSONEncoder().encode(customCurves) {
+                UserDefaults.standard.set(data, forKey: "customCurves")
+            }
+            updateKextCurves()
+        }
+    }
+    @Published var fanMappings: [Int: Int] = [:] {
+        didSet {
+            if let data = try? JSONEncoder().encode(fanMappings) {
+                UserDefaults.standard.set(data, forKey: "fanMappings")
+            }
+            updateKextMappings()
+        }
     }
     private var lastAppliedFanPWM: UInt8? = nil
     private var cachedNumPhysicalCores: Int = 0
@@ -422,6 +493,45 @@ final class TelemetryModel: ObservableObject {
         self.fanCurveMinTemp = fMin > 0 ? fMin : 40.0
         let fMax = UserDefaults.standard.double(forKey: "fanCurveMaxTemp")
         self.fanCurveMaxTemp = fMax > 0 ? fMax : 75.0
+
+        if let data = UserDefaults.standard.data(forKey: "customCurves"),
+           let decoded = try? JSONDecoder().decode([FanCurve].self, from: data) {
+            self.customCurves = decoded
+        } else {
+            self.customCurves = [
+                FanCurve(name: "CPU Silent", points: [
+                    FanCurvePoint(temp: 35.0, pwm: 20.0),
+                    FanCurvePoint(temp: 55.0, pwm: 35.0),
+                    FanCurvePoint(temp: 75.0, pwm: 65.0),
+                    FanCurvePoint(temp: 85.0, pwm: 80.0)
+                ], sourceSensor: 0, hysteresis: 2.0, rampRate: 5.0),
+                FanCurve(name: "CPU Standard", points: [
+                    FanCurvePoint(temp: 35.0, pwm: 25.0),
+                    FanCurvePoint(temp: 55.0, pwm: 45.0),
+                    FanCurvePoint(temp: 75.0, pwm: 75.0),
+                    FanCurvePoint(temp: 85.0, pwm: 90.0)
+                ], sourceSensor: 0, hysteresis: 2.0, rampRate: 5.0),
+                FanCurve(name: "CPU Performance", points: [
+                    FanCurvePoint(temp: 30.0, pwm: 35.0),
+                    FanCurvePoint(temp: 50.0, pwm: 60.0),
+                    FanCurvePoint(temp: 70.0, pwm: 85.0),
+                    FanCurvePoint(temp: 80.0, pwm: 100.0)
+                ], sourceSensor: 0, hysteresis: 2.0, rampRate: 8.0),
+                FanCurve(name: "GPU Sync", points: [
+                    FanCurvePoint(temp: 40.0, pwm: 20.0),
+                    FanCurvePoint(temp: 60.0, pwm: 45.0),
+                    FanCurvePoint(temp: 75.0, pwm: 75.0),
+                    FanCurvePoint(temp: 85.0, pwm: 95.0)
+                ], sourceSensor: 1, hysteresis: 3.0, rampRate: 5.0)
+            ]
+        }
+        
+        if let data = UserDefaults.standard.data(forKey: "fanMappings"),
+           let decoded = try? JSONDecoder().decode([Int: Int].self, from: data) {
+            self.fanMappings = decoded
+        } else {
+            self.fanMappings = [:]
+        }
 
         initSMC()
         applySavedCPUControls()
@@ -663,6 +773,9 @@ final class TelemetryModel: ObservableObject {
         cpuFreqMaxGHz = Double(maxMHz) * 0.001
 
         gpuTempC = Double(rawGPUTemp)
+        if smcDriverLoaded {
+            _ = ProcessorModel.shared.kernelSetUInt64(selector: 103, args: [UInt64(round(rawGPUTemp))])
+        }
         gpuPowerW = Double(rawGPUPower)
         
         let targetGPULoad = Double(rawGPULoad)
@@ -745,7 +858,7 @@ final class TelemetryModel: ObservableObject {
             evaluateAutoEPP(currentLoad: cpuLoadAvg)
         }
         if autoFanCurveEnabled {
-            evaluateAutoFanCurve()
+            // Evaluated kext-side in v3.14.5
         }
         
         
@@ -1098,6 +1211,43 @@ final class TelemetryModel: ObservableObject {
     func setAllFansTakeOff() {
         guard smcDriverLoaded else { return }
         let _ = ProcessorModel.shared.kernelSetUInt64(selector: 97, args: [1])
+    }
+
+    func updateKextCurves() {
+        guard smcDriverLoaded else { return }
+        for (idx, curve) in customCurves.enumerated() {
+            guard idx < 4 else { break }
+            var data = Data()
+            var curveIndex = UInt32(idx)
+            var sourceSensor = UInt32(curve.sourceSensor)
+            var hysteresis = UInt32(round(curve.hysteresis))
+            var rampRate = UInt32(round(curve.rampRate))
+            
+            data.append(UnsafeBufferPointer(start: &curveIndex, count: 1))
+            data.append(UnsafeBufferPointer(start: &sourceSensor, count: 1))
+            data.append(UnsafeBufferPointer(start: &hysteresis, count: 1))
+            data.append(UnsafeBufferPointer(start: &rampRate, count: 1))
+            
+            let lut = curve.generateLUT()
+            data.append(lut, count: 256)
+            
+            _ = ProcessorModel.shared.kernelSetStruct(selector: 101, data: data)
+        }
+    }
+
+    func updateKextMappings() {
+        guard smcDriverLoaded else { return }
+        for (fanIdx, snapshot) in fans.enumerated() {
+            let curveIdx = fanMappings[snapshot.id] ?? -1
+            _ = ProcessorModel.shared.kernelSetUInt64(selector: 102, args: [UInt64(fanIdx), UInt64(bitPattern: Int64(curveIdx))])
+        }
+    }
+
+    func releaseAllKextMappings() {
+        guard smcDriverLoaded else { return }
+        for (fanIdx, _) in fans.enumerated() {
+            _ = ProcessorModel.shared.kernelSetUInt64(selector: 102, args: [UInt64(fanIdx), UInt64(bitPattern: -1)])
+        }
     }
 
     func exportPStates(to url: URL) {

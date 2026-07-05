@@ -79,6 +79,15 @@ typedef struct tctl_offset {
 } TempOffset;
 
 
+#define MAX_FAN_CURVES 4
+struct FanCurveConfig {
+    uint8_t lut[256];
+    uint8_t sourceSensor; // 0 = CPU, 1 = GPU
+    uint8_t hysteresis;   // In °C
+    uint8_t rampRate;     // Max PWM change per second
+};
+
+
 static IOPMPowerState powerStates[kNrOfPowerStates] = {
    {1, kIOPMPowerOff, kIOPMPowerOff, kIOPMPowerOff, 0, 0, 0, 0, 0, 0, 0, 0},
    {1, kIOPMPowerOn, kIOPMPowerOn, kIOPMPowerOn, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -194,6 +203,7 @@ public:
     void writePstate(const uint64_t *buf);
     
     bool initSuperIO(uint16_t* chipIntel);
+    void evaluateFanCurves();
     
     uint32_t getPMPStateLimit();
     void setPMPStateLimit(uint32_t);
@@ -298,6 +308,13 @@ public:
     
     ISSuperIOSMCFamily *superIO{nullptr};
     IOLock *superIOLock{nullptr};   // Protects multi-step SuperIO I/O port sequences from concurrent UserClient calls
+    
+    FanCurveConfig fanCurves[MAX_FAN_CURVES];
+    int8_t fanToCurveMap[16]; // Maps each physical fan index to a curve index (-1 = Auto)
+    uint8_t lastAppliedPWM[16];
+    uint64_t lastPWMUpdateTime[16];
+    float gpuTempC;
+    float curveSmoothedTemp[MAX_FAN_CURVES];
     
 private:
     IOWorkLoop *workLoop;
