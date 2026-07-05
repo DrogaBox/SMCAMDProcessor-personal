@@ -5552,6 +5552,7 @@ struct InteractiveFanCurveEditor: View {
                                 }
                         }
                     }
+                    .background(BlockWindowDragView())
                     .background(Color.tahoeCardBorder.opacity(0.1))
                     .cornerRadius(6)
                     .overlay(
@@ -5589,4 +5590,14 @@ struct InteractiveFanCurveEditor: View {
             }
         )
     }
+}
+
+struct BlockWindowDragView: NSViewRepresentable {
+    class BlockDragNSView: NSView {
+        override var mouseDownCanMoveWindow: Bool { false }
+    }
+    func makeNSView(context: Context) -> BlockDragNSView {
+        BlockDragNSView()
+    }
+    func updateNSView(_ nsView: BlockDragNSView, context: Context) {}
 }
