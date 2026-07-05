@@ -196,4 +196,18 @@
 "Temas & Apariencia" = "Themes & Appearance";
 "Análisis" = "Analysis";
 
+"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
+"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
+"Chart Rendering Style" = "Chart Rendering Style";
+"Custom Theme Editor" = "Custom Theme Editor";
+"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Edit Active Theme" = "Edit Active Theme";
+"Export Theme (JSON)" = "Export Theme (JSON)";
+"Import Theme (JSON)" = "Import Theme (JSON)";
+"Card Background" = "Card Background";
+"Cyan Accent" = "Cyan Accent";
+"Orange Accent" = "Orange Accent";
+"Green Accent" = "Green Accent";
+"Purple Accent" = "Purple Accent";
+
 

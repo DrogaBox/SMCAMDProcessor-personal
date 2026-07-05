@@ -119,6 +119,7 @@
 		B5DF4AB4247156F200663498 /* ISSuperIONCT668X.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ISSuperIONCT668X.hpp; sourceTree = "<group>"; };
 		B5F3A1012B7C010100ABCDEF /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5F3A1022B7C010200ABCDEF /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B5F3A1042B7C010400ABCDEF /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5F46D80240E6F19009F2961 /* ProcessorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessorModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -596,6 +597,7 @@
 			children = (
 				B5F3A1012B7C010100ABCDEF /* en */,
 				B5F3A1022B7C010200ABCDEF /* es */,
+				B5F3A1042B7C010400ABCDEF /* it */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
