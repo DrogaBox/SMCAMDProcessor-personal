@@ -154,7 +154,7 @@ struct PStateRow: Identifiable {
 }
 
 struct TelemetryPoint: Identifiable {
-    let id = UUID()
+    let id: Int
     var time: Double
     var cpuFreqGHz: Double
     var cpuFreqMaxGHz: Double
@@ -263,6 +263,14 @@ final class TelemetryModel: ObservableObject {
     @Published var cores: [CoreSnapshot] = []
     @Published var fans: [FanSnapshot] = []
     @Published var history: [TelemetryPoint] = []
+
+    // Cache structures for performance optimization
+    private var lastDiskIOCheck: Date = Date.distantPast
+    private var cachedDiskIO: (read: UInt64, write: UInt64) = (0, 0)
+    private var lastCCDCheck: Date = Date.distantPast
+    private var cachedCCDTemps: [Float] = []
+    private var historyCounter: Int = 0
+    private var historyBuffer = SimpleDeque<TelemetryPoint>(capacity: 120)
 
     @Published var selectedSpeedStep: Int = 0
     @Published var speedStepClocks: [Float] = []
@@ -722,7 +730,15 @@ final class TelemetryModel: ObservableObject {
             let rawGPULoad = pm.getGPUUtilization()
             let rawGPUVram = pm.getGPUVramUsed()
             let rawGPUFan = pm.getGPUFanRPM()
-            let ccdTemps = pm.getCCDTemperatures()
+            let ccdTemps: [Float]
+            let nowTime = Date()
+            if nowTime.timeIntervalSince(self.lastCCDCheck) >= 2.0 {
+                ccdTemps = pm.getCCDTemperatures()
+                self.cachedCCDTemps = ccdTemps
+                self.lastCCDCheck = nowTime
+            } else {
+                ccdTemps = self.cachedCCDTemps
+            }
             let instDelta = pm.getInstructionDelta()
 
             let numFansCount = self.numFans
@@ -743,7 +759,14 @@ final class TelemetryModel: ObservableObject {
             } else {
                 diskUsage = self.cachedDiskUsage
             }
-            let diskIO = self.getDiskIOBytes()
+            let diskIO: (read: UInt64, write: UInt64)
+            if now.timeIntervalSince(self.lastDiskIOCheck) >= 2.0 {
+                diskIO = self.getDiskIOBytes()
+                self.cachedDiskIO = diskIO
+                self.lastDiskIOCheck = now
+            } else {
+                diskIO = self.cachedDiskIO
+            }
 
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
@@ -889,7 +912,26 @@ final class TelemetryModel: ObservableObject {
                 coreRank: rRank
             ))
         }
-        cores = newCores
+        var shouldUpdateCores = false
+        if newCores.count != cores.count {
+            shouldUpdateCores = true
+        } else {
+            for idx in 0..<newCores.count {
+                let old = cores[idx]
+                let new = newCores[idx]
+                if abs(new.freqMHz - old.freqMHz) > 1.0 ||
+                    abs(new.loadPct - old.loadPct) > 1.0 ||
+                    new.isLogical != old.isLogical ||
+                    new.cppcScore != old.cppcScore ||
+                    new.coreRank != old.coreRank {
+                    shouldUpdateCores = true
+                    break
+                }
+            }
+        }
+        if shouldUpdateCores {
+            cores = newCores
+        }
         
         let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
         cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
@@ -956,6 +998,7 @@ final class TelemetryModel: ObservableObject {
         }
 
         let point = TelemetryPoint(
+            id: historyCounter,
             time: relTime,
             cpuFreqGHz: cpuFreqAvgGHz,
             cpuFreqMaxGHz: cpuFreqMaxGHz,
@@ -974,12 +1017,9 @@ final class TelemetryModel: ObservableObject {
             diskWriteMBps: diskWriteMBps,
             fanRPM: firstFanRPM
         )
-        history.append(point)
-        // Keep only the last maxHistoryPoints entries. reserveCapacity avoids repeated heap reallocations
-        // on the append; removeFirst's O(n) memmove is bounded and negligible at 120 entries.
-        if history.count > maxHistoryPoints {
-            history.removeFirst(history.count - maxHistoryPoints)
-        }
+        historyCounter += 1
+        historyBuffer.append(point)
+        history = historyBuffer.elements
 
         if smcDriverLoaded && numFans > 0 {
             var updatedFans = fans
@@ -1034,10 +1074,10 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        speedStepClocks  = ProcessorModel.shared.getValidPStateClocks()
-        selectedSpeedStep = ProcessorModel.shared.getPState()
         if now.timeIntervalSince(lastCPUControlsCheck) >= 5.0 {
             loadCPUControls()
+            speedStepClocks  = ProcessorModel.shared.getValidPStateClocks()
+            selectedSpeedStep = ProcessorModel.shared.getPState()
             lastCPUControlsCheck = now
         }
         
@@ -1815,5 +1855,47 @@ private class CSVLogger {
         queue.sync {
             handle?.closeFile()
         }
+    }
+}
+
+// MARK: - Simple Deque Ring Buffer
+struct SimpleDeque<T> {
+    private var array: [T?]
+    private var head: Int = 0
+    private var tail: Int = 0
+    private(set) var count: Int = 0
+    
+    init(capacity: Int) {
+        self.array = Array(repeating: nil, count: capacity)
+    }
+    
+    mutating func append(_ element: T) {
+        if count == array.count {
+            array[tail] = element
+            tail = (tail + 1) % array.count
+            head = (head + 1) % array.count
+        } else {
+            array[tail] = element
+            tail = (tail + 1) % array.count
+            count += 1
+        }
+    }
+    
+    mutating func clear() {
+        array = Array(repeating: nil, count: array.count)
+        head = 0
+        tail = 0
+        count = 0
+    }
+    
+    var elements: [T] {
+        var result: [T] = []
+        result.reserveCapacity(count)
+        for i in 0..<count {
+            if let el = array[(head + i) % array.count] {
+                result.append(el)
+            }
+        }
+        return result
     }
 }

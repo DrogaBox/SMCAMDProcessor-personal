@@ -126,22 +126,11 @@ class GraphViewLineLayer: CALayer {
 
     
     override func action(forKey key: String) -> CAAction? {
-        
         if key == #keyPath(dataMin) ||
-            key == #keyPath(dataDiff){
-            let ba = CASpringAnimation(keyPath: key)
-            ba.damping = 7
-            ba.fromValue = self.presentation()?.value(forKey:key)
-            ba.duration = 1
-            return ba
-        }
-        
-        if key == #keyPath(dataXScale) ||
-            key == #keyPath(xOffset){
-            let ba = CABasicAnimation(keyPath: key)
-            ba.fromValue = self.presentation()?.value(forKey:key)
-            ba.duration = 1
-            return ba
+            key == #keyPath(dataDiff) ||
+            key == #keyPath(dataXScale) ||
+            key == #keyPath(xOffset) {
+            return NSNull()
         }
         return super.action(forKey:key)
     }
