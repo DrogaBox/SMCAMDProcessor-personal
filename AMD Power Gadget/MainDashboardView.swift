@@ -1595,7 +1595,18 @@ private struct FanControlCard: View {
         TahoeCard(accent: fan.isOverrided ? Color.tahoeAccentOrange.opacity(0.4) : Color.tahoeCardBorder) {
             HStack {
                 Image(systemName: "fan").foregroundColor(.tahoeAccentCyan).font(.system(size: 14))
-                Text(fan.name.isEmpty ? "Fan \(fan.id + 1)" : fan.name).font(.system(size: 13, weight: .semibold)).foregroundColor(.tahoeText)
+                TextField("", text: Binding(
+                    get: { model.customFanNames[fan.id] ?? (fan.name.isEmpty ? "Fan \(fan.id + 1)" : fan.name) },
+                    set: { newVal in
+                        var updated = model.customFanNames
+                        updated[fan.id] = newVal
+                        model.customFanNames = updated
+                    }
+                ))
+                .textFieldStyle(.plain)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.tahoeText)
+                .frame(width: 150)
                 Spacer()
                 HStack(spacing: 6) {
                     Text("\(fan.rpm) RPM").font(.system(size: 11, design: .monospaced)).foregroundColor(.tahoeAccentCyan)
