@@ -1,6 +1,6 @@
 # Change Summary & Release Changelog
 
-## v3.14.5  Next-Gen Custom Fan Curves & Raw Register Diagnostics
+## v3.14.6  Next-Gen Custom Fan Curves & Raw Register Diagnostics
 * **Advanced Custom Fan Curve Engine**: Implemented next-generation closed-loop fan curves evaluated directly in the kernel space (kext) using a 256-step LUT, Exponential Moving Average (EMA) smoothing, custom hysteresis, and ramp rate limiting. Includes an 85°C thermal safety guard bypass.
 * **Interactive 2D Graph Editor**: Built a Tahoe-themed SwiftUI coordinate-mapped canvas letting users drag points, double-click to add/delete points, and map individual fans to curves.
 * **Added Raw Register Access Selectors**: Implemented user-space connection selectors 98 (read raw register) and 99 (write raw register) in `AMDRyzenCPUPMUserClient.cpp`.
