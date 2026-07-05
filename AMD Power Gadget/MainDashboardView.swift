@@ -1500,13 +1500,13 @@ struct FanControlContentView: View {
                     
                     Divider().background(Color.tahoeCardBorder)
                     
-                    SectionTitle("Closed-Loop Thermal Fan Curve & Protection")
+                    SectionTitle("Closed-Loop Custom Fan Curves & Protection")
                     TahoeCard(accent: Color.tahoeAccentOrange.opacity(0.2)) {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Dynamic Auto-Curve & Thermal Guard").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                                    Text("Scales fan PWM automatically with temperature and forces 80% at 85°C").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                    Text("Dynamic Next-Gen Fan Curves").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Text("Evaluated in the kernel with 256-step LUT interpolation, hysteresis, and smooth ramping.").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
                                 }
                                 Spacer()
                                 Toggle("", isOn: $model.autoFanCurveEnabled)
@@ -1514,25 +1514,7 @@ struct FanControlContentView: View {
                             }
                             if model.autoFanCurveEnabled {
                                 Divider().background(Color.white.opacity(0.1))
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Text("Minimum Temp (20% PWM)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
-                                        Spacer()
-                                        Text(String(format: "%.0f°C", model.fanCurveMinTemp))
-                                            .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.tahoeAccentOrange)
-                                    }
-                                    Slider(value: $model.fanCurveMinTemp, in: 30...60, step: 5)
-                                        .accentColor(.tahoeAccentOrange)
-                                    
-                                    HStack {
-                                        Text("Maximum Temp (80% PWM)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
-                                        Spacer()
-                                        Text(String(format: "%.0f°C", model.fanCurveMaxTemp))
-                                            .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundColor(.tahoeAccentOrange)
-                                    }
-                                    Slider(value: $model.fanCurveMaxTemp, in: 65...85, step: 5)
-                                        .accentColor(.tahoeAccentOrange)
-                                }
+                                InteractiveFanCurveEditor(model: model)
                             }
                         }
                     }
@@ -1606,6 +1588,10 @@ private struct FanControlCard: View {
     let fan: FanSnapshot; @ObservedObject var model: TelemetryModel
     @State private var sliderValue: Double = 0
     var body: some View {
+        let isMappedToCurve = (model.fanMappings[fan.id] ?? -1) != -1
+        let mappedCurveIdx = model.fanMappings[fan.id] ?? -1
+        let curveName = mappedCurveIdx >= 0 && mappedCurveIdx < model.customCurves.count ? model.customCurves[mappedCurveIdx].name : "Unknown"
+        
         TahoeCard(accent: fan.isOverrided ? Color.tahoeAccentOrange.opacity(0.4) : Color.tahoeCardBorder) {
             HStack {
                 Image(systemName: "fan").foregroundColor(.tahoeAccentCyan).font(.system(size: 14))
@@ -1619,20 +1605,49 @@ private struct FanControlCard: View {
                         .foregroundColor(fan.isOverrided ? .tahoeAccentOrange : .tahoeSubtext)
                 }
             }
-            HStack(spacing: 12) {
-                Text("Throttle").font(.system(size: 11)).foregroundColor(.tahoeSubtext)
-                Slider(value: $sliderValue, in: 0...255, step: 1) { editing in
-                    if !editing { model.setFanThrottle(fanIndex: fan.id, throttle: UInt8(sliderValue)) }
+            HStack {
+                Text("Control Mode").font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                Spacer()
+                Picker("", selection: Binding(
+                    get: { model.fanMappings[fan.id] ?? -1 },
+                    set: { newVal in
+                        var updated = model.fanMappings
+                        updated[fan.id] = newVal
+                        model.fanMappings = updated
+                    }
+                )) {
+                    Text("BIOS / Auto").tag(-1)
+                    ForEach(0..<model.customCurves.count, id: \.self) { idx in
+                        Text(model.customCurves[idx].name).tag(idx)
+                    }
                 }
-                .tint(Color.tahoeAccentCyan)
-                Text(String(format: "%.0f%%", sliderValue / 255.0 * 100.0))
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .foregroundColor(.tahoeAccentCyan)
-                    .frame(width: 36, alignment: .trailing)
+                .pickerStyle(.menu)
+                .labelsHidden()
             }
-            if fan.isOverrided {
-                Button("↩ Reset to Auto") { model.setFanOverride(fanIndex: fan.id, overrideEnabled: false) }
-                    .font(.system(size: 11)).foregroundColor(.tahoeAccentOrange).buttonStyle(.plain)
+            
+            if isMappedToCurve {
+                HStack {
+                    Spacer()
+                    Text("Controlled by Curve: \(curveName)")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.tahoeAccentOrange)
+                }
+            } else {
+                HStack(spacing: 12) {
+                    Text("Manual Override").font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                    Slider(value: $sliderValue, in: 0...255, step: 1) { editing in
+                        if !editing { model.setFanThrottle(fanIndex: fan.id, throttle: UInt8(sliderValue)) }
+                    }
+                    .tint(Color.tahoeAccentCyan)
+                    Text(String(format: "%.0f%%", sliderValue / 255.0 * 100.0))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.tahoeAccentCyan)
+                        .frame(width: 36, alignment: .trailing)
+                }
+                if fan.isOverrided {
+                    Button("↩ Reset to Auto") { model.setFanOverride(fanIndex: fan.id, overrideEnabled: false) }
+                        .font(.system(size: 11)).foregroundColor(.tahoeAccentOrange).buttonStyle(.plain)
+                }
             }
         }
         .onAppear { sliderValue = Double(fan.throttle) }
@@ -5340,5 +5355,225 @@ struct DesktopWidgetsConfigView: View {
             manager.refreshWidgets()
             NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
         }
+    }
+}
+
+struct InteractiveFanCurveEditor: View {
+    @ObservedObject var model: TelemetryModel
+    @State private var selectedCurveIndex: Int = 0
+    @State private var hoveredPointIndex: Int? = nil
+    
+    var body: some View {
+        guard selectedCurveIndex < model.customCurves.count else {
+            return AnyView(Text("No curves configured."))
+        }
+        
+        let curve = model.customCurves[selectedCurveIndex]
+        
+        return AnyView(
+            VStack(alignment: .leading, spacing: 12) {
+                // Curve Selector and Controls
+                HStack(spacing: 12) {
+                    Picker("Curve", selection: $selectedCurveIndex) {
+                        ForEach(0..<model.customCurves.count, id: \.self) { idx in
+                            Text(model.customCurves[idx].name).tag(idx)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 140)
+                    
+                    TextField("Name", text: Binding(
+                        get: { curve.name },
+                        set: { newVal in
+                            var updated = model.customCurves
+                            updated[selectedCurveIndex].name = newVal
+                            model.customCurves = updated
+                        }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 120)
+                    
+                    Spacer()
+                }
+                
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Temp Source").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                        Picker("", selection: Binding(
+                            get: { curve.sourceSensor },
+                            set: { newVal in
+                                var updated = model.customCurves
+                                updated[selectedCurveIndex].sourceSensor = newVal
+                                model.customCurves = updated
+                            }
+                        )) {
+                            Text("CPU Temp").tag(0)
+                            Text("GPU Temp").tag(1)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 150)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Hysteresis").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            Spacer()
+                            Text("\(Int(curve.hysteresis))°C").font(.system(size: 10, weight: .bold)).foregroundColor(.tahoeAccentOrange)
+                        }
+                        Slider(value: Binding(
+                            get: { curve.hysteresis },
+                            set: { newVal in
+                                var updated = model.customCurves
+                                updated[selectedCurveIndex].hysteresis = newVal
+                                model.customCurves = updated
+                            }
+                        ), in: 1...5, step: 1)
+                        .accentColor(.tahoeAccentOrange)
+                        .frame(width: 100)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Ramp Rate").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            Spacer()
+                            Text("\(Int(curve.rampRate))%/s").font(.system(size: 10, weight: .bold)).foregroundColor(.tahoeAccentOrange)
+                        }
+                        Slider(value: Binding(
+                            get: { curve.rampRate },
+                            set: { newVal in
+                                var updated = model.customCurves
+                                updated[selectedCurveIndex].rampRate = newVal
+                                model.customCurves = updated
+                            }
+                        ), in: 1...20, step: 1)
+                        .accentColor(.tahoeAccentOrange)
+                        .frame(width: 100)
+                    }
+                }
+                
+                // 2D Graph Area
+                GeometryReader { geo in
+                    let w = geo.size.width
+                    let h = geo.size.height
+                    
+                    ZStack {
+                        // Background Grid
+                        Canvas { context, size in
+                            let gridColor = Color.tahoeCardBorder.opacity(0.6)
+                            
+                            // Horizontal lines (PWM)
+                            for i in 0...5 {
+                                let y = CGFloat(i) * size.height / 5
+                                var path = Path()
+                                path.move(to: CGPoint(x: 0, y: y))
+                                path.addLine(to: CGPoint(x: size.width, y: y))
+                                context.stroke(path, with: .color(gridColor), style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
+                                
+                                // PWM Labels
+                                let pwmPct = 100 - i * 20
+                                context.draw(Text("\(pwmPct)%").font(.system(size: 8)).foregroundColor(.tahoeSubtext), at: CGPoint(x: 12, y: y - 6), anchor: .leading)
+                            }
+                            
+                            // Vertical lines (Temp)
+                            for i in 0...5 {
+                                let x = CGFloat(i) * size.width / 5
+                                var path = Path()
+                                path.move(to: CGPoint(x: x, y: 0))
+                                path.addLine(to: CGPoint(x: x, y: size.height))
+                                context.stroke(path, with: .color(gridColor), style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
+                                
+                                // Temp Labels
+                                let tempC = i * 20
+                                context.draw(Text("\(tempC)°C").font(.system(size: 8)).foregroundColor(.tahoeSubtext), at: CGPoint(x: x + 2, y: size.height - 10), anchor: .leading)
+                            }
+                        }
+                        
+                        // Line Path connecting points
+                        Path { path in
+                            let sorted = curve.points.sorted { $0.temp < $1.temp }
+                            guard !sorted.isEmpty else { return }
+                            
+                            // Map first point
+                            let firstPt = sorted.first!
+                            path.move(to: CGPoint(x: CGFloat(firstPt.temp / 100.0) * w, y: h - CGFloat(firstPt.pwm / 100.0) * h))
+                            
+                            for pt in sorted.dropFirst() {
+                                path.addLine(to: CGPoint(x: CGFloat(pt.temp / 100.0) * w, y: h - CGFloat(pt.pwm / 100.0) * h))
+                            }
+                        }
+                        .stroke(Color.tahoeAccentOrange, lineWidth: 2)
+                        
+                        // Interactive points
+                        ForEach(curve.points.indices, id: \.self) { ptIdx in
+                            let pt = curve.points[ptIdx]
+                            let ptX = CGFloat(pt.temp / 100.0) * w
+                            let ptY = h - CGFloat(pt.pwm / 100.0) * h
+                            
+                            Circle()
+                                .fill(hoveredPointIndex == ptIdx ? Color.tahoeAccentCyan : Color.tahoeAccentOrange)
+                                .frame(width: 10, height: 10)
+                                .position(x: ptX, y: ptY)
+                                .gesture(
+                                    DragGesture()
+                                        .onChanged { val in
+                                            let newX = max(0, min(w, val.location.x))
+                                            let newY = max(0, min(h, val.location.y))
+                                            
+                                            var updated = model.customCurves
+                                            updated[selectedCurveIndex].points[ptIdx].temp = Double(newX / w) * 100.0
+                                            updated[selectedCurveIndex].points[ptIdx].pwm = Double((h - newY) / h) * 100.0
+                                            model.customCurves = updated
+                                        }
+                                )
+                                .onHover { hovering in
+                                    hoveredPointIndex = hovering ? ptIdx : nil
+                                }
+                                .contextMenu {
+                                    Button("Delete Point") {
+                                        if curve.points.count > 2 {
+                                            var updated = model.customCurves
+                                            updated[selectedCurveIndex].points.remove(at: ptIdx)
+                                            model.customCurves = updated
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                    .background(Color.tahoeCardBorder.opacity(0.1))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.tahoeCardBorder, lineWidth: 1)
+                    )
+                    .gesture(
+                        SpatialTapGesture()
+                            .onEnded { val in
+                                let tapX = val.location.x
+                                let tapY = val.location.y
+                                
+                                let tooClose = curve.points.contains { pt in
+                                    let ptX = CGFloat(pt.temp / 100.0) * w
+                                    let ptY = h - CGFloat(pt.pwm / 100.0) * h
+                                    let dist = sqrt(pow(tapX - ptX, 2) + pow(tapY - ptY, 2))
+                                    return dist < 12
+                                }
+                                
+                                if !tooClose && curve.points.count < 8 {
+                                    let newTemp = Double(tapX / w) * 100.0
+                                    let newPWM = Double((h - tapY) / h) * 100.0
+                                    var updated = model.customCurves
+                                    updated[selectedCurveIndex].points.append(FanCurvePoint(temp: newTemp, pwm: newPWM))
+                                    updated[selectedCurveIndex].points.sort { $0.temp < $1.temp }
+                                    model.customCurves = updated
+                                }
+                            }
+                    )
+                }
+                .frame(height: 180)
+                
+                Text("Drag control points to edit curve. Double-click/tap empty space to add a point (max 8). Right-click a point to delete it.")
+                    .font(.system(size: 9)).foregroundColor(.tahoeSubtext)
+            }
+        )
     }
 }
