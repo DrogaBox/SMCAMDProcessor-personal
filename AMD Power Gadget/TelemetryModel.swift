@@ -362,6 +362,19 @@ final class TelemetryModel: ObservableObject {
     private var lastHeavySyscallCheck: Date = Date.distantPast
     private var lastProcessFetchTime: Date = Date.distantPast
     
+    private var lastCPUControlsCheck: Date = Date.distantPast
+    private var lastSwapCheck: Date = Date.distantPast
+    private var lastIPCheck: Date = Date.distantPast
+    private var lastDiskUsageCheck: Date = Date.distantPast
+    private var lastUptimeCheck: Date = Date.distantPast
+    private var lastWrittenGPUTemp: Float = -1.0
+    private var lastGPUTempWriteTime: Date = Date.distantPast
+    
+    private var cachedDiskUsage: Double = 0.0
+    private var cachedSwap: (total: Double, used: Double) = (0.0, 0.0)
+    private var cachedIPInfo: (ip: String, interface: String) = ("", "")
+    private var cachedUptime: String = ""
+    
     private(set) var maxObservedFreq_perCore: [Int: Float] = [:]
 
     @Published var pStateRows: [PStateRow] = []
@@ -721,7 +734,15 @@ final class TelemetryModel: ObservableObject {
             }
 
             let ramUsage = self.getRAMUsagePct()
-            let diskUsage = self.getDiskUsagePct()
+            let diskUsage: Double
+            let now = Date()
+            if now.timeIntervalSince(self.lastDiskUsageCheck) >= 10.0 {
+                diskUsage = self.getDiskUsagePct()
+                self.cachedDiskUsage = diskUsage
+                self.lastDiskUsageCheck = now
+            } else {
+                diskUsage = self.cachedDiskUsage
+            }
             let diskIO = self.getDiskIOBytes()
 
             DispatchQueue.main.async { [weak self] in
@@ -775,6 +796,7 @@ final class TelemetryModel: ObservableObject {
         let numLogicalCores = cachedNumLogicalCores
 
         guard numPhysicalCores > 0 && numLogicalCores > 0 && metric.count > numPhysicalCores + 2 else { return }
+        let now = Date()
 
         let watts  = Double(metric[0])
         let tempC  = Double(metric[1])
@@ -790,8 +812,11 @@ final class TelemetryModel: ObservableObject {
         cpuFreqMaxGHz = Double(maxMHz) * 0.001
 
         gpuTempC = Double(rawGPUTemp)
-        if smcDriverLoaded {
-            _ = ProcessorModel.shared.kernelSetUInt64(selector: 103, args: [UInt64(round(rawGPUTemp))])
+        let roundedTemp = round(rawGPUTemp)
+        if smcDriverLoaded && (roundedTemp != lastWrittenGPUTemp || now.timeIntervalSince(lastGPUTempWriteTime) >= 5.0) {
+            _ = ProcessorModel.shared.kernelSetUInt64(selector: 103, args: [UInt64(roundedTemp)])
+            lastWrittenGPUTemp = roundedTemp
+            lastGPUTempWriteTime = now
         }
         gpuPowerW = Double(rawGPUPower)
         
@@ -879,7 +904,6 @@ final class TelemetryModel: ObservableObject {
         }
         
         
-        let now = Date()
         ramUsagePct = ramUsage
         diskUsagePct = diskUsage
         
@@ -1012,17 +1036,31 @@ final class TelemetryModel: ObservableObject {
 
         speedStepClocks  = ProcessorModel.shared.getValidPStateClocks()
         selectedSpeedStep = ProcessorModel.shared.getPState()
-        loadCPUControls()
+        if now.timeIntervalSince(lastCPUControlsCheck) >= 5.0 {
+            loadCPUControls()
+            lastCPUControlsCheck = now
+        }
         
-        let swap = getSwapMemoryUsage()
-        ramSwapTotalBytes = swap.total
-        ramSwapUsedBytes = swap.used
+        if now.timeIntervalSince(lastSwapCheck) >= 5.0 {
+            let swap = getSwapMemoryUsage()
+            cachedSwap = (total: swap.total, used: swap.used)
+            lastSwapCheck = now
+        }
+        ramSwapTotalBytes = cachedSwap.total
+        ramSwapUsedBytes = cachedSwap.used
         
-        let ipInfo = getLocalIPAddressAndInterface()
-        netLocalIP = ipInfo.ip
-        netActiveInterface = ipInfo.interface
+        if now.timeIntervalSince(lastIPCheck) >= 10.0 {
+            let ipInfo = getLocalIPAddressAndInterface()
+            cachedIPInfo = ipInfo
+            lastIPCheck = now
+        }
+        netLocalIP = cachedIPInfo.ip
+        netActiveInterface = cachedIPInfo.interface
         
-        systemUptimeFormatted = getSystemUptime()
+        if now.timeIntervalSince(lastUptimeCheck) >= 1.0 {
+            systemUptimeFormatted = getSystemUptime()
+            lastUptimeCheck = now
+        }
         
         NotificationCenter.default.post(name: .init("TelemetryDataUpdated"), object: nil)
     }
