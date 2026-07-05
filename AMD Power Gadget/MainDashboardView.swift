@@ -5471,7 +5471,9 @@ struct InteractiveFanCurveEditor: View {
                                 
                                 // PWM Labels
                                 let pwmPct = 100 - i * 20
-                                context.draw(Text("\(pwmPct)%").font(.system(size: 8)).foregroundColor(.tahoeSubtext), at: CGPoint(x: 12, y: y - 6), anchor: .leading)
+                                if pwmPct > 0 {
+                                    context.draw(Text("\(pwmPct)%").font(.system(size: 8)).foregroundColor(.tahoeSubtext), at: CGPoint(x: 12, y: y - 6), anchor: .leading)
+                                }
                             }
                             
                             // Vertical lines (Temp)
@@ -5484,7 +5486,9 @@ struct InteractiveFanCurveEditor: View {
                                 
                                 // Temp Labels
                                 let tempC = i * 20
-                                context.draw(Text("\(tempC)°C").font(.system(size: 8)).foregroundColor(.tahoeSubtext), at: CGPoint(x: x + 2, y: size.height - 10), anchor: .leading)
+                                if tempC > 0 {
+                                    context.draw(Text("\(tempC)°C").font(.system(size: 8)).foregroundColor(.tahoeSubtext), at: CGPoint(x: x + 2, y: size.height - 10), anchor: .leading)
+                                }
                             }
                         }
                         
