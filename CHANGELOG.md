@@ -10,6 +10,7 @@
 * **Localization Polish**: Translated sidebar tabs "Themes & Appearance" and "Analysis" for English systems, and initialized basic Italian localization (`it.lproj`) with sidebar tab navigation.
 * **Telemetry Performance Optimizations**: Cached and rate-limited heavy main-thread and background system calls (MSR loadCPUControls and swap memory query every 5s, active network IP and disk usage stats every 10s). The GPU temperature kernel write selector now uses change-detection (only writes to the kext if the integer temperature changes, with a 5s heartbeat). This reduces app background CPU footprint to near zero.
 * **Analysis Peak Sessions (Max/Min)**: Added live telemetry session statistics to the "Analysis" page, displaying the maximum (Máx) and minimum (Mín) recorded values for CPU/GPU Load, temperatures, memory usage, CPU package power, and clock frequencies over the selected timeframe.
+* **Dashboard Layout & Axis Enhancements**: Redesigned the main dashboard chart cards header metadata into a stacked vertical list showing Average (Prom.), Maximum (Máx.), and Minimum (Mín.) on separate lines. Standardized the Y-axis numbering formatting and grid strides based on telemetry units (using double decimals `%.2f` and `0.1` steps for GHz, single decimals `%.1f` for Watts, and integers `%.0f` for temperatures) to prevent integer truncation overlapping.
 * *Special thanks to Chiracopolis for the custom fan curve control idea and initial suggestion, and Kackvogel 4K for the customizable fan labels idea!*
 
 ### How to Use the Custom Fan Curves Feature:
