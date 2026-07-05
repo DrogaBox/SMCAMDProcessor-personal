@@ -3142,7 +3142,7 @@ struct ThemePresetPack: Codable {
 }
 
 struct ColorTokenEditorSlot: View {
-    let title: String
+    let title: LocalizedStringKey
     let colorHex: String
     @Binding var selection: Color
 
@@ -3204,35 +3204,35 @@ struct CustomThemeStudio: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Editor de Tema Personalizado")
+                    Text("Custom Theme Editor")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Mostrando los colores actuales del tema activo. Ajustá cualquier color para personalizar.")
+                    Text("Showing active theme colors. Adjust any color to customize.")
                         .font(.system(size: 10))
                         .foregroundColor(.tahoeSubtext)
                 }
                 Spacer()
-                TahoeButton(label: "Editar Tema Activo", icon: "doc.on.doc", accent: .tahoeAccentOrange) {
+                TahoeButton(label: "Edit Active Theme", icon: "doc.on.doc", accent: .tahoeAccentOrange) {
                     copyCurrentThemeToCustom()
                 }
             }
 
             // Grid of Color Token Editors showing active colors & HEX
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
-                ColorTokenEditorSlot(title: "Fondo Tarjeta", colorHex: AppTheme.current.card.toHexString, selection: cardColorBinding)
-                ColorTokenEditorSlot(title: "Acento Cian", colorHex: AppTheme.current.accentCyan.toHexString, selection: cyanColorBinding)
-                ColorTokenEditorSlot(title: "Acento Naranja", colorHex: AppTheme.current.accentOrange.toHexString, selection: orangeColorBinding)
-                ColorTokenEditorSlot(title: "Acento Verde", colorHex: AppTheme.current.accentGreen.toHexString, selection: greenColorBinding)
-                ColorTokenEditorSlot(title: "Acento Púrpura", colorHex: AppTheme.current.accentPurple.toHexString, selection: purpleColorBinding)
+                ColorTokenEditorSlot(title: "Card Background", colorHex: AppTheme.current.card.toHexString, selection: cardColorBinding)
+                ColorTokenEditorSlot(title: "Cyan Accent", colorHex: AppTheme.current.accentCyan.toHexString, selection: cyanColorBinding)
+                ColorTokenEditorSlot(title: "Orange Accent", colorHex: AppTheme.current.accentOrange.toHexString, selection: orangeColorBinding)
+                ColorTokenEditorSlot(title: "Green Accent", colorHex: AppTheme.current.accentGreen.toHexString, selection: greenColorBinding)
+                ColorTokenEditorSlot(title: "Purple Accent", colorHex: AppTheme.current.accentPurple.toHexString, selection: purpleColorBinding)
             }
 
             Divider().background(Color.tahoeCardBorder)
 
             HStack(spacing: 12) {
-                TahoeButton(label: "Exportar Tema (JSON)", icon: "square.and.arrow.up", accent: .tahoeAccentCyan) {
+                TahoeButton(label: "Export Theme (JSON)", icon: "square.and.arrow.up", accent: .tahoeAccentCyan) {
                     exportTheme()
                 }
-                TahoeButton(label: "Importar Tema (JSON)", icon: "square.and.arrow.down", accent: .tahoeAccentGreen) {
+                TahoeButton(label: "Import Theme (JSON)", icon: "square.and.arrow.down", accent: .tahoeAccentGreen) {
                     importTheme()
                 }
             }
@@ -3286,13 +3286,13 @@ struct ThemesContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                SectionTitle("Seleccionar Tema Visual (Cambio Instantáneo)")
+                SectionTitle("Select Visual Theme (Instant Application)")
                 ThemeSelectorGrid()
 
-                SectionTitle("Creador e Intercambio de Temas Custom (JSON)")
+                SectionTitle("Custom Theme Creator & Exchange (JSON)")
                 CustomThemeStudio()
 
-                SectionTitle("Estilo de Renderizado de Gráficas")
+                SectionTitle("Chart Rendering Style")
                 ChartStyleSelectorGrid()
             }
             .padding(20)

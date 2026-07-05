@@ -192,4 +192,18 @@
 "Temas & Apariencia" = "Temas & Apariencia";
 "Análisis" = "Análisis";
 
+"Select Visual Theme (Instant Application)" = "Seleccionar Tema Visual (Cambio Instantáneo)";
+"Custom Theme Creator & Exchange (JSON)" = "Creador e Intercambio de Temas Custom (JSON)";
+"Chart Rendering Style" = "Estilo de Renderizado de Gráficas";
+"Custom Theme Editor" = "Editor de Tema Personalizado";
+"Showing active theme colors. Adjust any color to customize." = "Mostrando los colores actuales del tema activo. Ajustá cualquier color para personalizar.";
+"Edit Active Theme" = "Editar Tema Activo";
+"Export Theme (JSON)" = "Exportar Tema (JSON)";
+"Import Theme (JSON)" = "Importar Tema (JSON)";
+"Card Background" = "Fondo Tarjeta";
+"Cyan Accent" = "Acento Cian";
+"Orange Accent" = "Acento Naranja";
+"Green Accent" = "Acento Verde";
+"Purple Accent" = "Acento Púrpura";
+
 
