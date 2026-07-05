@@ -1,0 +1,46 @@
+/* 
+  Localizable.strings (Italian)
+  AMD Power Gadget
+*/
+
+"Dashboard" = "Dashboard";
+"Telemetry" = "Telemetria";
+"Fan Control" = "Controllo Ventole";
+"Profiles" = "Profili";
+"Advanced" = "Avanzate";
+"Menu Bar" = "Barra dei Menu";
+"System Info" = "Info di Sistema";
+"Desktop Widgets" = "Widget Desktop";
+"Popover Menu" = "Menu Popover";
+
+"Temas & Apariencia" = "Temi & Aspetto";
+"Análisis" = "Analisi";
+
+"Exit" = "Esci";
+"AMD Power" = "AMD Power";
+"Gadget" = "Gadget";
+
+"CPU" = "CPU";
+"GPU" = "GPU";
+"Freq" = "Freq";
+"Average" = "Media";
+"Avg: %@" = "Media: %@";
+"RPM" = "RPM";
+"Throttle" = "Regolazione";
+"↩ Reset to Auto" = "↩ Ripristina Auto";
+"Cancel" = "Annulla";
+"OK" = "OK";
+
+"Select Visual Theme (Instant Application)" = "Seleziona Tema Visivo (Applicazione Istantanea)";
+"Custom Theme Creator & Exchange (JSON)" = "Creatore & Scambio di Temi Personalizzati (JSON)";
+"Chart Rendering Style" = "Stile di Rendering del Grafico";
+"Custom Theme Editor" = "Editor del Tema Personalizzato";
+"Showing active theme colors. Adjust any color to customize." = "Mostra i colori del tema attivo. Regola qualsiasi colore per personalizzare.";
+"Edit Active Theme" = "Modifica Tema Attivo";
+"Export Theme (JSON)" = "Esporta Tema (JSON)";
+"Import Theme (JSON)" = "Importa Tema (JSON)";
+"Card Background" = "Sfondo Scheda";
+"Cyan Accent" = "Accento Ciano";
+"Orange Accent" = "Accento Arancione";
+"Green Accent" = "Accento Verde";
+"Purple Accent" = "Accento Viola";
