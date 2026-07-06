@@ -1007,9 +1007,9 @@ int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
         return -2;
     }
     
-    // Safety check: Limit Curve Optimizer offset to safe range [-15, +15] as per implementation plan
-    if (offset < -15 || offset > 15) {
-        IOLog("AMDRyzenCPUPowerManagement: Offset %d exceeds safe limits [-15, +15]. Blocking write for safety.\n", offset);
+    // Safety check: Limit Curve Optimizer offset to safe range [-30, +30] as per implementation plan
+    if (offset < -30 || offset > 30) {
+        IOLog("AMDRyzenCPUPowerManagement: Offset %d exceeds safe limits [-30, +30]. Blocking write for safety.\n", offset);
         return -3;
     }
     

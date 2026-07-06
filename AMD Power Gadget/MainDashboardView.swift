@@ -1840,7 +1840,7 @@ struct ProfilesContentView: View {
                 }
                 
                 SectionTitle("AMD Curve Optimizer (CO)")
-                Text("Inject negative voltage offsets per core to lower temperatures and improve clock scaling. Limit: 0 to -15 counts.")
+                Text("Inject positive or negative voltage offsets per core. Center is 0 (no override). Limit: -30 (undervolt) to +30 (overvolt) counts.")
                     .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
                 
                 TahoeCard(accent: Color.tahoeAccentPurple.opacity(0.15)) {
@@ -1901,9 +1901,9 @@ struct ProfilesContentView: View {
                                             }
                                             
                                             let currentOffset = idx < model.curveOptimizerOffsets.count ? model.curveOptimizerOffsets[idx] : 0
-                                            Text("\(currentOffset)")
+                                            Text(currentOffset > 0 ? "+\(currentOffset)" : "\(currentOffset)")
                                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                                .foregroundColor(currentOffset < 0 ? .tahoeAccentPurple : .tahoeSubtext)
+                                                .foregroundColor(currentOffset < 0 ? .tahoeAccentPurple : (currentOffset > 0 ? .tahoeAccentOrange : .tahoeSubtext))
                                         }
                                         
                                         let currentOffset = idx < model.curveOptimizerOffsets.count ? Double(model.curveOptimizerOffsets[idx]) : 0.0
@@ -1912,7 +1912,7 @@ struct ProfilesContentView: View {
                                         }, set: { (val: Double) in
                                             let offsetInt = Int(round(val))
                                             let _ = model.setCurveOptimizerOffset(core: idx, offset: offsetInt)
-                                        }), in: -15...0, step: 1)
+                                        }), in: -30...30, step: 1)
                                         .accentColor(.tahoeAccentPurple)
                                     }
                                     .padding(8)
