@@ -8,13 +8,13 @@
 /* A future refactor should standardize all keys to English. */
 
 "Dashboard" = "Dashboard";
-"Telemetry" = "Telemetry";
-"Fan Control" = "Fan Control";
-"Profiles" = "Profiles";
-"Advanced" = "Advanced";
-"Menu Bar" = "Menu Bar";
-"System Info" = "System Info";
-"Desktop Widgets" = "Desktop Widgets";
+"Telemetry" = "Telemetria";
+"Fan Control" = "Controllo ventole";
+"Profiles" = "Profili";
+"Advanced" = "Avanzate";
+"Menu Bar" = "Barra dei menù";
+"System Info" = "Informazioni sul sistema";
+"Desktop Widgets" = "Widget del desktop";
 
 "AMD Power" = "AMD Power";
 "Gadget" = "Gadget";
@@ -22,48 +22,48 @@
 "CPU" = "CPU";
 "GPU" = "GPU";
 "Freq" = "Freq";
-"Average" = "Average";
-"Avg: %@" = "Avg: %@";
-"Collecting data…" = "Collecting data…";
+"Average" = "Media";
+"Avg: %@" = "Media: %@";
+"Collecting data…" = "Raccogliendo informazioni…";
 
-"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
-"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
-"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
+"Low Power Mode (LPM)" = "Modalità a basso consumo (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Consenti a macOS di gestire automaticamente la frequenza della CPU";
+"Forces CPU to lowest frequency for minimum power" = "Forza la CPU ad utilizzare la frequenza minima per minimizzare i consumi";
 "Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
-"Update Interval" = "Update Interval";
-"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+"Update Interval" = "Intervallo di aggiornamento";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Regola quanto frequentemente aggiornate i dati della telemetria. Meno frequente = più reattivo, Più frequente = meno uso della CPU.";
 
-"Opciones en Menú Bar" = "Menu Bar Options";
-"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
-"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
-"Límite de Temp de Alerta" = "Alert Temp Limit";
-"Color de Alerta de Temp" = "Alert Temp Color";
-"Color de Flechas" = "Arrows Color";
-"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
-"Show GPU VRAM" = "Show GPU VRAM";
-"G:X.XG in Memory column" = "G:X.XG in Memory column";
-"Show GPU Fan Speed" = "Show GPU Fan Speed";
-"G:XXXX in Fan column" = "G:XXXX in Fan column";
+"Opciones en Menú Bar" = "Opzioni della barra dei menù";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Scegli quali elementi mostrare nella barra dei menù. I cambiamenti si applicano immediatamente.";
+"Customize the visual appearance of the menu bar items." = "Personalizza l'aspetto degli elementi della barra dei menù.";
+"Límite de Temp de Alerta" = "Allerta temperatura limite";
+"Color de Alerta de Temp" = "Colore dell'allerta temperatura limite";
+"Color de Flechas" = "Colore delle frecce";
+"Additional telemetry for the menu bar." = "Telemetria aggiuntiva nella barra dei menù.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "Le informazioni della GPU vengono mostrate nelle colonne Temp, Consumi, Memoria e Ventole quando abilitate.";
+"Show GPU VRAM" = "Mostra l'utilizzo della VRAM della GPU";
+"G:X.XG in Memory column" = "G:X.XG nella colonna della memoria";
+"Show GPU Fan Speed" = "Mostra la velocità della ventola della GPU";
+"G:XXXX in Fan column" = "G:XXXX nella colonna della ventola";
 
-"No fans detected." = "No fans detected.";
-"SMC driver not available" = "SMC driver not available";
-"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"No fans detected." = "Nessuna ventola rilevata.";
+"SMC driver not available" = "Il driver SMC non è disponibile";
+"Your SMC chip may not be supported." = "Il tuo chip SMC potrebbe non essere supportato.";
 "RPM" = "RPM";
 "Throttle" = "Throttle";
-"↩ Reset to Auto" = "↩ Reset to Auto";
+"↩ Reset to Auto" = "Reimposta a Auto";
 
-"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Scegli un profilo per regolare l'intervallo di lavoro della CPU. I cambiamenti vengono applicati immediatamente.";
 
-"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
-"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
-"Disabled — work in progress" = "Disabled — work in progress";
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Modifica direttamente i registri P-State. Necessita il controllo dei privilegi kext disabilitato tramite boot-arg o root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Stai per applicare delle definizioni P-State direttamente alla CPU. Procedere?";
+"Disabled — work in progress" = "Disabilitato - work in progress";
 "WIP" = "WIP";
 
-"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
-"Motherboard info not available" = "Motherboard info not available";
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Abilitata su OC: Misc → Security → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Informazioni sulla scheda madre non disponibili";
 
-"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
+"Vista previa de la Barra de Menús:" = "Preview della barra dei menù:";
 "Ancho estimado: %dpt" = "Estimated Width: %dpt";
 "Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
 "Small (%dpt)" = "Small (%dpt)";
