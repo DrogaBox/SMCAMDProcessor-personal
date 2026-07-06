@@ -4607,6 +4607,7 @@ class HistoryManager: ObservableObject {
     
     private let saveURL: URL
     private var timer: Timer?
+    private var saveCounter = 0
     
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -4620,22 +4621,79 @@ class HistoryManager: ObservableObject {
     
     private func loadData() {
         guard let data = try? Data(contentsOf: saveURL) else { return }
-        do {
-            let decoder = JSONDecoder()
-            historyData = try decoder.decode([HistoryDataPoint].self, from: data)
+        let decoder = JSONDecoder()
+        
+        // Try decoding as JSON array first for backward compatibility
+        if let array = try? decoder.decode([HistoryDataPoint].self, from: data) {
+            historyData = array
             pruneOldData()
+            rewriteFile() // Convert to JSON Lines format immediately
+            return
+        }
+        
+        // Otherwise, decode as JSON Lines
+        var loadedPoints: [HistoryDataPoint] = []
+        if let content = String(data: data, encoding: .utf8) {
+            let lines = content.components(separatedBy: .newlines)
+            for line in lines {
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { continue }
+                if let lineData = trimmed.data(using: .utf8),
+                   let point = try? decoder.decode(HistoryDataPoint.self, from: lineData) {
+                    loadedPoints.append(point)
+                }
+            }
+        }
+        historyData = loadedPoints
+        pruneOldData()
+    }
+    
+    private func rewriteFile() {
+        do {
+            let encoder = JSONEncoder()
+            var fileData = Data()
+            for pt in historyData {
+                if let data = try? encoder.encode(pt) {
+                    fileData.append(data)
+                    fileData.append("\n".data(using: .utf8)!)
+                }
+            }
+            try fileData.write(to: saveURL, options: .atomic)
         } catch {
-            print("Failed to decode history: \(error)")
+            print("Failed to rewrite history: \(error)")
+        }
+    }
+    
+    private func appendData(point: HistoryDataPoint) {
+        do {
+            if !FileManager.default.fileExists(atPath: saveURL.path) {
+                rewriteFile()
+                return
+            }
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(point)
+            let fileHandle = try FileHandle(forWritingTo: saveURL)
+            fileHandle.seekToEndOfFile()
+            fileHandle.write(data)
+            if let newline = "\n".data(using: .utf8) {
+                fileHandle.write(newline)
+            }
+            fileHandle.closeFile()
+        } catch {
+            rewriteFile()
         }
     }
     
     func saveData() {
-        do {
-            let encoder = JSONEncoder()
-            let data = try encoder.encode(historyData)
-            try data.write(to: saveURL, options: .atomic)
-        } catch {
-            print("Failed to encode history: \(error)")
+        pruneOldData()
+        saveCounter += 1
+        if saveCounter >= 60 {
+            rewriteFile()
+            saveCounter = 0
+        } else {
+            if let last = historyData.last {
+                appendData(point: last)
+            }
         }
     }
     

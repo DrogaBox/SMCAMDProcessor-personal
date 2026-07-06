@@ -271,6 +271,9 @@ final class TelemetryModel: ObservableObject {
     private var cachedCCDTemps: [Float] = []
     private var historyCounter: Int = 0
     private var historyBuffer = SimpleDeque<TelemetryPoint>(capacity: 120)
+    private var lastRAMCheck: Date = Date.distantPast
+    private var cachedRAMUsage: Double = 0.0
+    private let cachedCsvDelimiter: String
 
     @Published var selectedSpeedStep: Int = 0
     @Published var speedStepClocks: [Float] = []
@@ -495,6 +498,9 @@ final class TelemetryModel: ObservableObject {
     private var instElapsedTime: Double = 0.0
 
     init() {
+        let decimal = Locale.current.decimalSeparator ?? "."
+        cachedCsvDelimiter = decimal == "," ? ";" : ","
+        
         buildSystemInfo()
         updateRankedPhysicalCores() // Initialize ranking early (fallback mode)
         speedStepClocks = ProcessorModel.shared.getValidPStateClocks()
@@ -749,9 +755,16 @@ final class TelemetryModel: ObservableObject {
                 fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
             }
 
-            let ramUsage = self.getRAMUsagePct()
+            let ramUsage: Double
             let diskUsage: Double
             let now = Date()
+            if now.timeIntervalSince(self.lastRAMCheck) >= 2.0 {
+                ramUsage = self.getRAMUsagePct()
+                self.cachedRAMUsage = ramUsage
+                self.lastRAMCheck = now
+            } else {
+                ramUsage = self.cachedRAMUsage
+            }
             if now.timeIntervalSince(self.lastDiskUsageCheck) >= 10.0 {
                 diskUsage = self.getDiskUsagePct()
                 self.cachedDiskUsage = diskUsage
@@ -852,7 +865,9 @@ final class TelemetryModel: ObservableObject {
 
         gpuVramUsedBytes = Double(rawGPUVram)
         gpuFanRPM = Double(rawGPUFan)
-        ccdTemperatures = ccdTemps
+        if !ccdTemps.elementsEqual(ccdTemperatures) {
+            ccdTemperatures = ccdTemps
+        }
 
         let instSum = instDelta.reduce(0, +)
         instAccumulated += instSum
@@ -1102,7 +1117,6 @@ final class TelemetryModel: ObservableObject {
             lastUptimeCheck = now
         }
         
-        NotificationCenter.default.post(name: .init("TelemetryDataUpdated"), object: nil)
     }
 
     // Format instruction count with suffix like original: K, M, G, T, P, E
@@ -1505,49 +1519,74 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
+    private struct ProcessCPUTypeTracker {
+        static var lastProcessCPUTimes: [Int32: (cpuTime: UInt64, time: Date)] = [:]
+        static let lock = NSLock()
+    }
+
     nonisolated private func fetchTopProcesses() -> [ProcessInfoRow] {
-        let task = Process()
-        task.launchPath = "/bin/ps"
-        task.arguments = ["-A", "-r", "-o", "pid,%cpu,comm", "-c"]
+        let count = proc_listallpids(nil, 0)
+        guard count > 0 else { return [] }
         
-        let pipe = Pipe()
-        task.standardOutput = pipe
+        var pids = Array<Int32>(repeating: 0, count: Int(count))
+        let bytesWritten = proc_listallpids(&pids, Int32(count * 4))
+        guard bytesWritten > 0 else { return [] }
         
-        do {
-            try task.run()
-            task.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                var list: [ProcessInfoRow] = []
-                let lines = output.components(separatedBy: .newlines)
-                for line in lines.dropFirst() {
-                    let parts = line.split(separator: " ", omittingEmptySubsequences: true)
-                    if parts.count >= 3 {
-                        if let pid = Int32(parts[0]) {
-                            let cpuStr = parts[1].replacingOccurrences(of: ",", with: ".")
-                            if let cpu = Float(cpuStr) {
-                                let name = parts[2...].joined(separator: " ")
-                                let cleanName = name.replacingOccurrences(of: ".app/Contents/MacOS/", with: "")
-                                                    .components(separatedBy: "/").last ?? name
-                                list.append(ProcessInfoRow(id: pid, name: cleanName, cpuUsage: cpu))
-                                if list.count >= 5 {
-                                    break
-                                }
-                            }
-                        }
-                    }
+        let actualCount = Int(bytesWritten) / MemoryLayout<Int32>.size
+        let now = Date()
+        
+        var currentSnapshots: [Int32: (cpuTime: UInt64, time: Date)] = [:]
+        var calculatedCPUUsages: [(pid: Int32, name: String, cpuUsage: Float)] = []
+        
+        var taskInfo = proc_taskinfo()
+        let infoSize = Int32(MemoryLayout<proc_taskinfo>.size)
+        
+        ProcessCPUTypeTracker.lock.lock()
+        let previousCPUTimes = ProcessCPUTypeTracker.lastProcessCPUTimes
+        ProcessCPUTypeTracker.lock.unlock()
+        
+        for i in 0..<actualCount {
+            let pid = pids[i]
+            guard pid > 0 else { continue }
+            
+            let res = proc_pidinfo(pid, 4, 0, &taskInfo, infoSize) // 4 = PROC_PIDTASKINFO
+            guard res == infoSize else { continue }
+            
+            let currentCPUTime = taskInfo.pti_total_user + taskInfo.pti_total_system
+            currentSnapshots[pid] = (cpuTime: currentCPUTime, time: now)
+            
+            if let prev = previousCPUTimes[pid] {
+                let deltaCPU = Double(currentCPUTime - prev.cpuTime) / 1_000_000_000.0 // ns to seconds
+                let deltaSecs = now.timeIntervalSince(prev.time)
+                if deltaSecs > 0.1 {
+                    let cpuUsage = Float((deltaCPU / deltaSecs) * 100.0)
+                    
+                    var nameBuffer = Array<CChar>(repeating: 0, count: 256)
+                    let nameLen = proc_name(pid, &nameBuffer, 256)
+                    let name = nameLen > 0 ? String(cString: nameBuffer) : "Unknown"
+                    
+                    calculatedCPUUsages.append((pid: pid, name: name, cpuUsage: cpuUsage))
                 }
-                return list
             }
-        } catch {}
-        return []
+        }
+        
+        ProcessCPUTypeTracker.lock.lock()
+        ProcessCPUTypeTracker.lastProcessCPUTimes = currentSnapshots
+        ProcessCPUTypeTracker.lock.unlock()
+        
+        let sortedProcesses = calculatedCPUUsages
+            .filter { $0.cpuUsage >= 0.1 }
+            .sorted { $0.cpuUsage > $1.cpuUsage }
+            
+        return sortedProcesses.prefix(5).map {
+            ProcessInfoRow(id: $0.pid, name: $0.name, cpuUsage: $0.cpuUsage)
+        }
     }
 
     // MARK: - Diagnostics, CSV Logging and Alerts Helpers
 
     private var csvDelimiter: String {
-        let decimal = Locale.current.decimalSeparator ?? "."
-        return decimal == "," ? ";" : ","
+        return cachedCsvDelimiter
     }
 
     private func startLoggingSession() {
@@ -1559,6 +1598,31 @@ final class TelemetryModel: ObservableObject {
         logger.stop()
     }
 
+    private struct CSVColumnConfig {
+        let showCpuTemp: Bool
+        let showGpuTemp: Bool
+        let showCpuPwr: Bool
+        let showGpuPwr: Bool
+        let showRam: Bool
+        let showDisk: Bool
+        let showNet: Bool
+        let showFan: Bool
+    }
+    
+    private func loadCSVColumnConfig() -> CSVColumnConfig {
+        let ud = UserDefaults.standard
+        return CSVColumnConfig(
+            showCpuTemp: ud.object(forKey: "tele_show_cputemp") as? Bool ?? true,
+            showGpuTemp: ud.object(forKey: "tele_show_gputemp") as? Bool ?? true,
+            showCpuPwr:  ud.object(forKey: "tele_show_cpupwr") as? Bool ?? true,
+            showGpuPwr:  ud.object(forKey: "tele_show_gpupwr") as? Bool ?? true,
+            showRam:     ud.object(forKey: "tele_show_ram") as? Bool ?? true,
+            showDisk:    ud.object(forKey: "tele_show_disk") as? Bool ?? true,
+            showNet:     ud.object(forKey: "tele_show_net") as? Bool ?? true,
+            showFan:     ud.object(forKey: "tele_show_fan") as? Bool ?? true
+        )
+    }
+
     private func getActiveCSVHeaders(includeTimestamp: Bool) -> [String] {
         var headers: [String] = []
         if includeTimestamp { headers.append("Timestamp") }
@@ -1566,14 +1630,15 @@ final class TelemetryModel: ObservableObject {
         headers.append("CPU Freq Avg (GHz)")
         headers.append("CPU Load (%)")
         
-        let showCpuTemp = UserDefaults.standard.object(forKey: "tele_show_cputemp") as? Bool ?? true
-        let showGpuTemp = UserDefaults.standard.object(forKey: "tele_show_gputemp") as? Bool ?? true
-        let showCpuPwr  = UserDefaults.standard.object(forKey: "tele_show_cpupwr") as? Bool ?? true
-        let showGpuPwr  = UserDefaults.standard.object(forKey: "tele_show_gpupwr") as? Bool ?? true
-        let showRam     = UserDefaults.standard.object(forKey: "tele_show_ram") as? Bool ?? true
-        let showDisk    = UserDefaults.standard.object(forKey: "tele_show_disk") as? Bool ?? true
-        let showNet     = UserDefaults.standard.object(forKey: "tele_show_net") as? Bool ?? true
-        let showFan     = UserDefaults.standard.object(forKey: "tele_show_fan") as? Bool ?? true
+        let config = loadCSVColumnConfig()
+        let showCpuTemp = config.showCpuTemp
+        let showGpuTemp = config.showGpuTemp
+        let showCpuPwr  = config.showCpuPwr
+        let showGpuPwr  = config.showGpuPwr
+        let showRam     = config.showRam
+        let showDisk    = config.showDisk
+        let showNet     = config.showNet
+        let showFan     = config.showFan
         
         if showCpuTemp { headers.append("CPU Temp (°C)") }
         if showCpuPwr  { headers.append("CPU Power (W)") }
@@ -1597,14 +1662,15 @@ final class TelemetryModel: ObservableObject {
         let locale = Locale.current
         let dateString = TelemetryModel.isoFormatter.string(from: Date())
         
-        let showCpuTemp = UserDefaults.standard.object(forKey: "tele_show_cputemp") as? Bool ?? true
-        let showGpuTemp = UserDefaults.standard.object(forKey: "tele_show_gputemp") as? Bool ?? true
-        let showCpuPwr  = UserDefaults.standard.object(forKey: "tele_show_cpupwr") as? Bool ?? true
-        let showGpuPwr  = UserDefaults.standard.object(forKey: "tele_show_gpupwr") as? Bool ?? true
-        let showRam     = UserDefaults.standard.object(forKey: "tele_show_ram") as? Bool ?? true
-        let showDisk    = UserDefaults.standard.object(forKey: "tele_show_disk") as? Bool ?? true
-        let showNet     = UserDefaults.standard.object(forKey: "tele_show_net") as? Bool ?? true
-        let showFan     = UserDefaults.standard.object(forKey: "tele_show_fan") as? Bool ?? true
+        let config = loadCSVColumnConfig()
+        let showCpuTemp = config.showCpuTemp
+        let showGpuTemp = config.showGpuTemp
+        let showCpuPwr  = config.showCpuPwr
+        let showGpuPwr  = config.showGpuPwr
+        let showRam     = config.showRam
+        let showDisk    = config.showDisk
+        let showNet     = config.showNet
+        let showFan     = config.showFan
 
         var cols: [String] = []
         cols.append(dateString)
@@ -1635,14 +1701,15 @@ final class TelemetryModel: ObservableObject {
         let headers = getActiveCSVHeaders(includeTimestamp: false)
         var csvText = headers.joined(separator: delim) + "\n"
         
-        let showCpuTemp = UserDefaults.standard.object(forKey: "tele_show_cputemp") as? Bool ?? true
-        let showGpuTemp = UserDefaults.standard.object(forKey: "tele_show_gputemp") as? Bool ?? true
-        let showCpuPwr  = UserDefaults.standard.object(forKey: "tele_show_cpupwr") as? Bool ?? true
-        let showGpuPwr  = UserDefaults.standard.object(forKey: "tele_show_gpupwr") as? Bool ?? true
-        let showRam     = UserDefaults.standard.object(forKey: "tele_show_ram") as? Bool ?? true
-        let showDisk    = UserDefaults.standard.object(forKey: "tele_show_disk") as? Bool ?? true
-        let showNet     = UserDefaults.standard.object(forKey: "tele_show_net") as? Bool ?? true
-        let showFan     = UserDefaults.standard.object(forKey: "tele_show_fan") as? Bool ?? true
+        let config = loadCSVColumnConfig()
+        let showCpuTemp = config.showCpuTemp
+        let showGpuTemp = config.showGpuTemp
+        let showCpuPwr  = config.showCpuPwr
+        let showGpuPwr  = config.showGpuPwr
+        let showRam     = config.showRam
+        let showDisk    = config.showDisk
+        let showNet     = config.showNet
+        let showFan     = config.showFan
 
         for point in history {
             var cols: [String] = []

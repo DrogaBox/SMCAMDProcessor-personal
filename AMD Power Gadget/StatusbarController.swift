@@ -9,6 +9,7 @@
 import Cocoa
 import SwiftUI
 import Charts
+import Combine
 
 // MARK: - Refresh Rate Config
 class RefreshRateConfig: ObservableObject {
@@ -424,6 +425,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     var updateTimer: Timer?
     var menu: NSMenu?
     private var popover: NSPopover!
+    private var telemetrySubscription: AnyCancellable?
 
     private var smcReady = false
     private var numFans = 0
@@ -489,7 +491,14 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         // Listen for config changes and telemetry updates
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: .init("CloseMenuBarPopover"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(update), name: .init("TelemetryDataUpdated"), object: nil)
+        
+        telemetrySubscription = TelemetryModel.shared.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.update()
+                }
+            }
 
         TelemetryModel.shared.setStatusbarActive(true)
     }
