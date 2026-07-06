@@ -1849,8 +1849,9 @@ struct ProfilesContentView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 8)
                     } else {
+                        let activeCoreCount = model.numPhysicalCores > 0 ? model.numPhysicalCores : (model.cores.isEmpty ? 16 : model.cores.count / 2)
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 12) {
-                            ForEach(0..<model.curveOptimizerOffsets.count, id: \.self) { idx in
+                            ForEach(0..<min(model.curveOptimizerOffsets.count, activeCoreCount), id: \.self) { idx in
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
                                         Text("Core \(idx)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
