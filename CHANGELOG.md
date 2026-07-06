@@ -1,5 +1,12 @@
 # Change Summary & Release Changelog
 
+## v3.15.0  Bidirectional Curve Optimizer, Standalone Telemetry Daemon & Startup Disclaimer
+* **Bidirectional Curve Optimizer (`[-30, +30]`)**: Extended the Curve Optimizer boundary checks in the kernel driver and the GUI sliders to support the full official AMD range of `[-30, +30]` counts. Centered the UI slider layouts at `0` (default native BIOS behavior), highlighting undervolts in Purple and overvolts in Orange. Locked the entire control card behind a persistent safety lock switch.
+* **HUD Live Telemetry Grid**: Positioned real-time core frequency (MHz), load (%), and CCD temperature (mapping cores to `CCD0` / `CCD1`) inside each core grid cell. Added checkbox toggles on the dashboard header allowing users to show/hide Freq, Temp, and Load HUD details dynamically.
+* **Standalone Background Daemon (`amdtelemetryd`)**: Designed and installed a Swift CLI telemetry daemon as a persistent LaunchAgent (`wtf.spinach.amdtelemetryd.plist`). The daemon collects metrics and appends them to the JSONL history file when the GUI is closed, and automatically bypasses logging when it detects the main GUI app running to prevent database write conflicts.
+* **First-Launch Disclaimer Gatekeeper**: Integrated a Liquid Glass modal safety agreement overlay on the very first launch, blocking main window access until the user checks an acceptance checkmark and presses "Accept & Continue" (with a "Quit" alternative to exit).
+* **Kernel & App Stability Hardening**: Fixed division-by-zero crashes on Zen 3 initialization and average load calculations, repaired a type mismatch in cpu_IPI interrupts, null-checked symtable resolves and UserClient providers, added bounds protection to inline helpers, eliminated swift force-unwraps on CPU counts and empty paths, and protected against `statusItem.button` AppKit unwrapping failures.
+
 ## v3.14.6  Next-Gen Custom Fan Curves & Raw Register Diagnostics
 * **Advanced Custom Fan Curve Engine**: Implemented next-generation closed-loop fan curves evaluated directly in the kernel space (kext) using a 256-step LUT, Exponential Moving Average (EMA) smoothing, custom hysteresis, and ramp rate limiting. Includes an 85°C thermal safety guard bypass.
 * **Interactive 2D Graph Editor**: Built a Tahoe-themed SwiftUI coordinate-mapped canvas letting users drag points, double-click to add/delete points, and map individual fans to curves.
