@@ -1004,6 +1004,44 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
+        // Get Curve Optimizer Offsets (Phase 13)
+        case 110: {
+            if(!fProvider)
+                return kIOReturnNoDevice;
+            
+            uint32_t requiredSize = CPUInfo::MaxCpus;
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput || maxLen < requiredSize) {
+                return kIOReturnBadArgument;
+            }
+            
+            memcpy(arguments->structureOutput, fProvider->curveOptimizerOffsets, requiredSize);
+            break;
+        }
+        
+        // Set Curve Optimizer Offset (Phase 13)
+        case 111: {
+            if(!fProvider)
+                return kIOReturnNoDevice;
+            
+            if(!hasPrivilege())
+                return kIOReturnNotPrivileged;
+                
+            if(arguments->scalarInputCount != 2)
+                return kIOReturnBadArgument;
+                
+            uint8_t core = (uint8_t)arguments->scalarInput[0];
+            int8_t offset = (int8_t)arguments->scalarInput[1];
+            
+            int rc = fProvider->setCurveOptimizer(core, offset);
+            if (rc < 0) {
+                return kIOReturnError;
+            }
+            break;
+        }
+        
         default: {
             IOLog("AMDRyzenCPUPMUserClient::externalMethod: invalid method.\n");
             break;
