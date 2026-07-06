@@ -277,6 +277,7 @@ final class TelemetryModel: ObservableObject {
 
     @Published var selectedSpeedStep: Int = 0
     @Published var speedStepClocks: [Float] = []
+    @Published var curveOptimizerOffsets: [Int8] = []
 
     @Published var cpbSupported: Bool = false
     @Published var cpbEnabled: Bool = false
@@ -685,6 +686,8 @@ final class TelemetryModel: ObservableObject {
             let displayName = customFanNames[idx] ?? (defaultName.isEmpty ? "Fan \(idx + 1)" : defaultName)
             return FanSnapshot(id: idx, name: displayName, rpm: 0, throttle: 0, isOverrided: false)
         }
+        
+        fetchCurveOptimizerOffsets()
     }
 
     func restartTimer() {
@@ -1733,6 +1736,23 @@ final class TelemetryModel: ObservableObject {
         }
         
         try? csvText.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    func fetchCurveOptimizerOffsets() {
+        let pm = ProcessorModel.shared
+        let offsets = pm.getCurveOptimizerOffsets()
+        DispatchQueue.main.async {
+            self.curveOptimizerOffsets = offsets
+        }
+    }
+    
+    func setCurveOptimizerOffset(core: Int, offset: Int) -> Bool {
+        let pm = ProcessorModel.shared
+        let success = pm.setCurveOptimizerOffset(core: UInt8(core), offset: Int8(offset))
+        if success {
+            fetchCurveOptimizerOffsets()
+        }
+        return success
     }
 
     private func requestNotificationPermission() {
