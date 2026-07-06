@@ -209,3 +209,31 @@
 "Orange Accent" = "Orange Accent";
 "Green Accent" = "Green Accent";
 "Purple Accent" = "Purple Accent";
+
+/* App Themes */
+"Custom" = "Personalizado";
+
+/* Charts Section */
+"History & Trends" = "Histórico y Tendencias";
+"Visible charts:" = "Gráficas visibles:";
+"CPU Load" = "Carga CPU";
+"Temperatures" = "Temperaturas";
+"RAM Usage" = "Uso RAM";
+"GPU Load" = "Carga GPU";
+"CPU Power" = "Potencia CPU";
+"CPU Frequency" = "Frecuencia CPU";
+
+/* Update Alert strings */
+"Connection Error: %@" = "Error de conexión: %@";
+"Could not fetch release info." = "No se pudo obtener información del release.";
+"No release notes available." = "Sin notas de versión disponibles.";
+"New version %@ available!" = "¡Nueva versión %@ disponible!";
+"New Version Available: %@" = "Nueva Versión Disponible: %@";
+"Current version: v%@\nNew version: %@\n\nRelease Notes:\n%@" = "Versión actual: v%@\nNueva versión: %@\n\nNotas del Release:\n%@";
+"Download on GitHub" = "Descargar en GitHub";
+"Later" = "Más Tarde";
+"You have the latest version installed (v%@)." = "Tenés la última versión instalada (v%@).";
+"System Up to Date" = "Sistema Actualizado";
+"You are running the most recent version of AMD Power Gadget (v%@)." = "Estás ejecutando la versión más reciente de AMD Power Gadget (v%@).";
+"OK" = "Aceptar";
+

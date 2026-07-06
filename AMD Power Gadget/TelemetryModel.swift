@@ -1778,18 +1778,24 @@ final class TelemetryModel: ObservableObject {
                 self.isCheckingForUpdates = false
                 
                 if let error = error {
-                    if manual { self.updateCheckMessage = "Error de conexión: \(error.localizedDescription)" }
+                    if manual {
+                        let format = NSLocalizedString("Connection Error: %@", comment: "")
+                        self.updateCheckMessage = String(format: format, error.localizedDescription)
+                    }
                     return
                 }
                 
                 guard let data = data,
                       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let tagName = json["tag_name"] as? String else {
-                    if manual { self.updateCheckMessage = "No se pudo obtener información del release." }
+                    if manual {
+                        self.updateCheckMessage = NSLocalizedString("Could not fetch release info.", comment: "")
+                    }
                     return
                 }
                 
-                let bodyText = (json["body"] as? String) ?? "Sin notas de versión disponibles."
+                let fallbackBody = NSLocalizedString("No release notes available.", comment: "")
+                let bodyText = (json["body"] as? String) ?? fallbackBody
                 let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
                 let cleanTag = tagName.replacingOccurrences(of: "v", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
                 let cleanCurrent = currentVersion.replacingOccurrences(of: "v", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1799,15 +1805,18 @@ final class TelemetryModel: ObservableObject {
                 
                 if cleanTag.compare(cleanCurrent, options: .numeric) == .orderedDescending {
                     self.updateAvailable = true
-                    self.updateCheckMessage = "¡Nueva versión \(tagName) disponible!"
+                    let format = NSLocalizedString("New version %@ available!", comment: "")
+                    self.updateCheckMessage = String(format: format, tagName)
                     if manual {
                         let alert = NSAlert()
-                        alert.messageText = "Nueva Versión Disponible: \(tagName)"
+                        let titleFormat = NSLocalizedString("New Version Available: %@", comment: "")
+                        alert.messageText = String(format: titleFormat, tagName)
                         let previewBody = bodyText.count > 300 ? String(bodyText.prefix(300)) + "..." : bodyText
-                        alert.informativeText = "Versión actual: v\(currentVersion)\nNueva versión: \(tagName)\n\nNotas del Release:\n\(previewBody)"
+                        let infoFormat = NSLocalizedString("Current version: v%@\nNew version: %@\n\nRelease Notes:\n%@", comment: "")
+                        alert.informativeText = String(format: infoFormat, currentVersion, tagName, previewBody)
                         alert.alertStyle = .informational
-                        alert.addButton(withTitle: "Descargar en GitHub")
-                        alert.addButton(withTitle: "Más Tarde")
+                        alert.addButton(withTitle: NSLocalizedString("Download on GitHub", comment: ""))
+                        alert.addButton(withTitle: NSLocalizedString("Later", comment: ""))
                         if alert.runModal() == .alertFirstButtonReturn {
                             if let openUrl = URL(string: self.releaseURLString) {
                                 NSWorkspace.shared.open(openUrl)
@@ -1817,12 +1826,14 @@ final class TelemetryModel: ObservableObject {
                 } else {
                     self.updateAvailable = false
                     if manual {
-                        self.updateCheckMessage = "Tenés la última versión instalada (v\(currentVersion))."
+                        let msgFormat = NSLocalizedString("You have the latest version installed (v%@).", comment: "")
+                        self.updateCheckMessage = String(format: msgFormat, currentVersion)
                         let alert = NSAlert()
-                        alert.messageText = "Sistema Actualizado"
-                        alert.informativeText = "Estás ejecutando la versión más reciente de AMD Power Gadget (v\(currentVersion))."
+                        alert.messageText = NSLocalizedString("System Up to Date", comment: "")
+                        let infoFormat = NSLocalizedString("You are running the most recent version of AMD Power Gadget (v%@).", comment: "")
+                        alert.informativeText = String(format: infoFormat, currentVersion)
                         alert.alertStyle = .informational
-                        alert.addButton(withTitle: "Aceptar")
+                        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
                         alert.runModal()
                     }
                 }
