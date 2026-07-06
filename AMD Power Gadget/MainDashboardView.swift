@@ -190,33 +190,126 @@ enum DashboardTab: String, CaseIterable, Identifiable {
 
 struct MainDashboardView: View {
     @ObservedObject var model: TelemetryModel
+    @AppStorage("disclaimer_accepted") private var disclaimerAccepted = false
+    @State private var tempCheckboxChecked = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            SidebarView(selectedTab: $model.selectedTab, model: model)
-                .frame(width: 188)
-            Divider().background(Color.tahoeCardBorder)
-            ZStack {
+        ZStack {
+            HStack(spacing: 0) {
+                SidebarView(selectedTab: $model.selectedTab, model: model)
+                    .frame(width: 188)
+                Divider().background(Color.tahoeCardBorder)
+                ZStack {
+                    VisualEffectBackground(
+                        material: .sidebar,
+                        blendingMode: .behindWindow,
+                        state: .active,
+                        cornerRadius: 0
+                    )
+                    .ignoresSafeArea()
+                    contentForTab
+                        .transition(.opacity)
+                }
+            }
+            .background(
                 VisualEffectBackground(
                     material: .sidebar,
                     blendingMode: .behindWindow,
                     state: .active,
                     cornerRadius: 0
                 )
-                .ignoresSafeArea()
-                contentForTab
-                    .transition(.opacity)
+            )
+            .preferredColorScheme(.dark)
+            
+            // Safety Disclaimer Gatekeeper Modal Sheet Overlay
+            if !disclaimerAccepted {
+                ZStack {
+                    // Dark blurred background locking the UI
+                    VisualEffectBackground(
+                        material: .hudWindow,
+                        blendingMode: .behindWindow,
+                        state: .active,
+                        cornerRadius: 0
+                    )
+                    .ignoresSafeArea()
+                    
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 20) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.shield.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(.tahoeAccentOrange)
+                            
+                            Text("SAFETY DISCLAIMER & LIABILITY AGREEMENT")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.tahoeText)
+                        }
+                        
+                        ScrollView {
+                            Text("This software interacts directly with low-level CPU hardware registers, Model-Specific Registers (MSRs), and the System Management Unit (SMU) to control CPU voltages, frequencies, and power limits.\n\nIncorrect settings, unstable undervolting, or wrong configurations can cause system instability, data loss, kernel panics, or permanent hardware damage.\n\nBy continuing, you agree that absolute responsibility for any system instability, hardware damage, or alien invasion lies entirely with the user. The authors and contributors assume no liability whatsoever for any damage, loss, or side effects to your hardware, software, or personal property. Use at your own risk.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.tahoeSubtext)
+                                .lineSpacing(4)
+                                .padding(12)
+                        }
+                        .frame(height: 160)
+                        .background(Color.white.opacity(0.03))
+                        .cornerRadius(8)
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle(isOn: $tempCheckboxChecked) {
+                                Text("I accept that absolute responsibility lies entirely with the user.")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(.tahoeText)
+                            }
+                            .toggleStyle(.checkbox)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                NSApplication.shared.terminate(nil)
+                            }) {
+                                Text("Quit")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.tahoeText)
+                                    .frame(width: 80, height: 26)
+                                    .background(Color.white.opacity(0.1))
+                                    .cornerRadius(6)
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                withAnimation {
+                                    disclaimerAccepted = true
+                                }
+                            }) {
+                                Text("Accept & Continue")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(tempCheckboxChecked ? .black : .tahoeSubtext)
+                                    .frame(width: 140, height: 26)
+                                    .background(tempCheckboxChecked ? Color.tahoeAccentOrange : Color.white.opacity(0.05))
+                                    .cornerRadius(6)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!tempCheckboxChecked)
+                        }
+                    }
+                    .padding(24)
+                    .frame(width: 460)
+                    .background(Color.tahoeCard)
+                    .cornerRadius(16)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.tahoeCardBorder, lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.5), radius: 20)
+                }
+                .transition(.opacity)
             }
         }
-        .background(
-            VisualEffectBackground(
-                material: .sidebar,
-                blendingMode: .behindWindow,
-                state: .active,
-                cornerRadius: 0
-            )
-        )
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
@@ -1987,6 +2080,13 @@ struct ProfilesContentView: View {
                         }
                     }
                 }
+                
+                Text("DISCLAIMER: This software interacts directly with low-level hardware control registers. By using it, you agree that absolute responsibility for any system instability, hardware damage, or alien invasion lies entirely with the user.")
+                    .font(.system(size: 9))
+                    .foregroundColor(.tahoeSubtext)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 12)
             }
             .padding(18)
         }
@@ -2240,6 +2340,13 @@ struct AdvancedContentView: View {
                         }
                     }
                 }
+                
+                Text("DISCLAIMER: This software interacts directly with low-level hardware control registers. By using it, you agree that absolute responsibility for any system instability, hardware damage, or alien invasion lies entirely with the user.")
+                    .font(.system(size: 9))
+                    .foregroundColor(.tahoeSubtext)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 12)
             }
             .padding(18)
         }

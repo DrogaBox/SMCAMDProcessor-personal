@@ -96,3 +96,13 @@ Special recognition to the AMD-OSX community for research, development, and test
 - **AlGrey**: Developer of the core AMD Vanilla kernel patches.
 - **Edhawk**, **CorpGhost**, **Royal**: Forum moderators, ACPI experts, and community support leaders.
 - **AMD-OSX Discord Community Testers**: Special thanks to fabiosun, Kackvogel 4K, Can, and MacOSx11 for extensive hardware testing across Zen 4 and Zen 5 silicon.
+
+---
+
+## Safety Disclaimer & Liability
+
+> [!CAUTION]
+> **WARNING & DISCLAIMER OF LIABILITY:**
+> This software interacts directly with low-level CPU hardware registers, Model-Specific Registers (MSRs), and the System Management Unit (SMU) to control CPU voltages, frequencies, and power limits. Incorrect settings can cause system instability, data loss, kernel panics, or permanent hardware damage.
+>
+> By using this software, you agree that **absolute responsibility rests entirely with the user**. The authors and contributors assume no liability whatsoever for any damage, loss, or side effects to your hardware, software, or personal property—regardless of whether it results in a crashed computer, data corruption, the end of the world, or an alien invasion. Use at your own risk.
