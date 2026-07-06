@@ -792,4 +792,37 @@ class ProcessorModel {
         }
         return scalerOut
     }
+
+    func getCurveOptimizerOffsets() -> [Int8] {
+        var output = [Int8](repeating: 0, count: 64) // MaxCpus is typically 64
+        var outputSize = output.count
+        
+        let res = IOConnectCallMethod(connect, 110, nil, 0, nil, 0,
+                                      nil, nil,
+                                      &output, &outputSize)
+        
+        if res == KERN_SUCCESS {
+            return Array(output.prefix(Int(outputSize)))
+        } else {
+            print("getCurveOptimizerOffsets failed: \(String(cString: mach_error_string(res)))")
+            return []
+        }
+    }
+    
+    func setCurveOptimizerOffset(core: UInt8, offset: Int8) -> Bool {
+        // cast offset to raw bit representation for transfer over 64-bit parameter
+        let rawOffset = UInt64(bitPattern: Int64(offset))
+        var input: [UInt64] = [UInt64(core), rawOffset]
+        
+        let res = IOConnectCallMethod(connect, 111, &input, 2, nil, 0,
+                                      nil, nil,
+                                      nil, nil)
+        
+        if res == KERN_SUCCESS {
+            return true
+        } else {
+            print("setCurveOptimizerOffset failed: \(String(cString: mach_error_string(res)))")
+            return false
+        }
+    }
 }
