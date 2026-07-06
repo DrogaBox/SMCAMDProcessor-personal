@@ -532,25 +532,33 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let gpuPwrVal = Float(tm.gpuPowerW)
 
         if temperature > peakTemp { peakTemp = temperature }
-        if lowestTemp == Float.greatestFiniteMagnitude || (temperature > 0 && temperature < lowestTemp) {
-            lowestTemp = temperature
+        if temperature > 0 {
+            if lowestTemp == Float.greatestFiniteMagnitude || temperature < lowestTemp {
+                lowestTemp = temperature
+            }
         }
         
         if power > peakPower { peakPower = power }
-        if lowestPower == Float.greatestFiniteMagnitude || (power > 0 && power < lowestPower) {
-            lowestPower = power
+        if power > 0 {
+            if lowestPower == Float.greatestFiniteMagnitude || power < lowestPower {
+                lowestPower = power
+            }
         }
         
         if maxFre > peakFreq { peakFreq = maxFre }
-        if lowestFreq == Float.greatestFiniteMagnitude || (maxFre > 0 && maxFre < lowestFreq) {
-            lowestFreq = maxFre
+        if maxFre > 0 {
+            if lowestFreq == Float.greatestFiniteMagnitude || maxFre < lowestFreq {
+                lowestFreq = maxFre
+            }
         }
 
         let fanIdx = max(0, MenuBarConfig.shared.fanIndex)
         let currentFan: UInt64 = (fanIdx < tm.fans.count) ? tm.fans[fanIdx].rpm : 0
         if currentFan > peakFan { peakFan = currentFan }
-        if lowestFan == UInt64.max || currentFan < lowestFan {
-            lowestFan = currentFan
+        if currentFan > 0 {
+            if lowestFan == UInt64.max || currentFan < lowestFan {
+                lowestFan = currentFan
+            }
         }
 
         // Diff-based Rendering guard (Skip redraw if change is insignificant)
