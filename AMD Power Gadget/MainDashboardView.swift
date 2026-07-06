@@ -1837,6 +1837,46 @@ struct ProfilesContentView: View {
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "Max Frequency", value: String(format: "%.3f GHz", model.cpuFreqMaxGHz))
                 }
+                
+                SectionTitle("AMD Curve Optimizer (CO)")
+                Text("Inject negative voltage offsets per core to lower temperatures and improve clock scaling. Limit: 0 to -15 counts.")
+                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                
+                TahoeCard(accent: Color.tahoeAccentPurple.opacity(0.15)) {
+                    if model.curveOptimizerOffsets.isEmpty {
+                        Text("Curve Optimizer is only active when the AMDRyzenCPUPowerManagement kext supports Zen 3 SMU mailbox interface.")
+                            .font(.system(size: 11, weight: .medium)).foregroundColor(.tahoeSubtext)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 8)
+                    } else {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 12) {
+                            ForEach(0..<model.curveOptimizerOffsets.count, id: \.self) { idx in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text("Core \(idx)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
+                                        Spacer()
+                                        let currentOffset = idx < model.curveOptimizerOffsets.count ? model.curveOptimizerOffsets[idx] : 0
+                                        Text("\(currentOffset)")
+                                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                            .foregroundColor(currentOffset < 0 ? .tahoeAccentPurple : .tahoeSubtext)
+                                    }
+                                    
+                                    let currentOffset = idx < model.curveOptimizerOffsets.count ? Double(model.curveOptimizerOffsets[idx]) : 0.0
+                                    Slider(value: Binding(get: {
+                                        return currentOffset
+                                    }, set: { (val: Double) in
+                                        let offsetInt = Int(round(val))
+                                        let _ = model.setCurveOptimizerOffset(core: idx, offset: offsetInt)
+                                    }), in: -15...0, step: 1)
+                                    .accentColor(.tahoeAccentPurple)
+                                }
+                                .padding(8)
+                                .background(Color.white.opacity(0.02))
+                                .cornerRadius(6)
+                            }
+                        }
+                    }
+                }
             }
             .padding(18)
         }
