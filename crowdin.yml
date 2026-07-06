@@ -1,0 +1,12 @@
+# crowdin.yml configuration file
+
+project_id_env: CROWDIN_PROJECT_ID
+api_token_env: CROWDIN_PERSONAL_TOKEN
+
+# Base path of the repository
+base_path: .
+
+# Target files mapping source keys to translated equivalents
+files:
+  - source: /AMD Power Gadget/en.lproj/Localizable.strings
+    translation: /AMD Power Gadget/%two_letters_code%.lproj/Localizable.strings
