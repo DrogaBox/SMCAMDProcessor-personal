@@ -1,46 +1,211 @@
 /* 
-  Localizable.strings (Italian)
+  Localizable.strings (English)
   AMD Power Gadget
 */
 
+/* NOTE: Some keys use Spanish text for historical reasons. */
+/* These are used as lookup identifiers and work correctly. */
+/* A future refactor should standardize all keys to English. */
+
 "Dashboard" = "Dashboard";
-"Telemetry" = "Telemetria";
-"Fan Control" = "Controllo Ventole";
-"Profiles" = "Profili";
-"Advanced" = "Avanzate";
-"Menu Bar" = "Barra dei Menu";
-"System Info" = "Info di Sistema";
-"Desktop Widgets" = "Widget Desktop";
-"Popover Menu" = "Menu Popover";
+"Telemetry" = "Telemetry";
+"Fan Control" = "Fan Control";
+"Profiles" = "Profiles";
+"Advanced" = "Advanced";
+"Menu Bar" = "Menu Bar";
+"System Info" = "System Info";
+"Desktop Widgets" = "Desktop Widgets";
 
-"Temas & Apariencia" = "Temi & Aspetto";
-"Análisis" = "Analisi";
-
-"Exit" = "Esci";
 "AMD Power" = "AMD Power";
 "Gadget" = "Gadget";
 
 "CPU" = "CPU";
 "GPU" = "GPU";
 "Freq" = "Freq";
-"Average" = "Media";
-"Avg: %@" = "Media: %@";
+"Average" = "Average";
+"Avg: %@" = "Avg: %@";
+"Collecting data…" = "Collecting data…";
+
+"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
+"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
+"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
+"Update Interval" = "Update Interval";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+
+"Opciones en Menú Bar" = "Menu Bar Options";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
+"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
+"Límite de Temp de Alerta" = "Alert Temp Limit";
+"Color de Alerta de Temp" = "Alert Temp Color";
+"Color de Flechas" = "Arrows Color";
+"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
+"Show GPU VRAM" = "Show GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG in Memory column";
+"Show GPU Fan Speed" = "Show GPU Fan Speed";
+"G:XXXX in Fan column" = "G:XXXX in Fan column";
+
+"No fans detected." = "No fans detected.";
+"SMC driver not available" = "SMC driver not available";
+"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
 "RPM" = "RPM";
-"Throttle" = "Regolazione";
-"↩ Reset to Auto" = "↩ Ripristina Auto";
-"Cancel" = "Annulla";
+"Throttle" = "Throttle";
+"↩ Reset to Auto" = "↩ Reset to Auto";
+
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
+"Disabled — work in progress" = "Disabled — work in progress";
+"WIP" = "WIP";
+
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Motherboard info not available";
+
+"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
+"Ancho estimado: %dpt" = "Estimated Width: %dpt";
+"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
+"Small (%dpt)" = "Small (%dpt)";
+"Medium (%dpt)" = "Medium (%dpt)";
+"Large (%dpt)" = "Large (%dpt)";
+
+"Green" = "Green";
+"Blue" = "Blue";
+"Orange" = "Orange";
+"Red" = "Red";
+"Purple" = "Purple";
+"Pink" = "Pink";
+"Teal" = "Teal";
+"Turquoise" = "Turquoise";
+
+"Verde" = "Green";
+"Azul" = "Blue";
+"Naranja" = "Orange";
+"Rojo" = "Red";
+"Morado" = "Purple";
+"Rosa" = "Pink";
+"Turquesa" = "Teal";
+
+"Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
+"Temp Alert Color" = "Temp Alert Color";
+"Temp Alert Limit" = "Temp Alert Limit";
+"Network" = "Network";
+"Network Arrows Color" = "Network Arrows Color";
+"Exit" = "Exit";
+"AMD Power Gadget" = "AMD Power Gadget";
+"AMD Power Tool" = "AMD Power Tool";
+"SMC Fans" = "SMC Fans";
+
+"Fan 1" = "Fan 1";
+"Fan 2" = "Fan 2";
+"Fan 3" = "Fan 3";
+"Fan 4" = "Fan 4";
+"Fan 5" = "Fan 5";
+"Fan 6" = "Fan 6";
+"Fan 7" = "Fan 7";
+"Fan 8" = "Fan 8";
+
+/* Alerts */
+"To enable motherboard display:" = "To enable motherboard display:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
+"Done" = "Done";
+"Invalid Input" = "Invalid Input";
+"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
+"Unable to Set PStateDef" = "Unable to Set PStateDef";
+"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
+"Your changes will not be saved" = "Your changes will not be saved";
+"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
+"Cancel" = "Cancel";
+"Close without saving" = "Close without saving";
+"Invalid File" = "Invalid File";
+"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
 "OK" = "OK";
 
-"Select Visual Theme (Instant Application)" = "Seleziona Tema Visivo (Applicazione Istantanea)";
-"Custom Theme Creator & Exchange (JSON)" = "Creatore & Scambio di Temi Personalizzati (JSON)";
-"Chart Rendering Style" = "Stile di Rendering del Grafico";
-"Custom Theme Editor" = "Editor del Tema Personalizzato";
-"Showing active theme colors. Adjust any color to customize." = "Mostra i colori del tema attivo. Regola qualsiasi colore per personalizzare.";
-"Edit Active Theme" = "Modifica Tema Attivo";
-"Export Theme (JSON)" = "Esporta Tema (JSON)";
-"Import Theme (JSON)" = "Importa Tema (JSON)";
-"Card Background" = "Sfondo Scheda";
-"Cyan Accent" = "Accento Ciano";
-"Orange Accent" = "Accento Arancione";
-"Green Accent" = "Accento Verde";
-"Purple Accent" = "Accento Viola";
+/* Dynamic format strings */
+"Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
+"%.2f °C" = "%.2f °C";
+"%.2f Watt" = "%.2f W";
+
+/* Session Peaks */
+"Session Peaks" = "Session Peaks";
+"Reset Peaks" = "Reset Peaks";
+
+/* GPU Fan Control */
+"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
+"macOS Hardware Limitation" = "macOS Hardware Limitation";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
+"Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
+"Open SPPT Guide" = "Open SPPT Guide";
+"MorePowerTool" = "MorePowerTool";
+
+/* CPPC & EPP */
+"Native CPPC Active Mode (EPP)" = "Native CPPC Active Mode (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Enables autonomous hardware frequency scaling (recommended)";
+"Power Management Mode" = "Power Management Mode";
+"Energy Preference (EPP)" = "Energy Preference (EPP)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Select a hardware autonomous profile. The CPU will scale frequency dynamically.";
+"Performance" = "Performance";
+"Balanced Perf" = "Balanced Perf";
+"Balanced Power" = "Balanced Power";
+"Power Save" = "Power Save";
+"Active Profile Status" = "Active Profile Status";
+"CPU Speed Profiles (Legacy)" = "CPU Speed Profiles (Legacy)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Select a manual P-State override profile. Frequencies will be restricted to the selected step.";
+"Mode" = "Mode";
+"EPP Profile" = "EPP Profile";
+
+/* Desktop Widgets */
+"Show CPU Widget" = "Show CPU Widget";
+"Show GPU Widget" = "Show GPU Widget";
+"Show RAM Widget" = "Show RAM Widget";
+"Show Disk Widget" = "Show Disk Widget";
+"Show Network Widget" = "Show Network Widget";
+"Show Fan Widget" = "Show Fan Widget";
+"Disable All Widgets" = "Disable All Widgets";
+"Sort by Rank" = "Sort by Rank";
+"Edit Widget Layout" = "Edit Widget Layout";
+"Unlock widgets to drag them around the screen" = "Unlock widgets to drag them around the screen";
+"Widget Options" = "Widget Options";
+"Customize the appearance and behavior of your desktop widgets." = "Customize the appearance and behavior of your desktop widgets.";
+"Auto-Align Active Widgets" = "Auto-Align Active Widgets";
+"Automatically stack active widgets at a corner" = "Automatically stack active widgets at a corner";
+"Alignment Corner" = "Alignment Corner";
+"Top Right" = "Top Right";
+"Top Left" = "Top Left";
+"Bottom Right" = "Bottom Right";
+"Bottom Left" = "Bottom Left";
+"Show Clock Widget" = "Show Clock Widget";
+"Clock" = "Clock";
+"Stats Table" = "Stats Table";
+"Classic Glass" = "Classic Glass";
+"Pro Monitor" = "Pro Monitor";
+"Core Matrix" = "Core Matrix";
+
+"United" = "United";
+"Show United Widget" = "Show United Widget";
+"Configure Combined Metrics" = "Configure Combined Metrics";
+"Include CPU" = "Include CPU";
+"Include GPU" = "Include GPU";
+"Include RAM" = "Include RAM";
+"Include Disk" = "Include Disk";
+"Include Network" = "Include Network";
+"Include Fan" = "Include Fan";
+
+"Temas & Apariencia" = "Themes & Appearance";
+"Análisis" = "Analysis";
+
+"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
+"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
+"Chart Rendering Style" = "Chart Rendering Style";
+"Custom Theme Editor" = "Custom Theme Editor";
+"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Edit Active Theme" = "Edit Active Theme";
+"Export Theme (JSON)" = "Export Theme (JSON)";
+"Import Theme (JSON)" = "Import Theme (JSON)";
+"Card Background" = "Card Background";
+"Cyan Accent" = "Cyan Accent";
+"Orange Accent" = "Orange Accent";
+"Green Accent" = "Green Accent";
+"Purple Accent" = "Purple Accent";
