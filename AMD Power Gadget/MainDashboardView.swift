@@ -60,13 +60,16 @@ enum AppTheme: String, CaseIterable, Identifiable {
     case solarized = "Solarized Amber"
     case monochrome = "Monochrome Stealth"
     case nordic = "Nordic Frost"
-    case custom = "Personalizado"
+    case custom = "Custom"
     
     var id: String { rawValue }
 
     static var current: AppTheme {
-        if let raw = UserDefaults.standard.string(forKey: "app_theme_preset"), let theme = AppTheme(rawValue: raw) {
-            return theme
+        if let raw = UserDefaults.standard.string(forKey: "app_theme_preset") {
+            if raw == "Personalizado" { return .custom }
+            if let theme = AppTheme(rawValue: raw) {
+                return theme
+            }
         }
         return .tahoe
     }
@@ -4830,7 +4833,7 @@ struct AnalysisContentView: View {
         VStack(spacing: 16) {
             // Header & Filters
             HStack {
-                SectionTitle("Histórico y Tendencias")
+                SectionTitle("History & Trends")
                 Spacer()
                 Picker("Timeframe", selection: $selectedTimeframe) {
                     Text("1h").tag(1)
@@ -4849,7 +4852,7 @@ struct AnalysisContentView: View {
             // Dynamic Chart Selectors / Toggles
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    Text("Gráficas visibles:")
+                    Text("Visible charts:")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.tahoeSubtext)
                     
@@ -4857,7 +4860,7 @@ struct AnalysisContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: showCpuLoad ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(showCpuLoad ? Color.tahoeAccentCyan : .tahoeSubtext)
-                            Text("Carga CPU")
+                            Text("CPU Load")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(showCpuLoad ? .white : .tahoeSubtext)
                         }
@@ -4873,7 +4876,7 @@ struct AnalysisContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: showThermals ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(showThermals ? Color.tahoeAccentRed : .tahoeSubtext)
-                            Text("Temperaturas")
+                            Text("Temperatures")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(showThermals ? .white : .tahoeSubtext)
                         }
@@ -4889,7 +4892,7 @@ struct AnalysisContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: showRam ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(showRam ? Color.tahoeAccentGreen : .tahoeSubtext)
-                            Text("Uso RAM")
+                            Text("RAM Usage")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(showRam ? .white : .tahoeSubtext)
                         }
@@ -4905,7 +4908,7 @@ struct AnalysisContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: showGpuLoad ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(showGpuLoad ? Color.tahoeAccentPurple : .tahoeSubtext)
-                            Text("Carga GPU")
+                            Text("GPU Load")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(showGpuLoad ? .white : .tahoeSubtext)
                         }
@@ -4921,7 +4924,7 @@ struct AnalysisContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: showCpuWatts ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(showCpuWatts ? Color.tahoeAccentOrange : .tahoeSubtext)
-                            Text("Potencia CPU")
+                            Text("CPU Power")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(showCpuWatts ? .white : .tahoeSubtext)
                         }
@@ -4937,7 +4940,7 @@ struct AnalysisContentView: View {
                         HStack(spacing: 6) {
                             Image(systemName: showCpuFreq ? "checkmark.circle.fill" : "circle")
                                 .foregroundColor(showCpuFreq ? Color.tahoeAccentCyan : .tahoeSubtext)
-                            Text("Frecuencia CPU")
+                            Text("CPU Frequency")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(showCpuFreq ? .white : .tahoeSubtext)
                         }
