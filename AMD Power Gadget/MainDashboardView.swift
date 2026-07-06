@@ -1405,6 +1405,9 @@ struct NetworkLineChartCard: View {
 struct CoreGridCard: View {
     @ObservedObject var model: TelemetryModel
     @AppStorage("sort_cores_by_ranking") private var sortCoresByRanking = false
+    @AppStorage("grid_show_load") private var gridShowLoad = true
+    @AppStorage("grid_show_freq") private var gridShowFreq = true
+    @AppStorage("grid_show_temp") private var gridShowTemp = true
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 8)
 
     private var displayCores: [CoreSnapshot] {
@@ -1431,6 +1434,19 @@ struct CoreGridCard: View {
                 SectionTitle("Current Utilization — \(model.sysInfo.logicalCores) Threads (\(model.sysInfo.physicalCores) Cores)")
                 Spacer()
                 HStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Toggle("Temp", isOn: $gridShowTemp)
+                            .toggleStyle(.checkbox)
+                            .font(.system(size: 9, weight: .semibold))
+                        Toggle("Freq", isOn: $gridShowFreq)
+                            .toggleStyle(.checkbox)
+                            .font(.system(size: 9, weight: .semibold))
+                        Toggle("Load", isOn: $gridShowLoad)
+                            .toggleStyle(.checkbox)
+                            .font(.system(size: 9, weight: .semibold))
+                    }
+                    .padding(.trailing, 8)
+                    
                     Toggle(NSLocalizedString("Sort by Rank", comment: ""), isOn: $sortCoresByRanking)
                         .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue))
                         .font(.system(size: 10, weight: .semibold))
@@ -1461,7 +1477,17 @@ struct CoreGridCard: View {
             .padding(.bottom, 4)
 
             LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(displayCores) { CoreCell(core: $0, showRanking: sortCoresByRanking) }
+                ForEach(displayCores) { core in
+                    CoreCell(
+                        core: core,
+                        ccdTemperatures: model.ccdTemperatures,
+                        physicalCoresCount: model.sysInfo.physicalCores,
+                        showRanking: sortCoresByRanking,
+                        showLoad: gridShowLoad,
+                        showFreq: gridShowFreq,
+                        showTemp: gridShowTemp
+                    )
+                }
             }
         }
     }
@@ -1469,12 +1495,19 @@ struct CoreGridCard: View {
 
 private struct CoreCell: View {
     let core: CoreSnapshot
+    let ccdTemperatures: [Float]
+    let physicalCoresCount: Int
     let showRanking: Bool
+    let showLoad: Bool
+    let showFreq: Bool
+    let showTemp: Bool
+
     private var loadColor: Color {
         if core.loadPct > 80 { return Color(red: 1.0, green: 0.35, blue: 0.3) }
         if core.loadPct > 50 { return Color(red: 1.0, green: 0.75, blue: 0.1) }
         return Color.tahoeAccentGreen
     }
+
     private var labelText: String {
         let base = core.isLogical ? "T\(core.id + 1)" : "C\(core.id + 1)"
         var parts: [String] = []
@@ -1488,6 +1521,7 @@ private struct CoreCell: View {
         }
         return parts.joined(separator: " ")
     }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -1496,21 +1530,48 @@ private struct CoreCell: View {
                     .foregroundColor(core.isLogical ? Color.tahoeSubtext.opacity(0.7) : .tahoeSubtext)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                Spacer()
-                Text(String(format: "%.0f%%", core.loadPct))
-                    .font(.system(size: 10, weight: .bold, design: .rounded)).foregroundColor(loadColor)
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.06)).frame(height: 3)
-                    Capsule().fill(loadColor)
-                        .frame(width: geo.size.width * CGFloat(core.loadPct / 100.0), height: 3)
-                        .shadow(color: loadColor.opacity(0.7), radius: 2)
+                if showLoad {
+                    Spacer()
+                    Text(String(format: "%.0f%%", core.loadPct))
+                        .font(.system(size: 10, weight: .bold, design: .rounded)).foregroundColor(loadColor)
                 }
             }
-            .frame(height: 3)
-            Text(String(format: "%.0f MHz", core.freqMHz))
-                .font(.system(size: 8, design: .monospaced)).foregroundColor(.tahoeSubtext)
+
+            if showLoad {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.06)).frame(height: 3)
+                        Capsule().fill(loadColor)
+                            .frame(width: geo.size.width * CGFloat(core.loadPct / 100.0), height: 3)
+                            .shadow(color: loadColor.opacity(0.7), radius: 2)
+                    }
+                }
+                .frame(height: 3)
+            }
+
+            if showFreq || showTemp {
+                HStack {
+                    if showFreq {
+                        Text(String(format: "%.0f MHz", core.freqMHz))
+                            .font(.system(size: 8, design: .monospaced)).foregroundColor(.tahoeSubtext)
+                    }
+                    
+                    let limitPhys = physicalCoresCount > 0 ? physicalCoresCount : 16
+                    let ccdIdx = (core.id % limitPhys) / 8
+                    
+                    if showFreq && showTemp && ccdTemperatures.count > ccdIdx {
+                        Spacer()
+                    }
+                    
+                    if showTemp {
+                        if ccdTemperatures.count > ccdIdx {
+                            Text(String(format: "%.0f°C", ccdTemperatures[ccdIdx]))
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .foregroundColor(.tahoeAccentRed)
+                        }
+                    }
+                }
+            }
         }
         .padding(6)
         .background(Color.tahoeBackground.opacity(0.6))
