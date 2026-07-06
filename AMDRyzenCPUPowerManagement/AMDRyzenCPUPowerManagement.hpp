@@ -209,6 +209,7 @@ public:
     void setPMPStateLimit(uint32_t);
     
     uint32_t getHPcpus();
+    int setCurveOptimizer(uint8_t core, int8_t offset);
     
     uint32_t totalNumberOfPhysicalCores;
     uint32_t totalNumberOfLogicalCores;
@@ -228,6 +229,9 @@ public:
     uint8_t  ccdCount = 0;
     float    ccdTemperatures[kMAX_CCD_COUNT] {};
     char     cpuArchName[16] {};
+    
+    // Curve Optimizer (Phase 13)
+    int8_t curveOptimizerOffsets[CPUInfo::MaxCpus] {};
     
     //Cache size in KB
     uint32_t cpuCacheL1_perCore;
@@ -348,6 +352,10 @@ private:
     
     bool getPCIService();
     bool wentToSleep;
+    
+    uint32_t smnRead32(uint32_t addr);
+    void smnWrite32(uint32_t addr, uint32_t val);
+    int smuSendCmd(uint32_t cmd, uint32_t arg);
     
     void initWorkLoop();
     void stopWorkLoop();

@@ -944,6 +944,98 @@ float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
     return temp;
 }
 
+uint32_t AMDRyzenCPUPowerManagement::smnRead32(uint32_t addr) {
+    if (!fIOPCIDevice || !pciConfigLock) return 0;
+    IOPCIAddressSpace space;
+    space.bits = 0x00;
+    
+    IOSimpleLockLock(pciConfigLock);
+    fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)addr);
+    uint32_t val = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
+    IOSimpleLockUnlock(pciConfigLock);
+    return val;
+}
+
+void AMDRyzenCPUPowerManagement::smnWrite32(uint32_t addr, uint32_t val) {
+    if (!fIOPCIDevice || !pciConfigLock) return;
+    IOPCIAddressSpace space;
+    space.bits = 0x00;
+    
+    IOSimpleLockLock(pciConfigLock);
+    fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)addr);
+    fIOPCIDevice->configWrite32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4, (UInt32)val);
+    IOSimpleLockUnlock(pciConfigLock);
+}
+
+int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
+    uint32_t msgReg = 0x3B10524;
+    uint32_t argReg = 0x3B10528;
+    uint32_t rspReg = 0x3B1052C;
+    
+    // Clear response register first
+    smnWrite32(rspReg, 0);
+    
+    // Write argument
+    smnWrite32(argReg, arg);
+    
+    // Send command
+    smnWrite32(msgReg, cmd);
+    
+    // Wait for response (timeout 2ms)
+    uint32_t rsp = 0;
+    for (int i = 0; i < 2000; i++) {
+        rsp = smnRead32(rspReg);
+        if (rsp != 0) {
+            break;
+        }
+        IODelay(1);
+    }
+    
+    return rsp;
+}
+
+int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
+    // Verify CPU support (Zen 3 Vermeer Family 19h)
+    if (cpuFamily != 0x19) {
+        IOLog("AMDRyzenCPUPowerManagement: Curve Optimizer is only supported on Zen 3 (Family 19h) processors.\n");
+        return -1;
+    }
+    
+    // Bounds check on core index
+    if (core >= totalNumberOfPhysicalCores) {
+        IOLog("AMDRyzenCPUPowerManagement: Invalid core index %d (max: %d).\n", core, totalNumberOfPhysicalCores - 1);
+        return -2;
+    }
+    
+    // Safety check: Limit Curve Optimizer offset to safe range [-15, +15] as per implementation plan
+    if (offset < -15 || offset > 15) {
+        IOLog("AMDRyzenCPUPowerManagement: Offset %d exceeds safe limits [-15, +15]. Blocking write for safety.\n", offset);
+        return -3;
+    }
+    
+    // Thermal safety check: Block if temperature is too high (> 75°C) to prevent instability
+    float currentTemp = PACKAGE_TEMPERATURE_perPackage[0];
+    if (currentTemp > 75.0f) {
+        IOLog("AMDRyzenCPUPowerManagement: Blocked Curve Optimizer write due to high core temperature (%.1f°C > 75°C).\n", currentTemp);
+        return -4;
+    }
+    
+    // Format argument: Bits [7:0] = Core Index, Bits [15:8] = Offset (signed 8-bit)
+    uint32_t arg = ((uint32_t)core & 0xFF) | (((uint32_t)offset & 0xFF) << 8);
+    
+    // Send command 0x3D (SetCurveOptimizer) to SMU
+    int response = smuSendCmd(0x3D, arg);
+    
+    if (response == 1) {
+        curveOptimizerOffsets[core] = offset;
+        IOLog("AMDRyzenCPUPowerManagement: Successfully set Curve Optimizer for Core %d to %d (Offset counts).\n", core, offset);
+        return 0;
+    } else {
+        IOLog("AMDRyzenCPUPowerManagement: SMU Curve Optimizer command failed with response code: 0x%X\n", response);
+        return -5;
+    }
+}
+
 void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     float sum = 0;
     for (int i = 0; i < HF_TEMP_SAMPLE_LEN; i++) sum += tempSamples[i];
