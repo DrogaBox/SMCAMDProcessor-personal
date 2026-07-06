@@ -278,6 +278,7 @@ final class TelemetryModel: ObservableObject {
     @Published var selectedSpeedStep: Int = 0
     @Published var speedStepClocks: [Float] = []
     @Published var curveOptimizerOffsets: [Int8] = []
+    @Published var numPhysicalCores: Int = 0
 
     @Published var cpbSupported: Bool = false
     @Published var cpbEnabled: Bool = false
@@ -830,6 +831,9 @@ final class TelemetryModel: ObservableObject {
         if cachedNumPhysicalCores == 0 {
             cachedNumPhysicalCores = numPhys
             cachedNumLogicalCores = numLogi
+            DispatchQueue.main.async {
+                self.numPhysicalCores = numPhys
+            }
         }
         let numPhysicalCores = cachedNumPhysicalCores
         let numLogicalCores = cachedNumLogicalCores
