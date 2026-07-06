@@ -225,10 +225,8 @@ void ISSuperIOIT86XXEFamily::setDefaultFanControl(int fan)
 {
     if (fan >= activeFansOnSystem)
         return;
-    writeByte(kFAN_MAIN_CTRL_REG, (readByte(kFAN_MAIN_CTRL_REG) ^ (1 << fan)));
-    writeByte(kFAN_MAIN_CTRL_REG,
-              (readByte(kFAN_MAIN_CTRL_REG) ^
-               (1 << fan)));  // Fan 0 only goes back to auto mode when MAIN_CTRL_REG is switched twice
+    // Clear override bit (restore BIOS automatic control)
+    writeByte(kFAN_MAIN_CTRL_REG, readByte(kFAN_MAIN_CTRL_REG) & ~(1 << fan));
     writeByte(kFAN_PWM_CTRL_REGS[fan], fanDefaultControlMode[fan]);
     writeByte(kFAN_PWM_CTRL_EXT_REGS[fan], fanDefaultExtControlMode[fan]);
 }
