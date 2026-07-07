@@ -26,6 +26,12 @@ Ensure the following kexts are present in your `EFI/OC/Kexts` folder and injecte
 - **ProvideCurrentCpuInfo** (Kernel -> Quirks): Set to `True`. Mandatory for macOS to correctly map AMD core topologies.
 - **agdpmod=pikera** (boot-args): Required for Radeon RX 6000 series (Navi) to prevent black screens.
 
+### 1.3 SMCAMDProcessor Custom Boot Arguments
+You can pass these optional boot arguments in OpenCore (`NVRAM -> boot-args`) to unlock advanced functionality or debug the kexts:
+- `-amdpnopchk`: Disables privilege checks. Required if you want to use the "Directly Edit Raw P-State Registers" feature in the app without running it as root.
+- `-amdcppcactive`: Forces CPPC (Collaborative Processor Performance Control) into Active Mode instead of Autonomous Mode, giving the macOS kernel more direct control over frequency selection rather than relying entirely on the SMU.
+- `-amdpdbg`: Enables verbose debug logging for `AMDRyzenCPUPowerManagement.kext`. Useful for troubleshooting kernel panics or missing sensor data.
+
 ---
 
 ## 2. Power & Frequencies Tab
