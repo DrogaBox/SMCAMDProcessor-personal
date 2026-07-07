@@ -192,7 +192,7 @@ void ISSuperIOIT86XXEFamily::updateFanRPMS()
 
         if (value > 0x3f)
         {
-            fanRPMs[i] = (value < 0xffff) ? 1.35e6f / (value * 10) : 0;
+            fanRPMs[i] = (value < 0xffff) ? 1.35e6f / (value * 2) : 0;
         }
         else
         {
