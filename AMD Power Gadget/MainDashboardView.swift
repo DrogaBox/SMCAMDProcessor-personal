@@ -1684,8 +1684,26 @@ struct FanControlContentView: View {
                 } else if model.fans.isEmpty {
                     Text("No fans detected.").foregroundColor(.tahoeSubtext).frame(maxWidth: .infinity).padding(32)
                 } else {
-                    SectionTitle("SMC Fan Control")
-                    ForEach(model.fans) { fan in FanControlCard(fan: fan, model: model) }
+                    HStack {
+                        SectionTitle("SMC Fan Control")
+                        Spacer()
+                        if !model.hiddenFanIDs.isEmpty {
+                            Button(action: {
+                                model.hiddenFanIDs.removeAll()
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "eye.fill")
+                                    Text("Show All (\(model.hiddenFanIDs.count) hidden)")
+                                }
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.tahoeAccentCyan)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    ForEach(model.fans.filter { !model.hiddenFanIDs.contains($0.id) }) { fan in
+                        FanControlCard(fan: fan, model: model)
+                    }
                     HStack(spacing: 10) {
                         TahoeButton(label: "All Auto", icon: "arrow.circlepath", accent: .tahoeAccentCyan) { model.setAllFansAuto() }
                         TahoeButton(label: "Max Speed", icon: "wind", accent: .tahoeAccentOrange) { model.setAllFansTakeOff() }
@@ -1807,6 +1825,16 @@ private struct FanControlCard: View {
                     Text(String(format: "%.0f%%", Double(fan.throttle) / 255.0 * 100.0))
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(fan.isOverrided ? .tahoeAccentOrange : .tahoeSubtext)
+                    Text("·").foregroundColor(.tahoeSubtext)
+                    Button(action: {
+                        model.hiddenFanIDs.insert(fan.id)
+                    }) {
+                        Image(systemName: "eye.slash")
+                            .foregroundColor(.tahoeSubtext)
+                            .font(.system(size: 11))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Hide this fan")
                 }
             }
             HStack {

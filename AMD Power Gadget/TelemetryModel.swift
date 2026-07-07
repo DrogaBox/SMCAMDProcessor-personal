@@ -262,6 +262,11 @@ final class TelemetryModel: ObservableObject {
 
     @Published var cores: [CoreSnapshot] = []
     @Published var fans: [FanSnapshot] = []
+    @Published var hiddenFanIDs: Set<Int> = [] {
+        didSet {
+            UserDefaults.standard.set(Array(hiddenFanIDs), forKey: "hidden_fan_ids")
+        }
+    }
     @Published var history: [TelemetryPoint] = []
 
     // Cache structures for performance optimization
@@ -577,6 +582,10 @@ final class TelemetryModel: ObservableObject {
             self.customFanNames = decoded
         } else {
             self.customFanNames = [:]
+        }
+
+        if let ids = UserDefaults.standard.array(forKey: "hidden_fan_ids") as? [Int] {
+            self.hiddenFanIDs = Set(ids)
         }
 
         initSMC()
