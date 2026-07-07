@@ -3,6 +3,8 @@ import IOKit
 import SystemConfiguration
 import AppKit
 
+var shouldExit = false
+
 // Struct layout matching AMDRyzenCPUPowerManagement CPUSensorPacket structure
 struct CPUSensorPacket {
     var packagePowerW: Float = 0
@@ -157,34 +159,39 @@ func getKextConnection() -> io_connect_t {
 }
 
 func pruneOldData(fileURL: URL) {
-    guard let data = try? Data(contentsOf: fileURL),
-          let content = String(data: data, encoding: .utf8) else { return }
+    guard let filePointer = fopen(fileURL.path, "r") else { return }
+    
+    let tempURL = fileURL.deletingLastPathComponent().appendingPathComponent("telemetry_history_tmp.json")
+    guard let writePointer = fopen(tempURL.path, "w") else {
+        fclose(filePointer)
+        return
+    }
     
     let decoder = JSONDecoder()
-    let encoder = JSONEncoder()
     let cutoff = Date().addingTimeInterval(-30 * 24 * 60 * 60) // 30 days
     
-    var retainedPoints: [HistoryDataPoint] = []
-    let lines = content.components(separatedBy: .newlines)
-    for line in lines {
-        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { continue }
-        if let lineData = trimmed.data(using: .utf8),
+    var lineBuffer = [CChar](repeating: 0, count: 4096)
+    while true {
+        guard fgets(&lineBuffer, Int32(lineBuffer.count), filePointer) != nil else {
+            break
+        }
+        let lineStr = String(cString: lineBuffer).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !lineStr.isEmpty else { continue }
+        
+        if let lineData = lineStr.data(using: .utf8),
            let point = try? decoder.decode(HistoryDataPoint.self, from: lineData) {
             if point.timestamp >= cutoff {
-                retainedPoints.append(point)
+                fputs(lineStr + "\n", writePointer)
             }
         }
     }
     
-    var outputData = Data()
-    for pt in retainedPoints {
-        if let encoded = try? encoder.encode(pt) {
-            outputData.append(encoded)
-            outputData.append("\n".data(using: .utf8)!)
-        }
-    }
-    try? outputData.write(to: fileURL, options: .atomic)
+    fclose(filePointer)
+    fclose(writePointer)
+    
+    // Replace old file with pruned temp file atomically
+    _ = try? FileManager.default.removeItem(at: fileURL)
+    _ = try? FileManager.default.moveItem(at: tempURL, to: fileURL)
 }
 
 func appendTelemetryPoint(point: HistoryDataPoint, fileURL: URL) {
@@ -215,14 +222,29 @@ func appendTelemetryPoint(point: HistoryDataPoint, fileURL: URL) {
 func main() {
     print("AMD Telemetry Daemon started.")
     
+    // Register signal handlers for clean launchd lifecycle termination
+    signal(SIGTERM) { _ in
+        shouldExit = true
+    }
+    signal(SIGINT) { _ in
+        shouldExit = true
+    }
+    
     // Initial CPU load sample to establish baseline for subsequent diffs
     _ = getCPULoadPct()
     
     var lastPruneDate = Date()
     
-    while true {
-        // Sleep first, wait for 60-second logging interval
-        Thread.sleep(forTimeInterval: 60.0)
+    while !shouldExit {
+        // Sleep in 1-second increments to allow immediate signal response
+        for _ in 0..<60 {
+            if shouldExit { break }
+            Thread.sleep(forTimeInterval: 1.0)
+        }
+        
+        if shouldExit {
+            break
+        }
         
         // Skip logging if the GUI application is currently running (it manages its own logging)
         if isAppRunning() {
@@ -309,6 +331,7 @@ func main() {
             lastPruneDate = Date()
         }
     }
+    print("AMD Telemetry Daemon terminating cleanly.")
 }
 
 main()
