@@ -1531,68 +1531,42 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
-    private struct ProcessCPUTypeTracker {
-        static var lastProcessCPUTimes: [Int32: (cpuTime: UInt64, time: Date)] = [:]
-        static let lock = NSLock()
-    }
-
     nonisolated private func fetchTopProcesses() -> [ProcessInfoRow] {
-        let count = proc_listallpids(nil, 0)
-        guard count > 0 else { return [] }
+        let task = Process()
+        task.launchPath = "/bin/ps"
+        task.arguments = ["-A", "-r", "-o", "pid,%cpu,comm", "-c"]
         
-        var pids = Array<Int32>(repeating: 0, count: Int(count))
-        let bytesWritten = proc_listallpids(&pids, Int32(count * 4))
-        guard bytesWritten > 0 else { return [] }
+        let pipe = Pipe()
+        task.standardOutput = pipe
         
-        let actualCount = Int(bytesWritten) / MemoryLayout<Int32>.size
-        let now = Date()
-        
-        var currentSnapshots: [Int32: (cpuTime: UInt64, time: Date)] = [:]
-        var calculatedCPUUsages: [(pid: Int32, name: String, cpuUsage: Float)] = []
-        
-        var taskInfo = proc_taskinfo()
-        let infoSize = Int32(MemoryLayout<proc_taskinfo>.size)
-        
-        ProcessCPUTypeTracker.lock.lock()
-        let previousCPUTimes = ProcessCPUTypeTracker.lastProcessCPUTimes
-        ProcessCPUTypeTracker.lock.unlock()
-        
-        for i in 0..<actualCount {
-            let pid = pids[i]
-            guard pid > 0 else { continue }
-            
-            let res = proc_pidinfo(pid, 4, 0, &taskInfo, infoSize) // 4 = PROC_PIDTASKINFO
-            guard res == infoSize else { continue }
-            
-            let currentCPUTime = taskInfo.pti_total_user + taskInfo.pti_total_system
-            currentSnapshots[pid] = (cpuTime: currentCPUTime, time: now)
-            
-            if let prev = previousCPUTimes[pid] {
-                let deltaCPU = Double(currentCPUTime - prev.cpuTime) / 1_000_000_000.0 // ns to seconds
-                let deltaSecs = now.timeIntervalSince(prev.time)
-                if deltaSecs > 0.1 {
-                    let cpuUsage = Float((deltaCPU / deltaSecs) * 100.0)
-                    
-                    var nameBuffer = Array<CChar>(repeating: 0, count: 256)
-                    let nameLen = proc_name(pid, &nameBuffer, 256)
-                    let name = nameLen > 0 ? String(cString: nameBuffer) : "Unknown"
-                    
-                    calculatedCPUUsages.append((pid: pid, name: name, cpuUsage: cpuUsage))
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                var list: [ProcessInfoRow] = []
+                let lines = output.components(separatedBy: .newlines)
+                for line in lines.dropFirst() {
+                    let parts = line.split(separator: " ", omittingEmptySubsequences: true)
+                    if parts.count >= 3 {
+                        if let pid = Int32(parts[0]) {
+                            let cpuStr = parts[1].replacingOccurrences(of: ",", with: ".")
+                            if let cpu = Float(cpuStr) {
+                                let name = parts[2...].joined(separator: " ")
+                                let cleanName = name.replacingOccurrences(of: ".app/Contents/MacOS/", with: "")
+                                                    .components(separatedBy: "/").last ?? name
+                                list.append(ProcessInfoRow(id: pid, name: cleanName, cpuUsage: cpu))
+                                if list.count >= 5 {
+                                    break
+                                }
+                            }
+                        }
+                    }
                 }
+                return list
             }
-        }
-        
-        ProcessCPUTypeTracker.lock.lock()
-        ProcessCPUTypeTracker.lastProcessCPUTimes = currentSnapshots
-        ProcessCPUTypeTracker.lock.unlock()
-        
-        let sortedProcesses = calculatedCPUUsages
-            .filter { $0.cpuUsage >= 0.1 }
-            .sorted { $0.cpuUsage > $1.cpuUsage }
-            
-        return sortedProcesses.prefix(5).map {
-            ProcessInfoRow(id: $0.pid, name: $0.name, cpuUsage: $0.cpuUsage)
-        }
+        } catch {}
+        return []
     }
 
     // MARK: - Diagnostics, CSV Logging and Alerts Helpers
