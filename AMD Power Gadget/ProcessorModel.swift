@@ -121,7 +121,9 @@ class ProcessorModel {
         let res = alert.runModal()
 
         if res == .alertSecondButtonReturn {
-            NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
+            if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+                NSWorkspace.shared.open(url)
+            }
         }
 
         NSApplication.shared.terminate(self)
@@ -137,7 +139,9 @@ class ProcessorModel {
         let res = alert.runModal()
 
         if res == .alertSecondButtonReturn {
-            NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
+            if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
 
