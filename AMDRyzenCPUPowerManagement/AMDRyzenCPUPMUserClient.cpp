@@ -937,6 +937,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 return kIOReturnBadArgument;
             }
             
+            #pragma pack(push, 1)
             struct FanCurveInput {
                 uint32_t curveIndex;
                 uint32_t sourceSensor;
@@ -944,6 +945,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 uint32_t rampRate;
                 uint8_t lut[256];
             };
+            #pragma pack(pop)
             
             const FanCurveInput *input = (const FanCurveInput*) arguments->structureInput;
             uint32_t idx = input->curveIndex;

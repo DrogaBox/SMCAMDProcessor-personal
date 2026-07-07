@@ -274,6 +274,8 @@ final class TelemetryModel: ObservableObject {
     private var lastRAMCheck: Date = Date.distantPast
     private var cachedRAMUsage: Double = 0.0
     private let cachedCsvDelimiter: String
+    private var cachedCSVColumnConfig: CSVColumnConfig? = nil
+    private var csvConfigDirty: Bool = true
 
     @Published var selectedSpeedStep: Int = 0
     @Published var speedStepClocks: [Float] = []
@@ -591,6 +593,9 @@ final class TelemetryModel: ObservableObject {
 
         restartTimer()
         NotificationCenter.default.addObserver(self, selector: #selector(handleActiveWindowsChanged), name: .init("AppActiveWindowsChanged"), object: nil)
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.csvConfigDirty = true
+        }
     }
 
     private func buildSystemInfo() {
@@ -660,6 +665,8 @@ final class TelemetryModel: ObservableObject {
     }
 
     private func initSMC() {
+        cachedNumPhysicalCores = 0
+        cachedNumLogicalCores = 0
         let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
         guard initRes.count > 0 && initRes[0] == 1 else { return }
         smcDriverLoaded = true
@@ -831,9 +838,7 @@ final class TelemetryModel: ObservableObject {
         if cachedNumPhysicalCores == 0 {
             cachedNumPhysicalCores = numPhys
             cachedNumLogicalCores = numLogi
-            DispatchQueue.main.async {
-                self.numPhysicalCores = numPhys
-            }
+            self.numPhysicalCores = numPhys
         }
         let numPhysicalCores = cachedNumPhysicalCores
         let numLogicalCores = cachedNumLogicalCores
@@ -1617,8 +1622,11 @@ final class TelemetryModel: ObservableObject {
     }
     
     private func loadCSVColumnConfig() -> CSVColumnConfig {
+        if !csvConfigDirty, let cached = cachedCSVColumnConfig {
+            return cached
+        }
         let ud = UserDefaults.standard
-        return CSVColumnConfig(
+        let config = CSVColumnConfig(
             showCpuTemp: ud.object(forKey: "tele_show_cputemp") as? Bool ?? true,
             showGpuTemp: ud.object(forKey: "tele_show_gputemp") as? Bool ?? true,
             showCpuPwr:  ud.object(forKey: "tele_show_cpupwr") as? Bool ?? true,
@@ -1628,6 +1636,9 @@ final class TelemetryModel: ObservableObject {
             showNet:     ud.object(forKey: "tele_show_net") as? Bool ?? true,
             showFan:     ud.object(forKey: "tele_show_fan") as? Bool ?? true
         )
+        cachedCSVColumnConfig = config
+        csvConfigDirty = false
+        return config
     }
 
     private func getActiveCSVHeaders(includeTimestamp: Bool) -> [String] {
