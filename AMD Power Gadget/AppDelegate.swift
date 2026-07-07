@@ -21,11 +21,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 
     @IBAction func openPage(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
+        if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @IBAction func orderFrontStandardAboutPanel(_ sender: Any) {
-        let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!
+        guard let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") else { return }
         let attributedString = NSMutableAttributedString(string: "GitHub Repository\n\nSpecial thanks to the AMD OS X community!\n\nCopyright © 2020-2026 Droga. All rights reserved.")
         attributedString.addAttribute(.link, value: url, range: NSRange(location: 0, length: 17))
         

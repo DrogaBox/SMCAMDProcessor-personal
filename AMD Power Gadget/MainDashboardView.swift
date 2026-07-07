@@ -378,7 +378,7 @@ private struct SidebarView: View {
                     }
                 }
                 Spacer()
-                Link(destination: URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!) {
+                Link(destination: URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") ?? URL(fileURLWithPath: "/")) {
                     let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
                     let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
                     Text("App: v\(appVer) • Kext: v\(kextVer) · macOS Tahoe")
@@ -1770,10 +1770,14 @@ private struct GPUFanControlGuideView: View {
                     
                     HStack(spacing: 10) {
                         TahoeButton(label: "Open SPPT Guide", icon: "safari", accent: .tahoeAccentCyan) {
-                            NSWorkspace.shared.open(URL(string: "https://github.com/perez987/6600XT-on-macOS-with-softPowerPlayTable")!)
+                            if let url = URL(string: "https://github.com/perez987/6600XT-on-macOS-with-softPowerPlayTable") {
+                                NSWorkspace.shared.open(url)
+                            }
                         }
                         TahoeButton(label: "MorePowerTool", icon: "arrow.down.circle", accent: .tahoeAccentOrange) {
-                            NSWorkspace.shared.open(URL(string: "https://www.igorslab.de/en/red-bios-editor-and-morepowertool-adjust-and-optimize-your-radeon-rx-5700-xt-and-radeon-vii-bios-instructions-and-downloads/")!)
+                            if let url = URL(string: "https://www.igorslab.de/en/red-bios-editor-and-morepowertool-adjust-and-optimize-your-radeon-rx-5700-xt-and-radeon-vii-bios-instructions-and-downloads/") {
+                                NSWorkspace.shared.open(url)
+                            }
                         }
                     }
                     .padding(.top, 6)
@@ -3697,7 +3701,9 @@ struct SystemInfoContentView: View {
                 SectionTitle("Links & Support")
                 HStack(spacing: 10) {
                     TahoeButton(label: "GitHub Repository", icon: "link", accent: .tahoeAccentCyan) {
-                        NSWorkspace.shared.open(URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal")!)
+                        if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+                            NSWorkspace.shared.open(url)
+                        }
                     }
                     TahoeButton(label: "Donate (PayPal)", icon: "heart.fill", accent: .tahoeAccentOrange) {
                         DispatchQueue.global(qos: .userInitiated).async {
@@ -3707,7 +3713,9 @@ struct SystemInfoContentView: View {
                                 }
                             }
                         }
-                        NSWorkspace.shared.open(URL(string: "https://www.paypal.com/donate/?business=mrleisures@gmail.com")!)
+                        if let url = URL(string: "https://www.paypal.com/donate/?business=mrleisures@gmail.com") {
+                            NSWorkspace.shared.open(url)
+                        }
                     }
                 }
             }

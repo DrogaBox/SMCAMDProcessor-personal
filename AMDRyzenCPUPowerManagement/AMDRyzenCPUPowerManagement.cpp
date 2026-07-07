@@ -435,20 +435,22 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     IOLog("AMDRyzenCPUPowerManagement::start CPUID MWait: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
     
-    uint32_t nameString[12]{};
+    char nameString[49] = {0};
+    uint32_t *namePtr = (uint32_t*)nameString;
     CPUInfo::getCpuid(0x80000002, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    nameString[0] = cpuid_eax; nameString[1] = cpuid_ebx; nameString[2] = cpuid_ecx; nameString[3] = cpuid_edx;
+    namePtr[0] = cpuid_eax; namePtr[1] = cpuid_ebx; namePtr[2] = cpuid_ecx; namePtr[3] = cpuid_edx;
     CPUInfo::getCpuid(0x80000003, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    nameString[4] = cpuid_eax; nameString[5] = cpuid_ebx; nameString[6] = cpuid_ecx; nameString[7] = cpuid_edx;
+    namePtr[4] = cpuid_eax; namePtr[5] = cpuid_ebx; namePtr[6] = cpuid_ecx; namePtr[7] = cpuid_edx;
     CPUInfo::getCpuid(0x80000004, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    nameString[8] = cpuid_eax; nameString[9] = cpuid_ebx; nameString[10] = cpuid_ecx; nameString[11] = cpuid_edx;
+    namePtr[8] = cpuid_eax; namePtr[9] = cpuid_ebx; namePtr[10] = cpuid_ecx; namePtr[11] = cpuid_edx;
+    nameString[48] = '\0';
     
-    IOLog("AMDRyzenCPUPowerManagement::start Processor: %s))\n", (char*)nameString);
+    IOLog("AMDRyzenCPUPowerManagement::start Processor: %s\n", nameString);
     
     //Check tctl temperature offset
     for(int i = 0; i < TCTL_OFFSET_TABLE_LEN; i++){
         const TempOffset *to = tctl_offset_table + i;
-        if(cpuFamily == to->model && strstr((char*)nameString, to->id)){
+        if(cpuFamily == to->model && strstr(nameString, to->id)){
             
             tempOffset = (float)to->offset;
             break;
@@ -484,10 +486,10 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     // A CCD is considered present if the valid bit (bit 11) is set.
     ccdCount = 0;
     for (uint8_t i = 0; i < kMAX_CCD_COUNT; i++) {
-        float t = getCCDTemp(i);
-        if (t > 0.0f) {
+        uint32_t regVal = readCCDRegisterRaw(i);
+        if (regVal & kZEN_CCD_TEMP_VALID_BIT) {
             ccdCount = i + 1;
-            IOLog("AMDRyzenCPUPowerManagement::start CCD%u detected, temp: %.1f°C\n", i, t);
+            IOLog("AMDRyzenCPUPowerManagement::start CCD%u detected, raw=0x%X\n", i, regVal);
         }
     }
     IOLog("AMDRyzenCPUPowerManagement::start Total CCDs detected: %u\n", ccdCount);
@@ -900,6 +902,7 @@ bool AMDRyzenCPUPowerManagement::getCPBState(){
 }
 
 inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
+    if (!fIOPCIDevice || !pciConfigLock) return 0.0f;
     IOPCIAddressSpace space;
     space.bits = 0x00;
     
@@ -923,20 +926,24 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
     return t;
 }
 
-float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
-    if (ccd >= kMAX_CCD_COUNT) return 0.0f;
-    
+uint32_t AMDRyzenCPUPowerManagement::readCCDRegisterRaw(uint8_t ccd) {
+    if (ccd >= kMAX_CCD_COUNT || !fIOPCIDevice || !pciConfigLock) return 0;
     IOPCIAddressSpace space;
     space.bits = 0x00;
-    
-    // Calculate CCD register address:
-    // Base (0x59800) + ccdOffset (0x154 or 0x308) + (ccd_index * 4)
     uint32_t ccdRegAddr = kF17H_M01H_THM_TCON_CUR_TMP + ccdOffset + (ccd * 4);
     
     IOSimpleLockLock(pciConfigLock);
     fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)ccdRegAddr);
     uint32_t regVal = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
     IOSimpleLockUnlock(pciConfigLock);
+    
+    return regVal;
+}
+
+float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
+    if (ccd >= kMAX_CCD_COUNT) return 0.0f;
+    
+    uint32_t regVal = readCCDRegisterRaw(ccd);
     
     // Check CCD valid bit (bit 11) — if not set, CCD is not present
     if (!(regVal & kZEN_CCD_TEMP_VALID_BIT)) return 0.0f;
