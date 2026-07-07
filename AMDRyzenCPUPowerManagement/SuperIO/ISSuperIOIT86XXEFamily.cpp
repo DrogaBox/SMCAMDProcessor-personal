@@ -157,7 +157,7 @@ int ISSuperIOIT86XXEFamily::getNumberOfFans()
 
 const char* ISSuperIOIT86XXEFamily::getReadableStringForFan(int fan)
 {
-    if (fan >= activeFansOnSystem)
+    if (fan < 0 || fan >= activeFansOnSystem || fan >= 6)
         return nullptr;
     return kFAN_READABLE_STRS[fan];
 }
