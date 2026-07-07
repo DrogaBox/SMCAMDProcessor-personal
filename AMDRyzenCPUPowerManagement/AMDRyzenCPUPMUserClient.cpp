@@ -29,13 +29,14 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     taskProcessBinaryName[sizeof(taskProcessBinaryName) - 1] = '\0';
     
     bool isRoot = (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0);
-    bool isKnownApp = (strncmp(taskProcessBinaryName, "AMD Power Gadget", 16) == 0 ||
-                       strncmp(taskProcessBinaryName, "SMCAMDProcessor", 15) == 0);
-                       
-    if (isRoot || isKnownApp) {
+    bool isPrivilegedDebug = checkKernelArgument("-amdpnopchk");
+    
+    if (isRoot || isPrivilegedDebug) {
         clientAuthorizedByUser = true;
     } else {
-        IOLog("AMDRyzenCPUPMUserClient: Connection attempt from unauthorized process: %s\n", taskProcessBinaryName);
+        IOLog("AMDRyzenCPUPMUserClient: REJECTED pid=%d binary='%s' (requires root)\n",
+              proc_pid(proc), taskProcessBinaryName);
+        return false;
     }
     
     return true;

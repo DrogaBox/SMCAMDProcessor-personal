@@ -18,6 +18,12 @@ static constexpr const struct tctl_offset tctl_offset_table[] = {
     { 0x17, "AMD Ryzen Threadripper 29", 27 }, /* 29{20,50,70,90}[W]X */
 };
 
+static constexpr float  kTHERMAL_GUARD_TEMP_C        = 85.0f;
+static constexpr uint8_t kTHERMAL_GUARD_PWM          = 200;   // 80%
+static constexpr float  kTHERMAL_THROTTLE_TEMP_C     = 95.0f; // CPPC throttle
+static constexpr float  kTHERMAL_THROTTLE_CLEAR_C    = 85.0f;
+static constexpr float  kCURVE_OPTIMIZER_BLOCK_TEMP_C = 75.0f;
+
 bool ADDPR(debugEnabled) = false;
 uint32_t ADDPR(debugPrintDelay) = 0;
 
@@ -1013,10 +1019,10 @@ int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
         return -3;
     }
     
-    // Thermal safety check: Block if temperature is too high (> 75°C) to prevent instability
+    // Thermal safety check: Block if temperature is too high (> kCURVE_OPTIMIZER_BLOCK_TEMP_C) to prevent instability
     float currentTemp = PACKAGE_TEMPERATURE_perPackage[0];
-    if (currentTemp > 75.0f) {
-        IOLog("AMDRyzenCPUPowerManagement: Blocked Curve Optimizer write due to high core temperature (%.1f°C > 75°C).\n", currentTemp);
+    if (currentTemp > kCURVE_OPTIMIZER_BLOCK_TEMP_C) {
+        IOLog("AMDRyzenCPUPowerManagement: Blocked Curve Optimizer write due to high core temperature (%.1f°C > %.1f°C).\n", currentTemp, kCURVE_OPTIMIZER_BLOCK_TEMP_C);
         return -4;
     }
     
@@ -1044,11 +1050,11 @@ void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     
     // Dynamic CPPC Throttling Logic
     if (cppcActiveMode) {
-        if (!cppcThrottled && currentTemp > 95.0f) {
+        if (!cppcThrottled && currentTemp > kTHERMAL_THROTTLE_TEMP_C) {
             cppcThrottled = true;
             IOLog("AMDRyzenCPUPowerManagement: Thermal limit reached (%.1f°C). Throttling CPPC EPP to Power Save.\n", currentTemp);
             applyEPPControl();
-        } else if (cppcThrottled && currentTemp < 85.0f) {
+        } else if (cppcThrottled && currentTemp < kTHERMAL_THROTTLE_CLEAR_C) {
             cppcThrottled = false;
             IOLog("AMDRyzenCPUPowerManagement: Thermal condition cleared (%.1f°C). Restoring CPPC EPP.\n", currentTemp);
             applyEPPControl();
@@ -1207,16 +1213,17 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
 }
 
 bool AMDRyzenCPUPowerManagement::initSuperIO(uint16_t *chipIntel){
-    
-    if (superIO) { delete superIO; }
-    superIO = nullptr;
+    if (!superIOLock) return false;
+    IOLockLock(superIOLock);
+    if (superIO) { delete superIO; superIO = nullptr; }
     if(!superIO) superIO = ISSuperIONCT668X::getDevice(&savedSMCChipIntel);
     if(!superIO) superIO = ISSuperIONCT67XXFamily::getDevice(&savedSMCChipIntel);
     if(!superIO) superIO = ISSuperIOIT86XXEFamily::getDevice(&savedSMCChipIntel);
     
     *chipIntel = savedSMCChipIntel;
-    
-    return superIO != nullptr;
+    bool ok = superIO != nullptr;
+    IOLockUnlock(superIOLock);
+    return ok;
 }
 
 uint32_t AMDRyzenCPUPowerManagement::getPMPStateLimit(){
@@ -1235,7 +1242,12 @@ uint32_t AMDRyzenCPUPowerManagement::getHPcpus(){
 }
 
 void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
-    if (!superIO) return;
+    if (!superIOLock) return;
+    IOLockLock(superIOLock);
+    if (!superIO) {
+        IOLockUnlock(superIOLock);
+        return;
+    }
     
     // 1. Get raw current temperatures
     float cpuTemp = getPackageTemp();
@@ -1271,11 +1283,6 @@ void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
         // 5. Look up target PWM from LUT
         uint8_t targetPWM = config.lut[tempIdx];
         
-        // 6. Apply Thermal Safety Guard (above 85°C, force at least 80% / value 200)
-        if (rawSourceTemp >= 85.0f && targetPWM < 200) {
-            targetPWM = 200;
-        }
-        
         uint8_t currentPWM = lastAppliedPWM[fanIdx];
         uint64_t lastTime = lastPWMUpdateTime[fanIdx];
         
@@ -1304,6 +1311,11 @@ void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
             }
         }
         
+        // 7.5. Apply Thermal Safety Guard (above kTHERMAL_GUARD_TEMP_C, force at least kTHERMAL_GUARD_PWM)
+        if (rawSourceTemp >= kTHERMAL_GUARD_TEMP_C) {
+            targetPWM = (targetPWM < kTHERMAL_GUARD_PWM) ? kTHERMAL_GUARD_PWM : targetPWM;
+        }
+        
         // 8. Apply PWM override to the Super I/O chip
         if (targetPWM == 0) {
             superIO->setDefaultFanControl(fanIdx);
@@ -1314,6 +1326,7 @@ void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
         }
         lastPWMUpdateTime[fanIdx] = now;
     }
+    IOLockUnlock(superIOLock);
 }
 
 EXPORT extern "C" kern_return_t amdryzencpupm_kern_start(kmod_info_t *, void *) {
