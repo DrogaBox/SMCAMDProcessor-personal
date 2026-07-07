@@ -170,7 +170,7 @@ public:
     virtual IOReturn setPowerState(unsigned long powerStateOrdinal, IOService* whatDevice) override;
     
     void fetchOEMBaseBoardInfo();
-    uint32_t fanUpdateCounter = 0;
+    volatile SInt32 fanUpdateCounter = 0;
 
     bool read_msr(uint32_t addr, uint64_t *value);
     bool write_msr(uint32_t addr, uint64_t value);
@@ -193,6 +193,7 @@ public:
 #define HF_TEMP_SAMPLE_PERIOD (int)(HF_TEMP_SAMPLE_REP * 1000.0)
     inline float getPackageTemp();
     float getCCDTemp(uint8_t ccd);
+    uint32_t readCCDRegisterRaw(uint8_t ccd);
     void updatePackageTemp();
     
     void updatePackageEnergy();

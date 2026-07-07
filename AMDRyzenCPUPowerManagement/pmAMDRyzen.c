@@ -75,11 +75,17 @@ pmDispatch_t pmRyzen_cpuFuncs = {
 
 void pmRyzen_init_PState(){
     uint64_t p0 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0);
+    if (!(p0 & (1ULL << 63))) return;
+    
     uint64_t p0dfsid = (p0 >> 8) & 0x3f;
-    float p0spd = (p0dfsid > 0) ? ((float)(p0 & 0xff) / (float)p0dfsid) * 200.0f : 0.0f;
+    if (p0dfsid == 0) return;
+    
+    float p0spd = ((float)(p0 & 0xff) / (float)p0dfsid) * 200.0f;
     
     uint64_t p1 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1);
-    uint64_t p1fid = (uint64_t)((p0spd * 0.80F) / 200.0F * (float)((p1 >> 8) & 0x3f));
+    uint32_t fid_raw = (uint32_t)((p0spd * 0.80f) / 200.0f * (float)((p1 >> 8) & 0x3f));
+    if (fid_raw > 0xFF) fid_raw = 0xFF;
+    uint64_t p1fid = (uint64_t)fid_raw;
     
     pmRyzen_wrmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1, (p1 & ~0xFFULL) | p1fid | (1ULL << 63));
 }
