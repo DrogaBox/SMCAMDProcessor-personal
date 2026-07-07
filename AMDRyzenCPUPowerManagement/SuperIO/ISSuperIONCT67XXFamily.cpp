@@ -162,7 +162,7 @@ int ISSuperIONCT67XXFamily::getNumberOfFans(){
 }
 
 const char *ISSuperIONCT67XXFamily::getReadableStringForFan(int fan){
-    if(fan >= activeFansOnSystem) return nullptr;
+    if(fan < 0 || fan >= activeFansOnSystem || fan >= 7) return nullptr;
     return kFAN_READABLE_STRS[fan];
 }
 

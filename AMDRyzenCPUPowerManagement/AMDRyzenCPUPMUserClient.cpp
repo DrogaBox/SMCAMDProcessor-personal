@@ -827,6 +827,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 return kIOReturnBadArgument;
             
             int fanSel = (int)arguments->scalarInput[0];
+            if (fanSel < 0 || fanSel >= fProvider->superIO->getNumberOfFans())
+                return kIOReturnBadArgument;
+                
             uint8_t pwm = (uint8_t)arguments->scalarInput[1];
             
             IOLockLock(fProvider->superIOLock);
@@ -848,6 +851,8 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 return kIOReturnBadArgument;
             
             int fanSel = (int)arguments->scalarInput[0];
+            if (fanSel < 0 || fanSel >= fProvider->superIO->getNumberOfFans())
+                return kIOReturnBadArgument;
             
             IOLockLock(fProvider->superIOLock);
             fProvider->superIO->setDefaultFanControl(fanSel);

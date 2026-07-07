@@ -125,7 +125,7 @@ int ISSuperIONCT668X::getNumberOfFans(){
 }
 
 const char *ISSuperIONCT668X::getReadableStringForFan(int fan){
-    if(fan >= activeFansOnSystem) return nullptr;
+    if(fan < 0 || fan >= activeFansOnSystem) return nullptr;
     //TODO: label fans
     return kFAN_READABLE_STRS[0];
 }
