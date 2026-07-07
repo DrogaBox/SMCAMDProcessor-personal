@@ -2052,60 +2052,61 @@ struct ProfilesContentView: View {
                                     .stroke(isCurveOptimizerUnlocked ? Color.tahoeAccentPurple.opacity(0.2) : Color.tahoeAccentOrange.opacity(0.2), lineWidth: 1)
                             )
                             
-                            let activeCoreCount = model.numPhysicalCores > 0 ? model.numPhysicalCores : (model.cores.isEmpty ? 16 : model.cores.count / 2)
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 12) {
-                                ForEach(0..<min(model.curveOptimizerOffsets.count, activeCoreCount), id: \.self) { idx in
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack {
-                                            Text("Core \(idx)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
-                                            Spacer()
-                                            
-                                            // Live feedback metrics
-                                            if let core = model.cores.first(where: { $0.id == idx }) {
-                                                HStack(spacing: 6) {
-                                                    let freqGHz = Double(core.freqMHz) / 1000.0
-                                                    Text(String(format: "%.2f GHz", freqGHz))
-                                                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                                        .foregroundColor(.tahoeAccentCyan)
-                                                    
-                                                    Text(String(format: "%.0f%%", core.loadPct))
-                                                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                                        .foregroundColor(.tahoeAccentOrange)
-                                                    
-                                                    let ccdIdx = idx / 8
-                                                    if model.ccdTemperatures.count > ccdIdx {
-                                                        Text(String(format: "%.0f°C", model.ccdTemperatures[ccdIdx]))
+                            if isCurveOptimizerUnlocked {
+                                let activeCoreCount = model.numPhysicalCores > 0 ? model.numPhysicalCores : (model.cores.isEmpty ? 16 : model.cores.count / 2)
+                                LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 12) {
+                                    ForEach(0..<min(model.curveOptimizerOffsets.count, activeCoreCount), id: \.self) { idx in
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack {
+                                                Text("Core \(idx)").font(.system(size: 11, weight: .semibold)).foregroundColor(.tahoeText)
+                                                Spacer()
+                                                
+                                                // Live feedback metrics
+                                                if let core = model.cores.first(where: { $0.id == idx }) {
+                                                    HStack(spacing: 6) {
+                                                        let freqGHz = Double(core.freqMHz) / 1000.0
+                                                        Text(String(format: "%.2f GHz", freqGHz))
                                                             .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                                            .foregroundColor(.tahoeAccentRed)
+                                                            .foregroundColor(.tahoeAccentCyan)
+                                                        
+                                                        Text(String(format: "%.0f%%", core.loadPct))
+                                                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                                            .foregroundColor(.tahoeAccentOrange)
+                                                        
+                                                        let ccdIdx = idx / 8
+                                                        if model.ccdTemperatures.count > ccdIdx {
+                                                            Text(String(format: "%.0f°C", model.ccdTemperatures[ccdIdx]))
+                                                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                                                .foregroundColor(.tahoeAccentRed)
+                                                        }
                                                     }
+                                                    .padding(.trailing, 8)
                                                 }
-                                                .padding(.trailing, 8)
+                                                
+                                                let currentOffset = idx < model.curveOptimizerOffsets.count ? model.curveOptimizerOffsets[idx] : 0
+                                                Text(currentOffset > 0 ? "+\(currentOffset)" : "\(currentOffset)")
+                                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                                    .foregroundColor(currentOffset < 0 ? .tahoeAccentPurple : (currentOffset > 0 ? .tahoeAccentOrange : .tahoeSubtext))
                                             }
                                             
-                                            let currentOffset = idx < model.curveOptimizerOffsets.count ? model.curveOptimizerOffsets[idx] : 0
-                                            Text(currentOffset > 0 ? "+\(currentOffset)" : "\(currentOffset)")
-                                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                                .foregroundColor(currentOffset < 0 ? .tahoeAccentPurple : (currentOffset > 0 ? .tahoeAccentOrange : .tahoeSubtext))
+                                            let currentOffset = idx < model.curveOptimizerOffsets.count ? Double(model.curveOptimizerOffsets[idx]) : 0.0
+                                            Slider(value: Binding(get: {
+                                                return currentOffset
+                                            }, set: { (val: Double) in
+                                                let offsetInt = Int(round(val))
+                                                let _ = model.setCurveOptimizerOffset(core: idx, offset: offsetInt)
+                                            }), in: -30...30, step: 1)
+                                            .accentColor(.tahoeAccentPurple)
                                         }
-                                        
-                                        let currentOffset = idx < model.curveOptimizerOffsets.count ? Double(model.curveOptimizerOffsets[idx]) : 0.0
-                                        Slider(value: Binding(get: {
-                                            return currentOffset
-                                        }, set: { (val: Double) in
-                                            let offsetInt = Int(round(val))
-                                            let _ = model.setCurveOptimizerOffset(core: idx, offset: offsetInt)
-                                        }), in: -30...30, step: 1)
-                                        .accentColor(.tahoeAccentPurple)
+                                        .padding(8)
+                                        .background(Color.white.opacity(0.02))
+                                        .cornerRadius(6)
                                     }
-                                    .padding(8)
-                                    .background(Color.white.opacity(0.02))
-                                    .cornerRadius(6)
                                 }
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                             }
-                            .opacity(isCurveOptimizerUnlocked ? 1.0 : 0.4)
-                            .disabled(!isCurveOptimizerUnlocked)
-                            .animation(.easeInOut(duration: 0.25), value: isCurveOptimizerUnlocked)
                         }
+                        .animation(.easeInOut(duration: 0.25), value: isCurveOptimizerUnlocked)
                     }
                 }
                 
