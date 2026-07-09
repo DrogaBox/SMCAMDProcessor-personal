@@ -21,7 +21,7 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
 - Authentic XNU Privilege Validation: Replaced mock privilege checks with authentic kernel root verification via `proc_suser` and `kauth_cred_getuid`.
 - Boundary-Checked String Tables & Mach-O Verification: Strict bounds checking on symbol table lookups (`kernel_resolver.c`) and explicit `MH_MAGIC_64` header verification prior to function resolution.
 - IPC Lifecycle Integrity: Strict 6-step teardown sequence during driver unload (`stop()`), retaining `fIOPCIDevice` and eliminating dangling pointers or memory leaks.
-- Client Process Authorization: Bound-checked executable identity validation (`proc_name`) in `initWithTask()` ensuring connection authorization strictly for trusted applications.
+- Privilege model (v3.16.1+): any process may open the UserClient for **read** telemetry; **writes** require root or `-amdpnopchk`. Process name is logged for audit only and is never used for authorization.
 
 ### 2. Micro-Architecture & Memory Optimization
 - 64-Byte Cache Line Alignment: Applied `alignas(64)` alignment to core data structures (`pmProcessor_t`), isolating per-thread state to L1 cache lines and eliminating false sharing across all 32 logical threads of high-end desktop (HEDT) processors.
@@ -43,10 +43,10 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
 - In-App Language Picker: **Themes & Appearance → Language** forces any bundled locale (`en`, `es`, `de`, `it`, …) or System Default; applied at launch via `AppleLanguages` with Apply & Restart.
 - Privilege UX Banner: When a write is denied (`kIOReturnNotPrivileged`), the dashboard shows a clear orange banner instead of silent failure (root or `-amdpnopchk` required for controls).
 
-### 5. UserClient privilege model (v3.16.1+)
+### 5. UserClient privilege model (v3.16.1+ / current: 3.16.2)
 - **Reads** (telemetry, fan RPM, temps): any process may open the UserClient — the menu bar app works without root.
 - **Writes** (fans, EPP, P-States, Curve Optimizer, SuperIO, …): require **root** or the explicit boot-arg **`-amdpnopchk`**.
-- Authorization is **not** based on process name (spoof-resistant). Details: [docs/PRIVILEGE_AND_SECURITY.md](docs/PRIVILEGE_AND_SECURITY.md).
+- Authorization is **not** based on process name (spoof-resistant). On denial, the dashboard shows a privilege banner (3.16.2). Details: [docs/PRIVILEGE_AND_SECURITY.md](docs/PRIVILEGE_AND_SECURITY.md).
 
 ---
 
