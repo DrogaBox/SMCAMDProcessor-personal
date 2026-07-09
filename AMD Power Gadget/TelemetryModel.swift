@@ -479,8 +479,12 @@ final class TelemetryModel: ObservableObject {
     private var lastDiskReadBytes: UInt64 = 0
     private var lastDiskWriteBytes: UInt64 = 0
     private var lastDiskCheck: Date = Date.distantPast
-    private let ioQueue = DispatchQueue(label: "com.drogabox.SMCAMDProcessor.io", qos: .userInteractive)
+    /// Utility QoS: telemetry is continuous background work, not interactive UI.
+    private let ioQueue = DispatchQueue(label: "com.drogabox.SMCAMDProcessor.io", qos: .utility)
     private var isSampling = false
+    private var lastFanSampleTime: Date = .distantPast
+    private var lastHistoryPublishTime: Date = .distantPast
+    private var lastGPUExtraSample: Date = .distantPast
 
     func setPopoverVisible(_ visible: Bool) {
         popoverVisible = visible
@@ -710,16 +714,9 @@ final class TelemetryModel: ObservableObject {
 
     func restartTimer() {
         timer?.cancel()
-        let interval: Double
-        if activeWindows {
-            interval = RefreshRateConfig.shared.interval
-        } else if popoverVisible || isAnyWidgetHovered {
-            interval = 1.2 // Throttled 1.2s refresh when popover is open to keep CPU usage < 1.5%
-        } else if DesktopWidgetManager.shared.hasActiveWidgets {
-            interval = 2.0 // Slow refresh when widgets are in background to conserve resources
-        } else {
-            interval = RefreshRateConfig.shared.interval
-        }
+        // Always honor the user-selected interval (Advanced → Refresh Rate).
+        // Do not clamp by popover/menubar mode — that would cancel the slider.
+        let interval = max(0.1, min(5.0, RefreshRateConfig.shared.interval))
         timer = Timer.publish(every: interval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.sample() }
@@ -750,16 +747,30 @@ final class TelemetryModel: ObservableObject {
             }
             let numLogi = self.sysInfo.logicalCores > 0 ? self.sysInfo.logicalCores : numPhys
 
+            // Light mode: menu bar only (no dashboard/popover) — fewer kext/GPU calls
+            let lightMode = !self.activeWindows && !self.popoverVisible
+
             let metric   = pm.getMetric(forced: true)
             let loadIndex = pm.getLoadIndex()
             let rawGPUTemp = pm.getGPUTemp()
             let rawGPUPower = pm.getGPUPower()
-            let rawGPULoad = pm.getGPUUtilization()
-            let rawGPUVram = pm.getGPUVramUsed()
-            let rawGPUFan = pm.getGPUFanRPM()
-            let ccdTemps: [Float]
             let nowTime = Date()
-            if nowTime.timeIntervalSince(self.lastCCDCheck) >= 2.0 {
+            let rawGPULoad: Float
+            let rawGPUVram: Float
+            let rawGPUFan: Float
+            if lightMode, nowTime.timeIntervalSince(self.lastGPUExtraSample) < 3.0 {
+                rawGPULoad = Float(self.gpuLoadPct)
+                rawGPUVram = Float(self.gpuVramUsedBytes)
+                rawGPUFan = Float(self.gpuFanRPM)
+            } else {
+                rawGPULoad = pm.getGPUUtilization()
+                rawGPUVram = pm.getGPUVramUsed()
+                rawGPUFan = pm.getGPUFanRPM()
+                self.lastGPUExtraSample = nowTime
+            }
+            let ccdTemps: [Float]
+            let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
+            if nowTime.timeIntervalSince(self.lastCCDCheck) >= ccdTTL {
                 ccdTemps = pm.getCCDTemperatures()
                 self.cachedCCDTemps = ccdTemps
                 self.lastCCDCheck = nowTime
@@ -771,9 +782,12 @@ final class TelemetryModel: ObservableObject {
             let numFansCount = self.numFans
             var fanRpms: [UInt64] = []
             var fanCtrls: [UInt64] = []
-            if self.smcDriverLoaded && numFansCount > 0 {
+            let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
+            if self.smcDriverLoaded && numFansCount > 0,
+               nowTime.timeIntervalSince(self.lastFanSampleTime) >= fanTTL {
                 fanRpms  = pm.kernelGetUInt64(count: numFansCount, selector: 93)
                 fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
+                self.lastFanSampleTime = nowTime
             }
 
             let ramUsage: Double
@@ -821,7 +835,8 @@ final class TelemetryModel: ObservableObject {
                     fanCtrls: fanCtrls,
                     ramUsage: ramUsage,
                     diskUsage: diskUsage,
-                    diskIO: diskIO
+                    diskIO: diskIO,
+                    lightMode: lightMode
                 )
             }
         }
@@ -843,7 +858,8 @@ final class TelemetryModel: ObservableObject {
         fanCtrls: [UInt64],
         ramUsage: Double,
         diskUsage: Double,
-        diskIO: (read: UInt64, write: UInt64)
+        diskIO: (read: UInt64, write: UInt64),
+        lightMode: Bool = false
     ) {
         if cachedNumPhysicalCores == 0 {
             cachedNumPhysicalCores = numPhys
@@ -1056,9 +1072,15 @@ final class TelemetryModel: ObservableObject {
         )
         historyCounter += 1
         historyBuffer.append(point)
-        history = historyBuffer.elements
+        // Publishing full history array every tick is expensive for SwiftUI charts.
+        // Light mode (menu bar only): refresh history less often.
+        let historyTTL: TimeInterval = lightMode ? 2.0 : 0.0
+        if historyTTL <= 0 || now.timeIntervalSince(lastHistoryPublishTime) >= historyTTL {
+            history = historyBuffer.elements
+            lastHistoryPublishTime = now
+        }
 
-        if smcDriverLoaded && numFans > 0 {
+        if smcDriverLoaded && numFans > 0 && !fanRpms.isEmpty {
             var updatedFans = fans
             for i in 0..<numFans where i < updatedFans.count {
                 updatedFans[i].rpm        = fanRpms.count  > i ? fanRpms[i]                 : 0
