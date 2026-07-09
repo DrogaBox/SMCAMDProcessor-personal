@@ -1009,7 +1009,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
-        // Set GPU temperature
+        // Set GPU temperature (used by the app for fan-curve source; unprivileged by design
+        // so the menu-bar process can feed GPU temp without root). Clamp to a sane range
+        // to prevent a malicious client from starving thermal fan curves via absurd values.
         case 103: {
             if(!provider)
                 return kIOReturnNoDevice;
@@ -1017,7 +1019,10 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
             
-            provider->gpuTempC = (float)arguments->scalarInput[0];
+            float t = (float)arguments->scalarInput[0];
+            if (t < 0.0f) t = 0.0f;
+            if (t > 120.0f) t = 120.0f;
+            provider->gpuTempC = t;
             
             break;
         }
@@ -1069,8 +1074,8 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         }
         
         default: {
-            IOLog("AMDRyzenCPUPMUserClient::externalMethod: invalid method.\n");
-            break;
+            IOLog("AMDRyzenCPUPMUserClient::externalMethod: invalid selector %u\n", selector);
+            return kIOReturnUnsupported;
         }
     }
     
