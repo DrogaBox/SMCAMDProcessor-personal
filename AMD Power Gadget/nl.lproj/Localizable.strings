@@ -282,7 +282,7 @@
 "CPPC hardware rankings are active and loaded from the processor." = "CPPC-hardware-ranglijsten zijn actief en geladen vanuit de processor.";
 "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." = "CPPC-hardware waarden konden niet worden gelezen. Rangschikkingen worden geschat op basis van de maximaal waargenomen klokfrequentie van elke kern.";
 "CPPC Preferred Cores (Silicon Quality)" = "CPPC Voorkeur Kern (Silicon Kwaliteit)";
-"CPPC: Active" = "CPPC: Actief";
+"CPPC: Active" = "CPPC: HW OK";
 "CPPC: Estimated" = "CPPC: Geschat";
 "CPU and GPU temperatures" = "CPU en GPU temperaturen";
 "CPU Average Frequency" = "CPU gemiddelde frequentie";
@@ -597,3 +597,26 @@
 "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root)." = "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root).";
 /* Deprecated badge key — kept so old locales still resolve */
 "CPPC: Active" = "CPPC: HW OK";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Show Max Freq Only" = "Show Max Freq Only";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Use Fahrenheit" = "Use Fahrenheit";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Frequency column (max/avg GHz)" = "Frequency column (max/avg GHz)";
+
+/* Menu Bar toggles (fabiosun IT) */
+"CPU temp + optional GPU temp" = "CPU temp + optional GPU temp";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Convert temperature values from Celsius to Fahrenheit" = "Convert temperature values from Celsius to Fahrenheit";
+
+/* Menu Bar toggles (fabiosun IT) */
+"CPU watts + optional GPU watts" = "CPU watts + optional GPU watts";
+
+/* CPPC support gate */
+"Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts." = "Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts.";
+"AMDRyzenCPUPowerManagement kext not connected." = "AMDRyzenCPUPowerManagement kext not connected.";
+"If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot." = "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot.";
