@@ -605,50 +605,6 @@ struct ResizableChart<Content: View>: View {
 }
 
 // MARK: - Dashboard Tab (3 charts separados, tamaño configurable)
-// MARK: - WIP Placeholder Card
-struct WIPCard: View {
-    let title: LocalizedStringKey
-    let subtitle: LocalizedStringKey
-
-    var body: some View {
-        TahoeCard(accent: Color.gray.opacity(0.15)) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(Color.gray.opacity(0.5))
-                        Text(subtitle)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(Color.gray.opacity(0.35))
-                    }
-                    Spacer()
-                    Text("WIP")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundColor(Color.gray.opacity(0.4))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.gray.opacity(0.12))
-                        .cornerRadius(4)
-                }
-
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.gray.opacity(0.05))
-                    .frame(height: 100)
-                    .overlay(
-                        HStack(spacing: 6) {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color.gray.opacity(0.3))
-                            Text("Disabled — work in progress")
-                                .font(.system(size: 11))
-                                .foregroundColor(Color.gray.opacity(0.3))
-                        }
-                    )
-            }
-        }
-    }
-}
 
 struct DashboardContentView: View {
     @ObservedObject var model: TelemetryModel
