@@ -1180,9 +1180,21 @@ final class TelemetryModel: ObservableObject {
 
     func applySavedCPUControls() {
         // Restore persisted controls; surface first privilege denial via banner.
+        // Refresh CPPC support first so we never re-apply Active Mode on unsupported CPUs.
+        let cppcRes = ProcessorModel.shared.getCPPCScore()
+        cppcSupported = cppcRes.supported
+        cppcScores = cppcRes.scores
+        cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
+
         if UserDefaults.standard.bool(forKey: "has_saved_cppcActiveMode") {
             let active = UserDefaults.standard.bool(forKey: "saved_cppcActiveMode")
-            _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCActiveMode(active: active))
+            if active && !cppcSupported {
+                // Stale prefs / -amdcppcactive mismatch: clear Active and stop showing Auto-EPP.
+                _ = ProcessorModel.shared.setCPPCActiveMode(active: false)
+                UserDefaults.standard.set(false, forKey: "saved_cppcActiveMode")
+            } else {
+                _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCActiveMode(active: active))
+            }
         }
         if UserDefaults.standard.bool(forKey: "has_saved_cppcEPPValue") {
             let epp = UInt8(UserDefaults.standard.integer(forKey: "saved_cppcEPPValue"))
@@ -1208,10 +1220,24 @@ final class TelemetryModel: ObservableObject {
         cpbEnabled   = cpb.count > 1 && cpb[1]
         ppmEnabled   = ProcessorModel.shared.getPPM()
         lpmEnabled   = ProcessorModel.shared.getLPM()
-        
+
+        // Keep support bit in sync with Active Mode so UI never shows ON + "no CPPC support".
+        let cppcRes = ProcessorModel.shared.getCPPCScore()
+        cppcSupported = cppcRes.supported
+        if cppcRes.supported {
+            cppcScores = cppcRes.scores
+            cppcScoresEstimated = cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 }
+        }
+
         let cppc = ProcessorModel.shared.getCPPCActiveMode()
-        cppcActiveMode = cppc.active
+        // Active Mode is only meaningful when the kext reports CPPC support.
+        cppcActiveMode = cppc.active && cppcSupported
         cppcEPPValue = cppc.epp
+
+        // Heal inconsistent kext state left by -amdcppcactive without HW support.
+        if cppc.active && !cppcSupported {
+            _ = ProcessorModel.shared.setCPPCActiveMode(active: false)
+        }
     }
 
     /// Report a kernel write failure to the UI (privilege banner / console).
@@ -1273,6 +1299,11 @@ final class TelemetryModel: ObservableObject {
     }
 
     func setCPPCActiveMode(active: Bool) {
+        if active && !cppcSupported {
+            // UI should keep the switch disabled; still re-sync from kext.
+            loadCPUControls()
+            return
+        }
         let status = ProcessorModel.shared.setCPPCActiveMode(active: active)
         if noteKernelWriteStatus(status) {
             UserDefaults.standard.set(active, forKey: "saved_cppcActiveMode")

@@ -1165,9 +1165,14 @@ void AMDRyzenCPUPowerManagement::reinitHwState() {
     
     if (cppcSupported) {
         write_msr(kMSR_AMD_CPPC_ENABLE, 1);
+        // Boot-arg only enables Active Mode when hardware/CPUID/MSR actually supports CPPC.
+        cppcActiveMode = checkKernelArgument("-amdcppcactive");
+    } else {
+        cppcActiveMode = false;
+        if (checkKernelArgument("-amdcppcactive")) {
+            IOLog("AMDRyzenCPUPowerManagement::reinitHwState WARN: -amdcppcactive set but CPPC not supported on this CPU; Active Mode left off\n");
+        }
     }
-    
-    cppcActiveMode = checkKernelArgument("-amdcppcactive");
     
     uint64_t rapl = 0;
     if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {

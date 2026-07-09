@@ -655,8 +655,13 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 
             if (arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
-                
-            provider->cppcActiveMode = (arguments->scalarInput[0] == 1);
+
+            const bool wantActive = (arguments->scalarInput[0] == 1);
+            // Never advertise Active Mode when the CPU did not report CPPC support.
+            if (wantActive && !provider->cppcSupported)
+                return kIOReturnUnsupported;
+
+            provider->cppcActiveMode = wantActive;
             if (provider->cppcActiveMode) {
                 provider->applyEPPControl();
             }

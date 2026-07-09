@@ -2088,6 +2088,13 @@ struct ProfilesContentView: View {
                         if !model.cppcSupported {
                             Text(NSLocalizedString("This CPU did not report CPPC support to the kext.", comment: ""))
                                 .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
+                            Text(NSLocalizedString(
+                                "Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts.",
+                                comment: "Explains ON toggle + no-support contradiction"
+                            ))
+                            .font(.system(size: 10))
+                            .foregroundColor(.tahoeSubtext)
+                            .fixedSize(horizontal: false, vertical: true)
                         } else if !model.cppcActiveMode {
                             Text(NSLocalizedString(
                                 "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch.",
@@ -2106,7 +2113,8 @@ struct ProfilesContentView: View {
                     }
                 }
                 
-                if model.cppcActiveMode {
+                // Auto-EPP / EPP picker only when HW reports CPPC *and* Active Mode is on.
+                if model.cppcSupported && model.cppcActiveMode {
                     // 2. Dynamic Auto-EPP Engine
                     TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
                         VStack(alignment: .leading, spacing: 10) {
