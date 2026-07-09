@@ -315,6 +315,8 @@ public:
     bool disablePrivilegeCheck = false;
     uint16_t savedSMCChipIntel = 0;
     uint16_t kextloadAlerts = 0;
+    /// Ensures kunc_alert modal is shown at most once until the user dismisses/clears it.
+    bool kextAlertDisplayed = false;
 
     kern_return_t (*kunc_alert)(int,unsigned,const char*,const char*,const char*,
                                 const char*,const char*,const char*,const char*,const char*,unsigned*) {nullptr};

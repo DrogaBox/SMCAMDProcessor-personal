@@ -235,6 +235,8 @@ final class TelemetryModel: ObservableObject {
     static let shared = TelemetryModel()
 
     @Published var selectedTab: DashboardTab = .dashboard
+    /// Non-nil when a privileged kext write was denied (root / -amdpnopchk required).
+    @Published var privilegeErrorMessage: String? = nil
     @Published var cpuFreqAvgGHz: Double = 0
     @Published var cpuFreqMaxGHz: Double = 0
     @Published var cpuTempC: Double = 0
@@ -1190,38 +1192,65 @@ final class TelemetryModel: ObservableObject {
         cppcEPPValue = cppc.epp
     }
 
+    /// Report a kernel write failure to the UI (privilege banner / console).
+    @discardableResult
+    func noteKernelWriteStatus(_ status: kern_return_t) -> Bool {
+        if status == KERN_SUCCESS {
+            if privilegeErrorMessage != nil { privilegeErrorMessage = nil }
+            return true
+        }
+        if let hint = ProcessorModel.privilegeHint(for: status) {
+            privilegeErrorMessage = hint
+        }
+        return false
+    }
+
+    func clearPrivilegeError() {
+        privilegeErrorMessage = nil
+    }
+
     func setCPB(enabled: Bool) {
-        ProcessorModel.shared.setCPB(enabled: enabled)
-        UserDefaults.standard.set(enabled, forKey: "saved_cpbEnabled")
-        UserDefaults.standard.set(true, forKey: "has_saved_cpbEnabled")
+        let status = ProcessorModel.shared.setCPB(enabled: enabled)
+        if noteKernelWriteStatus(status) {
+            UserDefaults.standard.set(enabled, forKey: "saved_cpbEnabled")
+            UserDefaults.standard.set(true, forKey: "has_saved_cpbEnabled")
+        }
         loadCPUControls()
     }
 
     func setPPM(enabled: Bool) {
-        ProcessorModel.shared.setPPM(enabled: enabled)
-        UserDefaults.standard.set(enabled, forKey: "saved_ppmEnabled")
-        UserDefaults.standard.set(true, forKey: "has_saved_ppmEnabled")
+        let status = ProcessorModel.shared.setPPM(enabled: enabled)
+        if noteKernelWriteStatus(status) {
+            UserDefaults.standard.set(enabled, forKey: "saved_ppmEnabled")
+            UserDefaults.standard.set(true, forKey: "has_saved_ppmEnabled")
+        }
         loadCPUControls()
     }
 
     func setLPM(enabled: Bool) {
-        ProcessorModel.shared.setLPM(enabled: enabled)
-        UserDefaults.standard.set(enabled, forKey: "saved_lpmEnabled")
-        UserDefaults.standard.set(true, forKey: "has_saved_lpmEnabled")
+        let status = ProcessorModel.shared.setLPM(enabled: enabled)
+        if noteKernelWriteStatus(status) {
+            UserDefaults.standard.set(enabled, forKey: "saved_lpmEnabled")
+            UserDefaults.standard.set(true, forKey: "has_saved_lpmEnabled")
+        }
         loadCPUControls()
     }
 
     func setCPPCActiveMode(active: Bool) {
-        _ = ProcessorModel.shared.setCPPCActiveMode(active: active)
-        UserDefaults.standard.set(active, forKey: "saved_cppcActiveMode")
-        UserDefaults.standard.set(true, forKey: "has_saved_cppcActiveMode")
+        let status = ProcessorModel.shared.setCPPCActiveMode(active: active)
+        if noteKernelWriteStatus(status) {
+            UserDefaults.standard.set(active, forKey: "saved_cppcActiveMode")
+            UserDefaults.standard.set(true, forKey: "has_saved_cppcActiveMode")
+        }
         loadCPUControls()
     }
 
     func setCPPCEPPValue(epp: UInt8) {
-        _ = ProcessorModel.shared.setCPPCEPPValue(epp: epp)
-        UserDefaults.standard.set(Int(epp), forKey: "saved_cppcEPPValue")
-        UserDefaults.standard.set(true, forKey: "has_saved_cppcEPPValue")
+        let status = ProcessorModel.shared.setCPPCEPPValue(epp: epp)
+        if noteKernelWriteStatus(status) {
+            UserDefaults.standard.set(Int(epp), forKey: "saved_cppcEPPValue")
+            UserDefaults.standard.set(true, forKey: "has_saved_cppcEPPValue")
+        }
         loadCPUControls()
     }
 
@@ -1312,35 +1341,37 @@ final class TelemetryModel: ObservableObject {
         let arr = pStateRows.map { $0.rawValue }
         let err = ProcessorModel.shared.setPState(def: arr)
         if err == 0 {
+            privilegeErrorMessage = nil
             pStateEditorDirty = false
             loadPStateRows()
             return true
         }
+        _ = noteKernelWriteStatus(kern_return_t(err))
         return false
     }
 
     func setFanThrottle(fanIndex: Int, throttle: UInt8) {
         guard smcDriverLoaded else { return }
-        if ProcessorModel.shared.kernelSetUInt64(selector: 95, args: [UInt64(fanIndex), UInt64(throttle)]) {
+        if noteKernelWriteStatus(ProcessorModel.shared.kernelSetUInt64Status(selector: 95, args: [UInt64(fanIndex), UInt64(throttle)])) {
             fans[fanIndex].throttle = throttle
         }
     }
 
     func setFanOverride(fanIndex: Int, overrideEnabled: Bool) {
         guard smcDriverLoaded, !overrideEnabled else { return }
-        if ProcessorModel.shared.kernelSetUInt64(selector: 96, args: [UInt64(fanIndex)]) {
+        if noteKernelWriteStatus(ProcessorModel.shared.kernelSetUInt64Status(selector: 96, args: [UInt64(fanIndex)])) {
             fans[fanIndex].isOverrided = false
         }
     }
 
     func setAllFansAuto() {
         guard smcDriverLoaded else { return }
-        let _ = ProcessorModel.shared.kernelSetUInt64(selector: 97, args: [0])
+        _ = noteKernelWriteStatus(ProcessorModel.shared.kernelSetUInt64Status(selector: 97, args: [0]))
     }
 
     func setAllFansTakeOff() {
         guard smcDriverLoaded else { return }
-        let _ = ProcessorModel.shared.kernelSetUInt64(selector: 97, args: [1])
+        _ = noteKernelWriteStatus(ProcessorModel.shared.kernelSetUInt64Status(selector: 97, args: [1]))
     }
 
     func updateKextCurves() {
@@ -1361,7 +1392,7 @@ final class TelemetryModel: ObservableObject {
             let lut = curve.generateLUT()
             data.append(lut, count: 256)
             
-            _ = ProcessorModel.shared.kernelSetStruct(selector: 101, data: data)
+            _ = noteKernelWriteStatus(ProcessorModel.shared.kernelSetStruct(selector: 101, data: data))
         }
     }
 
@@ -1369,14 +1400,24 @@ final class TelemetryModel: ObservableObject {
         guard smcDriverLoaded else { return }
         for (fanIdx, snapshot) in fans.enumerated() {
             let curveIdx = fanMappings[snapshot.id] ?? -1
-            _ = ProcessorModel.shared.kernelSetUInt64(selector: 102, args: [UInt64(fanIdx), UInt64(bitPattern: Int64(curveIdx))])
+            let st = ProcessorModel.shared.kernelSetUInt64Status(
+                selector: 102,
+                args: [UInt64(fanIdx), UInt64(bitPattern: Int64(curveIdx))]
+            )
+            _ = noteKernelWriteStatus(st)
+            if st != KERN_SUCCESS { break }
         }
     }
 
     func releaseAllKextMappings() {
         guard smcDriverLoaded else { return }
         for (fanIdx, _) in fans.enumerated() {
-            _ = ProcessorModel.shared.kernelSetUInt64(selector: 102, args: [UInt64(fanIdx), UInt64(bitPattern: -1)])
+            let st = ProcessorModel.shared.kernelSetUInt64Status(
+                selector: 102,
+                args: [UInt64(fanIdx), UInt64(bitPattern: -1)]
+            )
+            _ = noteKernelWriteStatus(st)
+            if st != KERN_SUCCESS { break }
         }
     }
 
@@ -1745,12 +1786,12 @@ final class TelemetryModel: ObservableObject {
     }
     
     func setCurveOptimizerOffset(core: Int, offset: Int) -> Bool {
-        let pm = ProcessorModel.shared
-        let success = pm.setCurveOptimizerOffset(core: UInt8(core), offset: Int8(offset))
-        if success {
+        let status = ProcessorModel.shared.setCurveOptimizerOffset(core: UInt8(core), offset: Int8(offset))
+        let ok = noteKernelWriteStatus(status)
+        if ok {
             fetchCurveOptimizerOffsets()
         }
-        return success
+        return ok
     }
 
     private func requestNotificationPermission() {
