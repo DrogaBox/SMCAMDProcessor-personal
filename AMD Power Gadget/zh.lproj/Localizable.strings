@@ -581,7 +581,6 @@
 "System Default" = "系统默认";
 "Current: %@" = "当前：%@";
 "Restart required" = "需要重启";
-"The language will change after the app restarts." = "应用重启后语言将更改。";
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "此操作需要管理员权限。请以 root 运行 AMD Power Gadget，或添加启动参数 -amdpnopchk。";
 
 "The app needs to restart to load the selected language." = "需要重启应用才能加载所选语言。";

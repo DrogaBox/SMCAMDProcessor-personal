@@ -588,4 +588,3 @@
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Esta acción requiere privilegios de administrador. Ejecuta AMD Power Gadget como root o añade el boot-arg -amdpnopchk para depuración.";
 
 /* Crowdin sync: language picker, privilege banner, theme opacity */
-"The language will change after the app restarts." = "El idioma cambiará después de reiniciar la aplicación.";

@@ -1326,8 +1326,13 @@ final class TelemetryModel: ObservableObject {
     }
 
     func setSpeedStep(_ index: Int) {
-        ProcessorModel.shared.setPState(state: index)
-        selectedSpeedStep = index
+        let status = ProcessorModel.shared.setPState(state: index)
+        if noteKernelWriteStatus(status) {
+            selectedSpeedStep = index
+        } else {
+            // Reload actual P-state selection so UI does not stick on a denied step
+            loadCPUControls()
+        }
     }
 
     func loadPStateRows() {

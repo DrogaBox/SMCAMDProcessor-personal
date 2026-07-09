@@ -581,7 +581,6 @@
 "System Default" = "Системный по умолчанию";
 "Current: %@" = "Сейчас: %@";
 "Restart required" = "Требуется перезапуск";
-"The language will change after the app restarts." = "Язык изменится после перезапуска приложения.";
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Для этого действия нужны права администратора. Запустите AMD Power Gadget от root или добавьте boot-arg -amdpnopchk.";
 
 "The app needs to restart to load the selected language." = "Приложению нужно перезапуститься, чтобы загрузить выбранный язык.";

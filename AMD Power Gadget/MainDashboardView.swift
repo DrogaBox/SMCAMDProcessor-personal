@@ -3621,7 +3621,8 @@ struct ColorTokenEditorSlot: View {
                 ColorPicker("", selection: $draftRGB, supportsOpacity: false)
                     .labelsHidden()
                     .onChange(of: draftRGB) { _ in
-                        pushHex()
+                        guard !suppressPush else { return }
+                        pushHex(userEdit: true)
                     }
 
                 // Live swatch with current opacity
@@ -3654,7 +3655,8 @@ struct ColorTokenEditorSlot: View {
                 Slider(value: $opacity, in: 0...1)
                     .controlSize(.small)
                     .onChange(of: opacity) { _ in
-                        pushHex()
+                        guard !suppressPush else { return }
+                        pushHex(userEdit: true)
                     }
                 Text("\(Int((opacity * 100).rounded()))%")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
@@ -3677,21 +3679,32 @@ struct ColorTokenEditorSlot: View {
     }
 
     private func pullFromHex() {
+        suppressPush = true
         let color = Color(hexString: hex) ?? .white
         let c = color.resolvedRGBA
         // Store opaque RGB in the picker; alpha lives in the slider
         draftRGB = Color.srgb(r: c.r, g: c.g, b: c.b, a: 1)
         opacity = c.a
+        // Quietly normalize legacy #RRGGBB → #AARRGGBB without flipping app theme to Custom
+        let normalized = Color.srgb(r: c.r, g: c.g, b: c.b, a: c.a).toHexStringARGB
+        if normalized.uppercased() != hex.uppercased() {
+            hex = normalized
+        }
+        DispatchQueue.main.async { suppressPush = false }
     }
 
-    private func pushHex() {
+    /// - Parameter userEdit: when true, notifies parent (switches preset to Custom).
+    ///   Silent normalizes / resyncs must pass false so opening Themes does not force Custom.
+    private func pushHex(userEdit: Bool) {
         let c = draftRGB.resolvedRGBA
         let composed = Color.srgb(r: c.r, g: c.g, b: c.b, a: opacity)
         let next = composed.toHexStringARGB
         guard next.uppercased() != hex.uppercased() else { return }
         suppressPush = true
         hex = next
-        onEdited()
+        if userEdit {
+            onEdited()
+        }
         DispatchQueue.main.async { suppressPush = false }
     }
 }
@@ -3899,6 +3912,8 @@ struct LanguagePickerCard: View {
                 .labelsHidden()
                 .pickerStyle(.menu)
                 .frame(maxWidth: 320, alignment: .leading)
+                // Force menu row to match stored language after Cancel
+                .id(languageCode)
 
                 Text(String(format: NSLocalizedString("Current: %@", comment: "Current language label"), currentLanguageLabel))
                     .font(.system(size: 10))
