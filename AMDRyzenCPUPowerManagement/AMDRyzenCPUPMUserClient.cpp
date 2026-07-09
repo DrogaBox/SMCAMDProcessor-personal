@@ -25,18 +25,28 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     proc_t proc = (proc_t)get_bsdtask_info(owningTask);
     if (!proc) return false;
     
+    // Capture binary name for audit logging only — never use it for authorization.
     proc_name(proc_pid(proc), taskProcessBinaryName, sizeof(taskProcessBinaryName));
     taskProcessBinaryName[sizeof(taskProcessBinaryName) - 1] = '\0';
     
+    // Authorization model (v3.16.1):
+    // - Always allow the UserClient connection so monitoring apps (menu bar) can
+    //   open the service as a normal user and read telemetry.
+    // - Privilege for WRITE selectors (MSR/SMU/fan/Curve Optimizer) is enforced
+    //   per-call via hasPrivilege() — root or boot-arg -amdpnopchk only.
+    // - Do NOT return false for non-root here: that makes IOServiceOpen fail and
+    //   the GUI shows a false "kext not found" error.
     bool isRoot = (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0);
-    bool isPrivilegedDebug = checkKernelArgument("-amdpnopchk");
+    bool isDebugBypass = checkKernelArgument("-amdpnopchk");
     
-    if (isRoot || isPrivilegedDebug) {
+    if (isRoot || isDebugBypass) {
         clientAuthorizedByUser = true;
+        IOLog("AMDRyzenCPUPMUserClient: ACCEPTED privileged pid=%d binary='%s' (root=%d debug=%d)\n",
+              proc_pid(proc), taskProcessBinaryName, isRoot, isDebugBypass);
     } else {
-        IOLog("AMDRyzenCPUPMUserClient: REJECTED pid=%d binary='%s' (requires root)\n",
+        clientAuthorizedByUser = false;
+        IOLog("AMDRyzenCPUPMUserClient: ACCEPTED read-only pid=%d binary='%s' (writes require root or -amdpnopchk)\n",
               proc_pid(proc), taskProcessBinaryName);
-        return false;
     }
     
     return true;
