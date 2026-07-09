@@ -1,8 +1,11 @@
 /* 
-  Localizable.strings (Italian)
+  Localizable.strings (English)
   AMD Power Gadget
-  Completed IT for Crowdin
 */
+
+/* NOTE: Some keys use Spanish text for historical reasons. */
+/* These are used as lookup identifiers and work correctly. */
+/* A future refactor should standardize all keys to English. */
 
 "Dashboard" = "Pannello";
 "Telemetry" = "Telemetria";
@@ -12,20 +15,24 @@
 "Menu Bar" = "Barra dei menu";
 "System Info" = "Info di sistema";
 "Desktop Widgets" = "Widget desktop";
+
 "AMD Power" = "AMD Power";
 "Gadget" = "Gadget";
+
 "CPU" = "CPU";
 "GPU" = "GPU";
 "Freq" = "Freq.";
 "Average" = "Media";
 "Avg: %@" = "Media: %@";
 "Collecting data…" = "Raccolta dati…";
+
 "Low Power Mode (LPM)" = "Modalità basso consumo (LPM)";
 "Allows macOS to auto-manage CPU frequency" = "Consenti a macOS di gestire automaticamente la frequenza della CPU";
 "Forces CPU to lowest frequency for minimum power" = "Forza la CPU alla frequenza più bassa per il minimo consumo";
 "Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
 "Update Interval" = "Intervallo di aggiornamento";
 "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Imposta quanto spesso si aggiorna la telemetria. Più basso = più reattivo; più alto = meno CPU.";
+
 "Opciones en Menú Bar" = "Opzioni barra dei menu";
 "Choose which items appear in the menu bar. Changes apply immediately." = "Scegli gli elementi nella barra dei menu. Le modifiche si applicano subito.";
 "Customize the visual appearance of the menu bar items." = "Personalizza l’aspetto degli elementi della barra dei menu.";
@@ -38,25 +45,31 @@
 "G:X.XG in Memory column" = "G:X.XG nella colonna Memoria";
 "Show GPU Fan Speed" = "Mostra velocità ventola GPU";
 "G:XXXX in Fan column" = "G:XXXX nella colonna Ventola";
+
 "No fans detected." = "Nessuna ventola rilevata.";
 "SMC driver not available" = "Driver SMC non disponibile";
 "Your SMC chip may not be supported." = "Il chip SMC potrebbe non essere supportato.";
 "RPM" = "RPM";
 "Throttle" = "Throttle PWM";
 "↩ Reset to Auto" = "↩ Ripristina Auto";
+
 "Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Seleziona un profilo per regolare l’intervallo operativo della CPU. Le modifiche sono immediate.";
+
 "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Modifica direttamente i registri P-State grezzi. Richiede controllo privilegi kext disattivato (boot-arg o root).";
 "This will write the raw P-State definitions directly to the CPU. Proceed?" = "Scriverà le definizioni P-State grezze direttamente nella CPU. Continuare?";
 "Disabled — work in progress" = "Disattivato — lavoro in corso";
 "WIP" = "WIP";
+
 "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Abilita in OC: Misc → Security → ExposeSensitiveData = 0x08";
 "Motherboard info not available" = "Info scheda madre non disponibili";
+
 "Vista previa de la Barra de Menús:" = "Anteprima barra dei menu:";
 "Ancho estimado: %dpt" = "Larghezza stimata: %d pt";
 "Restart the app to fully apply width changes." = "Riavvia l’app per applicare del tutto le modifiche di larghezza.";
 "Small (%dpt)" = "Piccolo (%d pt)";
 "Medium (%dpt)" = "Medio (%d pt)";
 "Large (%dpt)" = "Grande (%d pt)";
+
 "Green" = "Verde";
 "Blue" = "Blu";
 "Orange" = "Arancione";
@@ -65,6 +78,7 @@
 "Pink" = "Rosa";
 "Teal" = "Verde acqua";
 "Turquoise" = "Turchese";
+
 "Verde" = "Verde";
 "Azul" = "Blu";
 "Naranja" = "Arancione";
@@ -72,6 +86,7 @@
 "Morado" = "Viola";
 "Rosa" = "Rosa";
 "Turquesa" = "Verde acqua";
+
 "Dynamic Colors (Temp Only)" = "Colori dinamici (solo temp.)";
 "Temp Alert Color" = "Colore allarme temp.";
 "Temp Alert Limit" = "Limite allarme temp.";
@@ -81,6 +96,7 @@
 "AMD Power Gadget" = "AMD Power Gadget";
 "AMD Power Tool" = "AMD Power Tool";
 "SMC Fans" = "Ventole SMC";
+
 "Fan 1" = "Ventola 1";
 "Fan 2" = "Ventola 2";
 "Fan 3" = "Ventola 3";
@@ -89,6 +105,8 @@
 "Fan 6" = "Ventola 6";
 "Fan 7" = "Ventola 7";
 "Fan 8" = "Ventola 8";
+
+/* Alerts */
 "To enable motherboard display:" = "Per mostrare la scheda madre:";
 "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Apri il config.plist di OpenCore,\n\nVai a Misc → Security → ExposeSensitiveData,\n\nImposta 0x08 per esporre le info della scheda.";
 "Done" = "Fatto";
@@ -103,11 +121,17 @@
 "Invalid File" = "File non valido";
 "The selected file could not be read or is not a valid pstate file." = "Il file non può essere letto o non è un file pstate valido.";
 "OK" = "OK";
+
+/* Dynamic format strings */
 "Avg: %.2f GHz, Max: %.2f GHz" = "Media: %.2f GHz, Max: %.2f GHz";
 "%.2f °C" = "%.2f °C";
 "%.2f Watt" = "%.2f W";
+
+/* Session Peaks */
 "Session Peaks" = "Picchi di sessione";
 "Reset Peaks" = "Azzera picchi";
+
+/* GPU Fan Control */
 "GPU Fan Control (Zero RPM / Curves)" = "Controllo ventola GPU (Zero RPM / curve)";
 "macOS Hardware Limitation" = "Limitazione hardware di macOS";
 "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Le override software della velocità ventola GPU (Zero RPM o curve in macOS) non sono supportate dal driver kernel/IOKit di macOS per GPU AMD. Le gestisce il firmware GPU (vBIOS).";
@@ -115,6 +139,8 @@
 "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "L’unico modo (forzare le ventole a girare a temperature più basse o disattivare Zero RPM) è esportare il vBIOS, creare una Soft PowerPlay Table (SPPT) e iniettarla in config.plist di OpenCore sotto DeviceProperties.";
 "Open SPPT Guide" = "Apri guida SPPT";
 "MorePowerTool" = "MorePowerTool";
+
+/* CPPC & EPP */
 "Native CPPC Active Mode (EPP)" = "Modalità attiva CPPC nativa (EPP)";
 "Enables autonomous hardware frequency scaling (recommended)" = "Abilita lo scaling autonomo della frequenza hardware (consigliato)";
 "Power Management Mode" = "Modalità gestione energia";
@@ -129,6 +155,8 @@
 "Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Seleziona un profilo manuale di override P-State. Le frequenze saranno limitate al passo scelto.";
 "Mode" = "Modalità";
 "EPP Profile" = "Profilo EPP";
+
+/* Desktop Widgets */
 "Show CPU Widget" = "Mostra widget CPU";
 "Show GPU Widget" = "Mostra widget GPU";
 "Show RAM Widget" = "Mostra widget RAM";
@@ -154,6 +182,7 @@
 "Classic Glass" = "Vetro classico";
 "Pro Monitor" = "Monitor Pro";
 "Core Matrix" = "Matrice core";
+
 "United" = "Unificato";
 "Show United Widget" = "Mostra widget unificato";
 "Configure Combined Metrics" = "Configura metriche combinate";
@@ -163,8 +192,10 @@
 "Include Disk" = "Includi disco";
 "Include Network" = "Includi rete";
 "Include Fan" = "Includi ventola";
+
 "Temas & Apariencia" = "Temi e aspetto";
 "Análisis" = "Analisi";
+
 "Select Visual Theme (Instant Application)" = "Seleziona tema visuale (applicazione immediata)";
 "Custom Theme Creator & Exchange (JSON)" = "Creatore e scambio temi (JSON)";
 "Chart Rendering Style" = "Stile rendering grafici";
@@ -178,6 +209,8 @@
 "Orange Accent" = "Accento arancione";
 "Green Accent" = "Accento verde";
 "Purple Accent" = "Accento viola";
+
+/* ===== Auto-extracted / curated for Crowdin (v3.16.1+) ===== */
 "%.0f" = "%.0f";
 "%.0f K/s" = "%.0f K/s";
 "%.0f MHz" = "%.0f MHz";
@@ -535,4 +568,20 @@
 "You have the latest version installed (v%@)." = "Hai installata l’ultima versione (v%@).";
 "°C" = "°C";
 "Área Rellena (Gradient)" = "Area riempita (gradiente)";
+
+/* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "La versione di AMDRyzenCPUPowerManagement (%@) è obsoleta e non compatibile con l’API. Usa la 3.0.0 o successiva e riavvia l’app.";
+
+/* Crowdin sync: language picker, privilege banner, theme opacity */
+"Opacity" = "Opacità";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Usa il cursore Opacità per la trasparenza (il pannello colori di macOS spesso azzera l'alpha).";
+"App Language" = "Lingua dell'app";
+"Choose the interface language. The app will restart to apply the change." = "Scegli la lingua dell'interfaccia. L'app si riavvierà per applicare la modifica.";
+"Apply & Restart" = "Applica e riavvia";
+"System Default" = "Predefinito di sistema";
+"Current: %@" = "Attuale: %@";
+"Restart required" = "Riavvio necessario";
+"The language will change after the app restarts." = "La lingua cambierà dopo il riavvio dell'app.";
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Questa azione richiede privilegi di amministratore. Esegui AMD Power Gadget come root oppure aggiungi l'argomento di avvio -amdpnopchk.";
+
+"The app needs to restart to load the selected language." = "L'app deve riavviarsi per caricare la lingua selezionata.";
