@@ -1180,21 +1180,12 @@ final class TelemetryModel: ObservableObject {
 
     func applySavedCPUControls() {
         // Restore persisted controls; surface first privilege denial via banner.
-        // Refresh CPPC support first so we never re-apply Active Mode on unsupported CPUs.
-        let cppcRes = ProcessorModel.shared.getCPPCScore()
-        cppcSupported = cppcRes.supported
-        cppcScores = cppcRes.scores
-        cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
+        refreshCPPCSupportFromKext()
 
         if UserDefaults.standard.bool(forKey: "has_saved_cppcActiveMode") {
             let active = UserDefaults.standard.bool(forKey: "saved_cppcActiveMode")
-            if active && !cppcSupported {
-                // Stale prefs / -amdcppcactive mismatch: clear Active and stop showing Auto-EPP.
-                _ = ProcessorModel.shared.setCPPCActiveMode(active: false)
-                UserDefaults.standard.set(false, forKey: "saved_cppcActiveMode")
-            } else {
-                _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCActiveMode(active: active))
-            }
+            // Always try to restore; kext rejects only if truly unsupported.
+            _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCActiveMode(active: active))
         }
         if UserDefaults.standard.bool(forKey: "has_saved_cppcEPPValue") {
             let epp = UInt8(UserDefaults.standard.integer(forKey: "saved_cppcEPPValue"))
@@ -1214,6 +1205,14 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
+    /// Pull CPPC support + rankings from the kext (selector 21).
+    private func refreshCPPCSupportFromKext() {
+        let cppcRes = ProcessorModel.shared.getCPPCScore()
+        cppcSupported = cppcRes.supported
+        cppcScores = cppcRes.scores
+        cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
+    }
+
     func loadCPUControls() {
         let cpb = ProcessorModel.shared.getCPB()
         cpbSupported = cpb.count > 0 && cpb[0]
@@ -1221,22 +1220,17 @@ final class TelemetryModel: ObservableObject {
         ppmEnabled   = ProcessorModel.shared.getPPM()
         lpmEnabled   = ProcessorModel.shared.getLPM()
 
-        // Keep support bit in sync with Active Mode so UI never shows ON + "no CPPC support".
-        let cppcRes = ProcessorModel.shared.getCPPCScore()
-        cppcSupported = cppcRes.supported
-        if cppcRes.supported {
-            cppcScores = cppcRes.scores
-            cppcScoresEstimated = cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 }
-        }
+        refreshCPPCSupportFromKext()
 
         let cppc = ProcessorModel.shared.getCPPCActiveMode()
-        // Active Mode is only meaningful when the kext reports CPPC support.
-        cppcActiveMode = cppc.active && cppcSupported
+        // Trust kext Active Mode bit (boot-arg -amdcppcactive / user toggle).
+        // Do NOT force OFF when a flaky support query fails — that locked users out.
+        cppcActiveMode = cppc.active
         cppcEPPValue = cppc.epp
 
-        // Heal inconsistent kext state left by -amdcppcactive without HW support.
-        if cppc.active && !cppcSupported {
-            _ = ProcessorModel.shared.setCPPCActiveMode(active: false)
+        // If Active is on, the kext is treating CPPC as available for EPP writes.
+        if cppc.active {
+            cppcSupported = true
         }
     }
 
@@ -1299,16 +1293,14 @@ final class TelemetryModel: ObservableObject {
     }
 
     func setCPPCActiveMode(active: Bool) {
-        if active && !cppcSupported {
-            // UI should keep the switch disabled; still re-sync from kext.
-            loadCPUControls()
-            return
-        }
         let status = ProcessorModel.shared.setCPPCActiveMode(active: active)
         if noteKernelWriteStatus(status) {
             UserDefaults.standard.set(active, forKey: "saved_cppcActiveMode")
             UserDefaults.standard.set(true, forKey: "has_saved_cppcActiveMode")
+            cppcActiveMode = active
+            if active { cppcSupported = true }
         }
+        // Re-sync from kext (also picks up Unsupported / privilege failures).
         loadCPUControls()
     }
 
