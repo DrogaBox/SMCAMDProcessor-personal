@@ -1672,50 +1672,67 @@ struct CoreGridCard: View {
         }
     }
 
+    /// Checkbox + single-line label that never compresses into per-character wrapping.
+    @ViewBuilder
+    private func gridHUDToggle(_ key: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            Text(NSLocalizedString(key, comment: "Core grid HUD metric toggle"))
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.tahoeSubtext)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .toggleStyle(.checkbox)
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
     var body: some View {
         TahoeCard {
-            HStack(alignment: .center) {
+            // Two-row header: title on top; controls on a single non-wrapping row.
+            // (One cramped HStack was breaking ES labels into "Te mp ." / "Fr ec .")
+            VStack(alignment: .leading, spacing: 8) {
                 SectionTitle("Current Utilization — \(model.sysInfo.logicalCores) Threads (\(model.sysInfo.physicalCores) Cores)")
-                Spacer()
-                HStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        Toggle("Temp", isOn: $gridShowTemp)
-                            .toggleStyle(.checkbox)
-                            .font(.system(size: 9, weight: .semibold))
-                        Toggle("Freq", isOn: $gridShowFreq)
-                            .toggleStyle(.checkbox)
-                            .font(.system(size: 9, weight: .semibold))
-                        Toggle("Load", isOn: $gridShowLoad)
-                            .toggleStyle(.checkbox)
-                            .font(.system(size: 9, weight: .semibold))
+
+                HStack(alignment: .center, spacing: 12) {
+                    HStack(spacing: 12) {
+                        gridHUDToggle("Temp", isOn: $gridShowTemp)
+                        gridHUDToggle("Freq", isOn: $gridShowFreq)
+                        gridHUDToggle("Load", isOn: $gridShowLoad)
                     }
-                    .padding(.trailing, 8)
-                    
-                    Toggle(NSLocalizedString("Sort by Rank", comment: ""), isOn: $sortCoresByRanking)
-                        .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue))
-                        .font(.system(size: 10, weight: .semibold))
-                        .scaleEffect(0.85)
-                    
+
+                    Spacer(minLength: 8)
+
+                    Toggle(isOn: $sortCoresByRanking) {
+                        Text(NSLocalizedString("Sort by Rank", comment: ""))
+                            .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentBlue))
+                    .fixedSize(horizontal: true, vertical: false)
+
                     if model.cppcSupported {
                         HStack(spacing: 4) {
                             Image(systemName: "bolt.fill")
                                 .font(.system(size: 9))
                                 .foregroundColor(model.cppcActiveMode ? .tahoeAccentGreen : (model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentCyan))
-                            // Distinguish: hardware CPPC scores vs software Active Mode (EPP)
                             Text(cppcBadgeLabel)
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(model.cppcActiveMode ? .tahoeAccentGreen : (model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentCyan))
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
                             if model.cppcScoresEstimated {
                                 Text("~")
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(.tahoeAccentOrange)
                             }
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                         .background(Color.white.opacity(0.04))
                         .cornerRadius(4)
                         .help(cppcBadgeHelp)
+                        .fixedSize(horizontal: true, vertical: false)
                     }
                 }
             }
