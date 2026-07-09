@@ -587,4 +587,13 @@
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Для этого действия нужны права администратора. Запустите AMD Power Gadget от root или добавьте boot-arg -amdpnopchk.";
 
-/* Crowdin: recent UI strings */
+/* Crowdin: recent UI strings — CPPC badge vs EPP Active Mode */
+"CPPC: HW OK" = "CPPC: HW OK";
+"CPPC: EPP On" = "CPPC: EPP On";
+"This CPU did not report CPPC support to the kext." = "This CPU did not report CPPC support to the kext.";
+"If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch." = "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch.";
+"Native CPPC Active Mode (EPP) is ON. Cores scale autonomously; rankings come from the processor." = "Native CPPC Active Mode (EPP) is ON. Cores scale autonomously; rankings come from the processor.";
+"CPPC hardware scores could not be read. Rankings are estimated from observed clocks. This is not the Profiles EPP toggle." = "CPPC hardware scores could not be read. Rankings are estimated from observed clocks. This is not the Profiles EPP toggle.";
+"The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root)." = "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root).";
+/* Deprecated badge key — kept so old locales still resolve */
+"CPPC: Active" = "CPPC: HW OK";
