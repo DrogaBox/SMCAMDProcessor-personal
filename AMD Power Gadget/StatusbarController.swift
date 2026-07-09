@@ -16,6 +16,7 @@ class RefreshRateConfig: ObservableObject {
     static let shared = RefreshRateConfig()
     private let ud = UserDefaults.standard
 
+    /// User-selected sampling interval (seconds). Honored as-is by TelemetryModel.
     @Published var interval: Double = 0.7 {
         didSet {
             ud.set(interval, forKey: "refresh_interval")
@@ -491,13 +492,14 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         // Listen for config changes and telemetry updates
         NotificationCenter.default.addObserver(self, selector: #selector(updateLength), name: .init("MenuBarConfigChanged"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: .init("CloseMenuBarPopover"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(rebuildPopoverTheme), name: .init("AppThemeChanged"), object: nil)
         
+        // objectWillChange already hops to main via receive(on:) — avoid double async enqueue
         telemetrySubscription = TelemetryModel.shared.objectWillChange
             .receive(on: RunLoop.main)
+            .throttle(for: .milliseconds(200), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] _ in
-                DispatchQueue.main.async {
-                    self?.update()
-                }
+                self?.update()
             }
 
         TelemetryModel.shared.setStatusbarActive(true)
@@ -688,6 +690,19 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         if popover.isShown {
             popover.close()
             TelemetryModel.shared.setPopoverVisible(false)
+        }
+    }
+
+    /// Rebuild SwiftUI root when app theme changes (RTL-aligned presets).
+    @objc func rebuildPopoverTheme() {
+        let wasOpen = popover.isShown
+        let wasPinned = MenuBarConfig.shared.popoverPinOpen
+        popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView())
+        popover.behavior = wasPinned ? .applicationDefined : .transient
+        // If it was open, re-show so chrome refreshes immediately
+        if wasOpen, let button = statusItem.button {
+            let rect = button.bounds
+            popover.show(relativeTo: rect, of: button, preferredEdge: .minY)
         }
     }
 
