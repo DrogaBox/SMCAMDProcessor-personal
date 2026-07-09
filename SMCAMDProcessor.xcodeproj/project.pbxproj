@@ -51,6 +51,12 @@
 		B5DF4AB6247156F200663498 /* ISSuperIONCT668X.hpp in Headers */ = {isa = PBXBuildFile; fileRef = B5DF4AB4247156F200663498 /* ISSuperIONCT668X.hpp */; };
 		B5F3A1032B7C010300ABCDEF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B5F3A1002B7C010000ABCDEF /* Localizable.strings */; };
 		B5F46D81240E6F19009F2961 /* ProcessorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F46D80240E6F19009F2961 /* ProcessorModel.swift */; };
+		C0FFEE000000000000000040 /* ColorHexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000020 /* ColorHexTests.swift */; };
+		C0FFEE000000000000000041 /* EPPMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000021 /* EPPMappingTests.swift */; };
+		C0FFEE000000000000000042 /* FormatInstTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000022 /* FormatInstTests.swift */; };
+		C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */; };
+		C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000024 /* PStateRowTests.swift */; };
+		C0FFEE000000000000000013 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000012 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -148,6 +154,13 @@
 		B5F3A2262B7C0126ABCDEF /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5F3A2272B7C0127ABCDEF /* zh */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh; path = zh.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5F46D80240E6F19009F2961 /* ProcessorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessorModel.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000020 /* ColorHexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHexTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000021 /* EPPMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPPMappingTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000022 /* FormatInstTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatInstTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegeAndFanCurveTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000024 /* PStateRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PStateRowTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000002 /* AMDPowerGadgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AMDPowerGadgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE000000000000000012 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,6 +188,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B5CE1F7926B4271800DBF70A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
+		C0FFEE000000000000000004 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -285,6 +306,7 @@
 				B57D27F623F66AE7002BC699 /* AMDRyzenCPUPowerManagement */,
 				B5011E9F242E01CC009FB2A2 /* SMCAMDProcessor */,
 				B56162C52400EF770006A7D8 /* AMD Power Gadget */,
+				C0FFEE000000000000000011 /* AMDPowerGadgetTests */,
 				B5CE1F7D26B4271800DBF70A /* APGLaunchHelper */,
 				B57D27F523F66AE7002BC699 /* Products */,
 				B5CA7D642AC2DE73005FEE73 /* Frameworks */,
@@ -296,6 +318,7 @@
 			children = (
 				B57D27F423F66AE7002BC699 /* AMDRyzenCPUPowerManagement.kext */,
 				B56162C42400EF770006A7D8 /* AMD Power Gadget.app */,
+				C0FFEE000000000000000002 /* AMDPowerGadgetTests.xctest */,
 				B5011E9E242E01CC009FB2A2 /* SMCAMDProcessor.kext */,
 				B5CE1F7C26B4271800DBF70A /* APGLaunchHelper.app */,
 			);
@@ -370,6 +393,19 @@
 				B5D20186241B85E800BBD06A /* kernel_resolver.h */,
 			);
 			path = symresolver;
+			sourceTree = "<group>";
+		};
+
+		C0FFEE000000000000000011 /* AMDPowerGadgetTests */ = {
+			isa = PBXGroup;
+			children = (
+				C0FFEE000000000000000020 /* ColorHexTests.swift */,
+				C0FFEE000000000000000021 /* EPPMappingTests.swift */,
+				C0FFEE000000000000000022 /* FormatInstTests.swift */,
+				C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */,
+				C0FFEE000000000000000024 /* PStateRowTests.swift */,
+			);
+			path = AMDPowerGadgetTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -475,7 +511,45 @@
 			productReference = B5CE1F7C26B4271800DBF70A /* APGLaunchHelper.app */;
 			productType = "com.apple.product-type.application";
 		};
+
+		C0FFEE000000000000000001 /* AMDPowerGadgetTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE000000000000000008 /* Build configuration list for PBXNativeTarget "AMDPowerGadgetTests" */;
+			buildPhases = (
+				C0FFEE000000000000000003 /* Sources */,
+				C0FFEE000000000000000004 /* Frameworks */,
+				C0FFEE000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0FFEE000000000000000006 /* PBXTargetDependency */,
+			);
+			name = AMDPowerGadgetTests;
+			productName = AMDPowerGadgetTests;
+			productReference = C0FFEE000000000000000002 /* AMDPowerGadgetTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+
+/* Begin PBXContainerItemProxy section */
+		C0FFEE000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B57D27EB23F66AE7002BC699 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B56162C32400EF770006A7D8;
+			remoteInfo = "AMD Power Gadget";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		C0FFEE000000000000000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B56162C32400EF770006A7D8 /* AMD Power Gadget */;
+			targetProxy = C0FFEE000000000000000007 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		B57D27EB23F66AE7002BC699 /* Project object */ = {
@@ -496,6 +570,10 @@
 					};
 					B5CE1F7B26B4271800DBF70A = {
 						CreatedOnToolsVersion = 12.5.1;
+					};
+					C0FFEE000000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = B56162C32400EF770006A7D8;
 					};
 				};
 			};
@@ -543,6 +621,7 @@
 				B5011E9D242E01CC009FB2A2 /* SMCAMDProcessor */,
 				B5CE1F7B26B4271800DBF70A /* APGLaunchHelper */,
 				B56162C32400EF770006A7D8 /* AMD Power Gadget */,
+				C0FFEE000000000000000001 /* AMDPowerGadgetTests */,
 			);
 		};
 /* End PBXProject section */
@@ -576,6 +655,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B5CE1F7A26B4271800DBF70A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
+		C0FFEE000000000000000005 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -636,6 +723,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+
+		C0FFEE000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0FFEE000000000000000040 /* ColorHexTests.swift in Sources */,
+				C0FFEE000000000000000041 /* EPPMappingTests.swift in Sources */,
+				C0FFEE000000000000000042 /* FormatInstTests.swift in Sources */,
+				C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */,
+				C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -691,7 +791,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.17.0;
+				CURRENT_PROJECT_VERSION = 3.18.0;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/Lilu.kext/Contents/Resources",
 					"${PROJECT_DIR}/VirtualSMC.kext/Contents/Resources",
@@ -704,7 +804,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.17.0;
+				MARKETING_VERSION = 3.18.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
 				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				OTHER_CFLAGS = "";
@@ -720,7 +820,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.17.0;
+				CURRENT_PROJECT_VERSION = 3.18.0;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/Lilu.kext/Contents/Resources",
 					"${PROJECT_DIR}/VirtualSMC.kext/Contents/Resources",
@@ -733,7 +833,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.17.0;
+				MARKETING_VERSION = 3.18.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
 				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				OTHER_CFLAGS = "";
@@ -747,10 +847,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ENABLE_TESTABILITY = YES;
 				CODE_SIGN_ENTITLEMENTS = "AMD Power Gadget/AMD_Power_Gadget.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.17.0;
+				CURRENT_PROJECT_VERSION = 3.18.0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -762,7 +863,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.17.0;
+				MARKETING_VERSION = 3.18.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMD-Power-Gadget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -775,10 +876,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ENABLE_TESTABILITY = YES;
 				CODE_SIGN_ENTITLEMENTS = "AMD Power Gadget/AMD_Power_Gadget.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.17.0;
+				CURRENT_PROJECT_VERSION = 3.18.0;
 				GCC_PREPROCESSOR_DEFINITIONS = "VERSION_STRING=$(CURRENT_PROJECT_VERSION)";
 				INFOPLIST_FILE = "AMD Power Gadget/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -786,7 +888,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.17.0;
+				MARKETING_VERSION = 3.18.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMD-Power-Gadget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -911,7 +1013,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.17.0;
+				CURRENT_PROJECT_VERSION = 3.18.0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -929,7 +1031,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.17.0;
+				MARKETING_VERSION = 3.18.0;
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
@@ -962,7 +1064,7 @@
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.17.0;
+				CURRENT_PROJECT_VERSION = 3.18.0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PRODUCT_NAME=$(PRODUCT_NAME)",
 					"MODULE_VERSION=$(MODULE_VERSION)",
@@ -978,7 +1080,7 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.17.0;
+				MARKETING_VERSION = 3.18.0;
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
@@ -1050,6 +1152,55 @@
 			};
 			name = Release;
 		};
+
+		C0FFEE000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMDPowerGadgetTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AMD Power Gadget.app/Contents/MacOS/AMD Power Gadget";
+			};
+			name = Debug;
+		};
+		C0FFEE000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMDPowerGadgetTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AMD Power Gadget.app/Contents/MacOS/AMD Power Gadget";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1094,6 +1245,16 @@
 			buildConfigurations = (
 				B5CE1F8726B4271900DBF70A /* Debug */,
 				B5CE1F8826B4271900DBF70A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+
+		C0FFEE000000000000000008 /* Build configuration list for PBXNativeTarget "AMDPowerGadgetTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE000000000000000009 /* Debug */,
+				C0FFEE000000000000000010 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -824,7 +824,7 @@ struct OriginalLineChartCard: View {
     let line2Label: LocalizedStringKey?
     let height: CGFloat
 
-    @AppStorage("app_chart_style") private var selectedChartStyleRaw: String = AppChartStyle.line.rawValue
+    @AppStorage(AppChartStyle.storageKey) private var selectedChartStyleRaw: String = AppChartStyle.line.rawValue
     private var selectedChartStyle: AppChartStyle { AppChartStyle.normalized(selectedChartStyleRaw) }
 
     private var averageVal: Double {
@@ -3553,12 +3553,14 @@ struct ThemeSelectorGrid: View {
 }
 
 enum AppChartStyle: String, CaseIterable, Identifiable {
-    /// Stable **English** storage keys (legacy Spanish prefs are migrated in `normalized`).
+    /// Stable **English** storage keys (legacy Spanish prefs are migrated in `normalized` / `migrateStoredPreference`).
     case line = "Smooth Curves"
     case filledArea = "Filled Area"
     case bar = "Column Bars"
     case steppedLine = "Line Only"
-    
+
+    static let storageKey = "app_chart_style"
+
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -3587,10 +3589,22 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
             return AppChartStyle(rawValue: stored) ?? .line
         }
     }
+
+    /// Rewrite UserDefaults if an old Spanish (or unknown) value is still stored.
+    /// Call once at launch so UI never re-surfaces Spanish chart style keys.
+    @discardableResult
+    static func migrateStoredPreference(defaults: UserDefaults = .standard) -> AppChartStyle {
+        let stored = defaults.string(forKey: storageKey) ?? line.rawValue
+        let style = normalized(stored)
+        if stored != style.rawValue {
+            defaults.set(style.rawValue, forKey: storageKey)
+        }
+        return style
+    }
 }
 
 struct ChartStyleSelectorGrid: View {
-    @AppStorage("app_chart_style") private var selectedStyleRaw: String = AppChartStyle.line.rawValue
+    @AppStorage(AppChartStyle.storageKey) private var selectedStyleRaw: String = AppChartStyle.line.rawValue
     private let columns = [GridItem(.adaptive(minimum: 140), spacing: 12)]
 
     private var selectedStyle: AppChartStyle {
@@ -3632,6 +3646,13 @@ struct ChartStyleSelectorGrid: View {
         )
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.tahoeCardBorder, lineWidth: 1))
         .cornerRadius(14)
+        .onAppear {
+            // Persist English keys if user still has Spanish chart style prefs.
+            let style = AppChartStyle.migrateStoredPreference()
+            if selectedStyleRaw != style.rawValue {
+                selectedStyleRaw = style.rawValue
+            }
+        }
     }
 }
 

@@ -50,4 +50,21 @@ final class PrivilegeAndFanCurveTests: XCTestCase {
         XCTAssertTrue(codes.contains("en"))
         XCTAssertTrue(codes.contains("")) // system
     }
+
+    func testChartStyleNormalizesLegacySpanishKeys() {
+        XCTAssertEqual(AppChartStyle.normalized("Histograma de Barras"), .bar)
+        XCTAssertEqual(AppChartStyle.normalized("Línea Suave (Spline)"), .line)
+        XCTAssertEqual(AppChartStyle.normalized("Área Rellena (Gradient)"), .filledArea)
+        XCTAssertEqual(AppChartStyle.normalized("Línea Escalonada (Step)"), .steppedLine)
+        XCTAssertEqual(AppChartStyle.normalized("Column Bars"), .bar)
+        XCTAssertEqual(AppChartStyle.normalized("Smooth Curves"), .line)
+    }
+
+    func testChartStyleMigrationRewritesUserDefaults() {
+        let ud = UserDefaults(suiteName: "com.drogabox.tests.chartstyle.\(UUID().uuidString)")!
+        ud.set("Histograma de Barras", forKey: AppChartStyle.storageKey)
+        let style = AppChartStyle.migrateStoredPreference(defaults: ud)
+        XCTAssertEqual(style, .bar)
+        XCTAssertEqual(ud.string(forKey: AppChartStyle.storageKey), AppChartStyle.bar.rawValue)
+    }
 }

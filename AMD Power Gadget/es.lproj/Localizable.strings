@@ -587,11 +587,12 @@
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Esta acción requiere privilegios de administrador. Ejecuta AMD Power Gadget como root o añade el boot-arg -amdpnopchk para depuración.";
 
-/* Crowdin: recent UI strings */
+/* Crowdin: recent UI strings — badge CPPC vs modo EPP */
 "CPPC: HW OK" = "CPPC: HW OK";
-
 "CPPC: EPP On" = "CPPC: EPP activo";
-
 "This CPU did not report CPPC support to the kext." = "Esta CPU no reportó soporte CPPC al kext.";
-
 "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch." = "Si el interruptor vuelve a Off: habilita escrituras con -amdpnopchk (o root). El badge “CPPC: HW OK” solo indica rankings HW, no es este interruptor.";
+"Native CPPC Active Mode (EPP) is ON. Cores scale autonomously; rankings come from the processor." = "Modo CPPC Active (EPP) activado. Los núcleos escalan de forma autónoma; los rankings vienen del procesador.";
+"CPPC hardware scores could not be read. Rankings are estimated from observed clocks. This is not the Profiles EPP toggle." = "No se pudieron leer scores CPPC de HW. Rankings estimados por relojes observados. No es el interruptor EPP de Profiles.";
+"The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root)." = "La CPU reporta rankings CPPC (HW OK). Eso no significa que Active Mode esté ON — actívalo en Profiles (necesita -amdpnopchk o root).";
+"CPPC: Active" = "CPPC: HW OK";

@@ -28,3 +28,7 @@ scratch/*.o
 .crowdin-credentials
 .crowdin.env
 crowdin-credentials.env
+
+# Local xcodebuild derived data
+build_unit_test/
+build-test/

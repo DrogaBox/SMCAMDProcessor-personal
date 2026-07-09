@@ -61,8 +61,15 @@ jobs:
             ARCHS="x86_64" ONLY_ACTIVE_ARCH=NO -derivedDataPath ./build \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO GCC_TREAT_WARNINGS_AS_ERRORS=NO clean build
 
-      # Note: AMDPowerGadgetTests/ sources exist but are not yet an Xcode target.
-      # Wire a test target before enabling `xcodebuild test` here.
+      - name: Unit tests (AMDPowerGadgetTests)
+        run: |
+          xcodebuild test -project SMCAMDProcessor.xcodeproj \
+            -scheme "AMD Power Gadget" -configuration Debug \
+            -destination 'platform=macOS' \
+            -only-testing:AMDPowerGadgetTests \
+            -derivedDataPath ./build-test \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO
 
       # Flat package (same layout as CD release zips) so CI artifacts are usable as-is.
       - name: Package CI artifact

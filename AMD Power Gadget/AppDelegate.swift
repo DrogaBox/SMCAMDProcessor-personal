@@ -97,6 +97,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Apply in-app language override before any UI / localized strings load.
         AppLanguage.applyStoredPreference()
 
+        // Chart style: rewrite legacy Spanish UserDefaults keys → stable English keys.
+        AppChartStyle.migrateStoredPreference()
+
         let useTran = UserDefaults.standard.bool(forKey: "usetranslucency")
         let sb = UserDefaults.standard.bool(forKey: "statusbarenabled")
         let sl = UserDefaults.standard.bool(forKey: "startAtLogin")

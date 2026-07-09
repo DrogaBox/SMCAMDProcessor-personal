@@ -1,5 +1,24 @@
 # Change Summary & Release Changelog
 
+
+## v3.18.0  Chart style i18n fix, CPPC badge clarity, unit tests in CI
+
+### UI / localization (critical)
+* **Chart styles**: Stable English UserDefaults keys (`Smooth Curves`, `Filled Area`, `Column Bars`, `Line Only`). Legacy Spanish prefs are normalized and **rewritten at launch**.
+* **CPPC badge vs EPP toggle**: Core-grid badge shows `CPPC: HW OK` / `CPPC: EPP On` / `CPPC: Estimated` with help text. Profiles card explains that a green HW OK badge is **not** Active Mode and points to `-amdpnopchk` when the switch snaps back.
+* **EN/ES strings** for new CPPC help copy; deprecated `CPPC: Active` maps to HW OK.
+
+### Themes & telemetry (from 3.17.x trunk)
+* RTL-aligned theme presets (Classic / Midnight / Ember / Matrix / Rose) and live menu-bar popover rebuild.
+* Refresh-rate slider always honored; lighter GPU/fan/history sampling when only the menu bar is active.
+
+### Quality
+* **AMDPowerGadgetTests** Xcode unit-test target wired (`@testable import AMD_Power_Gadget`); CI runs `xcodebuild test` on the Gadget scheme.
+* Chart-style migration unit tests.
+
+### Packaging
+* CD continues to ship a single flat `SMCAMD-<ver>-Release.zip` (no nested `build/Build/Products`).
+
 ## v3.17.0  Audit v2 residual hardening (R-1 … R-8)
 
 Implements non-blocking residual items from the post-3.16.2 source audit.
