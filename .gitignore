@@ -23,3 +23,8 @@ build_release/
 scratch/dump_sio
 scratch/write_sio
 scratch/*.o
+
+# Local Crowdin API credentials (never commit)
+.crowdin-credentials
+.crowdin.env
+crowdin-credentials.env
