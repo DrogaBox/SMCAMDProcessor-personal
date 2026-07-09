@@ -7,6 +7,11 @@ on:
     - cron: '0 0 * * *' # Run daily at midnight
   workflow_dispatch: # manual trigger from GitHub Actions UI
 
+# Rapid pushes were racing Crowdin ("Another build is currently in progress").
+concurrency:
+  group: crowdin-sync-${{ github.repository }}
+  cancel-in-progress: true
+
 jobs:
   synchronize-with-crowdin:
     runs-on: ubuntu-latest
