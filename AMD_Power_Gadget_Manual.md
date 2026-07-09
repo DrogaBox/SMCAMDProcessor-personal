@@ -2,119 +2,214 @@
     <span class="cover-title">AMD Power Gadget</span>
     <span class="cover-subtitle">User Manual & Comprehensive Feature Guide</span>
     <br><br>
-    <span style="color: var(--accent-cyan);">Version 3.15.0</span>
+    <span style="color: var(--accent-cyan);">Version 3.16.x (Tahoe Edition)</span>
 </div>
 
 ## Introduction
 
-Welcome to **AMD Power Gadget** and **SMCAMDProcessor**. This suite provides comprehensive telemetry and power management capabilities for AMD Ryzen processors on macOS (Hackintosh).
+Welcome to **AMD Power Gadget** and **SMCAMDProcessor**. This suite provides comprehensive telemetry and power management for AMD Ryzen processors on macOS (Hackintosh).
 
-This manual explains *every single option, slider, and button* available in the application, leaving nothing to guesswork.
+This manual explains the options available in the application. For deep technical detail (UserClient privilege matrix, architecture, Crowdin), see the **[docs/](docs/README.md)** folder.
 
 ---
 
 ## 1. System Requirements & OpenCore Setup
 
 ### 1.1 Essential Kexts
-Ensure the following kexts are present in your `EFI/OC/Kexts` folder and injected in your `config.plist` under `Kernel -> Add`, in this exact order:
+Ensure the following kexts are present in `EFI/OC/Kexts` and injected under `Kernel → Add`, in this **exact order**:
 1. `Lilu.kext` (Must be first)
-2. `VirtualSMC.kext` (SMC emulator - DO NOT use FakeSMC)
-3. `AMDRyzenCPUPowerManagement.kext` (Provides raw CPU data and SuperIO access)
-4. `SMCAMDProcessor.kext` (Exports data to VirtualSMC for tools like iStat Menus)
+2. `VirtualSMC.kext` (SMC emulator — do **not** use FakeSMC)
+3. `AMDRyzenCPUPowerManagement.kext` (CPU data, SuperIO, UserClient)
+4. `SMCAMDProcessor.kext` (Exports data to VirtualSMC for iStat Menus, etc.)
 
 ### 1.2 OpenCore Quirks & Boot Arguments
-- **ProvideCurrentCpuInfo** (Kernel -> Quirks): Set to `True`. Mandatory for macOS to correctly map AMD core topologies.
-- **agdpmod=pikera** (boot-args): Required for Radeon RX 6000 series (Navi) to prevent black screens.
+- **ProvideCurrentCpuInfo** (Kernel → Quirks): `True`. Required for AMD core topology.
+- **agdpmod=pikera** (boot-args): Radeon RX 6000 (Navi) black-screen workaround (GPU, not this project).
 
 ### 1.3 SMCAMDProcessor Custom Boot Arguments
-You can pass these optional boot arguments in OpenCore (`NVRAM -> boot-args`) to unlock advanced functionality or debug the kexts:
-- `-amdpnopchk`: Disables privilege checks. Required if you want to use the "Directly Edit Raw P-State Registers" feature in the app without running it as root.
-- `-amdcppcactive`: Forces CPPC (Collaborative Processor Performance Control) into Active Mode instead of Autonomous Mode, giving the macOS kernel more direct control over frequency selection rather than relying entirely on the SMU.
-- `-amdpdbg`: Enables verbose debug logging for `AMDRyzenCPUPowerManagement.kext`. Useful for troubleshooting kernel panics or missing sensor data.
+
+Add under OpenCore **NVRAM → Add → `7C436110-AB2A-4BBB-A880-FE41995C9F82` → boot-args**. Also list `boot-args` under **NVRAM → Delete** for the same GUID so values refresh each boot.
+
+| Argument | Purpose |
+|----------|---------|
+| **`-amdpnopchk`** | Disables UserClient **write** privilege checks. Menu bar app (non-root) can change fans, EPP, P-States, Curve Optimizer, SuperIO. **Recommended on trusted personal machines** for full GUI control. |
+| **`-amdcppcactive`** | Enables CPPC Active Mode at boot so EPP profiles work with the SMU/OS. |
+| **`-amdpdbg`** | Verbose kext debug logging (troubleshooting only). |
+
+**Privilege model (v3.16.1+):**
+- **Any user** can open the driver connection and **read** telemetry.
+- **Writes** require **root** or **`-amdpnopchk`**.
+- Without the flag, monitoring works; controls fail and the app shows an orange **privilege banner**.
+
+Full docs: [docs/BOOT_ARGS.md](docs/BOOT_ARGS.md) · [docs/PRIVILEGE_AND_SECURITY.md](docs/PRIVILEGE_AND_SECURITY.md)
+
+> [!WARNING]
+> `-amdpnopchk` is a security tradeoff: any local process that opens the UserClient can issue privileged hardware writes. Use only on trusted personal systems.
+
+### 1.4 Install the application
+Copy `AMD Power Gadget.app` to `/Applications`. Clear quarantine if Gatekeeper blocks it (`xattr -cr "/Applications/AMD Power Gadget.app"`). On first launch, accept the **safety disclaimer**.
 
 ---
 
-## 2. Power & Frequencies Tab
+## 2. Privilege Banner
 
-This tab provides real-time monitoring of your CPU's internal metrics.
+If you try Fan Control, EPP, Curve Optimizer, or other writes without root and without `-amdpnopchk`, an orange banner appears:
 
-### 2.1 Core Metrics & Silicon Quality
-- **Core Frequencies**: Displays the real-time clock speed of each physical and logical core.
-- **Silicon Quality Ranking (1. ~ X.)**: Zen 3/4 processors evaluate the quality of the silicon on a per-core basis. The application reads these CPPC tags and ranks your cores. Core `1.` is your absolute best core, capable of sustaining the highest boost frequencies at the lowest voltages. Use this data when tweaking the Curve Optimizer.
-- **Package Power Tracking (PPT)**: Shows the total wattage consumed by the CPU package in real time.
-- **Tctl / Tdie Temperatures**: The absolute junction temperature of the CPU.
+> This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument `-amdpnopchk` for debugging.
+
+**Fix:** add `-amdpnopchk` to OpenCore boot-args and reboot (preferred for a personal Hackintosh), or run the app as root (impractical for a menu bar extra).
 
 ---
 
-## 3. Profiles Tab (CPU Speed Management)
+## 3. Dashboard Tab (Power & Frequencies)
 
-The Profiles tab allows you to fundamentally alter how the CPU scales its frequencies and voltages.
+Real-time CPU metrics, charts, and core grid.
 
-### 3.1 EPP Profiles (Hardware Autonomous)
-Energy Performance Preference (EPP) relies on the CPPC (Collaborative Processor Performance Control) interface. Instead of macOS dictating frequencies, you provide a "hint" to the CPU's internal SMU, and the hardware scales autonomously based on live load.
-- **Power Saver**: Heavily limits boost clocks to prioritize battery life and acoustics.
-- **Balanced**: The default state. Boosts when needed, but aggressively downclocks during idle.
-- **Performance**: Keeps the cores highly responsive, maintaining higher base clocks and prioritizing single-thread boost speed over power efficiency.
+### 3.1 Core Metrics & Silicon Quality
+- **Core Frequencies**: Real-time clock of each physical/logical core.
+- **Silicon Quality Ranking (1. ~ X.)**: Zen 3/4 CPPC quality tags; core `1.` is the best core for Curve Optimizer strategy.
+- **Package Power (PPT)**: Package wattage.
+- **Tctl / Tdie**: Junction temperatures.
+- **HUD toggles**: Show/hide per-core frequency, load, and CCD temp on the grid.
 
-### 3.2 CPU Speed Profiles (Legacy / Manual P-State)
-Older Ryzen processors (or specific manual tuning scenarios) rely on static P-States (Power States).
-- **Manual P-State Override**: Selecting a profile here completely restricts the CPU to a specific P-State step (e.g., P0 for max performance, P2 for base clock). The CPU will NOT scale dynamically; it is locked to the selected step.
-- **Directly Edit Raw P-State Registers**: A highly advanced feature. Clicking this allows you to manually input the Hex values for Frequency, Voltage (VID), and DID. 
-  > **[WARNING]** Requires kext privilege checks disabled. Incorrect VID values will cause instant system shutdown or potential hardware degradation.
+### 3.2 Charts
+Frequency, temperature, power, and network charts with average / max / min metadata. Update interval is configurable in preferences.
 
 ---
 
-## 4. Advanced CPU Tuning: Curve Optimizer
+## 4. Profiles Tab (CPU Speed Management)
 
-The **Curve Optimizer** is the most powerful tool for AMD Ryzen users. It adjusts the voltage/frequency curve dynamically.
+### 4.1 EPP Profiles (Hardware Autonomous)
+Energy Performance Preference via CPPC. Hint the SMU; hardware scales on load.
+- **Power Saver** — lower boost priority / acoustics / battery.
+- **Balanced** — default.
+- **Performance** — higher responsiveness / single-thread boost priority.
 
-- **Per-Core Curve Offsets (-30 to +30)**: Instead of applying a blanket voltage offset, you can assign a unique offset to *each individual physical core*. 
-- **How it works**: A negative offset (e.g., `-15`) tells the CPU to use less voltage for a given frequency. Because the CPU runs cooler at a lower voltage, the Precision Boost algorithm automatically allows it to sustain higher boost clocks for longer periods.
-- **Strategy**: Apply larger negative offsets (e.g., `-25`) to your lowest-ranked cores, and smaller offsets (e.g., `-10`) to your top-ranked cores (which are already pushed to their voltage limits from the factory).
+Requires CPPC path; prefer **`-amdcppcactive`** at boot. Optional auto-EPP by load and AC/battery switching when available.
 
----
-
-## 5. Fan Control Tab
-
-This tab interfaces with your motherboard's SuperIO controller (e.g., ITE IT8686E) to manage case and CPU fans.
-
-### 5.1 Fan Monitoring & Hiding
-- **Fan List**: Shows all detected fans, their RPM, and PWM Throttle percentage.
-- **Hide Fan (Eye Slash Icon)**: If your motherboard reports ghost fans or headers like `H_AMP` show erratic values (e.g., `40 RPM` when disconnected), click the eye slash icon to permanently hide it from the UI and Menu Bar.
-- **Show All (X hidden)**: Restores any hidden fans.
-
-### 5.2 Quick Presets
-- **All Auto (Arrow Circle Icon)**: Returns control of all fans back to the motherboard's BIOS logic.
-- **Max Speed (Wind Icon)**: Instantly forces 100% PWM duty cycle on all connected fans (Take Off mode).
-
-### 5.3 Closed-Loop Custom Fan Curves & Protection
-Toggle **"Dynamic Next-Gen Fan Curves"** to override the BIOS and manage fans entirely via the macOS kernel.
-- **Interactive Editor**: Drag the points on the graph to define your custom temperature-to-PWM curve.
-- **256-Step LUT Interpolation**: The software translates your curve into a smooth 256-step Look-Up Table.
-- **Smooth Ramping (Hysteresis)**: The kernel evaluates the curve with hysteresis to prevent fans from aggressively ramping up and down during sudden, momentary CPU temperature spikes.
-
-### 5.4 GPU Fan Control (Zero RPM / SPPT)
-As stated in the UI, direct software-based GPU fan speed overrides (like drawing curves for your Radeon RX 6800 XT) are **not supported** by the macOS kernel for AMD GPUs.
-- **The Solution**: You must extract your vBIOS, use **MorePowerTool (MPT)** on Windows to modify the acoustic limits and Zero RPM toggles, and inject the resulting Soft PowerPlay Table (SPPT) string into OpenCore's `config.plist` under `DeviceProperties`. The UI provides direct links to the SPPT Guide and MPT downloads.
+### 4.2 CPU Speed Profiles (Legacy / Manual P-State)
+- **Manual P-State Override**: Lock to a step (e.g. P0 max, P2 base). No dynamic scaling.
+- **Directly Edit Raw P-State Registers**: Hex FID/VID/DID. **Privileged.** Incorrect VID can shut down or damage silicon.
 
 ---
 
-## 6. Menu Bar Extra & Preferences
+## 5. Advanced CPU Tuning: Curve Optimizer
 
-The Menu Bar Extra provides a highly customizable, compact view of your system's vitals directly in the macOS menu bar.
+- Per-core offsets **[-30, +30]** (physical cores).
+- Negative offset undervolts for a given frequency (often higher sustained boost if stable).
+- Strategy: larger negative offsets on lower-ranked cores; conservative on top cores.
+- UI locked behind a **safety switch**; optional HUD (freq / load / CCD).
+- Requires privilege (root or `-amdpnopchk`) and SMU support (typically Zen 3+).
 
-### 6.1 Display Configuration
-Click the AMD Power Gadget icon -> **Preferences**:
-- **Include CPU/GPU/Fans**: Toggle specific widgets on or off.
-- **Peak Tracking**: The Menu Bar dropdown automatically logs the **Peak** and **Minimum** values for all your selected metrics during the current session.
-
-### 6.2 Application Settings
-- **Update Interval**: Adjust how frequently the sensors are polled. 1-second intervals provide real-time accuracy; higher intervals save CPU cycles.
-- **Theme**: Force Dark Mode, Light Mode, or respect System settings (utilizes Liquid Glass vibrancy).
+> [!CAUTION]
+> Aggressive Curve Optimizer settings can cause panics, reboots, or hardware stress. You assume all risk.
 
 ---
 
-## 7. Driver Dump Utility (Advanced)
+## 6. Fan Control Tab
 
-If your fans are reading incorrect RPMs, it usually means the 16-bit tachometer registers or the internal clock divisors are misaligned for your specific SuperIO chip revision.
-Run `Tools/IT8686E_Dump.sh` as `sudo` to output the raw Hex values of the Environment Controller (EC) registers. Use this to verify if the raw byte from the `FAN_RPM_REGS` needs a multiplier adjustment in the kext source code.
+Interfaces with motherboard SuperIO (Nuvoton NCT668X/NCT67XX, ITE IT86XXE, including NCT6799D / NCT6701D / IT8686E / IT8689E, etc.).
+
+### 6.1 Fan Monitoring & Hiding
+- List: RPM and PWM %.
+- **Hide Fan**: Ghost headers / erratic channels.
+- **Show All (X hidden)**: Restore hidden fans.
+- Custom labels (e.g. rename `AUX_3` → `Pump`).
+
+### 6.2 Quick Presets
+- **All Auto**: BIOS control.
+- **Max Speed**: 100% PWM on controlled fans.
+
+### 6.3 Dynamic Next-Gen Fan Curves
+Toggle to evaluate curves **in the kernel**:
+- Interactive graph (drag points; double-click add/delete).
+- 256-step LUT, EMA, hysteresis, ramp rate.
+- Thermal floor: at **85 °C**, PWM forced to at least **80 %** (after hysteresis/ramp).
+- Temp source: CPU or **GPU** (app injects GPU °C; values clamped 0–120 °C).
+- Map each fan to a curve or BIOS Auto.
+
+### 6.4 GPU Fan Control (Zero RPM / SPPT)
+macOS does **not** allow direct AMD GPU fan PWM override. Use **MorePowerTool** + Soft PowerPlay Table (SPPT) in OpenCore `DeviceProperties`. The UI links to SPPT/MPT guides.
+
+---
+
+## 7. Themes & Appearance (including Language)
+
+### 7.1 Language
+- **System Default** — follow macOS preferred languages.
+- **Specific language** — force a bundled locale (`English`, `Español`, `Deutsch`, `Italiano`, …).
+- Preference is stored and applied at launch (`AppleLanguages`).
+- After changing language, confirm **Apply & Restart**. The UI does **not** hot-reload all strings.
+
+See [docs/I18N_CROWDIN.md](docs/I18N_CROWDIN.md).
+
+### 7.2 Visual themes
+Dark / Light / System, custom theme JSON where available, chart style options, Liquid Glass materials on supported macOS versions.
+
+---
+
+## 8. Telemetry, Analysis & Advanced
+
+### 8.1 Telemetry
+Configurable history charts, continuous logging, CSV export. Optional background daemon `amdtelemetryd` continues JSONL history when the GUI is closed (skips if the app is open).
+
+### 8.2 Analysis
+Session max/min for load, temps, memory, power, clocks over the selected timeframe.
+
+### 8.3 Advanced
+CPB / PPM / LPM toggles, alert thresholds, raw diagnostics. Privileged writes need root or `-amdpnopchk`.
+
+### 8.4 Menu Bar / Popover / Desktop Widgets
+Toggle which sensors appear in the menu bar extra; peak/min tracking for the session; update interval.
+
+---
+
+## 9. Menu Bar Extra & Preferences
+
+Click the AMD Power Gadget icon:
+- **Include CPU/GPU/Fans** widgets.
+- **Peak Tracking** for selected metrics.
+- **Update Interval**: 1 s for real-time; higher values save CPU.
+
+---
+
+## 10. System Info
+
+CPU brand, board/chipset where available, cache topology, driver connection status.
+
+---
+
+## 11. Safety Disclaimer
+
+On first launch a modal blocks the main UI until you accept (`disclaimer_accepted`). Incorrect MSR/SMU/SuperIO settings can cause instability, data loss, panics, or hardware damage. **You use this software at your own risk.**
+
+---
+
+## 12. Troubleshooting (short)
+
+| Problem | Action |
+|---------|--------|
+| “No AMDRyzenCPUPowerManagement Found!” | Check `kextstat`; OC order; update kext+app ≥ 3.16.1 |
+| Orange privilege banner | Add `-amdpnopchk` or accept read-only |
+| Language unchanged | Apply & Restart |
+| Fan RPM wrong / 0 | Update kext; hide ghost fans; see docs |
+
+Full guide: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+---
+
+## 13. Further documentation
+
+| Doc | Content |
+|-----|---------|
+| [docs/README.md](docs/README.md) | Index of all docs |
+| [docs/INSTALLATION.md](docs/INSTALLATION.md) | Install / verify / build |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack diagram |
+| [CHANGELOG.md](CHANGELOG.md) | Release notes |
+| [COMPARISON.md](COMPARISON.md) | vs original spinach project |
+
+---
+
+## 14. Driver Dump Utility (Advanced)
+
+If fan RPM registers look wrong for your SuperIO revision, use SuperIO diagnostic sources under `scratch/` (`dump_sio`, `write_sio`) or board-specific dump scripts when provided. Prefer current release kexts before patching registers by hand.

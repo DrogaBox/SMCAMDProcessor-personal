@@ -40,6 +40,30 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
 - In-Process Zero-Allocation Network Analytics: Direct CChar ASCII buffer parsing using `sysctl(NET_RT_IFLIST2)` eliminates heap allocations, backed by an adaptive low-frequency background sampling mode.
 - macOS 26 Tahoe UI Aesthetics: Designed with native Liquid Glass material vibrancy (`NSVisualEffectView`) and dynamic hierarchical SF Symbols 7+ fill glyphs (`cpu.fill`, `fan.fill`, `memorycard.fill`).
 - Hardware-Autonomous CPPC & EPP Control: Native opt-in (`-amdcppcactive`) for CPPC Active Mode, delegating microsecond clock scaling to the internal System Management Unit (SMU) with configurable EPP profiles (Performance, Balanced, Power Save).
+- In-App Language Picker: **Themes & Appearance → Language** forces any bundled locale (`en`, `es`, `de`, `it`, …) or System Default; applied at launch via `AppleLanguages` with Apply & Restart.
+- Privilege UX Banner: When a write is denied (`kIOReturnNotPrivileged`), the dashboard shows a clear orange banner instead of silent failure (root or `-amdpnopchk` required for controls).
+
+### 5. UserClient privilege model (v3.16.1+)
+- **Reads** (telemetry, fan RPM, temps): any process may open the UserClient — the menu bar app works without root.
+- **Writes** (fans, EPP, P-States, Curve Optimizer, SuperIO, …): require **root** or the explicit boot-arg **`-amdpnopchk`**.
+- Authorization is **not** based on process name (spoof-resistant). Details: [docs/PRIVILEGE_AND_SECURITY.md](docs/PRIVILEGE_AND_SECURITY.md).
+
+---
+
+## Full documentation
+
+| Topic | Link |
+|-------|------|
+| **Docs index** | **[docs/README.md](docs/README.md)** |
+| Installation | [docs/INSTALLATION.md](docs/INSTALLATION.md) · [ES](docs/INSTALLATION_ES.md) |
+| Boot arguments | [docs/BOOT_ARGS.md](docs/BOOT_ARGS.md) · [ES](docs/BOOT_ARGS_ES.md) |
+| Privilege & security | [docs/PRIVILEGE_AND_SECURITY.md](docs/PRIVILEGE_AND_SECURITY.md) · [ES](docs/PRIVILEGE_AND_SECURITY_ES.md) |
+| Features | [docs/FEATURES.md](docs/FEATURES.md) · [ES](docs/FEATURES_ES.md) |
+| Troubleshooting | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) · [ES](docs/TROUBLESHOOTING_ES.md) |
+| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| i18n / Crowdin | [docs/I18N_CROWDIN.md](docs/I18N_CROWDIN.md) |
+| User manual | [AMD_Power_Gadget_Manual.md](AMD_Power_Gadget_Manual.md) · [ES](AMD_Power_Gadget_Manual_ES.md) |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
 
@@ -79,7 +103,19 @@ Ensure the kexts are loaded in the exact dependency order in your OpenCore `conf
 - OpenCore 0.7.1 or newer.
 - AMD Vanilla kernel patches applied.
 - `ProvideCurrentCpuInfo` quirk enabled in `config.plist`.
-- Boot argument `-amdcppcactive` (Optional, to enable autonomous CPPC EPP mode on boot).
+- Boot arguments (recommended for full app control on a personal machine):
+  - **`-amdcppcactive`** — CPPC Active Mode / EPP profiles at boot.
+  - **`-amdpnopchk`** — allow non-root UserClient **writes** (fans, EPP, CO, …). Without it, monitoring still works; controls need root or show the privilege banner.
+  - **`-amdpdbg`** — verbose kext debug logging (troubleshooting only).
+
+See [docs/BOOT_ARGS.md](docs/BOOT_ARGS.md) and [docs/INSTALLATION.md](docs/INSTALLATION.md) for NVRAM setup (`Add` + `Delete` for `boot-args`).
+
+> [!WARNING]
+> `-amdpnopchk` is a deliberate security tradeoff: any local process that can open the UserClient may issue privileged hardware writes. Use only on trusted personal systems.
+
+### App install
+Copy `AMD Power Gadget.app` to `/Applications`, clear quarantine if needed (`xattr -cr`), launch once and accept the safety disclaimer.  
+Language: **Themes & Appearance → Language → Apply & Restart**.
 
 ---
 
