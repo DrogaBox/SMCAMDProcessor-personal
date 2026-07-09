@@ -1152,40 +1152,22 @@ void AMDRyzenCPUPowerManagement::reinitHwState() {
     CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
-    // CPPC detection (Zen / Zen+ / Zen 3–5):
-    // 1) CAP1 MSR readable → supported (value may be 0 until ENABLE is written).
-    // 2) Family 17h/19h/1Ah → treat as supported even if early MSR read fails
-    //    (per-core path in startWorkLoop still programs CAP1/REQ).
-    // Old fallback used CPUID 8000_0008 EBX[27], which is NOT a CPPC flag and
-    // produced false "no CPPC support" on machines like 5900XT with -amdcppcactive.
+    // Check CPPC support: try to read MSR 0xC00102B0 first.
     uint64_t cppcVal = 0;
     bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
-    const bool zenFamily = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A);
-
-    if (msrSuccess) {
+    
+    if (msrSuccess && cppcVal != 0) {
         cppcSupported = true;
-    } else if (zenFamily) {
-        cppcSupported = true;
-        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CAP1 MSR read failed; assuming CPPC on Zen family %02Xh\n", cpuFamily);
     } else {
-        cppcSupported = false;
+        CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
+        cppcSupported = (cpuid_ebx >> 27) & 0x1;
     }
-
+    
     if (cppcSupported) {
         write_msr(kMSR_AMD_CPPC_ENABLE, 1);
-        // Re-read CAP1 after enable when first sample was 0 / failed.
-        if (!msrSuccess || cppcVal == 0) {
-            (void)read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
-        }
-        cppcActiveMode = checkKernelArgument("-amdcppcactive");
-        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC supported=1 CAP1=0x%llx activeMode=%d (-amdcppcactive)\n",
-              cppcVal, cppcActiveMode ? 1 : 0);
-    } else {
-        cppcActiveMode = false;
-        if (checkKernelArgument("-amdcppcactive")) {
-            IOLog("AMDRyzenCPUPowerManagement::reinitHwState WARN: -amdcppcactive ignored (non-Zen / no CPPC)\n");
-        }
     }
+    
+    cppcActiveMode = checkKernelArgument("-amdcppcactive");
     
     uint64_t rapl = 0;
     if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {

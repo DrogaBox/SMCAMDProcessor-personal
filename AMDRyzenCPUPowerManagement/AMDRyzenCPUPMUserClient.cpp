@@ -608,27 +608,24 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         }
         
         // Get CPPC Highest Performance values per logical core
-        // Scalar[0] = supported (always returned). Structure is optional rankings.
         case 21: {
             uint32_t numLogicalCores = provider->totalNumberOfLogicalCores;
 
             arguments->scalarOutputCount = 1;
             arguments->scalarOutput[0] = provider->cppcSupported ? 1 : 0;
-
-            if (!arguments->structureOutput) {
-                // App only asked for the support flag — still success.
-                arguments->structureOutputSize = 0;
-                break;
-            }
-
+            
             uint32_t requiredSize = numLogicalCores * sizeof(uint8_t);
             uint32_t maxLen = arguments->structureOutputSize;
             arguments->structureOutputSize = requiredSize;
 
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
             uint8_t *dataOut = (uint8_t*) arguments->structureOutput;
             uint32_t copyLen = (maxLen < requiredSize) ? maxLen : requiredSize;
-
-            for (uint32_t i = 0; i < copyLen; i++) {
+            
+            for(uint32_t i = 0; i < copyLen; i++) {
                 dataOut[i] = provider->cppcHighestPerf_perCore[i];
             }
             break;
@@ -658,13 +655,8 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 
             if (arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
-
-            const bool wantActive = (arguments->scalarInput[0] == 1);
-            // Never advertise Active Mode when the CPU did not report CPPC support.
-            if (wantActive && !provider->cppcSupported)
-                return kIOReturnUnsupported;
-
-            provider->cppcActiveMode = wantActive;
+                
+            provider->cppcActiveMode = (arguments->scalarInput[0] == 1);
             if (provider->cppcActiveMode) {
                 provider->applyEPPControl();
             }
