@@ -2083,15 +2083,20 @@ struct ProfilesContentView: View {
                             ))
                             .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
                             .labelsHidden()
-                            .disabled(!model.cppcSupported)
+                            // Keep toggle usable when kext is up (do not lock on false-negative support).
+                            .disabled(!model.smcDriverLoaded)
                         }
-                        if !model.cppcSupported {
+                        if !model.smcDriverLoaded {
+                            Text(NSLocalizedString("AMDRyzenCPUPowerManagement kext not connected.", comment: ""))
+                                .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
+                        } else if !model.cppcSupported && !model.cppcActiveMode {
+                            // Only if truly unsupported *and* Active is off (never when -amdcppcactive is live).
                             Text(NSLocalizedString("This CPU did not report CPPC support to the kext.", comment: ""))
                                 .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
                         } else if !model.cppcActiveMode {
                             Text(NSLocalizedString(
-                                "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch.",
-                                comment: "Explains fabiosun confusion: badge vs toggle"
+                                "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot.",
+                                comment: "CPPC Active Mode help"
                             ))
                             .font(.system(size: 10))
                             .foregroundColor(.tahoeSubtext)

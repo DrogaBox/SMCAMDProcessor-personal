@@ -689,6 +689,10 @@ final class TelemetryModel: ObservableObject {
         let cppcRes = ProcessorModel.shared.getCPPCScore()
         cppcSupported = cppcRes.supported
         cppcScores = cppcRes.scores
+        // Zen + Active Mode: never stick a false "unsupported" from a flaky score call.
+        if ProcessorModel.shared.getCPPCActiveMode().active {
+            cppcSupported = true
+        }
         cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
         updateRankedPhysicalCores()
         
@@ -1208,10 +1212,17 @@ final class TelemetryModel: ObservableObject {
         cpbEnabled   = cpb.count > 1 && cpb[1]
         ppmEnabled   = ProcessorModel.shared.getPPM()
         lpmEnabled   = ProcessorModel.shared.getLPM()
-        
+
+        let cppcRes = ProcessorModel.shared.getCPPCScore()
         let cppc = ProcessorModel.shared.getCPPCActiveMode()
         cppcActiveMode = cppc.active
         cppcEPPValue = cppc.epp
+        // Refresh support for Profiles banner; Active Mode bit also implies CPPC path is live.
+        cppcSupported = cppcRes.supported || cppc.active
+        if cppcRes.supported {
+            cppcScores = cppcRes.scores
+            cppcScoresEstimated = cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 }
+        }
     }
 
     /// Report a kernel write failure to the UI (privilege banner / console).
