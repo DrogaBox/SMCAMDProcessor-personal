@@ -104,7 +104,12 @@ class ProcessorModel {
         let status = IOServiceOpen(serviceObject, mach_task_self_, 0, &connect)
         IOObjectRelease(serviceObject) // Must be released whether open succeeds or fails
 
-        return status == KERN_SUCCESS
+        if status != KERN_SUCCESS {
+            // Distinguish "kext missing" from "connection refused" for diagnostics.
+            NSLog("ProcessorModel: IOServiceOpen failed status=0x%08x (service was present)", status)
+            return false
+        }
+        return true
     }
 
     func closeDriver() {

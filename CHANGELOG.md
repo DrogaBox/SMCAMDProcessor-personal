@@ -1,5 +1,10 @@
 # Change Summary & Release Changelog
 
+## v3.16.1  UserClient Connection Fix (menu-bar compatibility)
+* **P0-1 regression fix**: `initWithTask` no longer returns `false` for non-root clients. Rejecting the connection broke `IOServiceOpen` for the normal-user menu bar app and surfaced a false **"No AMDRyzenCPUPowerManagement Found!"** dialog even though the kext was loaded.
+* **Correct privilege model**: Any process may open the UserClient for **read-only telemetry**. Write selectors (P-state / CPB / PPM / LPM / CPPC / EPP / fan override / raw SuperIO / fan curves / Curve Optimizer) still require root or `-amdpnopchk` via `hasPrivilege()`.
+* Process name is logged for audit only and is **never** used for authorization.
+
 ## v3.16.0  Security Hardening, Kernel Correctness & Defensive Resilience
 
 ### Security & Safety (P0 — from v3.16.0-rc1)
