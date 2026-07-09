@@ -31,7 +31,7 @@ jobs:
           xcode-select -p
           xcodebuild -version
 
-      - name: Fetch Dependencies 
+      - name: Fetch Dependencies
         run: |
           curl -LfsO https://github.com/acidanthera/Lilu/releases/download/${{ env.LILU_VERSION }}/Lilu-${{ env.LILU_VERSION }}-DEBUG.zip
           unzip -q -o Lilu-${{ env.LILU_VERSION }}-DEBUG.zip
@@ -40,26 +40,38 @@ jobs:
           cp -R Kexts/VirtualSMC.kext ./ 2>/dev/null || true
           [ -d MacKernelSDK/Headers ] || git clone --depth 1 https://github.com/acidanthera/MacKernelSDK.git
 
+      # Important: only the first scheme uses `clean`. A later `clean` wipes prior
+      # products from the shared DerivedData path and broke "Package CI artifact".
       - name: Build AMDRyzenCPUPowerManagement
         run: |
+          set -euo pipefail
           xcodebuild -project SMCAMDProcessor.xcodeproj \
             -scheme AMDRyzenCPUPowerManagement -configuration Release \
             ARCHS="x86_64" ONLY_ACTIVE_ARCH=NO -derivedDataPath ./build \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO GCC_TREAT_WARNINGS_AS_ERRORS=NO clean build
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO clean build
+          mkdir -p build/ci-out
+          cp -R build/Build/Products/Release/AMDRyzenCPUPowerManagement.kext build/ci-out/
 
       - name: Build SMCAMDProcessor
         run: |
+          set -euo pipefail
           xcodebuild -project SMCAMDProcessor.xcodeproj \
             -scheme SMCAMDProcessor -configuration Release \
             ARCHS="x86_64" ONLY_ACTIVE_ARCH=NO -derivedDataPath ./build \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO GCC_TREAT_WARNINGS_AS_ERRORS=NO clean build
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO build
+          cp -R build/Build/Products/Release/SMCAMDProcessor.kext build/ci-out/
 
       - name: Build AMD Power Gadget
         run: |
+          set -euo pipefail
           xcodebuild -project SMCAMDProcessor.xcodeproj \
             -scheme "AMD Power Gadget" -configuration Release \
             ARCHS="x86_64" ONLY_ACTIVE_ARCH=NO -derivedDataPath ./build \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO GCC_TREAT_WARNINGS_AS_ERRORS=NO clean build
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO build
+          cp -R "build/Build/Products/Release/AMD Power Gadget.app" build/ci-out/
 
       - name: Unit tests (AMDPowerGadgetTests)
         run: |
@@ -71,26 +83,18 @@ jobs:
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             GCC_TREAT_WARNINGS_AS_ERRORS=NO
 
-      # Flat package (same layout as CD release zips) so CI artifacts are usable as-is.
+      # Flat package from staged products (survives multi-scheme builds).
       - name: Package CI artifact
         run: |
           set -euo pipefail
-          PROD="build/Build/Products/Release"
-          rm -rf "${PROD}"/*.dSYM "${PROD}"/*.swiftmodule 2>/dev/null || true
-          STAGE="build/package"
-          rm -rf "${STAGE}"
-          mkdir -p "${STAGE}"
-          for item in \
-            "AMDRyzenCPUPowerManagement.kext" \
-            "SMCAMDProcessor.kext" \
-            "AMD Power Gadget.app"
-          do
-            cp -R "${PROD}/${item}" "${STAGE}/"
-          done
+          STAGE="build/ci-out"
+          test -d "${STAGE}/AMDRyzenCPUPowerManagement.kext"
+          test -d "${STAGE}/SMCAMDProcessor.kext"
+          test -d "${STAGE}/AMD Power Gadget.app"
           (cd "${STAGE}" && zip -ry "../ci-${{ matrix.os }}.zip" .)
+          ls -lh "build/ci-${{ matrix.os }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
           path: build/ci-${{ matrix.os }}.zip
-
