@@ -138,17 +138,24 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         UserDefaults.standard.set(language.rawValue, forKey: storageKey)
         applyStoredPreference()
         if relaunch {
-            relaunchApp()
+            // TelemetryModel is main-actor isolated; always schedule on main.
+            Task { @MainActor in
+                relaunchApp()
+            }
         }
     }
 
+    @MainActor
     static func relaunchApp() {
+        // Persist curves / mappings / dirty editor state before the process dies (audit R-7).
+        TelemetryModel.shared.commitPendingChanges()
         let path = Bundle.main.bundlePath
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         task.arguments = ["-n", path]
         try? task.run()
-        DispatchQueue.main.async {
+        // Brief delay so `open -n` registers the new instance before we exit.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApplication.shared.terminate(nil)
         }
     }

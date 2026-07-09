@@ -1,5 +1,22 @@
 # Change Summary & Release Changelog
 
+## v3.17.0  Audit v2 residual hardening (R-1 … R-8)
+
+Implements non-blocking residual items from the post-3.16.2 source audit.
+
+### Kernel (R-1, R-3, R-6, R-8)
+* **R-1 SuperIO UserClient races**: Cases 90–99 now take `superIOLock` around all null-check + `getNumberOfFans` / string / RPM / control paths (case 92 copies label under lock). Prevents theoretical UAF if `initSuperIO` races concurrent reads.
+* **R-3 Effective frequency**: `calculateEffectiveFrequency` returns early when `PStateDefClock_perCore[0] <= 0` so cores are not reported as 0 MHz from a zero P0 base.
+* **R-6 kunc_alert once**: `kextAlertDisplayed` is `SInt32` with `OSCompareAndSwap` so concurrent UserClient connections cannot double-show the modal.
+* **R-8 SMU command lock**: New `smuCmdLock` serializes the full `smuSendCmd` mailbox sequence (clear → arg → msg → poll).
+
+### App (R-2, R-7)
+* **R-7 Language relaunch**: `AppLanguage.relaunchApp` calls `TelemetryModel.commitPendingChanges()` (kext curves/mappings, dirty P-States, history flush) and delays terminate 100 ms after `open -n`.
+* **R-2 Force-unwraps**: Safer `if let` / guards in `FanCurve.generateLUT`, `GraphView`, history path, fan-curve canvas path.
+
+### Tests (R-5)
+* Added `AMDPowerGadgetTests/PrivilegeAndFanCurveTests.swift` (privilege hint, empty LUT, PStateRow zero, AppLanguage). Sources still need an Xcode test target to run in CI.
+
 ## v3.16.2  Language picker, privilege UX, SuperIO latency & i18n packaging
 
 ### UI & localization

@@ -234,8 +234,8 @@ class GraphView: NSView {
         line.dataDiff = dataDiff
         
         line.scrollIndexBar = -1
-        if xs.count > 2 {
-            let ds = (line.frame.width) / (xs.last! - xs[1])
+        if xs.count > 2, let lastX = xs.last {
+            let ds = (line.frame.width) / (lastX - xs[1])
             line.dataXScale = ds
             line.xOffset = -xs[1] * ds
         }
@@ -245,13 +245,13 @@ class GraphView: NSView {
     }
     
     func updateGridLine() {
-        if gridLines.count <= 0 {return}
-        gridLines.first!.opacity = 1
-        gridLines.first!.dataDiff = dataDiff
-        gridLines.first!.dataMin = dataMin
+        guard let firstGrid = gridLines.first else { return }
+        firstGrid.opacity = 1
+        firstGrid.dataDiff = dataDiff
+        firstGrid.dataMin = dataMin
         
         if gridLines.count < 2 {return}
-        var lastHeight = viewBottom + (CGFloat((gridLines.first!.dataY - dataMin) / (dataDiff)) * viewHeight)
+        var lastHeight = viewBottom + (CGFloat((firstGrid.dataY - dataMin) / (dataDiff)) * viewHeight)
         for gl in gridLines[1...gridLines.count-1]{
             gl.dataDiff = dataDiff
             gl.dataMin = dataMin

@@ -11,6 +11,7 @@
 
 #include <i386/proc_reg.h>
 #include <libkern/libkern.h>
+#include <libkern/OSAtomic.h>
 
 
 #include <Headers/kern_efi.hpp>
@@ -316,7 +317,8 @@ public:
     uint16_t savedSMCChipIntel = 0;
     uint16_t kextloadAlerts = 0;
     /// Ensures kunc_alert modal is shown at most once until the user dismisses/clears it.
-    bool kextAlertDisplayed = false;
+    /// SInt32 for OSCompareAndSwap (audit R-6).
+    SInt32 kextAlertDisplayed = 0;
 
     kern_return_t (*kunc_alert)(int,unsigned,const char*,const char*,const char*,
                                 const char*,const char*,const char*,const char*,const char*,unsigned*) {nullptr};
@@ -324,6 +326,7 @@ public:
     
     ISSuperIOSMCFamily *superIO{nullptr};
     IOLock *superIOLock{nullptr};   // Protects multi-step SuperIO I/O port sequences from concurrent UserClient calls
+    IOLock *smuCmdLock{nullptr};    // Serializes full SMU command sequences (audit R-8)
     
     static constexpr size_t kMAX_FANS = 16;
     FanCurveConfig fanCurves[MAX_FAN_CURVES];

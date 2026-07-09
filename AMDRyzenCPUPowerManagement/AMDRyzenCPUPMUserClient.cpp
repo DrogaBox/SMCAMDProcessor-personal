@@ -81,22 +81,23 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
     AMDRyzenCPUPowerManagement *provider = fProvider;
     if (!provider) return kIOReturnNotReady;
     
-    // Surface kext-load alerts at most once. Telemetry polls externalMethod at high
-    // frequency; showing a modal on every call would stall the UI and kernel path.
-    if (provider->kextloadAlerts && provider->kunc_alert && !provider->kextAlertDisplayed) {
-        provider->kextAlertDisplayed = true;
-        unsigned int rf = 0;
-        
-        char buf[128];
-        snprintf(buf, 128,
-                 "Kext alert detected: %d",
-                 provider->kextloadAlerts);
-        
-        (*(provider->kunc_alert))(0, 0, NULL, NULL, NULL,
-                      "AMDRyzenCPUPowerManagement", buf, "Ok", "Ok and Clear Alert", "WTF?", &rf);
-        if (rf == 1) {
-            provider->kextloadAlerts = 0;
-            provider->kextAlertDisplayed = false;
+    // Surface kext-load alerts at most once across concurrent UserClient connections.
+    // OSCompareAndSwap makes the check-and-set atomic (audit R-6).
+    if (provider->kextloadAlerts && provider->kunc_alert) {
+        if (OSCompareAndSwap(0, 1, &provider->kextAlertDisplayed)) {
+            unsigned int rf = 0;
+            
+            char buf[128];
+            snprintf(buf, 128,
+                     "Kext alert detected: %d",
+                     provider->kextloadAlerts);
+            
+            (*(provider->kunc_alert))(0, 0, NULL, NULL, NULL,
+                          "AMDRyzenCPUPowerManagement", buf, "Ok", "Ok and Clear Alert", "WTF?", &rf);
+            if (rf == 1) {
+                provider->kextloadAlerts = 0;
+                provider->kextAlertDisplayed = 0;
+            }
         }
     }
     
@@ -692,14 +693,21 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
-            if(provider->superIO != nullptr){
-                if (maxLen >= sizeof(uint64_t)) {
-                    dataOut[0] = (uint64_t)(1);
+            // Snapshot under superIOLock (audit R-1). initSuperIO also takes the lock
+            // (non-recursive) so we must not hold it across that call.
+            if (provider->superIOLock) {
+                IOLockLock(provider->superIOLock);
+                if (provider->superIO != nullptr) {
+                    if (maxLen >= sizeof(uint64_t)) {
+                        dataOut[0] = (uint64_t)(1);
+                    }
+                    if (maxLen >= 2 * sizeof(uint64_t)) {
+                        dataOut[1] = (uint64_t)(provider->savedSMCChipIntel);
+                    }
+                    IOLockUnlock(provider->superIOLock);
+                    break;
                 }
-                if (maxLen >= 2 * sizeof(uint64_t)) {
-                    dataOut[1] = (uint64_t)(provider->savedSMCChipIntel);
-                }
-                break;
+                IOLockUnlock(provider->superIOLock);
             }
             
             uint16_t ci = 0;
@@ -717,7 +725,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC load number of fans
         case 91: {
-            if(!provider->superIO)
+            if (!provider->superIOLock)
                 return kIOReturnNoDevice;
 
             uint32_t requiredSize = 1 * sizeof(uint64_t);
@@ -730,26 +738,29 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
             
+            IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            uint32_t numFans = (uint32_t)provider->superIO->getNumberOfFans();
+            IOLockUnlock(provider->superIOLock);
+            
             if (maxLen >= sizeof(uint64_t)) {
-                dataOut[0] = (uint64_t)(provider->superIO->getNumberOfFans());
+                dataOut[0] = (uint64_t)numFans;
             }
             break;
         }
         
         //SMC load readable desc for fan
         case 92: {
-            if(!provider->superIO)
+            if (!provider->superIOLock)
                 return kIOReturnNoDevice;
 
             arguments->scalarOutputCount = 0;
                 
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
-                
-            const char *str = provider->superIO->getReadableStringForFan((int)arguments->scalarInput[0]);
-            if (!str) {
-                str = "";
-            }
             
             uint32_t maxLen = arguments->structureOutputSize;
             if (!arguments->structureOutput || maxLen == 0) {
@@ -758,7 +769,22 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             }
             
             char *dataOut = (char*) arguments->structureOutput;
-            strlcpy(dataOut, str, maxLen);
+            char localBuf[64] = {0};
+            
+            IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            const char *str = provider->superIO->getReadableStringForFan((int)arguments->scalarInput[0]);
+            if (!str) {
+                str = "";
+            }
+            // Copy under lock so the SuperIO object cannot be deleted mid-read.
+            strlcpy(localBuf, str, sizeof(localBuf));
+            IOLockUnlock(provider->superIOLock);
+            
+            strlcpy(dataOut, localBuf, maxLen);
             arguments->structureOutputSize = (uint32_t)strlen(dataOut);
             
             break;
@@ -766,29 +792,31 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
         //SMC fan rpms
         case 93: {
-            if(!provider->superIO)
+            if (!provider->superIOLock)
                 return kIOReturnNoDevice;
-            
-            uint32_t numFans = provider->superIO->getNumberOfFans();
-            uint32_t requiredSize = numFans * sizeof(uint64_t);
-            uint32_t maxLen = arguments->structureOutputSize;
-            arguments->structureOutputSize = requiredSize;
             
             if (!arguments->structureOutput) {
                 return kIOReturnBadArgument;
             }
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
+            uint32_t maxLen = arguments->structureOutputSize;
+            
+            IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            
+            uint32_t numFans = (uint32_t)provider->superIO->getNumberOfFans();
+            uint32_t requiredSize = numFans * sizeof(uint64_t);
+            arguments->structureOutputSize = requiredSize;
             
             UInt32 currentCount = (UInt32)OSIncrementAtomic(&provider->fanUpdateCounter);
             if ((currentCount % 4) == 0) {
-                IOLockLock(provider->superIOLock);
                 provider->superIO->updateFanRPMS();
-                IOLockUnlock(provider->superIOLock);
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
-            
-            IOLockLock(provider->superIOLock);
             for (uint32_t i = 0; i < copyCount; i++) {
                 dataOut[i] = provider->superIO->getRPMForFan(i);
             }
@@ -799,29 +827,31 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC fan throttles and control mode
         case 94: {
-            if(!provider->superIO)
+            if (!provider->superIOLock)
                 return kIOReturnNoDevice;
-            
-            uint32_t numFans = provider->superIO->getNumberOfFans();
-            uint32_t requiredSize = numFans * sizeof(uint64_t);
-            uint32_t maxLen = arguments->structureOutputSize;
-            arguments->structureOutputSize = requiredSize;
             
             if (!arguments->structureOutput) {
                 return kIOReturnBadArgument;
             }
             
             uint64_t *dataOut = (uint64_t*) arguments->structureOutput;
+            uint32_t maxLen = arguments->structureOutputSize;
+            
+            IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            
+            uint32_t numFans = (uint32_t)provider->superIO->getNumberOfFans();
+            uint32_t requiredSize = numFans * sizeof(uint64_t);
+            arguments->structureOutputSize = requiredSize;
             
             UInt32 snap94 = (UInt32)provider->fanUpdateCounter;
             if ((snap94 % 4) == 0) {
-                IOLockLock(provider->superIOLock);
                 provider->superIO->updateFanControl();
-                IOLockUnlock(provider->superIOLock);
             }
             uint32_t copyCount = (maxLen / sizeof(uint64_t) < numFans) ? (maxLen / sizeof(uint64_t)) : numFans;
-            
-            IOLockLock(provider->superIOLock);
             for (uint32_t i = 0; i < copyCount; i++) {
                 dataOut[i] = provider->superIO->getFanThrottle(i) << 8 | (provider->superIO->getFanAutoControlMode(i) ? 1 : 0);
             }
@@ -832,22 +862,27 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC fan override control
         case 95: {
-            if(!provider->superIO)
-                return kIOReturnNoDevice;
-            
             if(!hasPrivilege())
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 2)
                 return kIOReturnBadArgument;
             
+            if (!provider->superIOLock)
+                return kIOReturnNoDevice;
+            
             int fanSel = (int)arguments->scalarInput[0];
-            if (fanSel < 0 || fanSel >= provider->superIO->getNumberOfFans())
-                return kIOReturnBadArgument;
-                
             uint8_t pwm = (uint8_t)arguments->scalarInput[1];
             
             IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            if (fanSel < 0 || fanSel >= provider->superIO->getNumberOfFans()) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnBadArgument;
+            }
             provider->superIO->overrideFanControl(fanSel, pwm);
             IOLockUnlock(provider->superIOLock);
             
@@ -856,20 +891,26 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC fan default control
         case 96: {
-            if(!provider->superIO)
-                return kIOReturnNoDevice;
-            
             if(!hasPrivilege())
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
             
+            if (!provider->superIOLock)
+                return kIOReturnNoDevice;
+            
             int fanSel = (int)arguments->scalarInput[0];
-            if (fanSel < 0 || fanSel >= provider->superIO->getNumberOfFans())
-                return kIOReturnBadArgument;
             
             IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            if (fanSel < 0 || fanSel >= provider->superIO->getNumberOfFans()) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnBadArgument;
+            }
             provider->superIO->setDefaultFanControl(fanSel);
             IOLockUnlock(provider->superIOLock);
             
@@ -878,17 +919,21 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC Secret Undocumented feature (⁎⁍̴̛ᴗ⁍̴̛⁎) - Capped at 80% PWM (0xC8) for hardware safety
         case 97: {
-            if(!provider->superIO)
-                return kIOReturnNoDevice;
-            
             if(!hasPrivilege())
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
             
-            int numFan = provider->superIO->getNumberOfFans();
+            if (!provider->superIOLock)
+                return kIOReturnNoDevice;
+            
             IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
+            int numFan = provider->superIO->getNumberOfFans();
             for (int i = 0; i < numFan; i++) {
                 if(arguments->scalarInput[0])
                     provider->superIO->overrideFanControl(i, 0xC8);
@@ -902,7 +947,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         // Read raw SuperIO register
         case 98: {
-            if(!provider || !provider->superIO)
+            if (!provider || !provider->superIOLock)
                 return kIOReturnNoDevice;
             
             if(arguments->scalarInputCount != 1)
@@ -916,6 +961,10 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 return kIOReturnBadArgument;
             
             IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
             uint8_t val = provider->superIO->readReg(reg);
             IOLockUnlock(provider->superIOLock);
             
@@ -926,7 +975,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         // Write raw SuperIO register
         case 99: {
-            if(!provider || !provider->superIO)
+            if (!provider || !provider->superIOLock)
                 return kIOReturnNoDevice;
             
             if(!hasPrivilege())
@@ -939,6 +988,10 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             uint8_t val = (uint8_t)arguments->scalarInput[1];
             
             IOLockLock(provider->superIOLock);
+            if (!provider->superIO) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnNoDevice;
+            }
             provider->superIO->writeReg(reg, val);
             IOLockUnlock(provider->superIOLock);
             
