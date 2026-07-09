@@ -686,7 +686,6 @@ final class TelemetryModel: ObservableObject {
         cppcSupported = cppcRes.supported
         cppcScores = cppcRes.scores
         cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
-        print("DEBUG: CPPC Supported = \(cppcSupported), Scores = \(cppcScores), Estimated = \(cppcScoresEstimated)")
         updateRankedPhysicalCores()
         
         cstateAddress = ProcessorModel.shared.getCStateAddress()
@@ -1158,25 +1157,26 @@ final class TelemetryModel: ObservableObject {
     }
 
     func applySavedCPUControls() {
+        // Restore persisted controls; surface first privilege denial via banner.
         if UserDefaults.standard.bool(forKey: "has_saved_cppcActiveMode") {
             let active = UserDefaults.standard.bool(forKey: "saved_cppcActiveMode")
-            _ = ProcessorModel.shared.setCPPCActiveMode(active: active)
+            _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCActiveMode(active: active))
         }
         if UserDefaults.standard.bool(forKey: "has_saved_cppcEPPValue") {
             let epp = UInt8(UserDefaults.standard.integer(forKey: "saved_cppcEPPValue"))
-            _ = ProcessorModel.shared.setCPPCEPPValue(epp: epp)
+            _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCEPPValue(epp: epp))
         }
         if UserDefaults.standard.bool(forKey: "has_saved_cpbEnabled") {
             let enabled = UserDefaults.standard.bool(forKey: "saved_cpbEnabled")
-            ProcessorModel.shared.setCPB(enabled: enabled)
+            _ = noteKernelWriteStatus(ProcessorModel.shared.setCPB(enabled: enabled))
         }
         if UserDefaults.standard.bool(forKey: "has_saved_ppmEnabled") {
             let enabled = UserDefaults.standard.bool(forKey: "saved_ppmEnabled")
-            ProcessorModel.shared.setPPM(enabled: enabled)
+            _ = noteKernelWriteStatus(ProcessorModel.shared.setPPM(enabled: enabled))
         }
         if UserDefaults.standard.bool(forKey: "has_saved_lpmEnabled") {
             let enabled = UserDefaults.standard.bool(forKey: "saved_lpmEnabled")
-            ProcessorModel.shared.setLPM(enabled: enabled)
+            _ = noteKernelWriteStatus(ProcessorModel.shared.setLPM(enabled: enabled))
         }
     }
 
@@ -1265,9 +1265,11 @@ final class TelemetryModel: ObservableObject {
         }
         
         if lastAutoEPPApplied != targetEPP {
-            lastAutoEPPApplied = targetEPP
-            _ = ProcessorModel.shared.setCPPCEPPValue(epp: targetEPP)
-            cppcEPPValue = targetEPP
+            let status = ProcessorModel.shared.setCPPCEPPValue(epp: targetEPP)
+            if noteKernelWriteStatus(status) {
+                lastAutoEPPApplied = targetEPP
+                cppcEPPValue = targetEPP
+            }
         }
     }
 
@@ -1314,14 +1316,17 @@ final class TelemetryModel: ObservableObject {
         }
         
         if lastAppliedFanPWM != targetPWM {
-            lastAppliedFanPWM = targetPWM
+            var allOk = true
             for i in 0..<fans.count {
+                let st: kern_return_t
                 if targetPWM == 0 {
-                    _ = ProcessorModel.shared.kernelSetUInt64(selector: 96, args: [UInt64(i)])
+                    st = ProcessorModel.shared.kernelSetUInt64Status(selector: 96, args: [UInt64(i)])
                 } else {
-                    _ = ProcessorModel.shared.kernelSetUInt64(selector: 95, args: [UInt64(i), UInt64(targetPWM)])
+                    st = ProcessorModel.shared.kernelSetUInt64Status(selector: 95, args: [UInt64(i), UInt64(targetPWM)])
                 }
+                if !noteKernelWriteStatus(st) { allOk = false; break }
             }
+            if allOk { lastAppliedFanPWM = targetPWM }
         }
     }
 

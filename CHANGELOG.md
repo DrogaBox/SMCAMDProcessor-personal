@@ -6,14 +6,18 @@
 * **In-app language picker** (`AppLanguage.swift`): Themes & Appearance → Language. Options: System Default or any bundled locale (`en`, `es`, `de`, `it`, `fr`, …). Stored as `app_language_code`; applied at launch via `AppleLanguages`. Changing language prompts **Apply & Restart** (not hot-switch).
 * **Package all `*.lproj`**: Expanded Xcode `knownRegions` and `Localizable.strings` variant group so every localization is copied into the app bundle for the picker.
 * **Crowdin**: `crowdin.yml` maps regional codes (`es-ES` / `es-419` → `es.lproj`, zh/pt/sv variants). Local helper scripts under `scripts/crowdin-*.sh` (credentials via gitignored `.crowdin-credentials`). Full Spanish + completed DE/IT strings in the 3.16 line.
+* **Theme editor**: Opening Themes no longer forces the preset to Custom when normalizing `#RRGGBB` → `#AARRGGBB`; opacity slider refreshes live.
 
 ### Privilege UX & kernel polish
 * **Privilege denial banner**: When UserClient writes return `kIOReturnNotPrivileged`, the dashboard shows an orange banner with guidance (run as root or use `-amdpnopchk`) instead of silent control failures. Control state is reloaded from the kext.
+* **Speed Step / saved controls**: `setPState` returns IOKit status; Speed Step and restore-on-launch paths report privilege denials and do not stick UI on failed writes. Auto-EPP and auto-fan curve also surface denials.
 * **NCT668X SuperIO lock latency**: Replaced long `IOSleep(2)` under `superIOLock` with short `IODelay` to reduce scheduler hold time during multi-step I/O.
 * **kunc_alert once per cycle**: Kext load / alert modal is shown at most once until cleared, avoiding spam on every telemetry poll.
+* **GPU temp inject clamp** + reject invalid UserClient selectors (defensive).
 
 ### Documentation
 * Added full `docs/` set: installation, boot-args (EN/ES), privilege model (EN/ES), features (EN/ES), troubleshooting (EN/ES), architecture, Crowdin/i18n; manuals updated to 3.16.x privilege + language sections.
+* README privilege wording corrected (process name is audit-only, not authorization).
 
 ## v3.16.1  UserClient Connection Fix (menu-bar compatibility)
 * **P0-1 regression fix**: `initWithTask` no longer returns `false` for non-root clients. Rejecting the connection broke `IOServiceOpen` for the normal-user menu bar app and surfaced a false **"No AMDRyzenCPUPowerManagement Found!"** dialog even though the kext was loaded.
