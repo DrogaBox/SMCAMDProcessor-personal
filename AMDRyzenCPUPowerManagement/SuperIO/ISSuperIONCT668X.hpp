@@ -45,8 +45,16 @@ class ISSuperIONCT668X : public ISSuperIOSMCFamily {
 
     
 public:
+    // Generic NCT668X header labels (chip maps vary by board; user can rename in GUI).
     static constexpr const char *kFAN_READABLE_STRS[] = {
-        "Fan",
+        "CPU",
+        "SYS_1",
+        "SYS_2",
+        "SYS_3",
+        "SYS_4",
+        "SYS_5",
+        "Pump",
+        "AUX",
     };
     
     static ISSuperIONCT668X* getDevice(uint16_t *chipIntel);

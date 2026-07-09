@@ -132,6 +132,14 @@ public:
     static constexpr uint32_t kZEN_CCD_TEMP_VALID_BIT = (1 << 11);
     static constexpr uint32_t kZEN_CCD_TEMP_MASK = 0x7FF;
     
+    enum SMUResponse : uint32_t {
+        SMU_RSP_OK           = 1,
+        SMU_RSP_INVALID_CMD  = 0xFF,
+        SMU_RSP_INVALID_ARGS = 0xFE,
+        SMU_RSP_BUSY         = 0xFD,
+        SMU_RSP_TIMEOUT      = 0,
+    };
+    
     static constexpr uint32_t kMSR_HWCR = 0xC0010015;
     static constexpr uint32_t kMSR_CORE_ENERGY_STAT = 0xC001029A;
     static constexpr uint32_t kMSR_HARDWARE_PSTATE_STATUS = 0xC0010293;
@@ -201,6 +209,7 @@ public:
     void registerRequest();
     
     void dumpPstate();
+    void reinitHwState();
     void writePstate(const uint64_t *buf);
     
     bool initSuperIO(uint16_t* chipIntel);
@@ -314,10 +323,15 @@ public:
     ISSuperIOSMCFamily *superIO{nullptr};
     IOLock *superIOLock{nullptr};   // Protects multi-step SuperIO I/O port sequences from concurrent UserClient calls
     
+    static constexpr size_t kMAX_FANS = 16;
     FanCurveConfig fanCurves[MAX_FAN_CURVES];
-    int8_t fanToCurveMap[16]; // Maps each physical fan index to a curve index (-1 = Auto)
-    uint8_t lastAppliedPWM[16];
-    uint64_t lastPWMUpdateTime[16];
+    int8_t fanToCurveMap[kMAX_FANS]; // Maps each physical fan index to a curve index (-1 = Auto)
+    uint8_t lastAppliedPWM[kMAX_FANS];
+    uint64_t lastPWMUpdateTime[kMAX_FANS];
+    
+    static_assert(sizeof(fanToCurveMap) / sizeof(fanToCurveMap[0]) == kMAX_FANS, "fan array size mismatch");
+    static_assert(sizeof(lastAppliedPWM) / sizeof(lastAppliedPWM[0]) == kMAX_FANS, "fan array size mismatch");
+    static_assert(sizeof(lastPWMUpdateTime) / sizeof(lastPWMUpdateTime[0]) == kMAX_FANS, "fan array size mismatch");
     float gpuTempC;
     float curveSmoothedTemp[MAX_FAN_CURVES];
     

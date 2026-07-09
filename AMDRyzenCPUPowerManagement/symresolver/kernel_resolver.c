@@ -26,7 +26,26 @@ static uint64_t mh_base_addr = 0;
 void find_mach_header_addr(uint8_t kc){
     uint64_t slide = 0;
     vm_offset_t slide_address = 0;
+    
+    // vm_kernel_unslide_or_perm_external retorna void en el SDK XNU actual.
+    // No hay código de retorno que validar; en su lugar validamos el slide_address resultante.
     vm_kernel_unslide_or_perm_external((unsigned long long)(void *)printf, &slide_address);
+    
+    if (slide_address == 0) {
+        IOLog("kernel_resolver: vm_kernel_unslide_or_perm_external failed\n");
+        mh_base_addr = 0;
+        return;
+    }
+    
+    // Sanity check: el slide_address debe caer en el rango kernel canonical hi
+    // (0xFFFFFF8000000000 - 0xFFFFFFFFFFFFFFFF en x86_64). Si está fuera, abortar.
+    if (slide_address < 0xFFFFFF8000000000ULL) {
+        IOLog("kernel_resolver: slide_address 0x%llx fuera de rango kernel, aborting\n",
+              (unsigned long long)slide_address);
+        mh_base_addr = 0;
+        return;
+    }
+    
     slide = (uint64_t)(void *)printf - slide_address;
     uint64_t base_address = (uint64_t)slide + KERNEL_BASE;
     
@@ -37,6 +56,9 @@ void find_mach_header_addr(uint8_t kc){
     
     mach_header_64_t* mach_header = (mach_header_64_t*)base_address;
     if (mach_header->magic != MH_MAGIC_64) {
+        // No es un mach header válido; caer al base_address como fallback.
+        IOLog("kernel_resolver: MH_MAGIC_64 mismatch at 0x%llx, using base_address fallback\n",
+              (unsigned long long)base_address);
         mh_base_addr = base_address;
         return;
     }

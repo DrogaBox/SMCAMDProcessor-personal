@@ -19,3 +19,7 @@ CONTEXT.md
 *.log
 build_ci/
 build_release/
+# Scratch diagnostic binaries (keep sources only)
+scratch/dump_sio
+scratch/write_sio
+scratch/*.o

@@ -1045,6 +1045,14 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
             int rc = provider->setCurveOptimizer(core, offset);
             if (rc < 0) {
+                // Map setCurveOptimizer error codes to IOReturn values.
+                // -1 unsupported, -2/-3 bad args, -4 not ready,
+                // -10 SMU timeout, -11 invalid SMU cmd, -12 invalid SMU args, -13 SMU busy.
+                if (rc == -1 || rc == -11) return kIOReturnUnsupported;
+                if (rc == -2 || rc == -3 || rc == -12) return kIOReturnBadArgument;
+                if (rc == -4) return kIOReturnNotReady;
+                if (rc == -10) return kIOReturnTimeout;
+                if (rc == -13) return kIOReturnBusy;
                 return kIOReturnError;
             }
             break;
