@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Chart Rendering Style";
 "Custom Theme Editor" = "Custom Theme Editor";
 "Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
+"Opacity" = "Opacity";
 "Edit Active Theme" = "Edit Active Theme";
 "Export Theme (JSON)" = "Export Theme (JSON)";
 "Import Theme (JSON)" = "Import Theme (JSON)";
@@ -584,3 +586,6 @@
 
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+
+/* Crowdin: recent UI strings */
+"The language will change after the app restarts." = "The language will change after the app restarts.";

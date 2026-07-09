@@ -197,6 +197,19 @@ struct MainDashboardView: View {
     @AppStorage("disclaimer_accepted") private var disclaimerAccepted = false
     @State private var tempCheckboxChecked = false
 
+    // Observe theme keys so Color.tahoe* (static UserDefaults reads) refresh app-wide when custom hex/opacity changes.
+    @AppStorage("app_theme_preset") private var themePreset: String = AppTheme.tahoe.rawValue
+    @AppStorage("custom_hex_card") private var themeCardHex: String = "#16213E"
+    @AppStorage("custom_hex_cyan") private var themeCyanHex: String = "#4CC9F0"
+    @AppStorage("custom_hex_orange") private var themeOrangeHex: String = "#FF8C00"
+    @AppStorage("custom_hex_green") private var themeGreenHex: String = "#00FF7F"
+    @AppStorage("custom_hex_purple") private var themePurpleHex: String = "#A020F0"
+
+    /// Changes whenever any theme token changes → forces sidebar/content re-render with new colors.
+    private var themeRevision: String {
+        "\(themePreset)|\(themeCardHex)|\(themeCyanHex)|\(themeOrangeHex)|\(themeGreenHex)|\(themePurpleHex)"
+    }
+
     var body: some View {
         ZStack {
             HStack(spacing: 0) {
@@ -215,6 +228,7 @@ struct MainDashboardView: View {
                         .transition(.opacity)
                 }
             }
+            .id(themeRevision)
             .background(
                 VisualEffectBackground(
                     material: .sidebar,
@@ -473,6 +487,9 @@ private struct TahoeCard<Content: View>: View {
     let accent: Color
     @ViewBuilder let content: Content
     @AppStorage("theme_glass_material") private var glassMaterial: Int = 0
+    // Keep cards in sync when custom theme opacity/hex is edited live
+    @AppStorage("app_theme_preset") private var themePreset: String = AppTheme.tahoe.rawValue
+    @AppStorage("custom_hex_card") private var cardHex: String = "#16213E"
 
     init(accent: Color = .tahoeCardBorder, @ViewBuilder content: () -> Content) {
         self.accent = accent; self.content = content()
@@ -487,13 +504,20 @@ private struct TahoeCard<Content: View>: View {
         }
     }
 
+    private var cardFill: Color {
+        // Touch storage so SwiftUI invalidates this view when theme tokens change
+        _ = themePreset
+        _ = cardHex
+        return Color.tahoeCard
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) { content }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.tahoeCard)
+                    .fill(cardFill)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
                             .fill(materialStyle)
@@ -3349,9 +3373,17 @@ private struct CPPCCoreGrid: View {
 
 struct ThemeSelectorGrid: View {
     @AppStorage("app_theme_preset") private var selectedThemeRaw: String = AppTheme.tahoe.rawValue
+    // Observe custom tokens so the "Custom" tile preview updates with opacity/hex edits
+    @AppStorage("custom_hex_card") private var customCardHex: String = "#16213E"
+    @AppStorage("custom_hex_cyan") private var customCyanHex: String = "#4CC9F0"
+    @AppStorage("custom_hex_orange") private var customOrangeHex: String = "#FF8C00"
+    @AppStorage("custom_hex_green") private var customGreenHex: String = "#00FF7F"
+    @AppStorage("custom_hex_purple") private var customPurpleHex: String = "#A020F0"
     private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
 
     var body: some View {
+        // Touch custom hex so body re-evaluates when editor pushes ARGB
+        let _ = (customCardHex, customCyanHex, customOrangeHex, customGreenHex, customPurpleHex)
         LazyVGrid(columns: columns, spacing: 14) {
             ForEach(AppTheme.allCases) { theme in
                 let isSelected = selectedThemeRaw == theme.rawValue
@@ -3473,6 +3505,7 @@ struct ChartStyleSelectorGrid: View {
 }
 
 extension Color {
+    /// Parses `#RGB`, `#RRGGBB`, or `#AARRGGBB` (alpha first when 8 digits).
     init?(hexString: String) {
         var clean = hexString.trimmingCharacters(in: .whitespacesAndNewlines)
         if clean.hasPrefix("#") {
@@ -3493,12 +3526,61 @@ extension Color {
         self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255, opacity: Double(a) / 255)
     }
 
+    /// sRGB components in 0…1. Prefer this over repeated NSColor conversions in bindings.
+    var resolvedRGBA: (r: Double, g: Double, b: Double, a: Double) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
+        let ns = NSColor(self)
+        if let srgb = ns.usingColorSpace(.sRGB) {
+            srgb.getRed(&r, green: &g, blue: &b, alpha: &a)
+        } else if let device = ns.usingColorSpace(.deviceRGB) {
+            device.getRed(&r, green: &g, blue: &b, alpha: &a)
+        } else if ns.type == .componentBased {
+            ns.getRed(&r, green: &g, blue: &b, alpha: &a)
+        }
+        return (
+            r: Double(min(max(r, 0), 1)),
+            g: Double(min(max(g, 0), 1)),
+            b: Double(min(max(b, 0), 1)),
+            a: Double(min(max(a, 0), 1))
+        )
+    }
+
+    /// Same RGB, new alpha (0…1).
+    func withResolvedAlpha(_ alpha: Double) -> Color {
+        let c = resolvedRGBA
+        return Color(.sRGB, red: c.r, green: c.g, blue: c.b, opacity: min(max(alpha, 0), 1))
+    }
+
+    /// Opaque `#RRGGBB`, translucent `#AARRGGBB` (alpha first).
     var toHexString: String {
-        guard let nsColor = NSColor(self).usingColorSpace(.sRGB) else { return "#000000" }
-        let r = Int(nsColor.redComponent * 255)
-        let g = Int(nsColor.greenComponent * 255)
-        let b = Int(nsColor.blueComponent * 255)
-        return String(format: "#%02X%02X%02X", r, g, b)
+        let c = resolvedRGBA
+        let ri = Int((c.r * 255).rounded())
+        let gi = Int((c.g * 255).rounded())
+        let bi = Int((c.b * 255).rounded())
+        let ai = Int((c.a * 255).rounded())
+        if ai < 255 {
+            return String(format: "#%02X%02X%02X%02X", ai, ri, gi, bi)
+        }
+        return String(format: "#%02X%02X%02X", ri, gi, bi)
+    }
+
+    /// Always `#AARRGGBB` — used by the theme editor so opacity never drops on save.
+    var toHexStringARGB: String {
+        let c = resolvedRGBA
+        let ri = Int((c.r * 255).rounded())
+        let gi = Int((c.g * 255).rounded())
+        let bi = Int((c.b * 255).rounded())
+        let ai = Int((c.a * 255).rounded())
+        return String(format: "#%02X%02X%02X%02X", ai, ri, gi, bi)
+    }
+
+    /// Build sRGB color from components without going through NSColorPicker quirks.
+    static func srgb(r: Double, g: Double, b: Double, a: Double) -> Color {
+        Color(.sRGB,
+              red: min(max(r, 0), 1),
+              green: min(max(g, 0), 1),
+              blue: min(max(b, 0), 1),
+              opacity: min(max(a, 0), 1))
     }
 }
 
@@ -3511,62 +3593,155 @@ struct ThemePresetPack: Codable {
     var purpleHex: String
 }
 
+/// Theme color editor with a **stable local Color** + **explicit opacity slider**.
+/// Binding ColorPicker directly to hex re-encoding fights the macOS panel and resets alpha to 100%.
 struct ColorTokenEditorSlot: View {
     let title: LocalizedStringKey
-    let colorHex: String
-    @Binding var selection: Color
+    @Binding var hex: String
+    var onEdited: () -> Void = {}
+
+    /// Local draft — ColorPicker writes here; we push ARGB hex outward.
+    @State private var draftRGB: Color = .white
+    @State private var opacity: Double = 1.0
+    @State private var suppressPush = false
+
+    private var preview: Color {
+        let c = draftRGB.resolvedRGBA
+        return Color.srgb(r: c.r, g: c.g, b: c.b, a: opacity)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.tahoeSubtext)
+
             HStack(spacing: 8) {
-                ColorPicker("", selection: $selection)
+                // Opacity handled by the slider below — avoids macOS ColorPanel alpha reset
+                ColorPicker("", selection: $draftRGB, supportsOpacity: false)
                     .labelsHidden()
-                Text(colorHex)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .onChange(of: draftRGB) { _ in
+                        pushHex()
+                    }
+
+                // Live swatch with current opacity
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(preview)
+                    .frame(width: 22, height: 22)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    )
+                    .background(
+                        // Checkerboard hint for transparency
+                        CheckerboardBackground()
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .frame(width: 22, height: 22)
+                    )
+
+                Text(hex)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
             }
-            .padding(8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.04))
-            .cornerRadius(8)
+
+            HStack(spacing: 8) {
+                Text("Opacity")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(.tahoeSubtext)
+                    .frame(width: 48, alignment: .leading)
+                Slider(value: $opacity, in: 0...1)
+                    .controlSize(.small)
+                    .onChange(of: opacity) { _ in
+                        pushHex()
+                    }
+                Text("\(Int((opacity * 100).rounded()))%")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                    .frame(width: 36, alignment: .trailing)
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.04))
+        .cornerRadius(8)
+        .onAppear { pullFromHex() }
+        .onChange(of: hex) { newValue in
+            // External change (import / Edit Active Theme) — resync local draft
+            guard !suppressPush else { return }
+            if newValue.uppercased() != preview.toHexStringARGB.uppercased() {
+                pullFromHex()
+            }
+        }
+    }
+
+    private func pullFromHex() {
+        let color = Color(hexString: hex) ?? .white
+        let c = color.resolvedRGBA
+        // Store opaque RGB in the picker; alpha lives in the slider
+        draftRGB = Color.srgb(r: c.r, g: c.g, b: c.b, a: 1)
+        opacity = c.a
+    }
+
+    private func pushHex() {
+        let c = draftRGB.resolvedRGBA
+        let composed = Color.srgb(r: c.r, g: c.g, b: c.b, a: opacity)
+        let next = composed.toHexStringARGB
+        guard next.uppercased() != hex.uppercased() else { return }
+        suppressPush = true
+        hex = next
+        onEdited()
+        DispatchQueue.main.async { suppressPush = false }
+    }
+}
+
+/// Tiny checkerboard so transparent swatches are visible on dark UI.
+private struct CheckerboardBackground: View {
+    var body: some View {
+        Canvas { context, size in
+            let cell: CGFloat = 4
+            var y: CGFloat = 0
+            var row = 0
+            while y < size.height {
+                var x: CGFloat = 0
+                var col = 0
+                while x < size.width {
+                    let dark = (row + col) % 2 == 0
+                    context.fill(
+                        Path(CGRect(x: x, y: y, width: cell, height: cell)),
+                        with: .color(dark ? Color.gray.opacity(0.55) : Color.white.opacity(0.85))
+                    )
+                    x += cell
+                    col += 1
+                }
+                y += cell
+                row += 1
+            }
         }
     }
 }
 
 struct CustomThemeStudio: View {
-    @AppStorage("custom_hex_card") private var cardHex: String = "#16213E"
-    @AppStorage("custom_hex_cyan") private var cyanHex: String = "#4CC9F0"
-    @AppStorage("custom_hex_orange") private var orangeHex: String = "#FF8C00"
-    @AppStorage("custom_hex_green") private var greenHex: String = "#00FF7F"
-    @AppStorage("custom_hex_purple") private var purpleHex: String = "#A020F0"
+    @AppStorage("custom_hex_card") private var cardHex: String = "#FF16213E"
+    @AppStorage("custom_hex_cyan") private var cyanHex: String = "#FF4CC9F0"
+    @AppStorage("custom_hex_orange") private var orangeHex: String = "#FFFF8C00"
+    @AppStorage("custom_hex_green") private var greenHex: String = "#FF00FF7F"
+    @AppStorage("custom_hex_purple") private var purpleHex: String = "#FFA020F0"
     @AppStorage("app_theme_preset") private var selectedThemeRaw: String = AppTheme.tahoe.rawValue
 
-    private var cardColorBinding: Binding<Color> {
-        Binding(get: { Color(hexString: cardHex) ?? .blue }, set: { cardHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
-    }
-    private var cyanColorBinding: Binding<Color> {
-        Binding(get: { Color(hexString: cyanHex) ?? .cyan }, set: { cyanHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
-    }
-    private var orangeColorBinding: Binding<Color> {
-        Binding(get: { Color(hexString: orangeHex) ?? .orange }, set: { orangeHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
-    }
-    private var greenColorBinding: Binding<Color> {
-        Binding(get: { Color(hexString: greenHex) ?? .green }, set: { greenHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
-    }
-    private var purpleColorBinding: Binding<Color> {
-        Binding(get: { Color(hexString: purpleHex) ?? .purple }, set: { purpleHex = $0.toHexString; selectedThemeRaw = AppTheme.custom.rawValue })
+    private func markCustom() {
+        selectedThemeRaw = AppTheme.custom.rawValue
     }
 
     private func copyCurrentThemeToCustom() {
         let curr = AppTheme.current
-        cardHex = curr.card.toHexString
-        cyanHex = curr.accentCyan.toHexString
-        orangeHex = curr.accentOrange.toHexString
-        greenHex = curr.accentGreen.toHexString
-        purpleHex = curr.accentPurple.toHexString
+        // Always ARGB so card translucency (Tahoe ~0.82) is kept
+        cardHex = curr.card.toHexStringARGB
+        cyanHex = curr.accentCyan.toHexStringARGB
+        orangeHex = curr.accentOrange.toHexStringARGB
+        greenHex = curr.accentGreen.toHexStringARGB
+        purpleHex = curr.accentPurple.toHexStringARGB
         selectedThemeRaw = AppTheme.custom.rawValue
     }
 
@@ -3577,7 +3752,7 @@ struct CustomThemeStudio: View {
                     Text("Custom Theme Editor")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Showing active theme colors. Adjust any color to customize.")
+                    Text("Use the Opacity slider for transparency (macOS color panel alone often resets alpha).")
                         .font(.system(size: 10))
                         .foregroundColor(.tahoeSubtext)
                 }
@@ -3587,13 +3762,12 @@ struct CustomThemeStudio: View {
                 }
             }
 
-            // Grid of Color Token Editors showing active colors & HEX
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
-                ColorTokenEditorSlot(title: "Card Background", colorHex: AppTheme.current.card.toHexString, selection: cardColorBinding)
-                ColorTokenEditorSlot(title: "Cyan Accent", colorHex: AppTheme.current.accentCyan.toHexString, selection: cyanColorBinding)
-                ColorTokenEditorSlot(title: "Orange Accent", colorHex: AppTheme.current.accentOrange.toHexString, selection: orangeColorBinding)
-                ColorTokenEditorSlot(title: "Green Accent", colorHex: AppTheme.current.accentGreen.toHexString, selection: greenColorBinding)
-                ColorTokenEditorSlot(title: "Purple Accent", colorHex: AppTheme.current.accentPurple.toHexString, selection: purpleColorBinding)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 10)], spacing: 10) {
+                ColorTokenEditorSlot(title: "Card Background", hex: $cardHex, onEdited: markCustom)
+                ColorTokenEditorSlot(title: "Cyan Accent", hex: $cyanHex, onEdited: markCustom)
+                ColorTokenEditorSlot(title: "Orange Accent", hex: $orangeHex, onEdited: markCustom)
+                ColorTokenEditorSlot(title: "Green Accent", hex: $greenHex, onEdited: markCustom)
+                ColorTokenEditorSlot(title: "Purple Accent", hex: $purpleHex, onEdited: markCustom)
             }
 
             Divider().background(Color.tahoeCardBorder)
@@ -3618,7 +3792,15 @@ struct CustomThemeStudio: View {
     }
 
     private func exportTheme() {
-        let pack = ThemePresetPack(name: "Mi Tema Custom", cardHex: cardHex, cyanHex: cyanHex, orangeHex: orangeHex, greenHex: greenHex, purpleHex: purpleHex)
+        // Always export ARGB so opacity survives re-import
+        let pack = ThemePresetPack(
+            name: "Mi Tema Custom",
+            cardHex: Color(hexString: cardHex)?.toHexStringARGB ?? cardHex,
+            cyanHex: Color(hexString: cyanHex)?.toHexStringARGB ?? cyanHex,
+            orangeHex: Color(hexString: orangeHex)?.toHexStringARGB ?? orangeHex,
+            greenHex: Color(hexString: greenHex)?.toHexStringARGB ?? greenHex,
+            purpleHex: Color(hexString: purpleHex)?.toHexStringARGB ?? purpleHex
+        )
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         if let data = try? encoder.encode(pack) {
@@ -3640,11 +3822,12 @@ struct CustomThemeStudio: View {
         panel.begin { resp in
             if resp == .OK, let url = panel.url, let data = try? Data(contentsOf: url) {
                 if let pack = try? JSONDecoder().decode(ThemePresetPack.self, from: data) {
-                    cardHex = pack.cardHex
-                    cyanHex = pack.cyanHex
-                    orangeHex = pack.orangeHex
-                    greenHex = pack.greenHex
-                    purpleHex = pack.purpleHex
+                    // Normalize to ARGB so older 6-digit JSON imports keep working and opacity is explicit
+                    cardHex = Color(hexString: pack.cardHex)?.toHexStringARGB ?? pack.cardHex
+                    cyanHex = Color(hexString: pack.cyanHex)?.toHexStringARGB ?? pack.cyanHex
+                    orangeHex = Color(hexString: pack.orangeHex)?.toHexStringARGB ?? pack.orangeHex
+                    greenHex = Color(hexString: pack.greenHex)?.toHexStringARGB ?? pack.greenHex
+                    purpleHex = Color(hexString: pack.purpleHex)?.toHexStringARGB ?? pack.purpleHex
                     selectedThemeRaw = AppTheme.custom.rawValue
                 }
             }
