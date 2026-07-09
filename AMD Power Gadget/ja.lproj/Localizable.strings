@@ -581,7 +581,6 @@
 "System Default" = "システムのデフォルト";
 "Current: %@" = "現在: %@";
 "Restart required" = "再起動が必要です";
-"The language will change after the app restarts." = "アプリの再起動後に言語が変更されます。";
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "この操作には管理者権限が必要です。AMD Power Gadget を root で実行するか、ブート引数 -amdpnopchk を追加してください。";
 
 "The app needs to restart to load the selected language." = "選択した言語を読み込むにはアプリを再起動する必要があります。";
