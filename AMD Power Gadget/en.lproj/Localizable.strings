@@ -282,7 +282,7 @@
 "CPPC hardware rankings are active and loaded from the processor." = "CPPC hardware rankings are active and loaded from the processor.";
 "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." = "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core.";
 "CPPC Preferred Cores (Silicon Quality)" = "CPPC Preferred Cores (Silicon Quality)";
-"CPPC: Active" = "CPPC: Active";
+"CPPC: Active" = "CPPC: HW OK";
 "CPPC: Estimated" = "CPPC: Estimated";
 "CPU and GPU temperatures" = "CPU and GPU temperatures";
 "CPU Average Frequency" = "CPU Average Frequency";
