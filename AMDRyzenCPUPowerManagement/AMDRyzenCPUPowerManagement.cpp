@@ -297,6 +297,7 @@ void AMDRyzenCPUPowerManagement::stopWorkLoop() {
 
 void AMDRyzenCPUPowerManagement::resumeWorkLoop() {
     if (!workLoop) return;
+    reinitHwState();
     workLoop->enableAllEventSources();
     serviceInitialized = true;
     pwrLastTSC = rdtsc64();
@@ -407,31 +408,6 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
           cpuCacheL1_perCore, cpuCacheL2_perCore, cpuCacheL3);
     
     
-    CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    cpbSupported = (cpuid_edx >> 9) & 0x1;
-
-    // Check CPPC support: try to read MSR 0xC00102B0 first.
-    uint64_t cppcVal = 0;
-    bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
-    
-    IOLog("AMDRyzenCPUPowerManagement::start CPPC MSR 0xC00102B0 read success: %d, value: 0x%llX\n", msrSuccess, cppcVal);
-    
-    if (msrSuccess && cppcVal != 0) {
-        cppcSupported = true;
-    } else {
-        CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-        cppcSupported = (cpuid_ebx >> 27) & 0x1;
-    }
-    
-    if (cppcSupported) {
-        write_msr(kMSR_AMD_CPPC_ENABLE, 1);
-    }
-    
-    cppcActiveMode = checkKernelArgument("-amdcppcactive");
-    
-    IOLog("AMDRyzenCPUPowerManagement::start CPPC supported: %d, Active Mode: %d\n", cppcSupported, cppcActiveMode);
-
-    
     CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     IOLog("AMDRyzenCPUPowerManagement::start CPUID MWait: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
     
@@ -456,25 +432,10 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
             break;
         }
     }
-    
-    uint64_t rapl = 0;
-    if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
-        uint8_t energyStatusUnits = (rapl >> 8) & 0x1f;
-        uint8_t timeUnits = (rapl >> 16) & 0x0f;
-        pwrEnergyUnit = 1.0 / (double)(1ULL << energyStatusUnits);
-        pwrTimeUnit = 1.0 / (double)(1ULL << timeUnits);
-    } else {
-        static bool loggedRaplFallback = false;
-        if (!loggedRaplFallback) {
-            loggedRaplFallback = true;
-            IOLog("AMDRyzenCPUPowerManagement::start WARN: failed to read MSR_RAPL_POWER_UNIT, using default 1/2^16 energy unit\n");
-        }
-        pwrEnergyUnit = 1.0 / (double)(1ULL << 16);
-        pwrTimeUnit = 1.0 / (double)(1ULL << 10);
-    }
+
+    reinitHwState();
     
     fetchOEMBaseBoardInfo();
-        
     
     IOLog("AMDRyzenCPUPowerManagement::start trying to init PCI service...\n");
     if(!getPCIService()){
@@ -1039,12 +1000,16 @@ int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
     // Send command 0x3D (SetCurveOptimizer) to SMU
     int response = smuSendCmd(0x3D, arg);
     
-    if (response == 1) {
+    if (response == SMU_RSP_OK) {
         curveOptimizerOffsets[core] = offset;
         IOLog("AMDRyzenCPUPowerManagement: Successfully set Curve Optimizer for Core %d to %d (Offset counts).\n", core, offset);
         return 0;
     } else {
         IOLog("AMDRyzenCPUPowerManagement: SMU Curve Optimizer command failed with response code: 0x%X\n", response);
+        if (response == SMU_RSP_TIMEOUT) return -10;
+        if (response == SMU_RSP_INVALID_CMD) return -11;
+        if (response == SMU_RSP_INVALID_ARGS) return -12;
+        if (response == SMU_RSP_BUSY) return -13;
         return -5;
     }
 }
@@ -1149,6 +1114,51 @@ void AMDRyzenCPUPowerManagement::dumpPstate(){
     }
     
     PStateEnabledLen = len;
+}
+
+void AMDRyzenCPUPowerManagement::reinitHwState() {
+    uint32_t cpuid_eax = 0;
+    uint32_t cpuid_ebx = 0;
+    uint32_t cpuid_ecx = 0;
+    uint32_t cpuid_edx = 0;
+
+    CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
+    cpbSupported = (cpuid_edx >> 9) & 0x1;
+
+    // Check CPPC support: try to read MSR 0xC00102B0 first.
+    uint64_t cppcVal = 0;
+    bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
+    
+    if (msrSuccess && cppcVal != 0) {
+        cppcSupported = true;
+    } else {
+        CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
+        cppcSupported = (cpuid_ebx >> 27) & 0x1;
+    }
+    
+    if (cppcSupported) {
+        write_msr(kMSR_AMD_CPPC_ENABLE, 1);
+    }
+    
+    cppcActiveMode = checkKernelArgument("-amdcppcactive");
+    
+    uint64_t rapl = 0;
+    if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
+        uint8_t energyStatusUnits = (rapl >> 8) & 0x1f;
+        uint8_t timeUnits = (rapl >> 16) & 0x0f;
+        pwrEnergyUnit = 1.0 / (double)(1ULL << energyStatusUnits);
+        pwrTimeUnit = 1.0 / (double)(1ULL << timeUnits);
+    } else {
+        static bool loggedRaplFallback = false;
+        if (!loggedRaplFallback) {
+            loggedRaplFallback = true;
+            IOLog("AMDRyzenCPUPowerManagement::reinitHwState WARN: failed to read MSR_RAPL_POWER_UNIT, using default 1/2^16 energy unit\n");
+        }
+        pwrEnergyUnit = 1.0 / (double)(1ULL << 16);
+        pwrTimeUnit = 1.0 / (double)(1ULL << 10);
+    }
+    
+    dumpPstate();
 }
 
 void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
@@ -1295,7 +1305,7 @@ void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
         
         // 7. Enforce Hysteresis and Ramp Rate Limiting
         if (currentPWM > 0 && targetPWM != 0) {
-            double deltaTime = 0.5; // Default step duration (seconds) if timer just started
+            double deltaTime = (double)HF_TEMP_SAMPLE_PERIOD / 1000.0;
             if (lastTime > 0 && now > lastTime) {
                 deltaTime = (double)(now - lastTime) / 1e9;
             }
