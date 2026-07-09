@@ -571,3 +571,13 @@
 
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.";
+
+/* App language picker */
+"Language" = "Language";
+"App Language" = "App Language";
+"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
+"System Default" = "System Default";
+"Current: %@" = "Current: %@";
+"Restart required" = "Restart required";
+"Apply & Restart" = "Apply & Restart";
+"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";

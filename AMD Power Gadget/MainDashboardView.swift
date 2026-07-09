@@ -3632,6 +3632,9 @@ struct ThemesContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
+                SectionTitle("Language")
+                LanguagePickerCard()
+
                 SectionTitle("Select Visual Theme (Instant Application)")
                 ThemeSelectorGrid()
 
@@ -3643,6 +3646,80 @@ struct ThemesContentView: View {
             }
             .padding(20)
         }
+    }
+}
+
+// MARK: - Language picker
+struct LanguagePickerCard: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode: String = ""
+    @State private var pendingCode: String = ""
+    @State private var showRestartAlert = false
+
+    private var languages: [AppLanguage] { AppLanguage.available }
+
+    var body: some View {
+        TahoeCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "globe")
+                        .foregroundColor(.tahoeAccentCyan)
+                        .font(.system(size: 16, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(NSLocalizedString("App Language", comment: ""))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.tahoeText)
+                        Text(NSLocalizedString("Choose the interface language. The app will restart to apply the change.", comment: ""))
+                            .font(.system(size: 11))
+                            .foregroundColor(.tahoeSubtext)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                }
+
+                Picker("", selection: Binding(
+                    get: { languageCode },
+                    set: { newValue in
+                        if newValue != languageCode {
+                            pendingCode = newValue
+                            showRestartAlert = true
+                        }
+                    }
+                )) {
+                    ForEach(languages) { lang in
+                        Text(lang.displayName).tag(lang.rawValue)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(maxWidth: 320, alignment: .leading)
+
+                Text(String(format: NSLocalizedString("Current: %@", comment: "Current language label"), currentLanguageLabel))
+                    .font(.system(size: 10))
+                    .foregroundColor(.tahoeSubtext)
+            }
+        }
+        .alert(NSLocalizedString("Restart required", comment: ""), isPresented: $showRestartAlert) {
+            Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {
+                pendingCode = languageCode
+            }
+            Button(NSLocalizedString("Apply & Restart", comment: "")) {
+                let lang = AppLanguage(rawValue: pendingCode) ?? .system
+                AppLanguage.select(lang, relaunch: true)
+            }
+        } message: {
+            Text(NSLocalizedString("The app needs to restart to load the selected language.", comment: ""))
+        }
+    }
+
+    private var currentLanguageLabel: String {
+        let lang = AppLanguage(rawValue: languageCode) ?? .system
+        if lang == .system {
+            let preferred = Locale.preferredLanguages.first ?? "en"
+            let code = String(preferred.prefix(while: { $0 != "-" && $0 != "_" }))
+            let name = Locale.current.localizedString(forLanguageCode: code) ?? code
+            return "\(NSLocalizedString("System Default", comment: "")) (\(name))"
+        }
+        return lang.displayName
     }
 }
 

@@ -84,14 +84,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
-        let keyDefaults = [
+        let keyDefaults: [String: Any] = [
             "usetranslucency" : false,
             "statusbarenabled": true,
             "startAtLogin": false,
-            "startAtLoginAsked": false
+            "startAtLoginAsked": false,
+            "app_language_code": ""
         ]
 
         UserDefaults.standard.register(defaults: keyDefaults)
+
+        // Apply in-app language override before any UI / localized strings load.
+        AppLanguage.applyStoredPreference()
 
         let useTran = UserDefaults.standard.bool(forKey: "usetranslucency")
         let sb = UserDefaults.standard.bool(forKey: "statusbarenabled")
