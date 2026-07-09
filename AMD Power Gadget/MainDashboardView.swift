@@ -2083,17 +2083,15 @@ struct ProfilesContentView: View {
                             ))
                             .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
                             .labelsHidden()
-                            // Always allow the toggle when the kext is loaded — kext returns
-                            // Unsupported only on non-Zen; privilege errors surface below.
-                            .disabled(!model.smcDriverLoaded)
+                            .disabled(!model.cppcSupported)
                         }
-                        if !model.smcDriverLoaded {
-                            Text(NSLocalizedString("AMDRyzenCPUPowerManagement kext not connected.", comment: ""))
+                        if !model.cppcSupported {
+                            Text(NSLocalizedString("This CPU did not report CPPC support to the kext.", comment: ""))
                                 .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
                         } else if !model.cppcActiveMode {
                             Text(NSLocalizedString(
-                                "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot.",
-                                comment: "CPPC Active Mode help"
+                                "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch.",
+                                comment: "Explains fabiosun confusion: badge vs toggle"
                             ))
                             .font(.system(size: 10))
                             .foregroundColor(.tahoeSubtext)
@@ -2108,7 +2106,6 @@ struct ProfilesContentView: View {
                     }
                 }
                 
-                // Auto-EPP / EPP picker when Active Mode is on (boot-arg or user toggle).
                 if model.cppcActiveMode {
                     // 2. Dynamic Auto-EPP Engine
                     TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {

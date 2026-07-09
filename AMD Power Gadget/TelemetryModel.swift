@@ -1180,11 +1180,8 @@ final class TelemetryModel: ObservableObject {
 
     func applySavedCPUControls() {
         // Restore persisted controls; surface first privilege denial via banner.
-        refreshCPPCSupportFromKext()
-
         if UserDefaults.standard.bool(forKey: "has_saved_cppcActiveMode") {
             let active = UserDefaults.standard.bool(forKey: "saved_cppcActiveMode")
-            // Always try to restore; kext rejects only if truly unsupported.
             _ = noteKernelWriteStatus(ProcessorModel.shared.setCPPCActiveMode(active: active))
         }
         if UserDefaults.standard.bool(forKey: "has_saved_cppcEPPValue") {
@@ -1205,33 +1202,16 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
-    /// Pull CPPC support + rankings from the kext (selector 21).
-    private func refreshCPPCSupportFromKext() {
-        let cppcRes = ProcessorModel.shared.getCPPCScore()
-        cppcSupported = cppcRes.supported
-        cppcScores = cppcRes.scores
-        cppcScoresEstimated = cppcSupported && (cppcScores.isEmpty || cppcScores.allSatisfy { $0 == 0 })
-    }
-
     func loadCPUControls() {
         let cpb = ProcessorModel.shared.getCPB()
         cpbSupported = cpb.count > 0 && cpb[0]
         cpbEnabled   = cpb.count > 1 && cpb[1]
         ppmEnabled   = ProcessorModel.shared.getPPM()
         lpmEnabled   = ProcessorModel.shared.getLPM()
-
-        refreshCPPCSupportFromKext()
-
+        
         let cppc = ProcessorModel.shared.getCPPCActiveMode()
-        // Trust kext Active Mode bit (boot-arg -amdcppcactive / user toggle).
-        // Do NOT force OFF when a flaky support query fails — that locked users out.
         cppcActiveMode = cppc.active
         cppcEPPValue = cppc.epp
-
-        // If Active is on, the kext is treating CPPC as available for EPP writes.
-        if cppc.active {
-            cppcSupported = true
-        }
     }
 
     /// Report a kernel write failure to the UI (privilege banner / console).
@@ -1297,10 +1277,7 @@ final class TelemetryModel: ObservableObject {
         if noteKernelWriteStatus(status) {
             UserDefaults.standard.set(active, forKey: "saved_cppcActiveMode")
             UserDefaults.standard.set(true, forKey: "has_saved_cppcActiveMode")
-            cppcActiveMode = active
-            if active { cppcSupported = true }
         }
-        // Re-sync from kext (also picks up Unsupported / privilege failures).
         loadCPUControls()
     }
 
