@@ -495,7 +495,7 @@
 "Show Temperature" = "Mostrar temperatura";
 "Show Temperature Sparkline Graph below" = "Mostrar minigráfico de temperatura debajo";
 "Show Top Processes" = "Mostrar procesos principales";
-"Single large value instead of max/avg stack" = "Un solo valor grande en lugar de pila máx./prom.";
+"Single large value instead of max/avg stack" = "Un solo valor grande en lugar de pila máx/media";
 "SMC Fan Control" = "Control de ventiladores SMC";
 "Smooth Curves" = "Curvas suaves";
 "Software" = "Software";
@@ -597,3 +597,21 @@
 "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root)." = "La CPU reporta rankings CPPC (HW OK). Eso no significa que Active Mode esté ON — actívalo en Profiles (necesita -amdpnopchk o root).";
 /* Deprecated badge key — kept so old locales still resolve */
 "CPPC: Active" = "CPPC: HW OK";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Show Max Freq Only" = "Mostrar solo frecuencia máxima";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Use Fahrenheit" = "Usar Fahrenheit";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Frequency column (max/avg GHz)" = "Columna de frecuencia (máx/media GHz)";
+
+/* Menu Bar toggles (fabiosun IT) */
+"CPU temp + optional GPU temp" = "Temp CPU + temp GPU opcional";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Convert temperature values from Celsius to Fahrenheit" = "Convierte las temperaturas de Celsius a Fahrenheit";
+
+/* Menu Bar toggles (fabiosun IT) */
+"CPU watts + optional GPU watts" = "Vatios CPU + vatios GPU opcionales";
