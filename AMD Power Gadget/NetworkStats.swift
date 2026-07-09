@@ -86,14 +86,9 @@ class NetworkStats {
                             if isPhysical == nil {
                                 var nameBuffer = [CChar](repeating: 0, count: 16) // 16 is IF_NAMESIZE
                                 if if_indextoname(index, &nameBuffer) != nil {
-                                    let b0 = nameBuffer[0]
-                                    let b1 = nameBuffer[1]
-                                    let b2 = nameBuffer[2]
-                                    let b3 = nameBuffer[3]
-                                    let isEn = (b0 == 101 && b1 == 110) // "en" (101='e', 110='n')
-                                    let isBond = (b0 == 98 && b1 == 111 && b2 == 110 && b3 == 100) // "bond"
-                                    let isBridge = (b0 == 98 && b1 == 114 && b2 == 105 && b3 == 100 && nameBuffer[4] == 103 && nameBuffer[5] == 101) // "bridge"
-                                    isPhysical = isEn || isBond || isBridge
+                                    let name = String(cString: nameBuffer)
+                                    let isPhysicalInterface = name.hasPrefix("en") || name.hasPrefix("bond") || name.hasPrefix("bridge")
+                                    isPhysical = isPhysicalInterface
                                 } else {
                                     isPhysical = false
                                 }

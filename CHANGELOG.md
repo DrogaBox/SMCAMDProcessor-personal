@@ -1,5 +1,36 @@
 # Change Summary & Release Changelog
 
+## v3.16.0  Security Hardening, Kernel Correctness & Defensive Resilience
+
+### Security & Safety (P0 — from v3.16.0-rc1)
+* **P0-1 UserClient Authorization (root-only)**: Removed the insecure process-name bypass (`AMD Power Gadget` / `SMCAMDProcessor` string match). Connections now require root (`proc_suser`) or the explicit debug boot-arg `-amdpnopchk`. Rejected connections log PID and binary name.
+* **P0-2 SuperIO UAF Race**: Wrapped `initSuperIO()` and `evaluateFanCurves()` with `superIOLock`, double-checking `superIO != nullptr` after lock acquisition to prevent use-after-free against concurrent UserClient calls.
+* **P0-3 Thermal Guard Ordering**: Moved the 85 °C / 80 % PWM thermal floor **after** hysteresis and ramp-rate limiting so the safety PWM can never be overwritten. Named constants: `kTHERMAL_GUARD_TEMP_C`, `kTHERMAL_GUARD_PWM`, `kTHERMAL_THROTTLE_*`, `kCURVE_OPTIMIZER_BLOCK_TEMP_C`.
+
+### Kernel & App Correctness (P1 — from v3.16.0-rc2)
+* **P1-1 P-State FID Clamp**: Clamped computed P1 FID to `0xFF` and require P0 enabled + non-zero DfsId before writing (`pmAMDRyzen.c`).
+* **P1-2 CCD Detection**: Probe CCDs via valid-bit (`kZEN_CCD_TEMP_VALID_BIT`) instead of `t > 0`, so cold-boot detection works below ambient-positive false negatives.
+* **P1-3 Provider Capture**: `externalMethod` snapshots `fProvider` into a local pointer for the entire switch.
+* **P1-4 CPUID Brand Null-Termination**: Explicit `nameString[48] = '\0'` after brand CPUID leaves.
+* **P1-5 Fan Counter Snapshot**: Removed strict-aliasing `OSAddAtomic` cast on `fanUpdateCounter` in selector 94.
+* **P1-6 Safe URL Opens**: Replaced force-unwrapped `URL(string:)!` call sites with guarded opens in AppDelegate / ProcessorModel / MainDashboardView.
+* **P1-7 PCI Accessor Guards**: Null/lock guards on `getCCDTemp`, package temp, and SMN accessors.
+* **P1-8 SMC Key Index Bounds**: `KeyTCx*` helpers clamp index against `MaxIndexCount`.
+
+### Defensive Hardening (P2)
+* **P2-1 NetworkStats**: Replaced magic ASCII byte compares with `hasPrefix("en"|"bond"|"bridge")`.
+* **P2-3 SMU Response Codes**: Documented `SMUResponse` enum; `setCurveOptimizer` returns distinct codes; UserClient selector 111 maps them to `kIOReturnTimeout` / `Unsupported` / `BadArgument` / `Busy`.
+* **P2-4 Post-Wake Reinit**: Extracted `reinitHwState()` (CPB/CPPC/RAPL/P-states) and call it from `start()` and `resumeWorkLoop()`.
+* **P2-5 Symbol Resolver**: Validate `vm_kernel_unslide_or_perm_external` slide address and kernel canonical range before walking Mach-O headers.
+* **P2-6 Fan Curve deltaTime**: Use `HF_TEMP_SAMPLE_PERIOD` instead of hardcoded `0.5` seconds.
+* **P2-7 Fan Array Size Asserts**: `kMAX_FANS` + `static_assert` on curve/PWM arrays.
+* **P2-8 Format Check Script**: Added `scripts/check-format.sh` (clang-format dry-run).
+
+### Cleanup (P3)
+* Scratch diagnostic binaries (`dump_sio`, `write_sio`) ignored; sources retained.
+* NCT668X `getReadableStringForFan` returns per-index labels instead of a single `"Fan"` stub.
+* Italian (`it`) added to known localization regions in the Xcode project.
+
 ## v3.15.0  Bidirectional Curve Optimizer, Standalone Telemetry Daemon & Startup Disclaimer
 * **Bidirectional Curve Optimizer (`[-30, +30]`)**: Extended the Curve Optimizer boundary checks in the kernel driver and the GUI sliders to support the full official AMD range of `[-30, +30]` counts. Centered the UI slider layouts at `0` (default native BIOS behavior), highlighting undervolts in Purple and overvolts in Orange. Locked the entire control card behind a persistent safety lock switch.
 * **HUD Live Telemetry Grid**: Positioned real-time core frequency (MHz), load (%), and CCD temperature (mapping cores to `CCD0` / `CCD1`) inside each core grid cell. Added checkbox toggles on the dashboard header allowing users to show/hide Freq, Temp, and Load HUD details dynamically.
