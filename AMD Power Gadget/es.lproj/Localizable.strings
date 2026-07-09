@@ -282,7 +282,7 @@
 "CPPC hardware rankings are active and loaded from the processor." = "Los rankings CPPC de hardware están activos y cargados desde el procesador.";
 "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." = "No se pudieron leer los valores CPPC de hardware. Los rankings se estiman a partir de la frecuencia máxima observada de cada núcleo.";
 "CPPC Preferred Cores (Silicon Quality)" = "Núcleos preferidos CPPC (calidad de silicio)";
-"CPPC: Active" = "CPPC: activo";
+"CPPC: Active" = "CPPC: HW OK";
 "CPPC: Estimated" = "CPPC: estimado";
 "CPU and GPU temperatures" = "Temperaturas de CPU y GPU";
 "CPU Average Frequency" = "Frecuencia media de CPU";
@@ -587,7 +587,7 @@
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Esta acción requiere privilegios de administrador. Ejecuta AMD Power Gadget como root o añade el boot-arg -amdpnopchk para depuración.";
 
-/* Crowdin: recent UI strings — badge CPPC vs modo EPP */
+/* Crowdin: recent UI strings — CPPC badge vs EPP Active Mode */
 "CPPC: HW OK" = "CPPC: HW OK";
 "CPPC: EPP On" = "CPPC: EPP activo";
 "This CPU did not report CPPC support to the kext." = "Esta CPU no reportó soporte CPPC al kext.";
@@ -595,4 +595,5 @@
 "Native CPPC Active Mode (EPP) is ON. Cores scale autonomously; rankings come from the processor." = "Modo CPPC Active (EPP) activado. Los núcleos escalan de forma autónoma; los rankings vienen del procesador.";
 "CPPC hardware scores could not be read. Rankings are estimated from observed clocks. This is not the Profiles EPP toggle." = "No se pudieron leer scores CPPC de HW. Rankings estimados por relojes observados. No es el interruptor EPP de Profiles.";
 "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root)." = "La CPU reporta rankings CPPC (HW OK). Eso no significa que Active Mode esté ON — actívalo en Profiles (necesita -amdpnopchk o root).";
+/* Deprecated badge key — kept so old locales still resolve */
 "CPPC: Active" = "CPPC: HW OK";
