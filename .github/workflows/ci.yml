@@ -64,10 +64,26 @@ jobs:
       # Note: AMDPowerGadgetTests/ sources exist but are not yet an Xcode target.
       # Wire a test target before enabling `xcodebuild test` here.
 
+      # Flat package (same layout as CD release zips) so CI artifacts are usable as-is.
+      - name: Package CI artifact
+        run: |
+          set -euo pipefail
+          PROD="build/Build/Products/Release"
+          rm -rf "${PROD}"/*.dSYM "${PROD}"/*.swiftmodule 2>/dev/null || true
+          STAGE="build/package"
+          rm -rf "${STAGE}"
+          mkdir -p "${STAGE}"
+          for item in \
+            "AMDRyzenCPUPowerManagement.kext" \
+            "SMCAMDProcessor.kext" \
+            "AMD Power Gadget.app"
+          do
+            cp -R "${PROD}/${item}" "${STAGE}/"
+          done
+          (cd "${STAGE}" && zip -ry "../ci-${{ matrix.os }}.zip" .)
+
       - uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
-          path: |
-            build/Build/Products/Release/*.kext
-            build/Build/Products/Release/AMD Power Gadget.app
+          path: build/ci-${{ matrix.os }}.zip
 
