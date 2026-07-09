@@ -1,7 +1,6 @@
-# crowdin.yml configuration file
-# Source of truth for strings: en.lproj (English)
-# Translations live in <lang>.lproj and are uploaded TO Crowdin on sync
-# so local work (e.g. full Spanish) appears in the Crowdin UI for translators.
+# crowdin.yml — SMCAMDProcessor / AMD Power Gadget
+# Source: English (en.lproj). Repo folders use short codes (es, zh, pt, sv).
+# Crowdin target languages use regional codes (es-ES, es-419, zh-CN, …).
 
 project_id_env: CROWDIN_PROJECT_ID
 api_token_env: CROWDIN_PERSONAL_TOKEN
@@ -9,11 +8,23 @@ api_token_env: CROWDIN_PERSONAL_TOKEN
 base_path: .
 preserve_hierarchy: true
 
-# Target files mapping source keys to translated equivalents
 files:
   - source: /AMD Power Gadget/en.lproj/Localizable.strings
     translation: /AMD Power Gadget/%two_letters_code%.lproj/Localizable.strings
-    # Skip uploading English as a "translation"
     skip_untranslated_strings: false
     skip_untranslated_files: false
     export_only_approved: false
+    # Map Crowdin language IDs → folder names under AMD Power Gadget/
+    languages_mapping:
+      two_letters_code:
+        # Spanish (Spain + LatAm) → es.lproj
+        es-ES: es
+        es-419: es
+        # Chinese
+        zh-CN: zh
+        zh-TW: zh
+        # Portuguese
+        pt-PT: pt
+        pt-BR: pt
+        # Swedish
+        sv-SE: sv
