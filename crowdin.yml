@@ -1,12 +1,19 @@
 # crowdin.yml configuration file
+# Source of truth for strings: en.lproj (English)
+# Translations live in <lang>.lproj and are uploaded TO Crowdin on sync
+# so local work (e.g. full Spanish) appears in the Crowdin UI for translators.
 
 project_id_env: CROWDIN_PROJECT_ID
 api_token_env: CROWDIN_PERSONAL_TOKEN
 
-# Base path of the repository
 base_path: .
+preserve_hierarchy: true
 
 # Target files mapping source keys to translated equivalents
 files:
   - source: /AMD Power Gadget/en.lproj/Localizable.strings
     translation: /AMD Power Gadget/%two_letters_code%.lproj/Localizable.strings
+    # Skip uploading English as a "translation"
+    skip_untranslated_strings: false
+    skip_untranslated_files: false
+    export_only_approved: false
