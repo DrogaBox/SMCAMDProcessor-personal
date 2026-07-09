@@ -63,18 +63,18 @@ struct FanCurve: Codable, Identifiable, Hashable {
     func generateLUT() -> [UInt8] {
         var lut = [UInt8](repeating: 0, count: 256)
         let sortedPoints = points.sorted { $0.temp < $1.temp }
-        guard !sortedPoints.isEmpty else { return lut }
+        guard let firstPt = sortedPoints.first, let lastPt = sortedPoints.last else { return lut }
         
         for temp in 0...255 {
             let tempD = Double(temp)
-            if tempD <= sortedPoints.first!.temp {
-                let rawPWM = sortedPoints.first!.pwm
+            if tempD <= firstPt.temp {
+                let rawPWM = firstPt.pwm
                 let byteVal = UInt8(round((rawPWM / 100.0) * 255.0))
                 lut[temp] = byteVal == 0 ? 1 : byteVal
                 continue
             }
-            if tempD >= sortedPoints.last!.temp {
-                let rawPWM = sortedPoints.last!.pwm
+            if tempD >= lastPt.temp {
+                let rawPWM = lastPt.pwm
                 let byteVal = UInt8(round((rawPWM / 100.0) * 255.0))
                 lut[temp] = byteVal == 0 ? 1 : byteVal
                 continue
@@ -1207,6 +1207,20 @@ final class TelemetryModel: ObservableObject {
 
     func clearPrivilegeError() {
         privilegeErrorMessage = nil
+    }
+
+    /// Flush in-memory UI state before process exit / language relaunch (audit R-7).
+    /// Curves and mappings already auto-save via `didSet`; re-push to kext and sync defaults.
+    func commitPendingChanges() {
+        UserDefaults.standard.synchronize()
+        if smcDriverLoaded {
+            updateKextCurves()
+            updateKextMappings()
+        }
+        if pStateEditorDirty {
+            _ = applyPStates()
+        }
+        HistoryManager.shared.flushToDisk()
     }
 
     func setCPB(enabled: Bool) {

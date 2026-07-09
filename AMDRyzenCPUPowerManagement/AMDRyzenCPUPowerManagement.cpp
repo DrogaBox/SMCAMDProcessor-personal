@@ -71,6 +71,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     
     pciConfigLock = IOSimpleLockAlloc();
     superIOLock = IOLockAlloc();
+    smuCmdLock = IOLockAlloc();
     
     pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
     pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
@@ -548,10 +549,17 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     if (fIOPCIDevice) { fIOPCIDevice->release(); fIOPCIDevice = nullptr; }
 
     // 6. SuperIO defaults + delete and workloop release before super::stop()
-    if (superIO) {
-        for (int i = 0; i < superIO->getNumberOfFans(); i++) {
-            superIO->setDefaultFanControl(i);
+    if (superIOLock) {
+        IOLockLock(superIOLock);
+        if (superIO) {
+            for (int i = 0; i < superIO->getNumberOfFans(); i++) {
+                superIO->setDefaultFanControl(i);
+            }
+            delete superIO;
+            superIO = nullptr;
         }
+        IOLockUnlock(superIOLock);
+    } else if (superIO) {
         delete superIO;
         superIO = nullptr;
     }
@@ -559,6 +567,10 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     if (pciConfigLock) {
         IOSimpleLockFree(pciConfigLock);
         pciConfigLock = nullptr;
+    }
+    if (smuCmdLock) {
+        IOLockFree(smuCmdLock);
+        smuCmdLock = nullptr;
     }
     if (superIOLock) {
         IOLockFree(superIOLock);
@@ -752,6 +764,10 @@ void AMDRyzenCPUPowerManagement::calculateEffectiveFrequency(uint8_t physical){
     }
     
     float freqP0 = PStateDefClock_perCore[0];
+    // P0 clock not ready yet (dumpPstate failed / still zero) — skip this sample (audit R-3).
+    if (freqP0 <= 0.0f) {
+        return;
+    }
     
     uint64_t deltaAPERF = APERF - lastAPERF;
     float effFreq = ((float)deltaAPERF / (float)(MPERF - lastMPERF)) * freqP0;
@@ -946,6 +962,13 @@ int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
     uint32_t argReg = 0x3B10528;
     uint32_t rspReg = 0x3B1052C;
     
+    // Serialize the full SMU mailbox sequence (clear → arg → msg → poll).
+    // Individual smnRead/Write use pciConfigLock, but that alone does not protect
+    // the multi-step protocol against concurrent UserClient callers (audit R-8).
+    if (smuCmdLock) {
+        IOLockLock(smuCmdLock);
+    }
+    
     // Clear response register first
     smnWrite32(rspReg, 0);
     
@@ -965,7 +988,11 @@ int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
         IODelay(1);
     }
     
-    return rsp;
+    if (smuCmdLock) {
+        IOLockUnlock(smuCmdLock);
+    }
+    
+    return (int)rsp;
 }
 
 int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
