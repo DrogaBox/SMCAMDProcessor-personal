@@ -618,3 +618,5 @@
 
 /* CPPC support gate */
 "Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts." = "Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts.";
+"AMDRyzenCPUPowerManagement kext not connected." = "AMDRyzenCPUPowerManagement kext not connected.";
+"If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot." = "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot.";
