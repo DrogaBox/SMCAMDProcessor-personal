@@ -615,3 +615,6 @@
 
 /* Menu Bar toggles (fabiosun IT) */
 "CPU watts + optional GPU watts" = "Vatios CPU + vatios GPU opcionales";
+
+/* CPPC support gate */
+"Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts." = "El modo Active y Auto-EPP permanecen apagados hasta que el kext reporte CPPC. El boot-arg -amdcppcactive no basta si fallan MSR/CPUID: reinicia tras actualizar los kexts.";
