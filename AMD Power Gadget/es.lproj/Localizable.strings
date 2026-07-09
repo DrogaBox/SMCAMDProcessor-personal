@@ -588,3 +588,10 @@
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Esta acción requiere privilegios de administrador. Ejecuta AMD Power Gadget como root o añade el boot-arg -amdpnopchk para depuración.";
 
 /* Crowdin: recent UI strings */
+"CPPC: HW OK" = "CPPC: HW OK";
+
+"CPPC: EPP On" = "CPPC: EPP activo";
+
+"This CPU did not report CPPC support to the kext." = "Esta CPU no reportó soporte CPPC al kext.";
+
+"If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch." = "Si el interruptor vuelve a Off: habilita escrituras con -amdpnopchk (o root). El badge “CPPC: HW OK” solo indica rankings HW, no es este interruptor.";

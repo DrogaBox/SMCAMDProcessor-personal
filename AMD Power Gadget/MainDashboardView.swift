@@ -54,8 +54,14 @@ struct VisualEffectNSView: NSViewRepresentable {
 }
 
 // MARK: - Design Tokens & Themes Engine
+/// Presets aligned with RTL Wi-Fi Tahoe (`Theme.swift`) so both apps share the same look.
 enum AppTheme: String, CaseIterable, Identifiable {
-    case tahoe = "Tahoe Glass"
+    case tahoe = "Tahoe Glass"           // = RTL "Power Gadget" palette
+    case classic = "Classic Dark"        // RTL classic
+    case midnight = "Midnight Blue"      // RTL midnight
+    case ember = "Ember"                 // RTL ember
+    case matrix = "Matrix"               // RTL matrix
+    case rose = "Rose"                   // RTL rose
     case cyberpunk = "Cyberpunk Neon"
     case solarized = "Solarized Amber"
     case monochrome = "Monochrome Stealth"
@@ -70,6 +76,8 @@ enum AppTheme: String, CaseIterable, Identifiable {
     static var current: AppTheme {
         if let raw = UserDefaults.standard.string(forKey: "app_theme_preset") {
             if raw == "Personalizado" || raw == "Mi Tema Custom" { return .custom }
+            // Migrate old names
+            if raw == "power" || raw == "Power Gadget" { return .tahoe }
             if let theme = AppTheme(rawValue: raw) {
                 return theme
             }
@@ -77,87 +85,182 @@ enum AppTheme: String, CaseIterable, Identifiable {
         return .tahoe
     }
 
+    /// Notify menu-bar popover / widgets to rebuild hosting roots.
+    static func postThemeChanged() {
+        NotificationCenter.default.post(name: .init("AppThemeChanged"), object: nil)
+    }
+
+    var background: Color {
+        switch self {
+        case .tahoe: return Color(red: 0.08, green: 0.08, blue: 0.10)
+        case .classic: return Color(red: 0.07, green: 0.08, blue: 0.11)
+        case .midnight: return Color(red: 0.04, green: 0.06, blue: 0.14)
+        case .ember: return Color(red: 0.10, green: 0.06, blue: 0.05)
+        case .matrix: return Color(red: 0.02, green: 0.05, blue: 0.03)
+        case .rose: return Color(red: 0.09, green: 0.05, blue: 0.10)
+        case .cyberpunk: return Color(red: 0.06, green: 0.04, blue: 0.12)
+        case .solarized: return Color(red: 0.08, green: 0.10, blue: 0.11)
+        case .monochrome: return Color(red: 0.07, green: 0.07, blue: 0.07)
+        case .nordic: return Color(red: 0.10, green: 0.13, blue: 0.16)
+        case .custom:
+            let hex = UserDefaults.standard.string(forKey: "custom_hex_card") ?? "#0A0A10"
+            return (Color(hexString: hex) ?? Color(red: 0.08, green: 0.08, blue: 0.10)).opacity(1)
+        }
+    }
+
     var card: Color {
         switch self {
-        case .tahoe: return Color(red: 0.10, green: 0.12, blue: 0.17).opacity(0.82)
+        // Match RTL ThemePalette.card (powerGadget / classic / …)
+        case .tahoe: return Color(red: 0.13, green: 0.13, blue: 0.16).opacity(0.92)
+        case .classic: return Color(red: 0.12, green: 0.14, blue: 0.19).opacity(0.92)
+        case .midnight: return Color(red: 0.08, green: 0.11, blue: 0.22).opacity(0.92)
+        case .ember: return Color(red: 0.18, green: 0.11, blue: 0.09).opacity(0.92)
+        case .matrix: return Color(red: 0.05, green: 0.10, blue: 0.07).opacity(0.92)
+        case .rose: return Color(red: 0.16, green: 0.10, blue: 0.18).opacity(0.92)
         case .cyberpunk: return Color(red: 0.12, green: 0.08, blue: 0.22).opacity(0.85)
         case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(0.85)
         case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(0.85)
         case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(0.85)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_card") ?? "#16213E"
-            return Color(hexString: hex) ?? Color(red: 0.10, green: 0.12, blue: 0.17).opacity(0.82)
+            return Color(hexString: hex) ?? Color(red: 0.13, green: 0.13, blue: 0.16).opacity(0.92)
+        }
+    }
+
+    var cardBorder: Color {
+        switch self {
+        case .midnight: return Color(red: 0.35, green: 0.50, blue: 0.95).opacity(0.25)
+        case .ember: return Color(red: 1.0, green: 0.45, blue: 0.20).opacity(0.22)
+        case .matrix: return Color(red: 0.20, green: 0.90, blue: 0.40).opacity(0.22)
+        case .rose: return Color(red: 1.0, green: 0.45, blue: 0.75).opacity(0.22)
+        default: return Color.white.opacity(0.12)
         }
     }
 
     var accentCyan: Color {
         switch self {
-        case .tahoe: return Color(red: 0.0, green: 0.85, blue: 0.95)
+        case .tahoe: return Color(red: 0.20, green: 0.88, blue: 0.98)   // RTL powerGadget
+        case .classic: return Color(red: 0.0, green: 0.85, blue: 0.95)
+        case .midnight: return Color(red: 0.35, green: 0.65, blue: 1.0)
+        case .ember: return Color(red: 1.0, green: 0.72, blue: 0.35)
+        case .matrix: return Color(red: 0.25, green: 1.0, blue: 0.55)
+        case .rose: return Color(red: 1.0, green: 0.55, blue: 0.80)
         case .cyberpunk: return Color(red: 0.0, green: 0.96, blue: 1.0)
         case .solarized: return Color(red: 0.16, green: 0.63, blue: 0.60)
         case .monochrome: return Color(white: 0.90)
         case .nordic: return Color(red: 0.53, green: 0.75, blue: 0.82)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_cyan") ?? "#4CC9F0"
-            return Color(hexString: hex) ?? Color(red: 0.0, green: 0.85, blue: 0.95)
+            return Color(hexString: hex) ?? Color(red: 0.20, green: 0.88, blue: 0.98)
         }
     }
 
     var accentOrange: Color {
         switch self {
-        case .tahoe: return Color(red: 1.0, green: 0.55, blue: 0.10)
+        case .tahoe: return Color(red: 1.00, green: 0.42, blue: 0.38)
+        case .classic: return Color(red: 1.0, green: 0.55, blue: 0.10)
+        case .midnight: return Color(red: 1.0, green: 0.65, blue: 0.25)
+        case .ember: return Color(red: 1.0, green: 0.48, blue: 0.12)
+        case .matrix: return Color(red: 0.70, green: 0.95, blue: 0.30)
+        case .rose: return Color(red: 1.0, green: 0.50, blue: 0.45)
         case .cyberpunk: return Color(red: 1.0, green: 0.16, blue: 0.43)
         case .solarized: return Color(red: 0.80, green: 0.29, blue: 0.09)
         case .monochrome: return Color(white: 0.70)
         case .nordic: return Color(red: 0.82, green: 0.53, blue: 0.44)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_orange") ?? "#FF8C00"
-            return Color(hexString: hex) ?? Color(red: 1.0, green: 0.55, blue: 0.10)
+            return Color(hexString: hex) ?? Color(red: 1.0, green: 0.42, blue: 0.38)
         }
     }
 
     var accentGreen: Color {
         switch self {
-        case .tahoe: return Color(red: 0.1, green: 0.95, blue: 0.45)
+        case .tahoe: return Color(red: 0.25, green: 0.92, blue: 0.48)
+        case .classic: return Color(red: 0.10, green: 0.95, blue: 0.45)
+        case .midnight: return Color(red: 0.30, green: 0.95, blue: 0.75)
+        case .ember: return Color(red: 0.85, green: 0.90, blue: 0.35)
+        case .matrix: return Color(red: 0.15, green: 0.98, blue: 0.40)
+        case .rose: return Color(red: 0.55, green: 0.95, blue: 0.70)
         case .cyberpunk: return Color(red: 0.0, green: 1.0, blue: 0.5)
         case .solarized: return Color(red: 0.52, green: 0.60, blue: 0.0)
         case .monochrome: return Color(white: 0.80)
         case .nordic: return Color(red: 0.64, green: 0.75, blue: 0.55)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_green") ?? "#00FF7F"
-            return Color(hexString: hex) ?? Color(red: 0.1, green: 0.95, blue: 0.45)
+            return Color(hexString: hex) ?? Color(red: 0.25, green: 0.92, blue: 0.48)
         }
     }
 
     var accentPurple: Color {
         switch self {
-        case .tahoe: return Color(red: 0.65, green: 0.40, blue: 1.0)
+        case .tahoe: return Color(red: 0.72, green: 0.48, blue: 1.00)
+        case .classic: return Color(red: 0.65, green: 0.40, blue: 1.0)
+        case .midnight: return Color(red: 0.55, green: 0.45, blue: 1.0)
+        case .ember: return Color(red: 1.0, green: 0.40, blue: 0.55)
+        case .matrix: return Color(red: 0.40, green: 0.85, blue: 0.65)
+        case .rose: return Color(red: 0.85, green: 0.40, blue: 1.0)
         case .cyberpunk: return Color(red: 0.75, green: 0.0, blue: 1.0)
         case .solarized: return Color(red: 0.82, green: 0.21, blue: 0.51)
         case .monochrome: return Color(white: 0.60)
         case .nordic: return Color(red: 0.71, green: 0.55, blue: 0.66)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_purple") ?? "#A020F0"
-            return Color(hexString: hex) ?? Color(red: 0.65, green: 0.40, blue: 1.0)
+            return Color(hexString: hex) ?? Color(red: 0.72, green: 0.48, blue: 1.00)
+        }
+    }
+
+    var accentRed: Color {
+        switch self {
+        case .ember: return Color(red: 1.0, green: 0.28, blue: 0.22)
+        case .rose: return Color(red: 1.0, green: 0.30, blue: 0.45)
+        case .midnight: return Color(red: 1.0, green: 0.40, blue: 0.50)
+        default: return Color(red: 0.95, green: 0.28, blue: 0.32)
+        }
+    }
+
+    var text: Color {
+        switch self {
+        case .matrix: return Color(red: 0.85, green: 1.0, blue: 0.90)
+        case .ember: return Color(red: 1.0, green: 0.96, blue: 0.92)
+        default: return Color.white.opacity(0.95)
+        }
+    }
+
+    var subtext: Color {
+        switch self {
+        case .matrix: return Color(red: 0.45, green: 0.75, blue: 0.55)
+        default: return Color.white.opacity(0.55)
+        }
+    }
+
+    var glassOpacity: Double {
+        switch self {
+        case .tahoe: return 0.55
+        case .classic: return 0.72
+        case .midnight: return 0.65
+        case .ember: return 0.50
+        case .matrix: return 0.40
+        case .rose: return 0.60
+        default: return 0.55
         }
     }
 }
 
 private extension Color {
-    static var tahoeBackground   : Color { Color(red: 0.06, green: 0.07, blue: 0.10).opacity(0.72) }
-    static var tahoeSidebar      : Color { Color(red: 0.08, green: 0.09, blue: 0.13).opacity(0.25) }
+    static var tahoeBackground   : Color { AppTheme.current.background.opacity(0.88) }
+    static var tahoeSidebar      : Color { AppTheme.current.background.opacity(0.35) }
     static var tahoeCard         : Color { AppTheme.current.card }
-    static var tahoeCardBorder   : Color { Color(white: 1.0, opacity: 0.07) }
+    static var tahoeCardBorder   : Color { AppTheme.current.cardBorder }
     static var tahoeAccentCyan   : Color { AppTheme.current.accentCyan }
     static var tahoeAccentOrange : Color { AppTheme.current.accentOrange }
     static var tahoeAccentGreen  : Color { AppTheme.current.accentGreen }
     static var tahoeAccentPurple : Color { AppTheme.current.accentPurple }
-    static var tahoeAccentRed    : Color { Color(red: 1.0,  green: 0.30, blue: 0.30) }
+    static var tahoeAccentRed    : Color { AppTheme.current.accentRed }
     static var tahoeAccentBlue   : Color { Color(red: 0.35, green: 0.55, blue: 1.0) }
     static var tahoeAccentYellow : Color { Color(red: 1.0,  green: 0.80, blue: 0.20) }
-    static var tahoeText         : Color { Color(white: 0.90) }
-    static var tahoeSubtext      : Color { Color(white: 0.50) }
-    static var tahoeSidebarActive : Color { Color(red: 0.12, green: 0.15, blue: 0.24) }
+    static var tahoeText         : Color { AppTheme.current.text }
+    static var tahoeSubtext      : Color { AppTheme.current.subtext }
+    static var tahoeSidebarActive : Color { AppTheme.current.card.opacity(0.9) }
 }
 
 enum DashboardTab: String, CaseIterable, Identifiable {
@@ -722,6 +825,7 @@ struct OriginalLineChartCard: View {
     let height: CGFloat
 
     @AppStorage("app_chart_style") private var selectedChartStyleRaw: String = AppChartStyle.line.rawValue
+    private var selectedChartStyle: AppChartStyle { AppChartStyle.normalized(selectedChartStyleRaw) }
 
     private var averageVal: Double {
         let vals = data.map(line1)
@@ -797,13 +901,13 @@ struct OriginalLineChartCard: View {
                 let maxIndex = Double(indexedData.count - 1)
 
                 Chart(indexedData, id: \.offset) { index, pt in
-                    if selectedChartStyleRaw == AppChartStyle.bar.rawValue {
+                    if selectedChartStyle == .bar {
                         BarMark(
                             x: .value("Index", Double(index)),
                             y: .value(line1Label, line1(pt))
                         )
                         .foregroundStyle(accent)
-                    } else if selectedChartStyleRaw == AppChartStyle.filledArea.rawValue {
+                    } else if selectedChartStyle == .filledArea {
                         AreaMark(
                             x: .value("Index", Double(index)),
                             y: .value(line1Label, line1(pt))
@@ -823,7 +927,7 @@ struct OriginalLineChartCard: View {
                         .foregroundStyle(accent)
                         .lineStyle(StrokeStyle(lineWidth: 1.5))
                         .interpolationMethod(.catmullRom)
-                    } else if selectedChartStyleRaw == AppChartStyle.steppedLine.rawValue {
+                    } else if selectedChartStyle == .steppedLine {
                         LineMark(
                             x: .value("Index", Double(index)),
                             y: .value(line1Label, line1(pt))
@@ -1511,6 +1615,36 @@ struct CoreGridCard: View {
     @AppStorage("grid_show_temp") private var gridShowTemp = true
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 8)
 
+    /// Badge is about **hardware CPPC ranking**, not the Profiles “Active Mode (EPP)” toggle.
+    private var cppcBadgeLabel: String {
+        if model.cppcActiveMode {
+            return NSLocalizedString("CPPC: EPP On", comment: "Core grid badge — Active Mode enabled")
+        }
+        if model.cppcScoresEstimated {
+            return NSLocalizedString("CPPC: Estimated", comment: "Core grid badge — ranking estimated")
+        }
+        return NSLocalizedString("CPPC: HW OK", comment: "Core grid badge — hardware CPPC scores present, EPP mode may still be off")
+    }
+
+    private var cppcBadgeHelp: String {
+        if model.cppcActiveMode {
+            return NSLocalizedString(
+                "Native CPPC Active Mode (EPP) is ON. Cores scale autonomously; rankings come from the processor.",
+                comment: ""
+            )
+        }
+        if model.cppcScoresEstimated {
+            return NSLocalizedString(
+                "CPPC hardware scores could not be read. Rankings are estimated from observed clocks. This is not the Profiles EPP toggle.",
+                comment: ""
+            )
+        }
+        return NSLocalizedString(
+            "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root).",
+            comment: ""
+        )
+    }
+
     private var displayCores: [CoreSnapshot] {
         if sortCoresByRanking {
             return model.cores.sorted { (c1, c2) -> Bool in
@@ -1557,10 +1691,11 @@ struct CoreGridCard: View {
                         HStack(spacing: 4) {
                             Image(systemName: "bolt.fill")
                                 .font(.system(size: 9))
-                                .foregroundColor(.tahoeAccentGreen)
-                            Text(model.cppcScoresEstimated ? "CPPC: Estimated" : "CPPC: Active")
+                                .foregroundColor(model.cppcActiveMode ? .tahoeAccentGreen : (model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentCyan))
+                            // Distinguish: hardware CPPC scores vs software Active Mode (EPP)
+                            Text(cppcBadgeLabel)
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentGreen)
+                                .foregroundColor(model.cppcActiveMode ? .tahoeAccentGreen : (model.cppcScoresEstimated ? .tahoeAccentOrange : .tahoeAccentCyan))
                             if model.cppcScoresEstimated {
                                 Text("~")
                                     .font(.system(size: 10, weight: .bold))
@@ -1571,7 +1706,7 @@ struct CoreGridCard: View {
                         .padding(.vertical, 2)
                         .background(Color.white.opacity(0.04))
                         .cornerRadius(4)
-                        .help(model.cppcScoresEstimated ? "CPPC hardware values could not be read. Rankings are estimated from the maximum observed clock frequency of each core." : "CPPC hardware rankings are active and loaded from the processor.")
+                        .help(cppcBadgeHelp)
                     }
                 }
             }
@@ -1922,15 +2057,43 @@ struct ProfilesContentView: View {
                 SectionTitle("Power Management Mode")
                 
                 // 1. CPPC Mode Switch
+                // Note: Dashboard badge "CPPC: HW OK" ≠ this toggle. Badge = hardware scores; toggle = EPP Active Mode.
                 TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Native CPPC Active Mode (EPP)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                            Text("Enables autonomous hardware frequency scaling (recommended)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(NSLocalizedString("Native CPPC Active Mode (EPP)", comment: ""))
+                                    .font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text(NSLocalizedString("Enables autonomous hardware frequency scaling (recommended)", comment: ""))
+                                    .font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { model.cppcActiveMode },
+                                set: { model.setCPPCActiveMode(active: $0) }
+                            ))
+                            .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
+                            .labelsHidden()
+                            .disabled(!model.cppcSupported)
                         }
-                        Spacer()
-                        Toggle("", isOn: Binding(get: { model.cppcActiveMode }, set: { model.setCPPCActiveMode(active: $0) }))
-                            .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
+                        if !model.cppcSupported {
+                            Text(NSLocalizedString("This CPU did not report CPPC support to the kext.", comment: ""))
+                                .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
+                        } else if !model.cppcActiveMode {
+                            Text(NSLocalizedString(
+                                "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). The green “CPPC: HW OK” badge only means rankings exist — it is not this switch.",
+                                comment: "Explains fabiosun confusion: badge vs toggle"
+                            ))
+                            .font(.system(size: 10))
+                            .foregroundColor(.tahoeSubtext)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let err = model.privilegeErrorMessage {
+                            Text(err)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.tahoeAccentOrange)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
                 
@@ -3346,6 +3509,7 @@ struct ThemeSelectorGrid: View {
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedThemeRaw = theme.rawValue
+                        AppTheme.postThemeChanged()
                     }
                 }) {
                     VStack(alignment: .leading, spacing: 10) {
@@ -3389,11 +3553,11 @@ struct ThemeSelectorGrid: View {
 }
 
 enum AppChartStyle: String, CaseIterable, Identifiable {
-    // Stable storage keys (legacy Spanish values preserved for existing UserDefaults).
-    case line = "Línea Suave (Spline)"
-    case filledArea = "Área Rellena (Gradient)"
-    case bar = "Histograma de Barras"
-    case steppedLine = "Línea Escalonada (Step)"
+    /// Stable **English** storage keys (legacy Spanish prefs are migrated in `normalized`).
+    case line = "Smooth Curves"
+    case filledArea = "Filled Area"
+    case bar = "Column Bars"
+    case steppedLine = "Line Only"
     
     var id: String { rawValue }
     var icon: String {
@@ -3405,22 +3569,33 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
         }
     }
 
-    /// English Crowdin keys for UI display.
-    var localizationKey: String {
-        switch self {
-        case .line: return "Smooth Curves"
-        case .filledArea: return "Filled Area"
-        case .bar: return "Column Bars"
-        case .steppedLine: return "Line Only"
+    /// Display name always follows app language via Localizable.strings (key = English rawValue).
+    var localizedName: String { NSLocalizedString(rawValue, comment: "Chart rendering style") }
+
+    /// Map legacy Spanish storage values (and English keys) to current cases.
+    static func normalized(_ stored: String) -> AppChartStyle {
+        switch stored {
+        case line.rawValue, "Línea Suave (Spline)", "Linea Suave (Spline)":
+            return .line
+        case filledArea.rawValue, "Área Rellena (Gradient)", "Area Rellena (Gradient)":
+            return .filledArea
+        case bar.rawValue, "Histograma de Barras":
+            return .bar
+        case steppedLine.rawValue, "Línea Escalonada (Step)", "Linea Escalonada (Step)":
+            return .steppedLine
+        default:
+            return AppChartStyle(rawValue: stored) ?? .line
         }
     }
-
-    var localizedName: String { NSLocalizedString(localizationKey, comment: "Chart rendering style") }
 }
 
 struct ChartStyleSelectorGrid: View {
     @AppStorage("app_chart_style") private var selectedStyleRaw: String = AppChartStyle.line.rawValue
     private let columns = [GridItem(.adaptive(minimum: 140), spacing: 12)]
+
+    private var selectedStyle: AppChartStyle {
+        AppChartStyle.normalized(selectedStyleRaw)
+    }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 12) {
@@ -3432,18 +3607,18 @@ struct ChartStyleSelectorGrid: View {
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: style.icon)
-                            .foregroundColor(selectedStyleRaw == style.rawValue ? Color.tahoeAccentCyan : .tahoeSubtext)
+                            .foregroundColor(selectedStyle == style ? Color.tahoeAccentCyan : .tahoeSubtext)
                         Text(style.localizedName)
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(selectedStyleRaw == style.rawValue ? .white : .tahoeSubtext)
+                            .foregroundColor(selectedStyle == style ? .white : .tahoeSubtext)
                     }
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(selectedStyleRaw == style.rawValue ? Color.white.opacity(0.1) : Color.white.opacity(0.03))
+                    .background(selectedStyle == style ? Color.white.opacity(0.1) : Color.white.opacity(0.03))
                     .cornerRadius(10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(selectedStyleRaw == style.rawValue ? Color.tahoeAccentCyan : Color.clear, lineWidth: 1)
+                            .stroke(selectedStyle == style ? Color.tahoeAccentCyan : Color.clear, lineWidth: 1)
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -3701,6 +3876,7 @@ struct CustomThemeStudio: View {
 
     private func markCustom() {
         selectedThemeRaw = AppTheme.custom.rawValue
+        AppTheme.postThemeChanged()
     }
 
     private func copyCurrentThemeToCustom() {
@@ -3712,6 +3888,7 @@ struct CustomThemeStudio: View {
         greenHex = curr.accentGreen.toHexStringARGB
         purpleHex = curr.accentPurple.toHexStringARGB
         selectedThemeRaw = AppTheme.custom.rawValue
+        AppTheme.postThemeChanged()
     }
 
     var body: some View {
@@ -4000,8 +4177,16 @@ struct SystemInfoContentView: View {
 // MARK: - Menu Bar Popover View
 struct MenuBarPopoverView: View {
     @ObservedObject var model: TelemetryModel = TelemetryModel.shared
+    /// Live theme (same store as RTL Wi-Fi Tahoe / Themes tab)
+    @AppStorage("app_theme_preset") private var themePreset: String = AppTheme.tahoe.rawValue
+    @AppStorage("custom_hex_card") private var customCardHex: String = "#16213E"
+    @AppStorage("custom_hex_cyan") private var customCyanHex: String = "#4CC9F0"
+    @AppStorage("custom_hex_orange") private var customOrangeHex: String = "#FF8C00"
+    @AppStorage("custom_hex_green") private var customGreenHex: String = "#00FF7F"
+    @AppStorage("custom_hex_purple") private var customPurpleHex: String = "#A020F0"
     
     private var cfg: MenuBarConfig { MenuBarConfig.shared }
+    private var theme: AppTheme { AppTheme.current }
 
     private func formatSpeed(_ mbps: Double) -> String {
         let absMbps = abs(mbps)
@@ -4021,17 +4206,24 @@ struct MenuBarPopoverView: View {
     }
 
     var body: some View {
+        // Touch custom hex so body re-evaluates when editor changes tokens
+        let _ = (themePreset, customCardHex, customCyanHex, customOrangeHex, customGreenHex, customPurpleHex)
         VStack(spacing: 12) {
-            // Header Section
+            // Header Section — RTL-style glass chrome
             VStack(spacing: 4) {
                 HStack {
                     HStack(spacing: 6) {
-                        Image(systemName: "cpu")
-                            .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))
+                        Image(systemName: "cpu.fill")
+                            .foregroundColor(theme.accentCyan)
                             .font(.system(size: 13, weight: .bold))
-                        Text("AMD Power Gadget")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
+                        HStack(spacing: 0) {
+                            Text("AMD Power ")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(theme.text)
+                            Text("Gadget")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(theme.accentCyan)
+                        }
                     }
                     Spacer()
                     Button(action: {
@@ -4040,23 +4232,23 @@ struct MenuBarPopoverView: View {
                     }) {
                         Image(systemName: MenuBarConfig.shared.popoverPinOpen ? "pin.fill" : "pin")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(MenuBarConfig.shared.popoverPinOpen ? .tahoeAccentGreen : .white.opacity(0.4))
+                            .foregroundColor(MenuBarConfig.shared.popoverPinOpen ? theme.accentGreen : theme.subtext)
                     }
                     .buttonStyle(.plain)
                     .help("Pin Popover Open")
                 }
                 
                 HStack {
-                    let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
+                    let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.17.0"
                     let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
                     
-                    Text("App Version: v\(appVer)")
+                    Text("App: v\(appVer) · \(theme.localizedName)")
                         .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(theme.subtext)
                     Spacer()
-                    Text("Kext Version: v\(kextVer)")
+                    Text("Kext: v\(kextVer)")
                         .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(theme.subtext)
                 }
                 .padding(.top, 2)
             }
@@ -4077,7 +4269,7 @@ struct MenuBarPopoverView: View {
             })
             
             if showRingsRow {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(theme.cardBorder)
                 
                 HStack(spacing: 14) {
                     ForEach(rings, id: \.self) { ring in
@@ -4086,13 +4278,13 @@ struct MenuBarPopoverView: View {
                             VStack(spacing: 4) {
                                 ZStack {
                                     Circle()
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .stroke(theme.cardBorder.opacity(0.6), lineWidth: 4.5)
                                         .frame(width: 46, height: 46)
                                     Circle()
                                         .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.cpuLoadAvg / 100.0))))
                                         .stroke(
                                             LinearGradient(
-                                                gradient: Gradient(colors: [Color(red: 0.93, green: 0.11, blue: 0.14), Color(red: 1.0, green: 0.4, blue: 0.4)]),
+                                                gradient: Gradient(colors: [theme.accentCyan, theme.accentCyan.opacity(0.55)]),
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             ),
@@ -4104,18 +4296,18 @@ struct MenuBarPopoverView: View {
                                     VStack(spacing: 0) {
                                         Text(String(format: "%.0f%%", model.cpuLoadAvg))
                                             .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(theme.text)
                                         if cfg.popoverRingShowTemp {
                                             Text(String(format: "%.0f°", model.cpuTempC))
                                                 .font(.system(size: 7.5, weight: .semibold))
-                                                .foregroundColor(.white.opacity(0.7))
+                                                .foregroundColor(theme.subtext)
                                         }
                                     }
                                 }
                                 if cfg.popoverRingShowLabels {
                                     Text("CPU")
                                         .font(.system(size: 8.5, weight: .bold))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundColor(theme.subtext)
                                 }
                             }
                         } else if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 0 {
@@ -4123,13 +4315,13 @@ struct MenuBarPopoverView: View {
                             VStack(spacing: 4) {
                                 ZStack {
                                     Circle()
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .stroke(theme.cardBorder.opacity(0.6), lineWidth: 4.5)
                                         .frame(width: 46, height: 46)
                                     Circle()
                                         .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.ramUsagePct / 100.0))))
                                         .stroke(
                                             LinearGradient(
-                                                gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                                gradient: Gradient(colors: [theme.accentOrange, theme.accentOrange.opacity(0.55)]),
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             ),
@@ -4141,19 +4333,19 @@ struct MenuBarPopoverView: View {
                                     VStack(spacing: 0) {
                                         Text(String(format: "%.0f%%", model.ramUsagePct))
                                             .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(theme.text)
                                         if cfg.popoverRingShowTemp {
                                             let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
                                             Text(String(format: "%.0fG", usedGB))
                                                 .font(.system(size: 7.5, weight: .semibold))
-                                                .foregroundColor(.white.opacity(0.7))
+                                                .foregroundColor(theme.subtext)
                                         }
                                     }
                                 }
                                 if cfg.popoverRingShowLabels {
                                     Text("RAM")
                                         .font(.system(size: 8.5, weight: .bold))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundColor(theme.subtext)
                                 }
                             }
                         } else if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 0 {
@@ -4161,13 +4353,13 @@ struct MenuBarPopoverView: View {
                             VStack(spacing: 4) {
                                 ZStack {
                                     Circle()
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .stroke(theme.cardBorder.opacity(0.6), lineWidth: 4.5)
                                         .frame(width: 46, height: 46)
                                     Circle()
                                         .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.diskUsagePct / 100.0))))
                                         .stroke(
                                             LinearGradient(
-                                                gradient: Gradient(colors: [Color.blue, Color.cyan]),
+                                                gradient: Gradient(colors: [theme.accentGreen, theme.accentGreen.opacity(0.55)]),
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             ),
@@ -4179,18 +4371,18 @@ struct MenuBarPopoverView: View {
                                     VStack(spacing: 0) {
                                         Text(String(format: "%.0f%%", model.diskUsagePct))
                                             .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(theme.text)
                                         if cfg.popoverRingShowTemp {
                                             Text("SSD")
                                                 .font(.system(size: 7.5, weight: .semibold))
-                                                .foregroundColor(.white.opacity(0.7))
+                                                .foregroundColor(theme.subtext)
                                         }
                                     }
                                 }
                                 if cfg.popoverRingShowLabels {
                                     Text("DISK")
                                         .font(.system(size: 8.5, weight: .bold))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundColor(theme.subtext)
                                 }
                             }
                         } else if ring == "gpu" && cfg.popoverShowGPURing && cfg.popoverGPUStyle == 0 {
@@ -4198,13 +4390,13 @@ struct MenuBarPopoverView: View {
                             VStack(spacing: 4) {
                                 ZStack {
                                     Circle()
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .stroke(theme.cardBorder.opacity(0.6), lineWidth: 4.5)
                                         .frame(width: 46, height: 46)
                                     Circle()
                                         .trim(from: 0, to: CGFloat(min(1.0, max(0.0, model.gpuLoadPct / 100.0))))
                                         .stroke(
                                             LinearGradient(
-                                                gradient: Gradient(colors: [Color.purple, Color(red: 0.5, green: 0.3, blue: 0.9)]),
+                                                gradient: Gradient(colors: [theme.accentPurple, theme.accentPurple.opacity(0.55)]),
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             ),
@@ -4216,18 +4408,18 @@ struct MenuBarPopoverView: View {
                                     VStack(spacing: 0) {
                                         Text(String(format: "%.0f%%", model.gpuLoadPct))
                                             .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(theme.text)
                                         if cfg.popoverRingShowTemp {
                                             Text(String(format: "%.0f°", model.gpuTempC))
                                                 .font(.system(size: 7.5, weight: .semibold))
-                                                .foregroundColor(.white.opacity(0.7))
+                                                .foregroundColor(theme.subtext)
                                         }
                                     }
                                 }
                                 if cfg.popoverRingShowLabels {
                                     Text("GPU")
                                         .font(.system(size: 8.5, weight: .bold))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundColor(theme.subtext)
                                 }
                             }
                         } else if ring == "vram" && cfg.popoverShowVRAM && cfg.popoverGPUStyle == 0 {
@@ -4235,7 +4427,7 @@ struct MenuBarPopoverView: View {
                             VStack(spacing: 4) {
                                 ZStack {
                                     Circle()
-                                        .stroke(Color.white.opacity(0.06), lineWidth: 4.5)
+                                        .stroke(theme.cardBorder.opacity(0.6), lineWidth: 4.5)
                                         .frame(width: 46, height: 46)
                                     let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
                                     let recommendedSize = MTLCreateSystemDefaultDevice()?.recommendedMaxWorkingSetSize
@@ -4246,7 +4438,7 @@ struct MenuBarPopoverView: View {
                                         .trim(from: 0, to: CGFloat(min(1.0, max(0.0, vramPct / 100.0))))
                                         .stroke(
                                             LinearGradient(
-                                                gradient: Gradient(colors: [Color.purple.opacity(0.8), Color.pink.opacity(0.8)]),
+                                                gradient: Gradient(colors: [theme.accentPurple.opacity(0.9), theme.accentOrange.opacity(0.75)]),
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             ),
@@ -4258,18 +4450,18 @@ struct MenuBarPopoverView: View {
                                     VStack(spacing: 0) {
                                         Text(String(format: "%.0f%%", vramPct))
                                             .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(theme.text)
                                         if cfg.popoverRingShowTemp {
                                             Text(String(format: "%.0fG", vramGB))
                                                 .font(.system(size: 7.5, weight: .semibold))
-                                                .foregroundColor(.white.opacity(0.7))
+                                                .foregroundColor(theme.subtext)
                                         }
                                     }
                                 }
                                 if cfg.popoverRingShowLabels {
                                     Text("VRAM")
                                         .font(.system(size: 8.5, weight: .bold))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundColor(theme.subtext)
                                 }
                             }
                         }
@@ -4290,7 +4482,7 @@ struct MenuBarPopoverView: View {
             })
             
             if showLinearOrGraphs {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(theme.cardBorder)
                 
                 VStack(spacing: 10) {
                     ForEach(rings, id: \.self) { ring in
@@ -4301,7 +4493,7 @@ struct MenuBarPopoverView: View {
                                     label: "CPU",
                                     pct: model.cpuLoadAvg,
                                     detailText: String(format: "%.0f%%%@", model.cpuLoadAvg, cpuTempStr),
-                                    color: Color(red: 0.93, green: 0.11, blue: 0.14)
+                                    color: theme.accentCyan
                                 )
                             }
                             if cfg.popoverShowCPUSparkline {
@@ -4309,7 +4501,7 @@ struct MenuBarPopoverView: View {
                                 MiniSparkline(
                                     label: "CPU Temp",
                                     currentVal: String(format: "%.0f°C", model.cpuTempC),
-                                    color: Color(red: 0.93, green: 0.11, blue: 0.14),
+                                    color: theme.accentCyan,
                                     data: model.history,
                                     value: { $0.cpuTempC },
                                     filterZeros: true
@@ -4347,14 +4539,14 @@ struct MenuBarPopoverView: View {
                                     label: "GPU",
                                     pct: model.gpuLoadPct,
                                     detailText: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
-                                    color: .purple
+                                    color: theme.accentPurple
                                 )
                             }
                             if cfg.popoverShowGPUSparkline {
                                 MiniSparkline(
                                     label: "GPU Temp",
                                     currentVal: String(format: "%.0f°C", model.gpuTempC),
-                                    color: .purple,
+                                    color: theme.accentPurple,
                                     data: model.history,
                                     value: { $0.gpuTempC },
                                     filterZeros: true
@@ -4373,7 +4565,7 @@ struct MenuBarPopoverView: View {
                                     label: "VRAM",
                                     pct: vramPct,
                                     detailText: String(format: "%.0f%%%@", vramPct, vramStr),
-                                    color: .purple.opacity(0.8)
+                                    color: theme.accentPurple.opacity(0.8)
                                 )
                             }
                         }
@@ -4384,7 +4576,7 @@ struct MenuBarPopoverView: View {
 
             // GPU & Network Stats
             if cfg.popoverShowGPU || cfg.popoverShowNetwork {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(theme.cardBorder)
                 
                 VStack(alignment: .leading, spacing: 6) {
                     if cfg.popoverShowGPU {
@@ -4393,22 +4585,22 @@ struct MenuBarPopoverView: View {
                             HStack(spacing: 6) {
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 10))
-                                    .foregroundColor(.purple)
+                                    .foregroundColor(theme.accentPurple)
                                     .frame(width: 14)
                                 Text(model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
                                     .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.9))
+                                    .foregroundColor(theme.text)
                                     .lineLimit(1)
                                     .truncationMode(.tail)
                                 Spacer()
                                 if model.gpuTempC > 0 {
                                     Text(String(format: "%.0f°C • %.0fW", model.gpuTempC, model.gpuPowerW))
                                         .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                                        .foregroundColor(.white.opacity(0.85))
+                                        .foregroundColor(theme.text.opacity(0.9))
                                 } else {
                                     Text("Inactive")
                                         .font(.system(size: 9.5, weight: .semibold))
-                                        .foregroundColor(.white.opacity(0.4))
+                                        .foregroundColor(theme.subtext.opacity(0.9))
                                 }
                             }
                             if model.gpuTempC > 0 {
@@ -4418,7 +4610,7 @@ struct MenuBarPopoverView: View {
                                     let fanRPMStr = model.gpuFanRPM > 0 ? String(format: " • %.0f RPM", model.gpuFanRPM) : ""
                                     Text(String(format: "VRAM: %.2fG%@", vramGB, fanRPMStr))
                                         .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .foregroundColor(theme.subtext)
                                 }
                             }
                         }
@@ -4433,11 +4625,11 @@ struct MenuBarPopoverView: View {
                                 .frame(width: 14)
                             Text("Network")
                                 .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(theme.text)
                             Spacer()
                             Text("↓ \(formatSpeed(model.netDownloadMBps))  ↑ \(formatSpeed(model.netUploadMBps))")
                                 .font(.system(size: 9, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(theme.text.opacity(0.85))
                         }
                         
                         if cfg.popoverShowNetSparkline {
@@ -4457,17 +4649,17 @@ struct MenuBarPopoverView: View {
 
             // Top Processes List
             if cfg.popoverShowProcesses {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(theme.cardBorder)
                 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("Top Processes")
                             .font(.system(size: 9.5, weight: .bold))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(theme.subtext)
                         Spacer()
                         Image(systemName: "list.bullet")
                             .font(.system(size: 8))
-                            .foregroundColor(.white.opacity(0.4))
+                            .foregroundColor(theme.subtext.opacity(0.9))
                     }
                     .padding(.bottom, 2)
 
@@ -4476,7 +4668,7 @@ struct MenuBarPopoverView: View {
                             Spacer()
                             Text("Loading...")
                                 .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.4))
+                                .foregroundColor(theme.subtext.opacity(0.9))
                                 .padding(.vertical, 4)
                             Spacer()
                         }
@@ -4485,13 +4677,13 @@ struct MenuBarPopoverView: View {
                             HStack {
                                 Text(proc.name)
                                     .font(.system(size: 9.5, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.85))
+                                    .foregroundColor(theme.text.opacity(0.9))
                                     .lineLimit(1)
                                     .truncationMode(.tail)
                                 Spacer()
                                 Text(String(format: "%.1f%%", proc.cpuUsage))
                                     .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                                    .foregroundColor(proc.cpuUsage > 50 ? Color(red: 0.93, green: 0.11, blue: 0.14) : .white.opacity(0.7))
+                                    .foregroundColor(proc.cpuUsage > 50 ? theme.accentOrange : theme.subtext)
                             }
                         }
                     }
@@ -4500,7 +4692,7 @@ struct MenuBarPopoverView: View {
                 .frame(height: 95)
             }
 
-            Divider().background(Color.white.opacity(0.1))
+            Divider().background(theme.cardBorder)
 
             // Action Buttons
             HStack(spacing: 8) {
@@ -4515,10 +4707,10 @@ struct MenuBarPopoverView: View {
                         Text("Open Dashboard")
                             .font(.system(size: 10, weight: .bold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(theme.text)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
-                    .background(Color.white.opacity(0.06))
+                    .background(theme.cardBorder.opacity(0.6))
                     .cornerRadius(5)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -4532,10 +4724,11 @@ struct MenuBarPopoverView: View {
                         Text("Quit")
                             .font(.system(size: 10, weight: .bold))
                     }
-                    .foregroundColor(Color(red: 0.93, green: 0.11, blue: 0.14))
+                    .foregroundColor(theme.accentRed)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
-                    .background(Color(red: 0.93, green: 0.11, blue: 0.14).opacity(0.08))
+                    .background(theme.accentRed.opacity(0.12))
+                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(theme.accentRed.opacity(0.35), lineWidth: 1))
                     .cornerRadius(5)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -4543,8 +4736,24 @@ struct MenuBarPopoverView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
         }
-        .frame(minWidth: 240, maxWidth: 340)
-        .background(Color.clear)
+        .frame(minWidth: 260, maxWidth: 360)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(theme.background.opacity(0.92))
+                VisualEffectBackground(
+                    material: .hudWindow,
+                    blendingMode: .behindWindow,
+                    state: .active,
+                    cornerRadius: 16
+                )
+                .opacity(theme.glassOpacity)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(theme.cardBorder, lineWidth: 1)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .id(themePreset) // force rebuild when theme changes
     }
 }
 
@@ -4553,6 +4762,7 @@ struct PopoverConfigView: View {
     @ObservedObject var model: TelemetryModel
     @State private var cfg = MenuBarConfig.shared
     @State private var items: [RingOrderItem] = []
+    @AppStorage("app_theme_preset") private var themePreset: String = AppTheme.tahoe.rawValue
 
     struct RingOrderItem: Identifiable, Equatable {
         let id: String
@@ -4563,6 +4773,12 @@ struct PopoverConfigView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                SectionTitle("Popover Theme")
+                Text("Same presets as RTL Wi-Fi Tahoe (and Themes & Appearance). Applies to the menu bar popover and main window.")
+                    .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+                ThemeSelectorGrid()
+                    .id(themePreset)
+
                 SectionTitle("Popover General Settings")
                 Text("Customize the behavior and visibility of the menu bar popover.")
                     .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
@@ -4981,7 +5197,7 @@ struct PopoverCoreGridView: View {
                             // Fill
                             RoundedRectangle(cornerRadius: 3.5)
                                 .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.cyan.opacity(0.8), Color.purple.opacity(0.9)]),
+                                    gradient: Gradient(colors: [Color.tahoeAccentCyan.opacity(0.85), Color.tahoeAccentPurple.opacity(0.9)]),
                                     startPoint: .bottom,
                                     endPoint: .top
                                 ))

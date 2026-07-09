@@ -364,7 +364,7 @@
 "HEVC Active (H.264 Inactive)" = "HEVC Active (H.264 Inactive)";
 "Hide this fan" = "Hide this fan";
 "High Load Threshold (Performance)" = "High Load Threshold (Performance)";
-"Histograma de Barras" = "Histograma de Barras";
+"Histograma de Barras" = "Column Bars";
 "Hysteresis" = "Hysteresis";
 "I accept that absolute responsibility lies entirely with the user." = "I accept that absolute responsibility lies entirely with the user.";
 "Idle Threshold (Power Save)" = "Idle Threshold (Power Save)";
@@ -383,8 +383,8 @@
 "Logical Cores" = "Logical Cores";
 "Low Performance Mode" = "Low Performance Mode";
 "Low Power\n%.1f GHz" = "Low Power\n%.1f GHz";
-"Línea Escalonada (Step)" = "Línea Escalonada (Step)";
-"Línea Suave (Spline)" = "Línea Suave (Spline)";
+"Línea Escalonada (Step)" = "Line Only";
+"Línea Suave (Spline)" = "Smooth Curves";
 "Manual Override" = "Manual Override";
 "Max Speed" = "Max Speed";
 "Max." = "Max.";
@@ -569,7 +569,7 @@
 "You are running the most recent version of AMD Power Gadget (v%@)." = "You are running the most recent version of AMD Power Gadget (v%@).";
 "You have the latest version installed (v%@)." = "You have the latest version installed (v%@).";
 "°C" = "°C";
-"Área Rellena (Gradient)" = "Área Rellena (Gradient)";
+"Área Rellena (Gradient)" = "Filled Area";
 
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.";
@@ -588,3 +588,6 @@
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
 
 /* Crowdin: recent UI strings */
+"CPPC: HW OK" = "CPPC: HW OK";
+
+"CPPC: EPP On" = "CPPC: EPP On";
