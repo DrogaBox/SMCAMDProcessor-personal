@@ -125,9 +125,10 @@ int ISSuperIONCT668X::getNumberOfFans(){
 }
 
 const char *ISSuperIONCT668X::getReadableStringForFan(int fan){
-    if(fan < 0 || fan >= activeFansOnSystem) return nullptr;
-    //TODO: label fans
-    return kFAN_READABLE_STRS[0];
+    if (fan < 0 || fan >= activeFansOnSystem) return nullptr;
+    const int kLabelCount = (int)(sizeof(kFAN_READABLE_STRS) / sizeof(kFAN_READABLE_STRS[0]));
+    if (fan >= kLabelCount) return "Fan";
+    return kFAN_READABLE_STRS[fan];
 }
 
 uint32_t ISSuperIONCT668X::getRPMForFan(int fan){
