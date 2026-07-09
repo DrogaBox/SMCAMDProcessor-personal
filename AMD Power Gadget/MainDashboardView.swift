@@ -5179,7 +5179,8 @@ class HistoryManager: ObservableObject {
     private var saveCounter = 0
     
     init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
         let appDir = appSupport.appendingPathComponent("AMD Power Gadget")
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
         saveURL = appDir.appendingPathComponent("telemetry_history.json")
@@ -5224,7 +5225,9 @@ class HistoryManager: ObservableObject {
             for pt in historyData {
                 if let data = try? encoder.encode(pt) {
                     fileData.append(data)
-                    fileData.append("\n".data(using: .utf8)!)
+                    if let nl = "\n".data(using: .utf8) {
+                        fileData.append(nl)
+                    }
                 }
             }
             try fileData.write(to: saveURL, options: .atomic)
@@ -5264,6 +5267,13 @@ class HistoryManager: ObservableObject {
                 appendData(point: last)
             }
         }
+    }
+
+    /// Force a full rewrite (language relaunch / app quit paths).
+    func flushToDisk() {
+        pruneOldData()
+        rewriteFile()
+        saveCounter = 0
     }
     
     private func pruneOldData() {
@@ -6250,10 +6260,8 @@ struct InteractiveFanCurveEditor: View {
                         // Line Path connecting points
                         Path { path in
                             let sorted = curve.points.sorted { $0.temp < $1.temp }
-                            guard !sorted.isEmpty else { return }
+                            guard let firstPt = sorted.first else { return }
                             
-                            // Map first point
-                            let firstPt = sorted.first!
                             path.move(to: CGPoint(x: CGFloat(firstPt.temp / 100.0) * w, y: h - CGFloat(firstPt.pwm / 100.0) * h))
                             
                             for pt in sorted.dropFirst() {

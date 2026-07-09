@@ -151,7 +151,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+        TelemetryModel.shared.commitPendingChanges()
         NetworkStats.shared.stop()
         ProcessorModel.shared.closeDriver()
     }
