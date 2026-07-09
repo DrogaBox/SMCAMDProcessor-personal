@@ -29,19 +29,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: "recursive"
-          
-      - name: Fetch Dependencies 
+
+      - name: Fetch Dependencies
         run: |
-          curl -LfsO https://github.com/acidanthera/Lilu/releases/download/${{ env.LILU_VERSION }}/Lilu-${{ env.LILU_VERSION }}-DEBUG.zip
-          unzip -q -o Lilu-${{ env.LILU_VERSION }}-DEBUG.zip
-          curl -LfsO https://github.com/acidanthera/VirtualSMC/releases/download/${{ env.VSMC_VERSION }}/VirtualSMC-${{ env.VSMC_VERSION }}-DEBUG.zip
-          unzip -q -o VirtualSMC-${{ env.VSMC_VERSION }}-DEBUG.zip
+          curl -LfsO "https://github.com/acidanthera/Lilu/releases/download/${{ env.LILU_VERSION }}/Lilu-${{ env.LILU_VERSION }}-DEBUG.zip"
+          unzip -q -o "Lilu-${{ env.LILU_VERSION }}-DEBUG.zip"
+          curl -LfsO "https://github.com/acidanthera/VirtualSMC/releases/download/${{ env.VSMC_VERSION }}/VirtualSMC-${{ env.VSMC_VERSION }}-DEBUG.zip"
+          unzip -q -o "VirtualSMC-${{ env.VSMC_VERSION }}-DEBUG.zip"
           cp -R Kexts/VirtualSMC.kext ./ 2>/dev/null || true
           [ -d MacKernelSDK/Headers ] || git clone --depth 1 https://github.com/acidanthera/MacKernelSDK.git
-          
+
       - name: Build AMDRyzenCPUPowerManagement
         run: xcodebuild -scheme "AMDRyzenCPUPowerManagement" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
-        
+
       - name: Build APGLaunchHelper
         run: xcodebuild -scheme "APGLaunchHelper" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
 
@@ -51,33 +51,80 @@ jobs:
       - name: Build SMCAMDProcessor
         run: xcodebuild -scheme "SMCAMDProcessor" -jobs 1 -arch x86_64 -configuration Release -derivedDataPath ./build
 
-      - name: Archive Artifacts
+      # Flat, versioned zip at repo root of archive (no build/Build/Products nesting).
+      # Contents match install docs: both kexts + app + optional standalone LaunchHelper.
+      - name: Package release zip
+        id: package
         run: |
-          rm -rf build/Build/Products/Release/*.dSYM
-          rm -rf build/Build/Products/Release/*.swiftmodule
-          rm -rf build/Build/Products/Release/APGLaunchHelper*
-          zip -r build/Release.zip build/Build/Products/Release
-        
+          set -euo pipefail
+          PROD="build/Build/Products/Release"
+          rm -rf "${PROD}"/*.dSYM "${PROD}"/*.swiftmodule 2>/dev/null || true
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VER="${GITHUB_REF_NAME#v}"
+          else
+            VER="dev-${GITHUB_SHA::7}"
+          fi
+          OUT="SMCAMD-${VER}-Release"
+          STAGE="build/package"
+          rm -rf "${STAGE}"
+          mkdir -p "${STAGE}"
+
+          for item in \
+            "AMDRyzenCPUPowerManagement.kext" \
+            "SMCAMDProcessor.kext" \
+            "AMD Power Gadget.app" \
+            "APGLaunchHelper.app"
+          do
+            if [ -e "${PROD}/${item}" ]; then
+              cp -R "${PROD}/${item}" "${STAGE}/"
+            else
+              echo "warning: missing ${item}" >&2
+            fi
+          done
+
+          # Required products must exist
+          test -d "${STAGE}/AMDRyzenCPUPowerManagement.kext"
+          test -d "${STAGE}/SMCAMDProcessor.kext"
+          test -d "${STAGE}/AMD Power Gadget.app"
+
+          ZIP_PATH="build/${OUT}.zip"
+          rm -f "${ZIP_PATH}"
+          (cd "${STAGE}" && zip -ry "../${OUT}.zip" .)
+          ls -lh "${ZIP_PATH}"
+          unzip -l "${ZIP_PATH}" | head -30
+
+          echo "zip_path=${ZIP_PATH}" >> "${GITHUB_OUTPUT}"
+          echo "zip_name=${OUT}.zip" >> "${GITHUB_OUTPUT}"
+          echo "version=${VER}" >> "${GITHUB_OUTPUT}"
+
       - name: Upload to Artifacts
-        if: "!startsWith(github.ref, 'refs/tags/')"
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: actions/upload-artifact@v4
         with:
-          name: Artifacts
-          path: build/Release.zip
+          name: ${{ steps.package.outputs.zip_name }}
+          path: ${{ steps.package.outputs.zip_path }}
 
       - name: Extract Release Notes
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          awk -v tag="## ${{ github.ref_name }}" '$0 ~ tag {flag=1; print; next} /^## v/ {flag=0} flag' CHANGELOG.md > build/release_notes.md
+          awk -v tag="## ${{ github.ref_name }}" \
+            '$0 ~ tag {flag=1; print; next} /^## v/ {flag=0} flag' \
+            CHANGELOG.md > build/release_notes.md
+          # Fallback if changelog section missing
+          if [ ! -s build/release_notes.md ]; then
+            echo "## ${{ github.ref_name }}" > build/release_notes.md
+            echo "" >> build/release_notes.md
+            echo "See CHANGELOG.md for details." >> build/release_notes.md
+          fi
 
-      - name: Create Release
+      - name: Create / update GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          files: build/Release.zip
+          files: ${{ steps.package.outputs.zip_path }}
           body_path: build/release_notes.md
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
