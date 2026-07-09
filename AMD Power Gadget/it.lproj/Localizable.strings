@@ -581,7 +581,6 @@
 "System Default" = "Predefinito di sistema";
 "Current: %@" = "Attuale: %@";
 "Restart required" = "Riavvio necessario";
-"The language will change after the app restarts." = "La lingua cambierà dopo il riavvio dell'app.";
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Questa azione richiede privilegi di amministratore. Esegui AMD Power Gadget come root oppure aggiungi l'argomento di avvio -amdpnopchk.";
 
 "The app needs to restart to load the selected language." = "L'app deve riavviarsi per caricare la lingua selezionata.";

@@ -458,32 +458,37 @@ class ProcessorModel {
         return o.count > 0 ? Int(o[0]) : 0
     }
 
-    func setPState(state : Int) {
+    @discardableResult
+    func setPState(state : Int) -> kern_return_t {
         // If we are in emulation mode (hardware reports only 1 P-state but we expose 5 in the GUI)
         if PStateDef.count > 1 && (PStateDef[1] & 0x8000000000000000) == 0 {
-            emulatedPState = state
-
-            // Smart mapping to real hardware controls in Zen 3:
+            // Smart mapping to real hardware controls in Zen 3 — surface first privilege failure
+            var status: kern_return_t = KERN_SUCCESS
             switch state {
-            case 0, 1: // Boost / High Performance (4900 MHz / 4100 MHz)
-                setCPB(enabled: true)
-                setLPM(enabled: false)
-                setPPM(enabled: true)
-            case 2: // Base Clock (3300 MHz)
-                setCPB(enabled: false) // Cap to base frequency for optimal thermal control
-                setLPM(enabled: false)
-                setPPM(enabled: true)
-            case 3: // Balanced / Low-Medium (2800 MHz)
-                setCPB(enabled: false)
-                setLPM(enabled: false)
-                setPPM(enabled: true)
-            case 4: // LPM / Idle (2200 MHz)
-                setCPB(enabled: false)
-                setLPM(enabled: true) // Activate Low Power Mode directly
+            case 0, 1: // Boost / High Performance
+                status = setCPB(enabled: true)
+                if status == KERN_SUCCESS { status = setLPM(enabled: false) }
+                if status == KERN_SUCCESS { status = setPPM(enabled: true) }
+            case 2: // Base Clock
+                status = setCPB(enabled: false)
+                if status == KERN_SUCCESS { status = setLPM(enabled: false) }
+                if status == KERN_SUCCESS { status = setPPM(enabled: true) }
+            case 3: // Balanced / Low-Medium
+                status = setCPB(enabled: false)
+                if status == KERN_SUCCESS { status = setLPM(enabled: false) }
+                if status == KERN_SUCCESS { status = setPPM(enabled: true) }
+            case 4: // LPM / Idle
+                status = setCPB(enabled: false)
+                if status == KERN_SUCCESS { status = setLPM(enabled: true) }
             default:
                 break
             }
-            return
+            if status == KERN_SUCCESS {
+                emulatedPState = state
+            } else {
+                print(String(cString: mach_error_string(status)))
+            }
+            return status
         }
 
         var input: [UInt64] = [UInt64(state)]
@@ -493,8 +498,8 @@ class ProcessorModel {
 
         if res != KERN_SUCCESS {
             print(String(cString: mach_error_string(res)))
-            return
         }
+        return res
     }
 
     func getPState() -> Int {
