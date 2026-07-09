@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Stile rendering grafici";
 "Custom Theme Editor" = "Editor tema personalizzato";
 "Showing active theme colors. Adjust any color to customize." = "Colori del tema attivo. Regola un colore per personalizzare.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Usa il cursore Opacità per la trasparenza (il pannello colori di macOS spesso azzera l'alpha).";
+"Opacity" = "Opacità";
 "Edit Active Theme" = "Modifica tema attivo";
 "Export Theme (JSON)" = "Esporta tema (JSON)";
 "Import Theme (JSON)" = "Importa tema (JSON)";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "La versione di AMDRyzenCPUPowerManagement (%@) è obsoleta e non compatibile con l’API. Usa la 3.0.0 o successiva e riavvia l’app.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacità";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Usa il cursore Opacità per la trasparenza (il pannello colori di macOS spesso azzera l'alpha).";
+/* App language picker */
+"Language" = "Lingua";
 "App Language" = "Lingua dell'app";
 "Choose the interface language. The app will restart to apply the change." = "Scegli la lingua dell'interfaccia. L'app si riavvierà per applicare la modifica.";
-"Apply & Restart" = "Applica e riavvia";
 "System Default" = "Predefinito di sistema";
 "Current: %@" = "Attuale: %@";
 "Restart required" = "Riavvio necessario";
+"Apply & Restart" = "Applica e riavvia";
+"The app needs to restart to load the selected language." = "L'app deve riavviarsi per caricare la lingua selezionata.";
+
+/* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Questa azione richiede privilegi di amministratore. Esegui AMD Power Gadget come root oppure aggiungi l'argomento di avvio -amdpnopchk.";
 
-"The app needs to restart to load the selected language." = "L'app deve riavviarsi per caricare la lingua selezionata.";
+/* Crowdin: recent UI strings */

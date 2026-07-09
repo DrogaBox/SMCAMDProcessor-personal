@@ -7,208 +7,210 @@
 /* These are used as lookup identifiers and work correctly. */
 /* A future refactor should standardize all keys to English. */
 
-"Dashboard" = "Dashboard";
-"Telemetry" = "Telemetry";
-"Fan Control" = "Fan Control";
+"Dashboard" = "Приладна дошка";
+"Telemetry" = "Телеметрія";
+"Fan Control" = "Fan контроль";
 "Profiles" = "Profiles";
-"Advanced" = "Advanced";
-"Menu Bar" = "Menu Bar";
-"System Info" = "System Info";
-"Desktop Widgets" = "Desktop Widgets";
+"Advanced" = "Додатково";
+"Menu Bar" = "Смужка меню";
+"System Info" = "Системна інформація";
+"Desktop Widgets" = "Віджети робочого столу";
 
-"AMD Power" = "AMD Power";
+"AMD Power" = "Сила AMD";
 "Gadget" = "Gadget";
 
-"CPU" = "CPU";
-"GPU" = "GPU";
-"Freq" = "Freq";
-"Average" = "Average";
-"Avg: %@" = "Avg: %@";
+"CPU" = "ЦП";
+"GPU" = "Геконка";
+"Freq" = "Фрек";
+"Average" = "Середнє значення";
+"Avg: %@" = "Середа: %@";
 "Collecting data…" = "Collecting data…";
 
-"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
-"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
-"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
-"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
-"Update Interval" = "Update Interval";
-"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+"Low Power Mode (LPM)" = "Режим економії енергії (PM)";
+"Allows macOS to auto-manage CPU frequency" = "Дозволяє macOS автоматично керувати частотою ЦП";
+"Forces CPU to lowest frequency for minimum power" = "Змушує частоту процесора бути найнижчою за мінімальну потужність";
+"Core Performance Boost (CPB)" = "Підвищення продуктивності ядра (CPB)";
+"Update Interval" = "Інтервал оновлення";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Налаштуйте частоту оновлення даних телеметрії. Нижче = додатково = додаткове навантаження на ЦП.";
 
-"Opciones en Menú Bar" = "Menu Bar Options";
-"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
-"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
-"Límite de Temp de Alerta" = "Alert Temp Limit";
-"Color de Alerta de Temp" = "Alert Temp Color";
-"Color de Flechas" = "Arrows Color";
-"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
-"Show GPU VRAM" = "Show GPU VRAM";
-"G:X.XG in Memory column" = "G:X.XG in Memory column";
-"Show GPU Fan Speed" = "Show GPU Fan Speed";
-"G:XXXX in Fan column" = "G:XXXX in Fan column";
+"Opciones en Menú Bar" = "Параметри рядка меню";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Виберіть елементи, які з’являться в рядку меню. Зміни застосовуються негайно.";
+"Customize the visual appearance of the menu bar items." = "Налаштуйте зовнішній вигляд елементів панелі меню.";
+"Límite de Temp de Alerta" = "Обмеження сповіщень";
+"Color de Alerta de Temp" = "Колір оповіщення";
+"Color de Flechas" = "Колір стрілок";
+"Additional telemetry for the menu bar." = "Додаткова телеметрія для панелі меню.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "Дані GPU відображаються всередині Temp, Power, Memory і Fan, коли увімкнено.";
+"Show GPU VRAM" = "Показати GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG в стовпці пам'яті";
+"Show GPU Fan Speed" = "Показати швидкість GPU Fan";
+"G:XXXX in Fan column" = "G:XXXX у колонці Fan";
 
-"No fans detected." = "No fans detected.";
-"SMC driver not available" = "SMC driver not available";
-"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"No fans detected." = "Не виявлено фанів.";
+"SMC driver not available" = "SMC драйвер не доступний";
+"Your SMC chip may not be supported." = "Ваш SMC чіп не підтримується.";
 "RPM" = "RPM";
-"Throttle" = "Throttle";
-"↩ Reset to Auto" = "↩ Reset to Auto";
+"Throttle" = "Дросель";
+"↩ Reset to Auto" = "↩️ Скинути до Авто";
 
-"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Виберіть профіль для налаштування діапазону операцій процесора. Зміни набувають чинності негайно.";
 
-"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
-"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
-"Disabled — work in progress" = "Disabled — work in progress";
-"WIP" = "WIP";
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Безпосередньо редагувати регістри P-стану. Для перевірки необхідно мати права на kext вимкнено через boot-arg або root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Будуть показані визначення, виконані безпосередньо процесором. Продовжити?";
+"Disabled — work in progress" = "Вимкнені - робота в процесі";
+"WIP" = "В розробці";
 
-"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
-"Motherboard info not available" = "Motherboard info not available";
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Увімкнути в OC: Різні → Безпека → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Інформація щодо порталу не доступна";
 
-"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
+"Vista previa de la Barra de Menús:" = "Попередній перегляд рядка меню:";
 "Ancho estimado: %dpt" = "Estimated Width: %dpt";
-"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
-"Small (%dpt)" = "Small (%dpt)";
-"Medium (%dpt)" = "Medium (%dpt)";
-"Large (%dpt)" = "Large (%dpt)";
+"Restart the app to fully apply width changes." = "Перезапустіть додаток, щоб повністю застосувати зміни ширини.";
+"Small (%dpt)" = "Малий (%dpt)";
+"Medium (%dpt)" = "Середній (%dpt)";
+"Large (%dpt)" = "Великий (%dpt)";
 
-"Green" = "Green";
-"Blue" = "Blue";
-"Orange" = "Orange";
-"Red" = "Red";
-"Purple" = "Purple";
-"Pink" = "Pink";
-"Teal" = "Teal";
+"Green" = "Зелений";
+"Blue" = "Синій";
+"Orange" = "Помаранчевий";
+"Red" = "Червоний";
+"Purple" = "Пурпурний";
+"Pink" = "Рожевий";
+"Teal" = "Зелено-блакитний";
 "Turquoise" = "Turquoise";
 
-"Verde" = "Green";
-"Azul" = "Blue";
-"Naranja" = "Orange";
-"Rojo" = "Red";
-"Morado" = "Purple";
-"Rosa" = "Pink";
-"Turquesa" = "Teal";
+"Verde" = "Зелений";
+"Azul" = "Синій";
+"Naranja" = "Помаранчевий";
+"Rojo" = "Червоний";
+"Morado" = "Пурпурний";
+"Rosa" = "Рожевий";
+"Turquesa" = "Зелено-блакитний";
 
-"Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
-"Temp Alert Color" = "Temp Alert Color";
-"Temp Alert Limit" = "Temp Alert Limit";
-"Network" = "Network";
-"Network Arrows Color" = "Network Arrows Color";
-"Exit" = "Exit";
-"AMD Power Gadget" = "AMD Power Gadget";
-"AMD Power Tool" = "AMD Power Tool";
-"SMC Fans" = "SMC Fans";
+"Dynamic Colors (Temp Only)" = "Динамічні кольори (лише тимчасово)";
+"Temp Alert Color" = "Колір для тимчасових сповіщень";
+"Temp Alert Limit" = "Обмежити температуру оповіщення";
+"Network" = "Мережа";
+"Network Arrows Color" = "Колір стрілок мережі";
+"Exit" = "Вийти";
+"AMD Power Gadget" = "AMD потужний ґаджет";
+"AMD Power Tool" = "Інструмент потужності AMD";
+"SMC Fans" = "Фанс SMC";
 
-"Fan 1" = "Fan 1";
-"Fan 2" = "Fan 2";
-"Fan 3" = "Fan 3";
-"Fan 4" = "Fan 4";
-"Fan 5" = "Fan 5";
-"Fan 6" = "Fan 6";
-"Fan 7" = "Fan 7";
-"Fan 8" = "Fan 8";
+"Fan 1" = "Віяло 1";
+"Fan 2" = "Фан 2";
+"Fan 3" = "Фан 3";
+"Fan 4" = "Фан-4";
+"Fan 5" = "Фан 5";
+"Fan 6" = "Фан 6";
+"Fan 7" = "Фан-7";
+"Fan 8" = "Фан-8";
 
 /* Alerts */
-"To enable motherboard display:" = "To enable motherboard display:";
-"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
-"Done" = "Done";
+"To enable motherboard display:" = "Щоб увімкнути відображення материка:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Відкрийте файл конфігурації OpenCore,\n\nПерейдіть на інший файл безпеки -> Безпека -> ExposeSensitiveData,\n\nВстановіть значення в 0x08 для відображення інформації про дошки.";
+"Done" = "Виконано";
 "Invalid Input" = "Invalid Input";
-"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
-"Unable to Set PStateDef" = "Unable to Set PStateDef";
+"Please type in numbers in hexadecimal." = "Будь ласка, введіть цифри у шістнадцятковому.";
+"Unable to Set PStateDef" = "Не вдалося встановити PStateDef";
 "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
-"Your changes will not be saved" = "Your changes will not be saved";
-"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
-"Cancel" = "Cancel";
-"Close without saving" = "Close without saving";
-"Invalid File" = "Invalid File";
-"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
-"OK" = "OK";
+"Your changes will not be saved" = "Ваші зміни не буде збережено";
+"Click apply to save changes before closing this windows." = "Натисніть застосовувати, щоб зберегти зміни перед закриттям цього вікна.";
+"Cancel" = "Скасувати";
+"Close without saving" = "Закрити без збереження";
+"Invalid File" = "Неприпустимий файл";
+"The selected file could not be read or is not a valid pstate file." = "Вибраний файл не може бути прочитаний або некоректний файл pдержав.";
+"OK" = "Гаразд";
 
 /* Dynamic format strings */
-"Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
+"Avg: %.2f GHz, Max: %.2f GHz" = "Середа: %.2f GHz, Max: %.2f GHz";
 "%.2f °C" = "%.2f °C";
 "%.2f Watt" = "%.2f W";
 
 /* Session Peaks */
-"Session Peaks" = "Session Peaks";
-"Reset Peaks" = "Reset Peaks";
+"Session Peaks" = "Версії сеансу";
+"Reset Peaks" = "Скинути піки";
 
 /* GPU Fan Control */
-"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
-"macOS Hardware Limitation" = "macOS Hardware Limitation";
-"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
-"Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
-"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
-"Open SPPT Guide" = "Open SPPT Guide";
-"MorePowerTool" = "MorePowerTool";
+"GPU Fan Control (Zero RPM / Curves)" = "Керування Fan GPU (нуль RPM / Curvs)";
+"macOS Hardware Limitation" = "macOS апаратне обмеження";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Прямі перевизначення швидкості фанів на основі графічного процесора (наприклад, перемикач «нульового rpm» або створення кривих фанів у macOS) не підтримуються рухом macOS kernel/IOKit для AMD GPU. Вбудована прошивка GPU управління процесором (vBIOS) керує фанами.";
+"Standard Hackintosh Solution:" = "Стандартне рішення щодо Hackintosh :";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "Єдиний спосіб змінити цю поведінку (наприклад, примушуючи шанувальників обертатися при нижчій температурі чи відключенні нульового RPM) експортуючи vBIOS, створення таблиці Soft PowerPlay (SPPT) і введення його через конфігурацію OpenCore. список в розділі Властивості пристроїв.";
+"Open SPPT Guide" = "Відкрити SPPT керівництво";
+"MorePowerTool" = "Більші інструменти";
 
 /* CPPC & EPP */
-"Native CPPC Active Mode (EPP)" = "Native CPPC Active Mode (EPP)";
-"Enables autonomous hardware frequency scaling (recommended)" = "Enables autonomous hardware frequency scaling (recommended)";
-"Power Management Mode" = "Power Management Mode";
-"Energy Preference (EPP)" = "Energy Preference (EPP)";
-"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Select a hardware autonomous profile. The CPU will scale frequency dynamically.";
-"Performance" = "Performance";
-"Balanced Perf" = "Balanced Perf";
-"Balanced Power" = "Balanced Power";
-"Power Save" = "Power Save";
-"Active Profile Status" = "Active Profile Status";
-"CPU Speed Profiles (Legacy)" = "CPU Speed Profiles (Legacy)";
-"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Select a manual P-State override profile. Frequencies will be restricted to the selected step.";
-"Mode" = "Mode";
-"EPP Profile" = "EPP Profile";
+"Native CPPC Active Mode (EPP)" = "Нативний CPPC активний (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Вмикає автономне апаратне масштабування частоти (рекомендовано)";
+"Power Management Mode" = "Режим керування потужністю";
+"Energy Preference (EPP)" = "Енергетичні налаштування (EPP)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Вибір апаратного автономного профілю. ЦП буде динамічно масштабувати частоту.";
+"Performance" = "Продуктивність";
+"Balanced Perf" = "Збалансована перевага";
+"Balanced Power" = "Збалансована сила";
+"Power Save" = "Енергозбереження";
+"Active Profile Status" = "Стан активного профілю";
+"CPU Speed Profiles (Legacy)" = "Профілі швидкості процесора (застарілі)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Вибір ручного профілю запису P-State після цього налаштування частоти будуть обмежені даними з вибраного кроку.";
+"Mode" = "Режим";
+"EPP Profile" = "EPP профіль";
 
 /* Desktop Widgets */
-"Show CPU Widget" = "Show CPU Widget";
-"Show GPU Widget" = "Show GPU Widget";
+"Show CPU Widget" = "Показати віджет процесора";
+"Show GPU Widget" = "Показати віджет GPU";
 "Show RAM Widget" = "Show RAM Widget";
-"Show Disk Widget" = "Show Disk Widget";
-"Show Network Widget" = "Show Network Widget";
-"Show Fan Widget" = "Show Fan Widget";
-"Disable All Widgets" = "Disable All Widgets";
-"Sort by Rank" = "Sort by Rank";
-"Edit Widget Layout" = "Edit Widget Layout";
-"Unlock widgets to drag them around the screen" = "Unlock widgets to drag them around the screen";
-"Widget Options" = "Widget Options";
-"Customize the appearance and behavior of your desktop widgets." = "Customize the appearance and behavior of your desktop widgets.";
-"Auto-Align Active Widgets" = "Auto-Align Active Widgets";
-"Automatically stack active widgets at a corner" = "Automatically stack active widgets at a corner";
-"Alignment Corner" = "Alignment Corner";
-"Top Right" = "Top Right";
-"Top Left" = "Top Left";
-"Bottom Right" = "Bottom Right";
-"Bottom Left" = "Bottom Left";
-"Show Clock Widget" = "Show Clock Widget";
-"Clock" = "Clock";
-"Stats Table" = "Stats Table";
-"Classic Glass" = "Classic Glass";
+"Show Disk Widget" = "Показати віджет диску";
+"Show Network Widget" = "Показати віджет мережі";
+"Show Fan Widget" = "Показати Візуальний віджет";
+"Disable All Widgets" = "Вимкнути всі віджети";
+"Sort by Rank" = "Впорядкувати за званням";
+"Edit Widget Layout" = "Редагувати макет віджета";
+"Unlock widgets to drag them around the screen" = "Розблокуйте віджети, щоб перетягувати їх навколо екрану";
+"Widget Options" = "Параметри віджета";
+"Customize the appearance and behavior of your desktop widgets." = "Налаштуйте зовнішній вигляд та поведінку віджетів вашого робочого столу.";
+"Auto-Align Active Widgets" = "Автоматичне вирівнювання активних віджетів";
+"Automatically stack active widgets at a corner" = "Автоматично ставляти активні віджети в кутку";
+"Alignment Corner" = "Кут вирівнювання";
+"Top Right" = "Верхній правий кут";
+"Top Left" = "Зліва зверху";
+"Bottom Right" = "Знизу праворуч";
+"Bottom Left" = "Нижній лівий";
+"Show Clock Widget" = "Показати віджет годинника";
+"Clock" = "Годинник";
+"Stats Table" = "Статистичний стіл";
+"Classic Glass" = "Класичний скло";
 "Pro Monitor" = "Pro Monitor";
-"Core Matrix" = "Core Matrix";
+"Core Matrix" = "Основна матриця";
 
-"United" = "United";
-"Show United Widget" = "Show United Widget";
-"Configure Combined Metrics" = "Configure Combined Metrics";
-"Include CPU" = "Include CPU";
-"Include GPU" = "Include GPU";
-"Include RAM" = "Include RAM";
-"Include Disk" = "Include Disk";
-"Include Network" = "Include Network";
-"Include Fan" = "Include Fan";
+"United" = "Юнайтед";
+"Show United Widget" = "Показати об'єднаний віджет";
+"Configure Combined Metrics" = "Налаштувати комбіновану метрику";
+"Include CPU" = "Включити ЦП";
+"Include GPU" = "Включити GPU";
+"Include RAM" = "Включати оперативну пам'ять";
+"Include Disk" = "Включити диск";
+"Include Network" = "Включаючи мережу";
+"Include Fan" = "Включити Віяло";
 
-"Temas & Apariencia" = "Themes & Appearance";
-"Análisis" = "Analysis";
+"Temas & Apariencia" = "Теми і вигляд";
+"Análisis" = "Аналіз";
 
-"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
-"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
-"Chart Rendering Style" = "Chart Rendering Style";
-"Custom Theme Editor" = "Custom Theme Editor";
-"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
-"Edit Active Theme" = "Edit Active Theme";
-"Export Theme (JSON)" = "Export Theme (JSON)";
-"Import Theme (JSON)" = "Import Theme (JSON)";
-"Card Background" = "Card Background";
-"Cyan Accent" = "Cyan Accent";
-"Orange Accent" = "Orange Accent";
-"Green Accent" = "Green Accent";
-"Purple Accent" = "Purple Accent";
+"Select Visual Theme (Instant Application)" = "Вибрати візуальну тему (миттєві програми)";
+"Custom Theme Creator & Exchange (JSON)" = "Спеціальний творець тем та біржа (JSON)";
+"Chart Rendering Style" = "Стиль рендерингу графіка";
+"Custom Theme Editor" = "Редактор тем";
+"Showing active theme colors. Adjust any color to customize." = "Відображення активних кольорів теми. Налаштуйте будь-який колір для налаштування.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Використовуйте повзунок непрозорості для прозорості (тільки для панелі кольору macOS часто скидає альфа).";
+"Opacity" = "Непрозорість";
+"Edit Active Theme" = "Редагувати активну тему";
+"Export Theme (JSON)" = "Експортувати тему (JSON)";
+"Import Theme (JSON)" = "Імпортувати тему (JSON)";
+"Card Background" = "Тло картки";
+"Cyan Accent" = "Бірюзовий акцент";
+"Orange Accent" = "Помаранчевий акцент";
+"Green Accent" = "Зелений відтінок";
+"Purple Accent" = "Бузковий акцент";
 
 /* ===== Auto-extracted / curated for Crowdin (v3.16.1+) ===== */
 "%.0f" = "%.0f";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Ваша версія AMDRyzenCPUPowerManagement (%@) застаріла і більше не сумісна з API. Будь ласка, використовуйте версію 3.0.0 або новішу і знову запустіть цей додаток.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
+/* App language picker */
+"Language" = "Мова:";
+"App Language" = "Мова програми";
+"Choose the interface language. The app will restart to apply the change." = "Виберіть мову інтерфейсу. Додаток перезавантажиться для застосування змін.";
+"System Default" = "Системна по замовчуванню";
 "Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+"Restart required" = "Необхідне перезавантаження";
+"Apply & Restart" = "Застосувати & Перезапустити";
+"The app needs to restart to load the selected language." = "Додатку потрібно перезапустити програму, щоб завантажити вибрану мову.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Ця дія потребує адміністративних привілеїв. Запустіть AMD Power Gadget в якості root, або додайте аргумент завантаження -amdpnopchk для налагодження.";
+
+/* Crowdin: recent UI strings */
