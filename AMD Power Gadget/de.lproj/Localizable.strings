@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Diagramm-Darstellungsstil";
 "Custom Theme Editor" = "Benutzerdefinierter Theme-Editor";
 "Showing active theme colors. Adjust any color to customize." = "Aktive Theme-Farben. Beliebige Farbe anpassen.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Verwende den Deckkraft-Regler für Transparenz (das macOS-Farbfeld setzt Alpha oft zurück).";
+"Opacity" = "Deckkraft";
 "Edit Active Theme" = "Aktives Theme bearbeiten";
 "Export Theme (JSON)" = "Theme exportieren (JSON)";
 "Import Theme (JSON)" = "Theme importieren (JSON)";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Deine AMDRyzenCPUPowerManagement-Version (%@) ist veraltet und API-inkompatibel. Bitte Version 3.0.0 oder neuer verwenden und die App neu starten.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Deckkraft";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Verwende den Deckkraft-Regler für Transparenz (das macOS-Farbfeld setzt Alpha oft zurück).";
+/* App language picker */
+"Language" = "Sprache";
 "App Language" = "App-Sprache";
 "Choose the interface language. The app will restart to apply the change." = "Wähle die Sprache der Oberfläche. Die App wird neu gestartet, um die Änderung zu übernehmen.";
-"Apply & Restart" = "Übernehmen & neu starten";
 "System Default" = "Systemstandard";
 "Current: %@" = "Aktuell: %@";
 "Restart required" = "Neustart erforderlich";
+"Apply & Restart" = "Übernehmen & neu starten";
+"The app needs to restart to load the selected language." = "Die App muss neu gestartet werden, um die gewählte Sprache zu laden.";
+
+/* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Diese Aktion erfordert Administratorrechte. Starte AMD Power Gadget als root oder füge das Boot-Argument -amdpnopchk hinzu.";
 
-"The app needs to restart to load the selected language." = "Die App muss neu gestartet werden, um die gewählte Sprache zu laden.";
+/* Crowdin: recent UI strings */

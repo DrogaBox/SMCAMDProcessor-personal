@@ -7,208 +7,210 @@
 /* These are used as lookup identifiers and work correctly. */
 /* A future refactor should standardize all keys to English. */
 
-"Dashboard" = "Dashboard";
-"Telemetry" = "Telemetry";
-"Fan Control" = "Fan Control";
+"Dashboard" = "Nástěnka";
+"Telemetry" = "Telemetrie";
+"Fan Control" = "Ovládání ventilátoru";
 "Profiles" = "Profiles";
-"Advanced" = "Advanced";
-"Menu Bar" = "Menu Bar";
-"System Info" = "System Info";
-"Desktop Widgets" = "Desktop Widgets";
+"Advanced" = "Rozšířené";
+"Menu Bar" = "Panel nabídek";
+"System Info" = "Systémové informace";
+"Desktop Widgets" = "Widgety plochy";
 
-"AMD Power" = "AMD Power";
+"AMD Power" = "Výkon AMD";
 "Gadget" = "Gadget";
 
 "CPU" = "CPU";
 "GPU" = "GPU";
-"Freq" = "Freq";
-"Average" = "Average";
-"Avg: %@" = "Avg: %@";
-"Collecting data…" = "Collecting data…";
+"Freq" = "Frekvence";
+"Average" = "Průměr";
+"Avg: %@" = "Průměr: %@";
+"Collecting data…" = "Shromažďuji data…";
 
-"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
-"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
-"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
-"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
-"Update Interval" = "Update Interval";
-"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+"Low Power Mode (LPM)" = "Režim nízké spotřeby (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Umožňuje macOS automatickou správu frekvence CPU";
+"Forces CPU to lowest frequency for minimum power" = "Vynutí CPU na nejnižší frekvenci při minimálním výkonu";
+"Core Performance Boost (CPB)" = "Základní výkonnostní náklady (CPB)";
+"Update Interval" = "Interval aktualizace";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Nastavte, jak často se aktualizace dat telemetrie. Nižší = citlivější, vyšší = méně využití CPU.";
 
-"Opciones en Menú Bar" = "Menu Bar Options";
-"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
-"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
-"Límite de Temp de Alerta" = "Alert Temp Limit";
-"Color de Alerta de Temp" = "Alert Temp Color";
-"Color de Flechas" = "Arrows Color";
-"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
-"Show GPU VRAM" = "Show GPU VRAM";
-"G:X.XG in Memory column" = "G:X.XG in Memory column";
-"Show GPU Fan Speed" = "Show GPU Fan Speed";
-"G:XXXX in Fan column" = "G:XXXX in Fan column";
+"Opciones en Menú Bar" = "Možnosti panelu nabídek";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Vyberte, které položky se objeví v liště nabídek. Změny platí okamžitě.";
+"Customize the visual appearance of the menu bar items." = "Přizpůsobit vzhled položek panelu nabídky.";
+"Límite de Temp de Alerta" = "Dočasný limit upozornění";
+"Color de Alerta de Temp" = "Barva teploty upozornění";
+"Color de Flechas" = "Barva šipek";
+"Additional telemetry for the menu bar." = "Další telemetrie pro panel nabídek.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data jsou zobrazena ve sloupcích teploty, napájení, paměti a fanoušků, pokud jsou povolena.";
+"Show GPU VRAM" = "Zobrazit GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG ve sloupci pro paměť";
+"Show GPU Fan Speed" = "Zobrazit rychlost GPU ventilátoru";
+"G:XXXX in Fan column" = "G:XXXX ve sloupci ventilátoru";
 
-"No fans detected." = "No fans detected.";
-"SMC driver not available" = "SMC driver not available";
-"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"No fans detected." = "Nebyly detekovány žádné ventilátory.";
+"SMC driver not available" = "Ovladač SMC není k dispozici";
+"Your SMC chip may not be supported." = "Váš SMC čip nemusí být podporován.";
 "RPM" = "RPM";
-"Throttle" = "Throttle";
-"↩ Reset to Auto" = "↩ Reset to Auto";
+"Throttle" = "Plyn";
+"↩ Reset to Auto" = "↩️ Obnovit na Auto";
 
-"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Vyberte profil pro úpravu rozsahu provozu procesoru. Změny se projeví okamžitě.";
 
-"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
-"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
-"Disabled — work in progress" = "Disabled — work in progress";
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Přímo upravit nezpracované registry P-stát. Vyžaduje oprávnění kext deaktivované pomocí boot-arg nebo root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Tím se do procesoru zapíší nezpracované definice stavu P přímo. Pokračovat?";
+"Disabled — work in progress" = "Zakázáno – práce probíhá";
 "WIP" = "WIP";
 
-"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
-"Motherboard info not available" = "Motherboard info not available";
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Povolit v OC: Různé → Bezpečnost → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Informace o základnové desce nejsou k dispozici";
 
-"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
-"Ancho estimado: %dpt" = "Estimated Width: %dpt";
-"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
-"Small (%dpt)" = "Small (%dpt)";
-"Medium (%dpt)" = "Medium (%dpt)";
-"Large (%dpt)" = "Large (%dpt)";
+"Vista previa de la Barra de Menús:" = "Náhled panelu nabídek:";
+"Ancho estimado: %dpt" = "Odhadovaná šířka: %dbodů";
+"Restart the app to fully apply width changes." = "Restartujte aplikaci, abyste mohli plně aplikovat změny šířky.";
+"Small (%dpt)" = "Malý (%dbod)";
+"Medium (%dpt)" = "Střední (%dbodu)";
+"Large (%dpt)" = "Velká (%dbod)";
 
-"Green" = "Green";
-"Blue" = "Blue";
-"Orange" = "Orange";
-"Red" = "Red";
-"Purple" = "Purple";
-"Pink" = "Pink";
-"Teal" = "Teal";
+"Green" = "Zelená";
+"Blue" = "Modrá";
+"Orange" = "Oranžová";
+"Red" = "Červená";
+"Purple" = "Fialová";
+"Pink" = "Růžová";
+"Teal" = "Modrozelený";
 "Turquoise" = "Turquoise";
 
-"Verde" = "Green";
-"Azul" = "Blue";
-"Naranja" = "Orange";
-"Rojo" = "Red";
-"Morado" = "Purple";
-"Rosa" = "Pink";
-"Turquesa" = "Teal";
+"Verde" = "Zelená";
+"Azul" = "Modrá";
+"Naranja" = "Oranžová";
+"Rojo" = "Červená";
+"Morado" = "Fialová";
+"Rosa" = "Růžová";
+"Turquesa" = "Modrozelený";
 
-"Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
-"Temp Alert Color" = "Temp Alert Color";
-"Temp Alert Limit" = "Temp Alert Limit";
-"Network" = "Network";
-"Network Arrows Color" = "Network Arrows Color";
-"Exit" = "Exit";
+"Dynamic Colors (Temp Only)" = "Dynamické barvy (pouze pro empy)";
+"Temp Alert Color" = "Barva upozornění na teplotu";
+"Temp Alert Limit" = "Dočasný limit výstrahy";
+"Network" = "Síť";
+"Network Arrows Color" = "Barva šípů sítě";
+"Exit" = "Ukončit";
 "AMD Power Gadget" = "AMD Power Gadget";
-"AMD Power Tool" = "AMD Power Tool";
-"SMC Fans" = "SMC Fans";
+"AMD Power Tool" = "Nástroj pro napájení AMD";
+"SMC Fans" = "SMC fanoušky";
 
-"Fan 1" = "Fan 1";
-"Fan 2" = "Fan 2";
-"Fan 3" = "Fan 3";
-"Fan 4" = "Fan 4";
-"Fan 5" = "Fan 5";
-"Fan 6" = "Fan 6";
-"Fan 7" = "Fan 7";
-"Fan 8" = "Fan 8";
+"Fan 1" = "Ventilátor 1";
+"Fan 2" = "Ventilátor 2";
+"Fan 3" = "Ventilátor 3";
+"Fan 4" = "Ventilátor 4";
+"Fan 5" = "Ventilátor 5";
+"Fan 6" = "Ventilátor 6";
+"Fan 7" = "Ventilátor 7";
+"Fan 8" = "Ventilátor 8";
 
 /* Alerts */
-"To enable motherboard display:" = "To enable motherboard display:";
-"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
-"Done" = "Done";
+"To enable motherboard display:" = "Pro povolení zobrazení základní tabule:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Otevřete konfigurační soubor OpenCore\n\nPřejděte na Misc -> Security -> ExposeSensitiveData,\n\nNastavte hodnotu na 0x08 pro odhalení informací o desce.";
+"Done" = "Hotovo";
 "Invalid Input" = "Invalid Input";
-"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
-"Unable to Set PStateDef" = "Unable to Set PStateDef";
-"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
-"Your changes will not be saved" = "Your changes will not be saved";
-"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
-"Cancel" = "Cancel";
-"Close without saving" = "Close without saving";
-"Invalid File" = "Invalid File";
-"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
+"Please type in numbers in hexadecimal." = "Zadejte čísla v šestnáctce.";
+"Unable to Set PStateDef" = "Nelze nastavit stav";
+"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Akce byla zamítnuta, protože aktuální uživatel nemá dostatečná oprávnění,\nnebo byla zrušena aktuálním uživatelem.\n\nSpusťte AMD Power Gadget jako root uživatele nebo zakažte kontrolu oprávnění pomocí boot-arg '-amdpnopchk'\n\nJinak Pro povolení této změny klikněte na 'Když' ve výstražné zprávě.";
+"Your changes will not be saved" = "Vaše změny nebudou uloženy";
+"Click apply to save changes before closing this windows." = "Klikněte na tlačítko Použít pro uložení změn před zavřením tohoto okna.";
+"Cancel" = "Zrušit";
+"Close without saving" = "Zavřít bez uložení";
+"Invalid File" = "Neplatný soubor";
+"The selected file could not be read or is not a valid pstate file." = "Vybraný soubor nelze přečíst nebo není platný pstate soubor.";
 "OK" = "OK";
 
 /* Dynamic format strings */
-"Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
+"Avg: %.2f GHz, Max: %.2f GHz" = "Průměr: %.2f GHz, Max: %.2f GHz";
 "%.2f °C" = "%.2f °C";
 "%.2f Watt" = "%.2f W";
 
 /* Session Peaks */
-"Session Peaks" = "Session Peaks";
-"Reset Peaks" = "Reset Peaks";
+"Session Peaks" = "Peaky na sezení";
+"Reset Peaks" = "Resetovat vrcholy";
 
 /* GPU Fan Control */
-"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
-"macOS Hardware Limitation" = "macOS Hardware Limitation";
-"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
+"GPU Fan Control (Zero RPM / Curves)" = "Řízení GPU ventilátoru (Zero RPM / křivky)";
+"macOS Hardware Limitation" = "Hardwarové omezení macOS";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Přepínání rychlosti GPU ventilátoru s přímým softwarem (jako přepínač nulových otáček nebo kreslení křivek ventilátoru v macOS) není podporováno ovladači macOS pro AMD GPU. Palubní firmware GPU (vBIOS) řídí fanoušky.";
 "Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
-"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
-"Open SPPT Guide" = "Open SPPT Guide";
-"MorePowerTool" = "MorePowerTool";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "Jediný způsob, jak změnit toto chování (jako je nutit fanoušky k vychýlení při nižších teplotách nebo vypnutí nulové RPM) je exportovat vBIOS, vytváření tabulky Soft PowerPlay (SPPT) a její vkládání přes OpenCore's config. seznam pod Vlastnostmi zařízení.";
+"Open SPPT Guide" = "Otevřít průvodce SPPT";
+"MorePowerTool" = "Další nástroj napájení";
 
 /* CPPC & EPP */
-"Native CPPC Active Mode (EPP)" = "Native CPPC Active Mode (EPP)";
-"Enables autonomous hardware frequency scaling (recommended)" = "Enables autonomous hardware frequency scaling (recommended)";
-"Power Management Mode" = "Power Management Mode";
-"Energy Preference (EPP)" = "Energy Preference (EPP)";
-"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Select a hardware autonomous profile. The CPU will scale frequency dynamically.";
-"Performance" = "Performance";
-"Balanced Perf" = "Balanced Perf";
-"Balanced Power" = "Balanced Power";
-"Power Save" = "Power Save";
-"Active Profile Status" = "Active Profile Status";
-"CPU Speed Profiles (Legacy)" = "CPU Speed Profiles (Legacy)";
-"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Select a manual P-State override profile. Frequencies will be restricted to the selected step.";
-"Mode" = "Mode";
-"EPP Profile" = "EPP Profile";
+"Native CPPC Active Mode (EPP)" = "Nativní CPPC aktivní režim (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Umožňuje autonomní hardwarovou frekvenci škálování (doporučeno)";
+"Power Management Mode" = "Režim řízení spotřeby";
+"Energy Preference (EPP)" = "Energetická předvolba (EPP)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Vyberte autonomní hardwarový profil. CPU bude měřit frekvenci dynamicky.";
+"Performance" = "Výkon";
+"Balanced Perf" = "Vyvážená perf";
+"Balanced Power" = "Vyvážená síla";
+"Power Save" = "Úspora energie";
+"Active Profile Status" = "Stav aktivního profilu";
+"CPU Speed Profiles (Legacy)" = "Profily rychlosti CPU (Legacy)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Vyberte manuální profil přepsání P-stavu. Frekvence budou omezeny na vybraný krok.";
+"Mode" = "Režim";
+"EPP Profile" = "Profil EPP";
 
 /* Desktop Widgets */
-"Show CPU Widget" = "Show CPU Widget";
-"Show GPU Widget" = "Show GPU Widget";
+"Show CPU Widget" = "Zobrazit CPU widget";
+"Show GPU Widget" = "Zobrazit GPU Widget";
 "Show RAM Widget" = "Show RAM Widget";
-"Show Disk Widget" = "Show Disk Widget";
-"Show Network Widget" = "Show Network Widget";
-"Show Fan Widget" = "Show Fan Widget";
-"Disable All Widgets" = "Disable All Widgets";
-"Sort by Rank" = "Sort by Rank";
-"Edit Widget Layout" = "Edit Widget Layout";
-"Unlock widgets to drag them around the screen" = "Unlock widgets to drag them around the screen";
-"Widget Options" = "Widget Options";
-"Customize the appearance and behavior of your desktop widgets." = "Customize the appearance and behavior of your desktop widgets.";
-"Auto-Align Active Widgets" = "Auto-Align Active Widgets";
-"Automatically stack active widgets at a corner" = "Automatically stack active widgets at a corner";
-"Alignment Corner" = "Alignment Corner";
-"Top Right" = "Top Right";
-"Top Left" = "Top Left";
-"Bottom Right" = "Bottom Right";
-"Bottom Left" = "Bottom Left";
-"Show Clock Widget" = "Show Clock Widget";
-"Clock" = "Clock";
-"Stats Table" = "Stats Table";
-"Classic Glass" = "Classic Glass";
+"Show Disk Widget" = "Zobrazit widget disku";
+"Show Network Widget" = "Zobrazit widget sítě";
+"Show Fan Widget" = "Zobrazit widget ventilátoru";
+"Disable All Widgets" = "Zakázat všechny widgety";
+"Sort by Rank" = "Řadit podle pořadí";
+"Edit Widget Layout" = "Upravit rozložení widgetu";
+"Unlock widgets to drag them around the screen" = "Odemknout widgety pro jejich přetažení po obrazovce";
+"Widget Options" = "Možnosti widgetu";
+"Customize the appearance and behavior of your desktop widgets." = "Přizpůsobte si vzhled a chování svých widgetů.";
+"Auto-Align Active Widgets" = "Automaticky zarovnat aktivní widgety";
+"Automatically stack active widgets at a corner" = "Automaticky vytvořit aktivní widgety v rohu";
+"Alignment Corner" = "Zarovnání rohu";
+"Top Right" = "Vpravo nahoře";
+"Top Left" = "Vlevo nahoře";
+"Bottom Right" = "Vpravo dole";
+"Bottom Left" = "Vlevo dole";
+"Show Clock Widget" = "Zobrazit widget hodin";
+"Clock" = "Hodiny";
+"Stats Table" = "Tabulka statistik";
+"Classic Glass" = "Klasické sklo";
 "Pro Monitor" = "Pro Monitor";
-"Core Matrix" = "Core Matrix";
+"Core Matrix" = "Hlavní matice";
 
-"United" = "United";
-"Show United Widget" = "Show United Widget";
-"Configure Combined Metrics" = "Configure Combined Metrics";
-"Include CPU" = "Include CPU";
-"Include GPU" = "Include GPU";
-"Include RAM" = "Include RAM";
-"Include Disk" = "Include Disk";
-"Include Network" = "Include Network";
-"Include Fan" = "Include Fan";
+"United" = "Spojené";
+"Show United Widget" = "Zobrazit Jednotný widget";
+"Configure Combined Metrics" = "Konfigurace kombinované metriky";
+"Include CPU" = "Zahrnout CPU";
+"Include GPU" = "Zahrnout GPU";
+"Include RAM" = "Zahrnout RAM";
+"Include Disk" = "Zahrnout disk";
+"Include Network" = "Zahrnout síť";
+"Include Fan" = "Zahrnout ventilátor";
 
-"Temas & Apariencia" = "Themes & Appearance";
-"Análisis" = "Analysis";
+"Temas & Apariencia" = "Motivy a vzhled";
+"Análisis" = "Analýza";
 
-"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
-"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
-"Chart Rendering Style" = "Chart Rendering Style";
-"Custom Theme Editor" = "Custom Theme Editor";
-"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
-"Edit Active Theme" = "Edit Active Theme";
-"Export Theme (JSON)" = "Export Theme (JSON)";
-"Import Theme (JSON)" = "Import Theme (JSON)";
-"Card Background" = "Card Background";
-"Cyan Accent" = "Cyan Accent";
-"Orange Accent" = "Orange Accent";
-"Green Accent" = "Green Accent";
-"Purple Accent" = "Purple Accent";
+"Select Visual Theme (Instant Application)" = "Vyberte vizuální motiv (okamžitá aplikace)";
+"Custom Theme Creator & Exchange (JSON)" = "Vlastní tvůrce a směna motivů (JSON)";
+"Chart Rendering Style" = "Styl vykreslování map";
+"Custom Theme Editor" = "Editor vlastních šablon";
+"Showing active theme colors. Adjust any color to customize." = "Zobrazení aktivních barev motivu. Upravte libovolnou barvu pro přizpůsobení.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Použít posuvník Průhlednosti pro průhlednost (pouze barevný panel macOS často resetuje alfa).";
+"Opacity" = "Neprůhlednost";
+"Edit Active Theme" = "Upravit aktivní motiv";
+"Export Theme (JSON)" = "Exportovat motiv (JSON)";
+"Import Theme (JSON)" = "Importovat motiv (JSON)";
+"Card Background" = "Pozadí karty";
+"Cyan Accent" = "Azurová zvýraznění";
+"Orange Accent" = "Oranžová zvýraznění";
+"Green Accent" = "Zelená zvýraznění";
+"Purple Accent" = "Fialová zvýraznění";
 
 /* ===== Auto-extracted / curated for Crowdin (v3.16.1+) ===== */
 "%.0f" = "%.0f";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Vaše AMDRyzenCPUPowerManagement verze (%@) je zastaralá a již není kompatibilní s API. Použijte prosím verzi 3.0.0 nebo novější a spusťte tuto aplikaci znovu.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Jazyk";
+"App Language" = "Jazyk aplikace";
+"Choose the interface language. The app will restart to apply the change." = "Vyberte jazyk rozhraní. Aplikace se pro aplikaci změny restartuje.";
+"System Default" = "Výchozí nastavení systému";
+"Current: %@" = "Aktuální: %@";
+"Restart required" = "Vyžadován restart";
+"Apply & Restart" = "Použít a restartovat";
+"The app needs to restart to load the selected language." = "Aplikace potřebuje restartovat pro načtení vybraného jazyka.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Tato akce vyžaduje oprávnění správce. Spusťte AMD Power Gadget jako root, nebo přidejte zaváděcí argument -amdpnopchk pro ladění.";
+
+/* Crowdin: recent UI strings */
