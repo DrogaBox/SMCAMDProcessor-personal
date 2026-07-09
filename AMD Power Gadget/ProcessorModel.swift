@@ -190,12 +190,19 @@ class ProcessorModel {
         return outputStr
     }
 
-    func kernelSetStruct(selector: UInt32, data: Data) -> Bool {
-        let res = data.withUnsafeBytes { rawBuffer -> kern_return_t in
+    /// IOKit `kIOReturnNotPrivileged` (0xe00002c1) — write selectors require root or `-amdpnopchk`.
+    static let kIOReturnNotPrivilegedCode: kern_return_t = kern_return_t(bitPattern: 0xe00002c1)
+
+    func kernelSetStruct(selector: UInt32, data: Data) -> kern_return_t {
+        return data.withUnsafeBytes { rawBuffer -> kern_return_t in
             guard let baseAddress = rawBuffer.baseAddress else { return kIOReturnBadArgument }
             return IOConnectCallMethod(connect, selector, nil, 0, baseAddress, data.count, nil, nil, nil, nil)
         }
-        return res == KERN_SUCCESS
+    }
+
+    @discardableResult
+    func kernelSetStructSuccess(selector: UInt32, data: Data) -> Bool {
+        kernelSetStruct(selector: selector, data: data) == KERN_SUCCESS
     }
 
     func kernelGetString(selector : UInt32, args : [UInt64]) -> String {
@@ -226,13 +233,30 @@ class ProcessorModel {
         return String(cString: validBytes)
     }
 
-    func kernelSetUInt64(selector : UInt32, args : [UInt64]) -> Bool {
+    /// Returns the raw IOKit status (KERN_SUCCESS / kIOReturnNotPrivileged / …).
+    @discardableResult
+    func kernelSetUInt64Status(selector: UInt32, args: [UInt64]) -> kern_return_t {
         var argcpy = args
-        let res = IOConnectCallMethod(connect, selector, &argcpy, UInt32(args.count), nil, 0,
-                                      nil, nil,
-                                      nil, nil)
+        return IOConnectCallMethod(connect, selector, &argcpy, UInt32(args.count), nil, 0,
+                                   nil, nil, nil, nil)
+    }
 
-        return res == KERN_SUCCESS
+    func kernelSetUInt64(selector: UInt32, args: [UInt64]) -> Bool {
+        kernelSetUInt64Status(selector: selector, args: args) == KERN_SUCCESS
+    }
+
+    /// Human-readable message for failed kernel write calls (localized).
+    static func privilegeHint(for status: kern_return_t) -> String? {
+        if status == kIOReturnNotPrivilegedCode {
+            return NSLocalizedString(
+                "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.",
+                comment: "Shown when a privileged kext write is denied"
+            )
+        }
+        if status != KERN_SUCCESS {
+            return String(cString: mach_error_string(status))
+        }
+        return nil
     }
 
     private func loadMetric(){
@@ -502,24 +526,14 @@ class ProcessorModel {
         return (output[0] == 1, UInt8(output[1]))
     }
 
-    func setCPPCActiveMode(active: Bool) -> Bool {
+    func setCPPCActiveMode(active: Bool) -> kern_return_t {
         var input: [UInt64] = [active ? 1 : 0]
-        let res = IOConnectCallMethod(connect, 24, &input, 1, nil, 0, nil, nil, nil, nil)
-        if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
-            return false
-        }
-        return true
+        return IOConnectCallMethod(connect, 24, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
-    func setCPPCEPPValue(epp: UInt8) -> Bool {
+    func setCPPCEPPValue(epp: UInt8) -> kern_return_t {
         var input: [UInt64] = [UInt64(epp)]
-        let res = IOConnectCallMethod(connect, 25, &input, 1, nil, 0, nil, nil, nil, nil)
-        if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
-            return false
-        }
-        return true
+        return IOConnectCallMethod(connect, 25, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
     func getPStateDef() -> [UInt64]{
@@ -555,16 +569,10 @@ class ProcessorModel {
         return o.map{ $0 == 0 ? false : true }
     }
 
-    func setCPB(enabled : Bool){
+    @discardableResult
+    func setCPB(enabled: Bool) -> kern_return_t {
         var input: [UInt64] = [UInt64(enabled ? 1 : 0)]
-        let res = IOConnectCallMethod(connect, 12, &input, 1, nil, 0,
-                                      nil, nil,
-                                      nil, nil)
-
-        if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
-            return
-        }
+        return IOConnectCallMethod(connect, 12, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
     func getPPM() -> Bool {
@@ -572,16 +580,10 @@ class ProcessorModel {
         return o.count > 0 && o[0] != 0
     }
 
-    func setPPM(enabled : Bool){
+    @discardableResult
+    func setPPM(enabled: Bool) -> kern_return_t {
         var input: [UInt64] = [UInt64(enabled ? 1 : 0)]
-        let res = IOConnectCallMethod(connect, 14, &input, 1, nil, 0,
-                                      nil, nil,
-                                      nil, nil)
-
-        if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
-            return
-        }
+        return IOConnectCallMethod(connect, 14, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
     func getLPM() -> Bool {
@@ -589,16 +591,10 @@ class ProcessorModel {
         return o.count > 0 && o[0] != 0
     }
 
-    func setLPM(enabled : Bool){
+    @discardableResult
+    func setLPM(enabled: Bool) -> kern_return_t {
         var input: [UInt64] = [UInt64(enabled ? 1 : 0)]
-        let res = IOConnectCallMethod(connect, 19, &input, 1, nil, 0,
-                                      nil, nil,
-                                      nil, nil)
-
-        if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
-            return
-        }
+        return IOConnectCallMethod(connect, 19, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
     func getInstructionDelta() -> [UInt64]{
@@ -819,20 +815,11 @@ class ProcessorModel {
         }
     }
     
-    func setCurveOptimizerOffset(core: UInt8, offset: Int8) -> Bool {
+    @discardableResult
+    func setCurveOptimizerOffset(core: UInt8, offset: Int8) -> kern_return_t {
         // cast offset to raw bit representation for transfer over 64-bit parameter
         let rawOffset = UInt64(bitPattern: Int64(offset))
         var input: [UInt64] = [UInt64(core), rawOffset]
-        
-        let res = IOConnectCallMethod(connect, 111, &input, 2, nil, 0,
-                                      nil, nil,
-                                      nil, nil)
-        
-        if res == KERN_SUCCESS {
-            return true
-        } else {
-            print("setCurveOptimizerOffset failed: \(String(cString: mach_error_string(res)))")
-            return false
-        }
+        return IOConnectCallMethod(connect, 111, &input, 2, nil, 0, nil, nil, nil, nil)
     }
 }

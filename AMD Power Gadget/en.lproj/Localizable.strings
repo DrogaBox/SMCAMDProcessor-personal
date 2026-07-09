@@ -581,3 +581,6 @@
 "Restart required" = "Restart required";
 "Apply & Restart" = "Apply & Restart";
 "The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
