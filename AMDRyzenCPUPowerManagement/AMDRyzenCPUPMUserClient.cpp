@@ -81,8 +81,11 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
     AMDRyzenCPUPowerManagement *provider = fProvider;
     if (!provider) return kIOReturnNotReady;
     
-    if (provider->kextloadAlerts && provider->kunc_alert) {
-        unsigned int rf;
+    // Surface kext-load alerts at most once. Telemetry polls externalMethod at high
+    // frequency; showing a modal on every call would stall the UI and kernel path.
+    if (provider->kextloadAlerts && provider->kunc_alert && !provider->kextAlertDisplayed) {
+        provider->kextAlertDisplayed = true;
+        unsigned int rf = 0;
         
         char buf[128];
         snprintf(buf, 128,
@@ -91,8 +94,9 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         (*(provider->kunc_alert))(0, 0, NULL, NULL, NULL,
                       "AMDRyzenCPUPowerManagement", buf, "Ok", "Ok and Clear Alert", "WTF?", &rf);
-        if(rf == 1){
+        if (rf == 1) {
             provider->kextloadAlerts = 0;
+            provider->kextAlertDisplayed = false;
         }
     }
     

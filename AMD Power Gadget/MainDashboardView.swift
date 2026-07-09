@@ -224,6 +224,30 @@ struct MainDashboardView: View {
                 )
             )
             .preferredColorScheme(.dark)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let msg = model.privilegeErrorMessage {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "exclamationmark.shield.fill")
+                            .foregroundColor(.orange)
+                        Text(msg)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.tahoeText)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        Button {
+                            model.clearPrivilegeError()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.tahoeSubtext)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.orange.opacity(0.18))
+                    .overlay(Rectangle().frame(height: 1).foregroundColor(Color.orange.opacity(0.35)), alignment: .bottom)
+                }
+            }
             
             // Safety Disclaimer Gatekeeper Modal Sheet Overlay
             if !disclaimerAccepted {

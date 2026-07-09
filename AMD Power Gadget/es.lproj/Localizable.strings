@@ -581,3 +581,6 @@
 "Restart required" = "Reinicio necesario";
 "Apply & Restart" = "Aplicar y reiniciar";
 "The app needs to restart to load the selected language." = "La app debe reiniciarse para cargar el idioma seleccionado.";
+
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Esta acción requiere privilegios de administrador. Ejecuta AMD Power Gadget como root o añade el boot-arg -amdpnopchk para depuración.";

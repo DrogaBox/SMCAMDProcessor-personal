@@ -166,7 +166,9 @@ void ISSuperIONCT668X::updateFanControl(){
 void ISSuperIONCT668X::overrideFanControl(int fan, uint8_t thr){
     if(fan >= activeFansOnSystem) return;
     writeByte(FAN_CFG_CTRL_REG, FAN_CFG_REQ);
-    IOSleep(2);
+    // IODelay (µs) instead of IOSleep (ms): evaluateFanCurves may hold superIOLock;
+    // sleeping while holding the lock stalls concurrent UserClient SuperIO calls.
+    IODelay(50);
     writeByte(FAN_PWMCMD_REGS(fan), thr);
     writeByte(FAN_CFG_CTRL_REG, FAN_CFG_DONE);
 }
@@ -174,7 +176,7 @@ void ISSuperIONCT668X::overrideFanControl(int fan, uint8_t thr){
 void ISSuperIONCT668X::setDefaultFanControl(int fan){
     if(fan >= activeFansOnSystem) return;
     writeByte(FAN_CFG_CTRL_REG, FAN_CFG_REQ);
-    IOSleep(2);
+    IODelay(50);
     writeByte(FAN_PWMCMD_REGS(fan), 0);
     writeByte(FAN_CFG_CTRL_REG, FAN_CFG_DONE);
     fanControlMode[fan] = 1;
