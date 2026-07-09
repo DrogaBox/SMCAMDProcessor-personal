@@ -1152,21 +1152,31 @@ void AMDRyzenCPUPowerManagement::reinitHwState() {
     CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
-    // Check CPPC support: try to read MSR 0xC00102B0 first.
+    // CPPC support (does NOT change Active Mode boot-arg behavior below).
+    // - CAP1 MSR readable → supported (value may be 0 before ENABLE is written).
+    // - Zen family 17h/19h/1Ah always has CPPC MSRs (5900XT, etc.).
+    // Old fallback CPUID 8000_0008 EBX[27] is NOT a CPPC flag and falsely
+    // reported "no CPPC" on many Zen systems → orange UI warning.
     uint64_t cppcVal = 0;
     bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
-    
-    if (msrSuccess && cppcVal != 0) {
+    const bool zenFamily = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A);
+
+    if (msrSuccess || zenFamily) {
         cppcSupported = true;
     } else {
-        CPUInfo::getCpuid(0x80000008, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-        cppcSupported = (cpuid_ebx >> 27) & 0x1;
+        cppcSupported = false;
     }
-    
+
     if (cppcSupported) {
         write_msr(kMSR_AMD_CPPC_ENABLE, 1);
+        if (!msrSuccess || cppcVal == 0) {
+            (void)read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
+        }
+        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC supported (CAP1=0x%llx zen=%d)\n",
+              cppcVal, zenFamily ? 1 : 0);
     }
-    
+
+    // Unchanged: -amdcppcactive still forces Active Mode at boot when present.
     cppcActiveMode = checkKernelArgument("-amdcppcactive");
     
     uint64_t rapl = 0;
