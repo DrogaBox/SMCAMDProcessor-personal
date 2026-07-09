@@ -1076,7 +1076,7 @@ final class TelemetryModel: ObservableObject {
             
             // 1. Temperature Alerts
             if cpuTempC >= Double(tempAlertThreshold) {
-                let shouldAlert = lastTempAlertTime == nil || now.timeIntervalSince(lastTempAlertTime!) >= 60.0
+                let shouldAlert = lastTempAlertTime.map { now.timeIntervalSince($0) >= 60.0 } ?? true
                 if shouldAlert {
                     lastTempAlertTime = now
                     sendNotification(
@@ -1092,7 +1092,7 @@ final class TelemetryModel: ObservableObject {
                 if let startTime = powerViolationStartTime {
                     let elapsed = now.timeIntervalSince(startTime)
                     if elapsed >= Double(powerAlertDuration) {
-                        let shouldAlert = lastPowerAlertTime == nil || now.timeIntervalSince(lastPowerAlertTime!) >= 60.0
+                        let shouldAlert = lastPowerAlertTime.map { now.timeIntervalSince($0) >= 60.0 } ?? true
                         if shouldAlert {
                             lastPowerAlertTime = now
                             sendNotification(
