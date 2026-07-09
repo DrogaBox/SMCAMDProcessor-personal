@@ -597,3 +597,21 @@
 "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root)." = "The CPU reports CPPC rankings (HW OK). That does not mean Active Mode is on — enable “Native CPPC Active Mode (EPP)” under Profiles (needs -amdpnopchk or root).";
 /* Deprecated badge key — kept so old locales still resolve */
 "CPPC: Active" = "CPPC: HW OK";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Show Max Freq Only" = "Show Max Freq Only";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Use Fahrenheit" = "Use Fahrenheit";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Frequency column (max/avg GHz)" = "Frequency column (max/avg GHz)";
+
+/* Menu Bar toggles (fabiosun IT) */
+"CPU temp + optional GPU temp" = "CPU temp + optional GPU temp";
+
+/* Menu Bar toggles (fabiosun IT) */
+"Convert temperature values from Celsius to Fahrenheit" = "Convert temperature values from Celsius to Fahrenheit";
+
+/* Menu Bar toggles (fabiosun IT) */
+"CPU watts + optional GPU watts" = "CPU watts + optional GPU watts";

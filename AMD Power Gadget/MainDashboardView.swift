@@ -651,10 +651,17 @@ private struct TahoeButton: View {
 }
 
 private struct ToggleRow: View {
-    let label: LocalizedStringKey; let detail: LocalizedStringKey; @Binding var isOn: Bool; let accent: Color; let onChange: (Bool) -> Void
+    let label: LocalizedStringKey
+    let detail: LocalizedStringKey
+    @Binding var isOn: Bool
+    let accent: Color
+    var indented: Bool = false
+    let onChange: (Bool) -> Void
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
+                // LocalizedStringKey looks up Localizable.strings — do not prefix labels with spaces.
                 Text(label).font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
                 Text(detail).font(.system(size: 10)).foregroundColor(.tahoeSubtext)
             }
@@ -664,7 +671,9 @@ private struct ToggleRow: View {
                 .labelsHidden()
                 .onChange(of: isOn) { newValue in onChange(newValue) }
         }
-        .padding(.vertical, 8).padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .padding(.leading, indented ? 28 : 14)
+        .padding(.trailing, 14)
         .background(Color.tahoeCard)
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
         .cornerRadius(8)
@@ -3188,9 +3197,9 @@ struct MenuBarConfigView: View {
                 ), accent: .tahoeAccentCyan) { _ in }
 
                 if cfg.showCPU {
-                    ToggleRow(label: "   Show Max Freq Only", detail: "Single large value instead of max/avg stack", isOn: .init(
+                    ToggleRow(label: "Show Max Freq Only", detail: "Single large value instead of max/avg stack", isOn: .init(
                         get: { cfg.showMaxFreqOnly }, set: { cfg.showMaxFreqOnly = $0; notify() }
-                    ), accent: .tahoeAccentCyan.opacity(0.8)) { _ in }
+                    ), accent: .tahoeAccentCyan.opacity(0.8), indented: true) { _ in }
                 }
 
                 ToggleRow(label: "Show Temperature", detail: "CPU temp + optional GPU temp", isOn: .init(
@@ -3198,9 +3207,9 @@ struct MenuBarConfigView: View {
                 ), accent: .tahoeAccentOrange) { _ in }
 
                 if cfg.showTemp {
-                    ToggleRow(label: "   Use Fahrenheit", detail: "Convert temperature values from Celsius to Fahrenheit", isOn: .init(
+                    ToggleRow(label: "Use Fahrenheit", detail: "Convert temperature values from Celsius to Fahrenheit", isOn: .init(
                         get: { cfg.useFahrenheit }, set: { cfg.useFahrenheit = $0; notify() }
-                    ), accent: .tahoeAccentOrange.opacity(0.8)) { _ in }
+                    ), accent: .tahoeAccentOrange.opacity(0.8), indented: true) { _ in }
                 }
 
                 ToggleRow(label: "Show Power", detail: "CPU watts + optional GPU watts", isOn: .init(
