@@ -45,7 +45,7 @@ class ProcessorModel {
 
     init() {
         if !initDriver() {
-            alertAndQuit(message: "Please download AMDRyzenCPUPowerManagement from the release page.")
+            alertAndQuit(message: NSLocalizedString("Please download AMDRyzenCPUPowerManagement from the release page.", comment: ""))
         }
 
         var scalerOut: UInt64 = 0
@@ -70,7 +70,8 @@ class ProcessorModel {
         }
 
         if !isCompatible {
-            alertAndQuit(message: "Your AMDRyzenCPUPowerManagement version (\(AMDRyzenCPUPowerManagementVersion)) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.")
+            let fmt = NSLocalizedString("Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.", comment: "")
+            alertAndQuit(message: String(format: fmt, AMDRyzenCPUPowerManagementVersion))
         }
 
         loadCPUID()
@@ -83,10 +84,10 @@ class ProcessorModel {
 
         if numberOfCores < 1{
             let alert = NSAlert()
-            alert.messageText = "Error reading CPU data."
-            alert.informativeText = "This application can not be launched due to AMDRyzenCPUPowerManagement is reporting incorrect data."
+            alert.messageText = NSLocalizedString("Error reading CPU data.", comment: "")
+            alert.informativeText = NSLocalizedString("This application can not be launched due to AMDRyzenCPUPowerManagement is reporting incorrect data.", comment: "")
             alert.alertStyle = .critical
-            alert.addButton(withTitle: "Quit")
+            alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
             alert.runModal()
             NSApplication.shared.terminate(self)
         }
@@ -118,11 +119,11 @@ class ProcessorModel {
 
     func alertAndQuit(message : String){
         let alert = NSAlert()
-        alert.messageText = "No AMDRyzenCPUPowerManagement Found!"
+        alert.messageText = NSLocalizedString("No AMDRyzenCPUPowerManagement Found!", comment: "")
         alert.informativeText = message
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "Quit")
-        alert.addButton(withTitle: "Quit and Download")
+        alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Quit and Download", comment: ""))
         let res = alert.runModal()
 
         if res == .alertSecondButtonReturn {
@@ -136,11 +137,11 @@ class ProcessorModel {
 
     func alertDontQuit(message : String){
         let alert = NSAlert()
-        alert.messageText = "Kext Update Available"
+        alert.messageText = NSLocalizedString("Kext Update Available", comment: "")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Later")
-        alert.addButton(withTitle: "Download")
+        alert.addButton(withTitle: NSLocalizedString("Later", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Download", comment: ""))
         let res = alert.runModal()
 
         if res == .alertSecondButtonReturn {

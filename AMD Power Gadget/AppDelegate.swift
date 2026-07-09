@@ -130,11 +130,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func askStartup() {
         let alert = NSAlert()
-        alert.messageText = "Startup at login?"
-        alert.informativeText = "Do you want AMD Power Gadget to start in menu bar at login? \n\n This will only be asked once. You can change this setting later under Appearance menu."
+        alert.messageText = NSLocalizedString("Startup at login?", comment: "")
+        alert.informativeText = NSLocalizedString("Do you want AMD Power Gadget to start in menu bar at login? \n\n This will only be asked once. You can change this setting later under Appearance menu.", comment: "")
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "Yes")
-        alert.addButton(withTitle: "No")
+        alert.addButton(withTitle: NSLocalizedString("Yes", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("No", comment: ""))
         let res = alert.runModal()
 
         if res == .alertFirstButtonReturn {

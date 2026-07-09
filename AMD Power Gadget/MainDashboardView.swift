@@ -64,9 +64,12 @@ enum AppTheme: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
 
+    /// Localized display name for UI (rawValue stays English for UserDefaults / Crowdin keys).
+    var localizedName: String { NSLocalizedString(rawValue, comment: "App theme preset name") }
+
     static var current: AppTheme {
         if let raw = UserDefaults.standard.string(forKey: "app_theme_preset") {
-            if raw == "Personalizado" { return .custom }
+            if raw == "Personalizado" || raw == "Mi Tema Custom" { return .custom }
             if let theme = AppTheme(rawValue: raw) {
                 return theme
             }
@@ -159,17 +162,18 @@ private extension Color {
 
 enum DashboardTab: String, CaseIterable, Identifiable {
     var id: String { rawValue }
+    // rawValue is the English localization key (Crowdin source).
     case dashboard  = "Dashboard"
     case telemetry  = "Telemetry"
     case fanControl = "Fan Control"
-    case themes     = "Temas & Apariencia"
+    case themes     = "Themes & Appearance"
     case profiles   = "Profiles"
     case advanced   = "Advanced"
     case menuBar    = "Menu Bar"
     case popover    = "Popover Menu"
     case desktopWidgets = "Desktop Widgets"
     case systemInfo = "System Info"
-    case analysis   = "Análisis"
+    case analysis   = "Analysis"
 
     var icon: String {
         switch self {
@@ -242,13 +246,13 @@ struct MainDashboardView: View {
                                 .font(.system(size: 28))
                                 .foregroundColor(.tahoeAccentOrange)
                             
-                            Text("SAFETY DISCLAIMER & LIABILITY AGREEMENT")
+                            Text(NSLocalizedString("SAFETY DISCLAIMER & LIABILITY AGREEMENT", comment: ""))
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.tahoeText)
                         }
                         
                         ScrollView {
-                            Text("This software interacts directly with low-level CPU hardware registers, Model-Specific Registers (MSRs), and the System Management Unit (SMU) to control CPU voltages, frequencies, and power limits.\n\nIncorrect settings, unstable undervolting, or wrong configurations can cause system instability, data loss, kernel panics, or permanent hardware damage.\n\nBy continuing, you agree that absolute responsibility for any system instability, hardware damage, or alien invasion lies entirely with the user. The authors and contributors assume no liability whatsoever for any damage, loss, or side effects to your hardware, software, or personal property. Use at your own risk.")
+                            Text(NSLocalizedString("This software interacts directly with low-level CPU hardware registers, Model-Specific Registers (MSRs), and the System Management Unit (SMU) to control CPU voltages, frequencies, and power limits.\n\nIncorrect settings, unstable undervolting, or wrong configurations can cause system instability, data loss, kernel panics, or permanent hardware damage.\n\nBy continuing, you agree that absolute responsibility for any system instability, hardware damage, or alien invasion lies entirely with the user. The authors and contributors assume no liability whatsoever for any damage, loss, or side effects to your hardware, software, or personal property. Use at your own risk.", comment: ""))
                                 .font(.system(size: 11))
                                 .foregroundColor(.tahoeSubtext)
                                 .lineSpacing(4)
@@ -261,7 +265,7 @@ struct MainDashboardView: View {
                         
                         VStack(alignment: .leading, spacing: 12) {
                             Toggle(isOn: $tempCheckboxChecked) {
-                                Text("I accept that absolute responsibility lies entirely with the user.")
+                                Text(NSLocalizedString("I accept that absolute responsibility lies entirely with the user.", comment: ""))
                                     .font(.system(size: 11, weight: .semibold))
                                     .foregroundColor(.tahoeText)
                             }
@@ -273,7 +277,7 @@ struct MainDashboardView: View {
                             Button(action: {
                                 NSApplication.shared.terminate(nil)
                             }) {
-                                Text("Quit")
+                                Text(NSLocalizedString("Quit", comment: ""))
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.tahoeText)
                                     .frame(width: 80, height: 26)
@@ -289,7 +293,7 @@ struct MainDashboardView: View {
                                     disclaimerAccepted = true
                                 }
                             }) {
-                                Text("Accept & Continue")
+                                Text(NSLocalizedString("Accept & Continue", comment: ""))
                                     .font(.system(size: 12, weight: .bold))
                                     .foregroundColor(tempCheckboxChecked ? .black : .tahoeSubtext)
                                     .frame(width: 140, height: 26)
@@ -1693,7 +1697,7 @@ struct FanControlContentView: View {
                             }) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "eye.fill")
-                                    Text("Show All (\(model.hiddenFanIDs.count) hidden)")
+                                    Text(String(format: NSLocalizedString("Show All (%d hidden)", comment: ""), model.hiddenFanIDs.count))
                                 }
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(.tahoeAccentCyan)
@@ -3334,7 +3338,7 @@ struct ThemeSelectorGrid: View {
                 }) {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text(theme.rawValue)
+                            Text(theme.localizedName)
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundColor(isSelected ? .white : .tahoeText)
                             Spacer()
@@ -3373,6 +3377,7 @@ struct ThemeSelectorGrid: View {
 }
 
 enum AppChartStyle: String, CaseIterable, Identifiable {
+    // Stable storage keys (legacy Spanish values preserved for existing UserDefaults).
     case line = "Línea Suave (Spline)"
     case filledArea = "Área Rellena (Gradient)"
     case bar = "Histograma de Barras"
@@ -3387,6 +3392,18 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
         case .steppedLine: return "chart.line.uptrend.xyaxis"
         }
     }
+
+    /// English Crowdin keys for UI display.
+    var localizationKey: String {
+        switch self {
+        case .line: return "Smooth Curves"
+        case .filledArea: return "Filled Area"
+        case .bar: return "Column Bars"
+        case .steppedLine: return "Line Only"
+        }
+    }
+
+    var localizedName: String { NSLocalizedString(localizationKey, comment: "Chart rendering style") }
 }
 
 struct ChartStyleSelectorGrid: View {
@@ -3404,7 +3421,7 @@ struct ChartStyleSelectorGrid: View {
                     HStack(spacing: 8) {
                         Image(systemName: style.icon)
                             .foregroundColor(selectedStyleRaw == style.rawValue ? Color.tahoeAccentCyan : .tahoeSubtext)
-                        Text(style.rawValue)
+                        Text(style.localizedName)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(selectedStyleRaw == style.rawValue ? .white : .tahoeSubtext)
                     }
