@@ -21,7 +21,7 @@
 
 "CPU" = "CPU";
 "GPU" = "GPU";
-"Freq" = "Frec.";
+"Freq" = "Frec";
 "Average" = "Promedio";
 "Avg: %@" = "Prom.: %@";
 "Collecting data…" = "Recopilando datos…";
@@ -516,7 +516,7 @@
 "System Alert Notifications" = "Notificaciones de alerta del sistema";
 "System Up to Date" = "Sistema actualizado";
 "Tahoe Glass" = "Tahoe Glass";
-"Temp" = "Temp.";
+"Temp" = "Temp";
 "Temp Source" = "Fuente de temperatura";
 "Temperature" = "Temperatura";
 "Temperature Warning Threshold" = "Umbral de aviso de temperatura";
