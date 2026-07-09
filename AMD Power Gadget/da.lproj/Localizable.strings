@@ -7,208 +7,210 @@
 /* These are used as lookup identifiers and work correctly. */
 /* A future refactor should standardize all keys to English. */
 
-"Dashboard" = "Dashboard";
-"Telemetry" = "Telemetry";
-"Fan Control" = "Fan Control";
+"Dashboard" = "Instrumentbræt";
+"Telemetry" = "Telemetri";
+"Fan Control" = "Ventilator Kontrol";
 "Profiles" = "Profiles";
-"Advanced" = "Advanced";
-"Menu Bar" = "Menu Bar";
+"Advanced" = "Avanceret";
+"Menu Bar" = "Menulinje";
 "System Info" = "System Info";
 "Desktop Widgets" = "Desktop Widgets";
 
-"AMD Power" = "AMD Power";
+"AMD Power" = "AMD Effekt";
 "Gadget" = "Gadget";
 
 "CPU" = "CPU";
 "GPU" = "GPU";
 "Freq" = "Freq";
-"Average" = "Average";
-"Avg: %@" = "Avg: %@";
-"Collecting data…" = "Collecting data…";
+"Average" = "Gennemsnit";
+"Avg: %@" = "Gns. %@";
+"Collecting data…" = "Indhenter data…";
 
-"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
-"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
-"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
+"Low Power Mode (LPM)" = "Lav Effekttilstand (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Tillader macOS at autoadministrere CPU-frekvens";
+"Forces CPU to lowest frequency for minimum power" = "Tvinger CPU til laveste frekvens for minimal effekt";
 "Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
-"Update Interval" = "Update Interval";
-"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+"Update Interval" = "Opdater Interval";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Juster hvor ofte telemetri data opdateringer. Lavere = mere lydhør, højere = mindre CPU brug.";
 
-"Opciones en Menú Bar" = "Menu Bar Options";
-"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
-"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
-"Límite de Temp de Alerta" = "Alert Temp Limit";
-"Color de Alerta de Temp" = "Alert Temp Color";
-"Color de Flechas" = "Arrows Color";
-"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
-"Show GPU VRAM" = "Show GPU VRAM";
-"G:X.XG in Memory column" = "G:X.XG in Memory column";
-"Show GPU Fan Speed" = "Show GPU Fan Speed";
-"G:XXXX in Fan column" = "G:XXXX in Fan column";
+"Opciones en Menú Bar" = "Indstillinger For Menulinje";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Vælg hvilke punkter der vises i menulinjen. Ændringer gælder med det samme.";
+"Customize the visual appearance of the menu bar items." = "Tilpas menulinjens visuelle udseende.";
+"Límite de Temp de Alerta" = "Alarm Temp Grænse";
+"Color de Alerta de Temp" = "Alarm Temp Farve";
+"Color de Flechas" = "Pile Farve";
+"Additional telemetry for the menu bar." = "Yderligere telemetri til menulinjen.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data vises inde i Temp, Power, Hukommelse og Fan kolonner, når aktiveret.";
+"Show GPU VRAM" = "Vis GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG i Hukommelse kolonne";
+"Show GPU Fan Speed" = "Vis GPU-ventilatorhastighed";
+"G:XXXX in Fan column" = "G:XXXX i fankolonne";
 
-"No fans detected." = "No fans detected.";
-"SMC driver not available" = "SMC driver not available";
-"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"No fans detected." = "Ingen fans fundet.";
+"SMC driver not available" = "SMC-chauffør ikke tilgængelig";
+"Your SMC chip may not be supported." = "Din SMC-chip understøttes muligvis ikke.";
 "RPM" = "RPM";
-"Throttle" = "Throttle";
-"↩ Reset to Auto" = "↩ Reset to Auto";
+"Throttle" = "Gas";
+"↩ Reset to Auto" = ":-_curving_left: Nulstil til automatisk";
 
-"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Vælg en profil for at justere CPU- operationsintervallet. Ændringer træder i kraft med det samme.";
 
-"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
-"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
-"Disabled — work in progress" = "Disabled — work in progress";
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Rediger rå P- State registre. Kræver kext privilegium tjek deaktiveret via boot- arg eller root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Dette vil skrive de rå P-State definitioner direkte til CPU'en. Fortsæt?";
+"Disabled — work in progress" = "Deaktiveret — igangværende arbejde";
 "WIP" = "WIP";
 
-"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
-"Motherboard info not available" = "Motherboard info not available";
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Aktiver i OC: Diverse → Sikkerhed → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Oplysninger om bundkortet er ikke tilgængelige";
 
-"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
-"Ancho estimado: %dpt" = "Estimated Width: %dpt";
-"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
-"Small (%dpt)" = "Small (%dpt)";
+"Vista previa de la Barra de Menús:" = "Forhåndsvisning Af Menulinjen:";
+"Ancho estimado: %dpt" = "Anslået Bredde: %dpt";
+"Restart the app to fully apply width changes." = "Genstart app'en for fuldt ud at anvende breddeændringer.";
+"Small (%dpt)" = "Lille (%dpt)";
 "Medium (%dpt)" = "Medium (%dpt)";
-"Large (%dpt)" = "Large (%dpt)";
+"Large (%dpt)" = "Stor (%dpt)";
 
-"Green" = "Green";
-"Blue" = "Blue";
+"Green" = "Grøn";
+"Blue" = "Blå";
 "Orange" = "Orange";
-"Red" = "Red";
-"Purple" = "Purple";
-"Pink" = "Pink";
-"Teal" = "Teal";
+"Red" = "Rød";
+"Purple" = "Lilla";
+"Pink" = "Lyserød";
+"Teal" = "Grønblåt";
 "Turquoise" = "Turquoise";
 
-"Verde" = "Green";
-"Azul" = "Blue";
+"Verde" = "Grøn";
+"Azul" = "Blå";
 "Naranja" = "Orange";
-"Rojo" = "Red";
-"Morado" = "Purple";
-"Rosa" = "Pink";
-"Turquesa" = "Teal";
+"Rojo" = "Rød";
+"Morado" = "Lilla";
+"Rosa" = "Lyserød";
+"Turquesa" = "Grønblåt";
 
-"Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
-"Temp Alert Color" = "Temp Alert Color";
-"Temp Alert Limit" = "Temp Alert Limit";
-"Network" = "Network";
-"Network Arrows Color" = "Network Arrows Color";
-"Exit" = "Exit";
+"Dynamic Colors (Temp Only)" = "Dynamiske Farver (kun Tekst)";
+"Temp Alert Color" = "Temp Alarm Farve";
+"Temp Alert Limit" = "Grænse For Temp Alarm";
+"Network" = "Netværk";
+"Network Arrows Color" = "Netværk Pile Farve";
+"Exit" = "Afslut";
 "AMD Power Gadget" = "AMD Power Gadget";
-"AMD Power Tool" = "AMD Power Tool";
-"SMC Fans" = "SMC Fans";
+"AMD Power Tool" = "AMD Strøm Værktøj";
+"SMC Fans" = "SMC Ventilatorer";
 
-"Fan 1" = "Fan 1";
-"Fan 2" = "Fan 2";
-"Fan 3" = "Fan 3";
-"Fan 4" = "Fan 4";
-"Fan 5" = "Fan 5";
-"Fan 6" = "Fan 6";
-"Fan 7" = "Fan 7";
-"Fan 8" = "Fan 8";
+"Fan 1" = "Ventilator 1";
+"Fan 2" = "Ventilator 2";
+"Fan 3" = "Ventilator 3";
+"Fan 4" = "Ventilator 4";
+"Fan 5" = "Ventilator 5";
+"Fan 6" = "Ventilator 6";
+"Fan 7" = "Ventilator 7";
+"Fan 8" = "Ventilator 8";
 
 /* Alerts */
-"To enable motherboard display:" = "To enable motherboard display:";
-"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
-"Done" = "Done";
+"To enable motherboard display:" = "For at aktivere bundkort visning:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Åbn din OpenCore konfigurationsfil,\n\nGå til Diverse -> Sikkerhed -> ExposeSensitiveData,\n\nIndstil værdien til 0x08 for at afsløre oplysninger om tavlen.";
+"Done" = "Udført";
 "Invalid Input" = "Invalid Input";
-"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
-"Unable to Set PStateDef" = "Unable to Set PStateDef";
-"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
-"Your changes will not be saved" = "Your changes will not be saved";
-"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
-"Cancel" = "Cancel";
-"Close without saving" = "Close without saving";
-"Invalid File" = "Invalid File";
-"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
-"OK" = "OK";
+"Please type in numbers in hexadecimal." = "Skriv venligst tal i hexadecimal.";
+"Unable to Set PStateDef" = "Kan ikke indstille PStateDef";
+"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Handling blev nægtet, da nuværende bruger ikke har nok privilegier,\neller blev annulleret af nuværende bruger.\n\nKør AMD Power Gadget som root bruger eller deaktiver privilegium tjek med boot-arg '-amdpnopchk'\n\nEllers, klik 'Én' i advarselsmeddelelsen for at tillade denne ændring.";
+"Your changes will not be saved" = "Dine ændringer vil ikke blive gemt";
+"Click apply to save changes before closing this windows." = "Klik på Anvend for at gemme ændringer, før du lukker dette vindue.";
+"Cancel" = "Annuller";
+"Close without saving" = "Luk uden at gemme";
+"Invalid File" = "Ugyldig Fil";
+"The selected file could not be read or is not a valid pstate file." = "Den valgte fil kunne ikke læses eller er ikke en gyldig pstate fil.";
+"OK" = "Ok";
 
 /* Dynamic format strings */
-"Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
+"Avg: %.2f GHz, Max: %.2f GHz" = "Gennemsnit: %.2f GHz, Max: %.2f GHz";
 "%.2f °C" = "%.2f °C";
 "%.2f Watt" = "%.2f W";
 
 /* Session Peaks */
-"Session Peaks" = "Session Peaks";
-"Reset Peaks" = "Reset Peaks";
+"Session Peaks" = "Session Toppe";
+"Reset Peaks" = "Nulstil Toppe";
 
 /* GPU Fan Control */
-"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
-"macOS Hardware Limitation" = "macOS Hardware Limitation";
-"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
+"GPU Fan Control (Zero RPM / Curves)" = "GPU Ventilatorkontrol (Zero RPM / Kurver)";
+"macOS Hardware Limitation" = "macOS Hardware Begrænsning";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direkte software-baserede GPU-ventilatorhastigheds-tilsidesættelser (såsom nul-omdr/min-omdr./min-omdr./omdr./min-ventilatorkurver i macOS) understøttes ikke af macOS-kernen/IOKit-driveren til AMD-GPU'er. GPU's indbyggede firmware (vBIOS) administrerer fans.";
 "Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
-"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
-"Open SPPT Guide" = "Open SPPT Guide";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "Den eneste måde at ændre denne adfærd (ligesom at tvinge fans til at dreje ved lavere temperaturer eller deaktivere Zero RPM) er ved at eksportere vBIOS, oprette en Soft PowerPlay-tabel (SPPT), og injicere den via OpenCores config. list under Enhedsegenskaber.";
+"Open SPPT Guide" = "Åbn SPPT Guide";
 "MorePowerTool" = "MorePowerTool";
 
 /* CPPC & EPP */
-"Native CPPC Active Mode (EPP)" = "Native CPPC Active Mode (EPP)";
-"Enables autonomous hardware frequency scaling (recommended)" = "Enables autonomous hardware frequency scaling (recommended)";
-"Power Management Mode" = "Power Management Mode";
-"Energy Preference (EPP)" = "Energy Preference (EPP)";
-"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Select a hardware autonomous profile. The CPU will scale frequency dynamically.";
-"Performance" = "Performance";
-"Balanced Perf" = "Balanced Perf";
-"Balanced Power" = "Balanced Power";
-"Power Save" = "Power Save";
-"Active Profile Status" = "Active Profile Status";
-"CPU Speed Profiles (Legacy)" = "CPU Speed Profiles (Legacy)";
-"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Select a manual P-State override profile. Frequencies will be restricted to the selected step.";
-"Mode" = "Mode";
-"EPP Profile" = "EPP Profile";
+"Native CPPC Active Mode (EPP)" = "Nativ CPPC Aktiv Tilstand (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Aktiverer autonom hardwarefrekvens skalering (anbefalet)";
+"Power Management Mode" = "Strømstyringstilstand";
+"Energy Preference (EPP)" = "Energipræference (EPP)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Vælg en hardware autonom profil. CPU'en skalerer frekvensen dynamisk.";
+"Performance" = "Ydeevne";
+"Balanced Perf" = "Balanceret Perf";
+"Balanced Power" = "Balanceret Effekt";
+"Power Save" = "Strøm Gem";
+"Active Profile Status" = "Aktiv Profilstatus";
+"CPU Speed Profiles (Legacy)" = "CPU Hastighedsprofiler (Legacy)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Vælg en manuel P-State tilsidesætte profil. Frekvenser vil blive begrænset til det valgte trin.";
+"Mode" = "Tilstand";
+"EPP Profile" = "EPP Profil";
 
 /* Desktop Widgets */
-"Show CPU Widget" = "Show CPU Widget";
-"Show GPU Widget" = "Show GPU Widget";
+"Show CPU Widget" = "Vis Cpu- Widget";
+"Show GPU Widget" = "Vis Gpu Widget";
 "Show RAM Widget" = "Show RAM Widget";
-"Show Disk Widget" = "Show Disk Widget";
-"Show Network Widget" = "Show Network Widget";
-"Show Fan Widget" = "Show Fan Widget";
-"Disable All Widgets" = "Disable All Widgets";
-"Sort by Rank" = "Sort by Rank";
-"Edit Widget Layout" = "Edit Widget Layout";
-"Unlock widgets to drag them around the screen" = "Unlock widgets to drag them around the screen";
-"Widget Options" = "Widget Options";
-"Customize the appearance and behavior of your desktop widgets." = "Customize the appearance and behavior of your desktop widgets.";
-"Auto-Align Active Widgets" = "Auto-Align Active Widgets";
-"Automatically stack active widgets at a corner" = "Automatically stack active widgets at a corner";
-"Alignment Corner" = "Alignment Corner";
-"Top Right" = "Top Right";
-"Top Left" = "Top Left";
-"Bottom Right" = "Bottom Right";
-"Bottom Left" = "Bottom Left";
-"Show Clock Widget" = "Show Clock Widget";
-"Clock" = "Clock";
-"Stats Table" = "Stats Table";
-"Classic Glass" = "Classic Glass";
+"Show Disk Widget" = "Vis Diskkontrol";
+"Show Network Widget" = "Vis Netværkskontrol";
+"Show Fan Widget" = "Vis Ventilatorkontrol";
+"Disable All Widgets" = "Deaktivér Alle Widgets";
+"Sort by Rank" = "Sorter efter rang";
+"Edit Widget Layout" = "Rediger Widget Layout";
+"Unlock widgets to drag them around the screen" = "Lås widgets op for at trække dem rundt på skærmen";
+"Widget Options" = "Widget Indstillinger";
+"Customize the appearance and behavior of your desktop widgets." = "Tilpas udseendet og opførslen af dine desktop-widgets.";
+"Auto-Align Active Widgets" = "Auto-Justér Aktive Widgets";
+"Automatically stack active widgets at a corner" = "Stak automatisk aktive widgets i et hjørne";
+"Alignment Corner" = "Justering Hjørne";
+"Top Right" = "Øverst Til Højre";
+"Top Left" = "Øverst Til Venstre";
+"Bottom Right" = "Nederst Til Højre";
+"Bottom Left" = "Nederst Til Venstre";
+"Show Clock Widget" = "Vis Ur Widget";
+"Clock" = "Ur";
+"Stats Table" = "Tabel Over Statistik";
+"Classic Glass" = "Klassisk Glas";
 "Pro Monitor" = "Pro Monitor";
-"Core Matrix" = "Core Matrix";
+"Core Matrix" = "Kerne Matrix";
 
-"United" = "United";
-"Show United Widget" = "Show United Widget";
-"Configure Combined Metrics" = "Configure Combined Metrics";
-"Include CPU" = "Include CPU";
-"Include GPU" = "Include GPU";
-"Include RAM" = "Include RAM";
-"Include Disk" = "Include Disk";
-"Include Network" = "Include Network";
-"Include Fan" = "Include Fan";
+"United" = "Forenet";
+"Show United Widget" = "Vis Forenede Widget";
+"Configure Combined Metrics" = "Konfigurer Kombinerede Metrics";
+"Include CPU" = "Inkludér CPU";
+"Include GPU" = "Inkluder GPU";
+"Include RAM" = "Inkludér RAM";
+"Include Disk" = "Inkludér Disk";
+"Include Network" = "Inkludér Netværk";
+"Include Fan" = "Inkludér Ventilator";
 
-"Temas & Apariencia" = "Themes & Appearance";
-"Análisis" = "Analysis";
+"Temas & Apariencia" = "Temaer Og Udseende";
+"Análisis" = "Analyse";
 
-"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
-"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
-"Chart Rendering Style" = "Chart Rendering Style";
-"Custom Theme Editor" = "Custom Theme Editor";
-"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
-"Edit Active Theme" = "Edit Active Theme";
-"Export Theme (JSON)" = "Export Theme (JSON)";
-"Import Theme (JSON)" = "Import Theme (JSON)";
-"Card Background" = "Card Background";
+"Select Visual Theme (Instant Application)" = "Vælg Visuelt Tema (Øjeblikkelig Program)";
+"Custom Theme Creator & Exchange (JSON)" = "Brugerdefineret Tema Creator & Exchange (JSON)";
+"Chart Rendering Style" = "Diagram Rendering Stil";
+"Custom Theme Editor" = "Brugerdefineret Tema Editor";
+"Showing active theme colors. Adjust any color to customize." = "Viser aktive tema farver. Juster enhver farve til at tilpasse.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Brug skyderen Opacity til gennemsigtighed (macOS farvepanel alene ofte nulstiller alfa).";
+"Opacity" = "Gennemsigtighed";
+"Edit Active Theme" = "Rediger Aktivt Tema";
+"Export Theme (JSON)" = "Eksporter Tema (JSON)";
+"Import Theme (JSON)" = "Importér Tema (JSON)";
+"Card Background" = "Kort Baggrund";
 "Cyan Accent" = "Cyan Accent";
 "Orange Accent" = "Orange Accent";
-"Green Accent" = "Green Accent";
-"Purple Accent" = "Purple Accent";
+"Green Accent" = "Grøn Accent";
+"Purple Accent" = "Lilla Accent";
 
 /* ===== Auto-extracted / curated for Crowdin (v3.16.1+) ===== */
 "%.0f" = "%.0f";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Din AMDRyzenCPUPowerManagement version (%@) er forældet og ikke længere API-kompatibel. Benyt venligst version 3.0.0 eller nyere og start denne applikation igen.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Sprog";
+"App Language" = "App Sprog";
+"Choose the interface language. The app will restart to apply the change." = "Vælg sproget interface. Appen vil genstarte for at anvende ændringen.";
+"System Default" = "System Standard";
+"Current: %@" = "Nuværende: %@";
+"Restart required" = "Genstart påkrævet";
+"Apply & Restart" = "Anvend & Genstart";
+"The app needs to restart to load the selected language." = "Appen skal genstartes for at indlæse det valgte sprog.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Denne handling kræver administratorrettigheder. Kør AMD Power Gadget som root, eller tilføj boot argument - amdpnopchk til fejlfinding.";
+
+/* Crowdin: recent UI strings */

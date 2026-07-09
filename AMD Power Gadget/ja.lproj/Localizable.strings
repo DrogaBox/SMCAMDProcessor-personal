@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Chart Rendering Style";
 "Custom Theme Editor" = "Custom Theme Editor";
 "Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "透明度は「不透明度」スライダーで設定してください（macOSのカラーパネルだけではアルファがリセットされやすいです）。";
+"Opacity" = "不透明度";
 "Edit Active Theme" = "Edit Active Theme";
 "Export Theme (JSON)" = "Export Theme (JSON)";
 "Import Theme (JSON)" = "Import Theme (JSON)";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "お使いの AMDRyzenCPUPowerManagement バージョン (%@) が古く、API に互換性がありません。バージョン 3.0.0 以降を使用して、このアプリケーションを再度起動してください。";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "不透明度";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "透明度は「不透明度」スライダーで設定してください（macOSのカラーパネルだけではアルファがリセットされやすいです）。";
+/* App language picker */
+"Language" = "言語";
 "App Language" = "アプリの言語";
 "Choose the interface language. The app will restart to apply the change." = "インターフェース言語を選択します。変更を適用するにはアプリが再起動します。";
-"Apply & Restart" = "適用して再起動";
 "System Default" = "システムのデフォルト";
 "Current: %@" = "現在: %@";
 "Restart required" = "再起動が必要です";
+"Apply & Restart" = "適用して再起動";
+"The app needs to restart to load the selected language." = "選択した言語を読み込むにはアプリを再起動する必要があります。";
+
+/* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "この操作には管理者権限が必要です。AMD Power Gadget を root で実行するか、ブート引数 -amdpnopchk を追加してください。";
 
-"The app needs to restart to load the selected language." = "選択した言語を読み込むにはアプリを再起動する必要があります。";
+/* Crowdin: recent UI strings */

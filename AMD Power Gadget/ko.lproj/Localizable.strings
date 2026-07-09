@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Chart Rendering Style";
 "Custom Theme Editor" = "Custom Theme Editor";
 "Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "투명도는 불투명도 슬라이더로 설정하세요(macOS 색상 패널만 쓰면 알파가 자주 초기화됩니다).";
+"Opacity" = "불투명도";
 "Edit Active Theme" = "Edit Active Theme";
 "Export Theme (JSON)" = "Export Theme (JSON)";
 "Import Theme (JSON)" = "Import Theme (JSON)";
@@ -336,7 +338,7 @@
 "Export CSV" = "Export CSV";
 "Export Telemetry History" = "Export Telemetry History";
 "Export the history of samples currently in memory to a CSV file" = "Export the history of samples currently in memory to a CSV file";
-"Failed — check kext privileges (-amdpnopchk)." = "Failed — check kext privileges (-amdpnopchk).";
+"Failed — check kext privileges (-amdpnopchk)." = "실패 — kext 권한을 확인하세요(-amdpnopchk).";
 "Fan" = "Fan";
 "Fan Number" = "Fan Number";
 "Fan Speed" = "Fan Speed";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Language";
+"App Language" = "앱 언어";
+"Choose the interface language. The app will restart to apply the change." = "인터페이스 언어를 선택하세요. 변경을 적용하려면 앱이 다시 시작됩니다.";
+"System Default" = "시스템 기본값";
+"Current: %@" = "현재: %@";
+"Restart required" = "재시작 필요";
+"Apply & Restart" = "적용 후 재시작";
+"The app needs to restart to load the selected language." = "선택한 언어를 불러오려면 앱을 다시 시작해야 합니다.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "이 작업에는 관리자 권한이 필요합니다. AMD Power Gadget을 root로 실행하거나 부트 인자 -amdpnopchk를 추가하세요.";
+
+/* Crowdin: recent UI strings */

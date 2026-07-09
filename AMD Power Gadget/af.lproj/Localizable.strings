@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Chart Rendering Style";
 "Custom Theme Editor" = "Custom Theme Editor";
 "Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Gebruik die deursigtigheidskuifknop (macOS-kleurpaneel herstel alfa dikwels).";
+"Opacity" = "Deursigtigheid";
 "Edit Active Theme" = "Edit Active Theme";
 "Export Theme (JSON)" = "Export Theme (JSON)";
 "Import Theme (JSON)" = "Import Theme (JSON)";
@@ -336,7 +338,7 @@
 "Export CSV" = "Export CSV";
 "Export Telemetry History" = "Export Telemetry History";
 "Export the history of samples currently in memory to a CSV file" = "Export the history of samples currently in memory to a CSV file";
-"Failed — check kext privileges (-amdpnopchk)." = "Failed — check kext privileges (-amdpnopchk).";
+"Failed — check kext privileges (-amdpnopchk)." = "Misluk — kontroleer kext-regte (-amdpnopchk).";
 "Fan" = "Fan";
 "Fan Number" = "Fan Number";
 "Fan Speed" = "Fan Speed";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Language";
+"App Language" = "App-taal";
+"Choose the interface language. The app will restart to apply the change." = "Kies die koppelvlaktaal. Die app sal herbegin om die verandering toe te pas.";
+"System Default" = "Stelselstandaard";
+"Current: %@" = "Huidig: %@";
+"Restart required" = "Herbegin vereis";
+"Apply & Restart" = "Pas toe en herbegin";
+"The app needs to restart to load the selected language." = "Die app moet herbegin om die geselekteerde taal te laai.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Hierdie handeling vereis administrateurregte. Hardloop AMD Power Gadget as root, of voeg die boot-arg -amdpnopchk by.";
+
+/* Crowdin: recent UI strings */

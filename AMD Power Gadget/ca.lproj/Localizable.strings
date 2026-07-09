@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Chart Rendering Style";
 "Custom Theme Editor" = "Custom Theme Editor";
 "Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Usa el control d'opacitat per a la transparència (el panell de color de macOS sovint reinicia l'alpha).";
+"Opacity" = "Opacitat";
 "Edit Active Theme" = "Edit Active Theme";
 "Export Theme (JSON)" = "Export Theme (JSON)";
 "Import Theme (JSON)" = "Import Theme (JSON)";
@@ -336,7 +338,7 @@
 "Export CSV" = "Export CSV";
 "Export Telemetry History" = "Export Telemetry History";
 "Export the history of samples currently in memory to a CSV file" = "Export the history of samples currently in memory to a CSV file";
-"Failed — check kext privileges (-amdpnopchk)." = "Failed — check kext privileges (-amdpnopchk).";
+"Failed — check kext privileges (-amdpnopchk)." = "Error — comprova els privilegis del kext (-amdpnopchk).";
 "Fan" = "Fan";
 "Fan Number" = "Fan Number";
 "Fan Speed" = "Fan Speed";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Language";
+"App Language" = "Idioma de l'app";
+"Choose the interface language. The app will restart to apply the change." = "Tria l'idioma de la interfície. L'app es reiniciarà per aplicar el canvi.";
+"System Default" = "Predeterminat del sistema";
+"Current: %@" = "Actual: %@";
+"Restart required" = "Cal reiniciar";
+"Apply & Restart" = "Aplica i reinicia";
+"The app needs to restart to load the selected language." = "L'app ha de reiniciar-se per carregar l'idioma seleccionat.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Aquesta acció requereix privilegis d'administrador. Executa AMD Power Gadget com a root o afegeix l'argument d'arrencada -amdpnopchk.";
+
+/* Crowdin: recent UI strings */

@@ -201,6 +201,8 @@
 "Chart Rendering Style" = "Chart Rendering Style";
 "Custom Theme Editor" = "Custom Theme Editor";
 "Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "请使用“不透明度”滑块设置透明度（仅用 macOS 取色器常会重置 alpha）。";
+"Opacity" = "不透明度";
 "Edit Active Theme" = "Edit Active Theme";
 "Export Theme (JSON)" = "Export Theme (JSON)";
 "Import Theme (JSON)" = "Import Theme (JSON)";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "不透明度";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "请使用“不透明度”滑块设置透明度（仅用 macOS 取色器常会重置 alpha）。";
+/* App language picker */
+"Language" = "Language";
 "App Language" = "应用语言";
 "Choose the interface language. The app will restart to apply the change." = "选择界面语言。应用将重启以应用更改。";
-"Apply & Restart" = "应用并重启";
 "System Default" = "系统默认";
 "Current: %@" = "当前：%@";
 "Restart required" = "需要重启";
+"Apply & Restart" = "应用并重启";
+"The app needs to restart to load the selected language." = "需要重启应用才能加载所选语言。";
+
+/* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "此操作需要管理员权限。请以 root 运行 AMD Power Gadget，或添加启动参数 -amdpnopchk。";
 
-"The app needs to restart to load the selected language." = "需要重启应用才能加载所选语言。";
+/* Crowdin: recent UI strings */

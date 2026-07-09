@@ -7,95 +7,95 @@
 /* These are used as lookup identifiers and work correctly. */
 /* A future refactor should standardize all keys to English. */
 
-"Dashboard" = "Dashboard";
-"Telemetry" = "Telemetry";
-"Fan Control" = "Fan Control";
+"Dashboard" = "Panou";
+"Telemetry" = "Telemetrie";
+"Fan Control" = "Control fan";
 "Profiles" = "Profiles";
-"Advanced" = "Advanced";
-"Menu Bar" = "Menu Bar";
-"System Info" = "System Info";
-"Desktop Widgets" = "Desktop Widgets";
+"Advanced" = "Avansat";
+"Menu Bar" = "Bară de meniu";
+"System Info" = "Informații despre sistem";
+"Desktop Widgets" = "Widget-uri desktop";
 
-"AMD Power" = "AMD Power";
+"AMD Power" = "Putere AMD";
 "Gadget" = "Gadget";
 
-"CPU" = "CPU";
+"CPU" = "procesor";
 "GPU" = "GPU";
 "Freq" = "Freq";
-"Average" = "Average";
-"Avg: %@" = "Avg: %@";
-"Collecting data…" = "Collecting data…";
+"Average" = "Medie";
+"Avg: %@" = "Medie: %@";
+"Collecting data…" = "Colectarea datelor…";
 
-"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
-"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
-"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
-"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
-"Update Interval" = "Update Interval";
-"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+"Low Power Mode (LPM)" = "Mod Energie Scăzută (LPM)";
+"Allows macOS to auto-manage CPU frequency" = "Permite macOS să gestioneze automat frecvența procesorului";
+"Forces CPU to lowest frequency for minimum power" = "Forțează procesorul la cea mai mică frecvență pentru puterea minimă";
+"Core Performance Boost (CPB)" = "Impuls de performanță (CPB) de bază";
+"Update Interval" = "Actualizare Interval";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Reglaţi cât de des se actualizează datele telemetrice. Mai jos = o utilizare mai reactivă, mai mare = mai puţină utilizare a procesorului.";
 
-"Opciones en Menú Bar" = "Menu Bar Options";
-"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
-"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
-"Límite de Temp de Alerta" = "Alert Temp Limit";
-"Color de Alerta de Temp" = "Alert Temp Color";
-"Color de Flechas" = "Arrows Color";
-"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
-"Show GPU VRAM" = "Show GPU VRAM";
-"G:X.XG in Memory column" = "G:X.XG in Memory column";
-"Show GPU Fan Speed" = "Show GPU Fan Speed";
-"G:XXXX in Fan column" = "G:XXXX in Fan column";
+"Opciones en Menú Bar" = "Opțiuni bară meniu";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Alege care elemente apar în bara de meniu. Modificările se aplică imediat.";
+"Customize the visual appearance of the menu bar items." = "Personalizați aspectul vizual al elementelor din bara de meniu.";
+"Límite de Temp de Alerta" = "Limita de alertă Temp";
+"Color de Alerta de Temp" = "Culoare alertă Temp";
+"Color de Flechas" = "Culoare săgeată";
+"Additional telemetry for the menu bar." = "Telemetrie suplimentară pentru bara de meniu.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "Datele GPU sunt afișate în interiorul coloanelor Temp, Power, Memorie și Fan când sunt activate.";
+"Show GPU VRAM" = "Arată GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG în coloana de memorie";
+"Show GPU Fan Speed" = "Arată Viteza Fan GPU";
+"G:XXXX in Fan column" = "G:XXXX în coloana Fan";
 
-"No fans detected." = "No fans detected.";
-"SMC driver not available" = "SMC driver not available";
-"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"No fans detected." = "Niciun fan detectat.";
+"SMC driver not available" = "Driverul SMC nu este disponibil";
+"Your SMC chip may not be supported." = "Este posibil ca cipul SMC să nu fie suportat.";
 "RPM" = "RPM";
-"Throttle" = "Throttle";
-"↩ Reset to Auto" = "↩ Reset to Auto";
+"Throttle" = "Rotire";
+"↩ Reset to Auto" = ":● _curving_left: Resetare la Auto";
 
-"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Selectaţi un profil pentru a ajusta intervalul de operare CPU. Modificările au efect imediat.";
 
-"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
-"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
-"Disabled — work in progress" = "Disabled — work in progress";
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Editează direct înregistrările brute de stat. Necesită verificarea privilegiilor kext dezactivate prin boot-arg sau root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Acest lucru va scrie definițiile brute de stat direct în procesor. Procedați?";
+"Disabled — work in progress" = "Dezactivat — lucrări în curs de desfășurare";
 "WIP" = "WIP";
 
-"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
-"Motherboard info not available" = "Motherboard info not available";
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Activare în OC: Diverse → Securitate → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Informațiile Motherboard nu sunt disponibile";
 
-"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
-"Ancho estimado: %dpt" = "Estimated Width: %dpt";
-"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
-"Small (%dpt)" = "Small (%dpt)";
-"Medium (%dpt)" = "Medium (%dpt)";
-"Large (%dpt)" = "Large (%dpt)";
+"Vista previa de la Barra de Menús:" = "Previzualizare bară de meniu:";
+"Ancho estimado: %dpt" = "Lăţime estimată: %dpt";
+"Restart the app to fully apply width changes." = "Reporniți aplicația pentru a aplica complet modificările de lățime.";
+"Small (%dpt)" = "Mic (%dpt)";
+"Medium (%dpt)" = "Mediu (%dpt)";
+"Large (%dpt)" = "Mare (%dpt)";
 
-"Green" = "Green";
-"Blue" = "Blue";
-"Orange" = "Orange";
-"Red" = "Red";
-"Purple" = "Purple";
-"Pink" = "Pink";
-"Teal" = "Teal";
+"Green" = "Verde";
+"Blue" = "Albastru";
+"Orange" = "Portocaliu";
+"Red" = "Roșu";
+"Purple" = "Violet";
+"Pink" = "Roz";
+"Teal" = "Turcoaz";
 "Turquoise" = "Turquoise";
 
-"Verde" = "Green";
-"Azul" = "Blue";
-"Naranja" = "Orange";
-"Rojo" = "Red";
-"Morado" = "Purple";
-"Rosa" = "Pink";
-"Turquesa" = "Teal";
+"Verde" = "Verde";
+"Azul" = "Albastru";
+"Naranja" = "Portocaliu";
+"Rojo" = "Roșu";
+"Morado" = "Violet";
+"Rosa" = "Roz";
+"Turquesa" = "Turcoaz";
 
-"Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
-"Temp Alert Color" = "Temp Alert Color";
-"Temp Alert Limit" = "Temp Alert Limit";
-"Network" = "Network";
-"Network Arrows Color" = "Network Arrows Color";
-"Exit" = "Exit";
-"AMD Power Gadget" = "AMD Power Gadget";
-"AMD Power Tool" = "AMD Power Tool";
-"SMC Fans" = "SMC Fans";
+"Dynamic Colors (Temp Only)" = "Culori dinamice (numai cânepă)";
+"Temp Alert Color" = "Culoare Alertă Temporară";
+"Temp Alert Limit" = "Limită de alertă temporară";
+"Network" = "Rețea";
+"Network Arrows Color" = "Culoare săgeți de rețea";
+"Exit" = "Ieșire";
+"AMD Power Gadget" = "Gadget de putere AMD";
+"AMD Power Tool" = "Unealta Putere AMD";
+"SMC Fans" = "Fani SMC";
 
 "Fan 1" = "Fan 1";
 "Fan 2" = "Fan 2";
@@ -107,108 +107,110 @@
 "Fan 8" = "Fan 8";
 
 /* Alerts */
-"To enable motherboard display:" = "To enable motherboard display:";
-"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
-"Done" = "Done";
+"To enable motherboard display:" = "Pentru a activa afișarea de la mamă:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Deschide fișierul de configurare OpenCore\n\nDu-te la Misc -> Security -> ExposeSensitiveData,\n\nSetează valoarea la 0x08 pentru a expune informații despre secțiune.";
+"Done" = "Terminat";
 "Invalid Input" = "Invalid Input";
-"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
-"Unable to Set PStateDef" = "Unable to Set PStateDef";
-"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
-"Your changes will not be saved" = "Your changes will not be saved";
-"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
-"Cancel" = "Cancel";
-"Close without saving" = "Close without saving";
-"Invalid File" = "Invalid File";
-"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
-"OK" = "OK";
+"Please type in numbers in hexadecimal." = "Vă rugăm să introduceţi numerele în hexadecimal.";
+"Unable to Set PStateDef" = "Imposibil de stabilit PStateDef";
+"Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Acțiunea a fost refuzată deoarece utilizatorul curent nu are suficient privilegiu,\nsau a fost anulat de utilizatorul curent.\n\nRulează AMD Power Gadget ca utilizator root sau dezactivează verificarea privilegiilor cu boot-arg '-amdpnopchk'\n\nAltfel, click pe 'O dată' din mesajul de avertizare pentru a permite această schimbare.";
+"Your changes will not be saved" = "Modificările nu vor fi salvate";
+"Click apply to save changes before closing this windows." = "Faceţi clic pe aplicare pentru a salva modificările înainte de a închide aceste ferestre.";
+"Cancel" = "Anulează";
+"Close without saving" = "Închide fără a salva";
+"Invalid File" = "Fișier nevalid";
+"The selected file could not be read or is not a valid pstate file." = "Fișierul selectat nu a putut fi citit sau nu este un fișier pstate valid.";
+"OK" = "Ok";
 
 /* Dynamic format strings */
 "Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
 "%.2f °C" = "%.2f °C";
-"%.2f Watt" = "%.2f W";
+"%.2f Watt" = "%.2f V";
 
 /* Session Peaks */
-"Session Peaks" = "Session Peaks";
-"Reset Peaks" = "Reset Peaks";
+"Session Peaks" = "Pauze sesiune";
+"Reset Peaks" = "Resetare vârfuri";
 
 /* GPU Fan Control */
-"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
-"macOS Hardware Limitation" = "macOS Hardware Limitation";
-"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
-"Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
-"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
-"Open SPPT Guide" = "Open SPPT Guide";
+"GPU Fan Control (Zero RPM / Curves)" = "Control Fan GPU (Zero RPM / Curves)";
+"macOS Hardware Limitation" = "Limitare hardware macOS";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Suprascrierile de viteză ale fanilor GPU direct pe bază de software (cum ar fi comutatorul zero rpm sau curbele de desenare ale fanilor în macOS) nu sunt suportate de macOS kernel/IOKit driver pentru AMD GPUs. Firmware-ul de bord al GPU (vBIOS) gestionează fanii.";
+"Standard Hackintosh Solution:" = "Soluţie Hackintosh standard:";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "Singurul mod de a modifica acest comportament (de exemplu forțarea fanilor să se învârtă la temperaturi mai scăzute sau dezactivarea Zero RPM) este exportarea vBIOS, crearea unei Mese PowerPlay Soft (SPPT) şi injectarea prin intermediul configuraţiei OpenCore. listă în DeviceProperties.";
+"Open SPPT Guide" = "Ghid Open SPPT";
 "MorePowerTool" = "MorePowerTool";
 
 /* CPPC & EPP */
-"Native CPPC Active Mode (EPP)" = "Native CPPC Active Mode (EPP)";
-"Enables autonomous hardware frequency scaling (recommended)" = "Enables autonomous hardware frequency scaling (recommended)";
-"Power Management Mode" = "Power Management Mode";
-"Energy Preference (EPP)" = "Energy Preference (EPP)";
-"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Select a hardware autonomous profile. The CPU will scale frequency dynamically.";
-"Performance" = "Performance";
-"Balanced Perf" = "Balanced Perf";
-"Balanced Power" = "Balanced Power";
-"Power Save" = "Power Save";
-"Active Profile Status" = "Active Profile Status";
-"CPU Speed Profiles (Legacy)" = "CPU Speed Profiles (Legacy)";
-"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Select a manual P-State override profile. Frequencies will be restricted to the selected step.";
-"Mode" = "Mode";
-"EPP Profile" = "EPP Profile";
+"Native CPPC Active Mode (EPP)" = "Mod activ CPPC nativ (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Permite scalarea autonomă a frecvențelor hardware (recomandat)";
+"Power Management Mode" = "Mod de management al energiei";
+"Energy Preference (EPP)" = "Preferințe energetice (PPE)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Selectaţi un profil autonom de hardware. Procesorul va scala frecvenţa în mod dinamic.";
+"Performance" = "Performanță";
+"Balanced Perf" = "Perf echilibrat";
+"Balanced Power" = "Putere echilibrată";
+"Power Save" = "Salvare baterie";
+"Active Profile Status" = "Stare profil activ";
+"CPU Speed Profiles (Legacy)" = "Profiluri de viteză CPU (Legacy)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Selectați un profil manual de suprascriere P-Stat. Frecvențele vor fi restricționate la pasul selectat.";
+"Mode" = "Mod";
+"EPP Profile" = "Profil EPP";
 
 /* Desktop Widgets */
-"Show CPU Widget" = "Show CPU Widget";
-"Show GPU Widget" = "Show GPU Widget";
+"Show CPU Widget" = "Arată Widget CPU";
+"Show GPU Widget" = "Arată Widget GPU";
 "Show RAM Widget" = "Show RAM Widget";
-"Show Disk Widget" = "Show Disk Widget";
-"Show Network Widget" = "Show Network Widget";
-"Show Fan Widget" = "Show Fan Widget";
-"Disable All Widgets" = "Disable All Widgets";
-"Sort by Rank" = "Sort by Rank";
-"Edit Widget Layout" = "Edit Widget Layout";
-"Unlock widgets to drag them around the screen" = "Unlock widgets to drag them around the screen";
-"Widget Options" = "Widget Options";
-"Customize the appearance and behavior of your desktop widgets." = "Customize the appearance and behavior of your desktop widgets.";
-"Auto-Align Active Widgets" = "Auto-Align Active Widgets";
-"Automatically stack active widgets at a corner" = "Automatically stack active widgets at a corner";
-"Alignment Corner" = "Alignment Corner";
-"Top Right" = "Top Right";
-"Top Left" = "Top Left";
-"Bottom Right" = "Bottom Right";
-"Bottom Left" = "Bottom Left";
-"Show Clock Widget" = "Show Clock Widget";
-"Clock" = "Clock";
-"Stats Table" = "Stats Table";
-"Classic Glass" = "Classic Glass";
+"Show Disk Widget" = "Arată widget pe disc";
+"Show Network Widget" = "Afișare widget rețea";
+"Show Fan Widget" = "Arată Widget Fan";
+"Disable All Widgets" = "Dezactivează toate widget-urile";
+"Sort by Rank" = "Sortează după Rang";
+"Edit Widget Layout" = "Editare aspect widget";
+"Unlock widgets to drag them around the screen" = "Deblocați widget-uri pentru a le trage pe ecran";
+"Widget Options" = "Opțiuni widget";
+"Customize the appearance and behavior of your desktop widgets." = "Personalizați aspectul și comportamentul widgetelor desktop.";
+"Auto-Align Active Widgets" = "Auto-aliniere Widget-uri active";
+"Automatically stack active widgets at a corner" = "Scrie automat widget-urile active într-un colț";
+"Alignment Corner" = "Colț de aliniere";
+"Top Right" = "Dreapta sus";
+"Top Left" = "Stânga sus";
+"Bottom Right" = "Dreapta jos";
+"Bottom Left" = "Stânga jos";
+"Show Clock Widget" = "Arată widget ceas";
+"Clock" = "Ceas";
+"Stats Table" = "Tabel Statistici";
+"Classic Glass" = "Sticlă Clasică";
 "Pro Monitor" = "Pro Monitor";
-"Core Matrix" = "Core Matrix";
+"Core Matrix" = "Matricea de bază";
 
-"United" = "United";
-"Show United Widget" = "Show United Widget";
-"Configure Combined Metrics" = "Configure Combined Metrics";
-"Include CPU" = "Include CPU";
+"United" = "Unită";
+"Show United Widget" = "Arată Unitatea Widget";
+"Configure Combined Metrics" = "Configurare valori combinate";
+"Include CPU" = "Include procesorul";
 "Include GPU" = "Include GPU";
 "Include RAM" = "Include RAM";
-"Include Disk" = "Include Disk";
-"Include Network" = "Include Network";
+"Include Disk" = "Include discul";
+"Include Network" = "Include rețeaua";
 "Include Fan" = "Include Fan";
 
-"Temas & Apariencia" = "Themes & Appearance";
-"Análisis" = "Analysis";
+"Temas & Apariencia" = "Teme & Aspecte";
+"Análisis" = "Analiză";
 
-"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
-"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
-"Chart Rendering Style" = "Chart Rendering Style";
-"Custom Theme Editor" = "Custom Theme Editor";
-"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
-"Edit Active Theme" = "Edit Active Theme";
-"Export Theme (JSON)" = "Export Theme (JSON)";
-"Import Theme (JSON)" = "Import Theme (JSON)";
-"Card Background" = "Card Background";
-"Cyan Accent" = "Cyan Accent";
-"Orange Accent" = "Orange Accent";
-"Green Accent" = "Green Accent";
-"Purple Accent" = "Purple Accent";
+"Select Visual Theme (Instant Application)" = "Selectaţi tema vizuală (Aplicaţie instant)";
+"Custom Theme Creator & Exchange (JSON)" = "Creator de Teme Personalizate & Schimb (JSON)";
+"Chart Rendering Style" = "Stilul redării graficului";
+"Custom Theme Editor" = "Editor personalizat de teme";
+"Showing active theme colors. Adjust any color to customize." = "Arată culoarea activă a temei. Ajustează orice culoare pentru a personaliza.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Utilizați glisorul Opacity pentru transparență (panoul de culori macOS doar resetează adesea alfa).";
+"Opacity" = "Opacitate";
+"Edit Active Theme" = "Editează Tema Activă";
+"Export Theme (JSON)" = "Exportă tema (JSON)";
+"Import Theme (JSON)" = "Importa Tema (JSON)";
+"Card Background" = "Fundal card";
+"Cyan Accent" = "Accent Turcoaz";
+"Orange Accent" = "Accent portocaliu";
+"Green Accent" = "Accent verde";
+"Purple Accent" = "Accent violet";
 
 /* ===== Auto-extracted / curated for Crowdin (v3.16.1+) ===== */
 "%.0f" = "%.0f";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Versiunea dumneavoastră AMDRyzenCPUPowerManagement (%@) este învechită și nu mai este compatibil API. Vă rugăm să folosiți versiunea 3.0.0 sau mai nouă și să reporniți această aplicație.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Limba";
+"App Language" = "Limba aplicației";
+"Choose the interface language. The app will restart to apply the change." = "Alegeți limba interfeței. Aplicația va reporni pentru a aplica modificarea.";
+"System Default" = "Implicit sistem";
+"Current: %@" = "Curent: %@";
+"Restart required" = "Repornire necesară";
+"Apply & Restart" = "Aplică și repornește";
+"The app needs to restart to load the selected language." = "Aplicația trebuie să repornească pentru a încărca limba selectată.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Această acțiune necesită privilegii de administrator. Executați AMD Power Gadget ca root, sau adăugați argumentul de pornire -amdpnopchk pentru depanare.";
+
+/* Crowdin: recent UI strings */

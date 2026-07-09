@@ -7,120 +7,120 @@
 /* These are used as lookup identifiers and work correctly. */
 /* A future refactor should standardize all keys to English. */
 
-"Dashboard" = "Dashboard";
-"Telemetry" = "Telemetry";
-"Fan Control" = "Fan Control";
+"Dashboard" = "Ταμπλό";
+"Telemetry" = "Τηλεμετρία";
+"Fan Control" = "Έλεγχος Ανεμιστήρων";
 "Profiles" = "Profiles";
-"Advanced" = "Advanced";
-"Menu Bar" = "Menu Bar";
-"System Info" = "System Info";
-"Desktop Widgets" = "Desktop Widgets";
+"Advanced" = "Προχωρημένα";
+"Menu Bar" = "Γραμμή Μενού";
+"System Info" = "Πληροφορίες Συστήματος";
+"Desktop Widgets" = "Γραφικά Συστατικά Επιφάνειας Εργασίας";
 
-"AMD Power" = "AMD Power";
+"AMD Power" = "Ισχύς AMD";
 "Gadget" = "Gadget";
 
-"CPU" = "CPU";
+"CPU" = "Επεξεργαστής";
 "GPU" = "GPU";
 "Freq" = "Freq";
-"Average" = "Average";
+"Average" = "Μέσος";
 "Avg: %@" = "Avg: %@";
 "Collecting data…" = "Collecting data…";
 
-"Low Power Mode (LPM)" = "Low Power Mode (LPM)";
-"Allows macOS to auto-manage CPU frequency" = "Allows macOS to auto-manage CPU frequency";
-"Forces CPU to lowest frequency for minimum power" = "Forces CPU to lowest frequency for minimum power";
-"Core Performance Boost (CPB)" = "Core Performance Boost (CPB)";
-"Update Interval" = "Update Interval";
-"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage.";
+"Low Power Mode (LPM)" = "Λειτουργία Χαμηλής Ισχύος (Lpm)";
+"Allows macOS to auto-manage CPU frequency" = "Επιτρέπει στο macOS να διαχειρίζεται αυτόματα τη συχνότητα της CPU";
+"Forces CPU to lowest frequency for minimum power" = "Δυνάμει της CPU στη χαμηλότερη συχνότητα για την ελάχιστη ισχύ";
+"Core Performance Boost (CPB)" = "Ενίσχυση Βασικής Απόδοσης (Cpb)";
+"Update Interval" = "Διάστημα Ενημέρωσης";
+"Adjust how frequently telemetry data updates. Lower = more responsive, higher = less CPU usage." = "Ρυθμίστε πόσο συχνά ενημερώνονται τα δεδομένα τηλεμετρίας. Χαμηλότερη = πιο ανταποκρίνεται, υψηλότερη = λιγότερη χρήση της CPU.";
 
-"Opciones en Menú Bar" = "Menu Bar Options";
-"Choose which items appear in the menu bar. Changes apply immediately." = "Choose which items appear in the menu bar. Changes apply immediately.";
-"Customize the visual appearance of the menu bar items." = "Customize the visual appearance of the menu bar items.";
-"Límite de Temp de Alerta" = "Alert Temp Limit";
-"Color de Alerta de Temp" = "Alert Temp Color";
-"Color de Flechas" = "Arrows Color";
-"Additional telemetry for the menu bar." = "Additional telemetry for the menu bar.";
-"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "GPU data is shown inside Temp, Power, Memory and Fan columns when enabled.";
-"Show GPU VRAM" = "Show GPU VRAM";
-"G:X.XG in Memory column" = "G:X.XG in Memory column";
-"Show GPU Fan Speed" = "Show GPU Fan Speed";
-"G:XXXX in Fan column" = "G:XXXX in Fan column";
+"Opciones en Menú Bar" = "Επιλογές Γραμμής Μενού";
+"Choose which items appear in the menu bar. Changes apply immediately." = "Επιλέξτε ποια στοιχεία εμφανίζονται στη γραμμή μενού. Οι αλλαγές εφαρμόζονται αμέσως.";
+"Customize the visual appearance of the menu bar items." = "Προσαρμόστε την οπτική εμφάνιση των στοιχείων της γραμμής μενού.";
+"Límite de Temp de Alerta" = "Όριο Προσωρινής Ειδοποίησης";
+"Color de Alerta de Temp" = "Χρώμα Ειδοποίησης Temp";
+"Color de Flechas" = "Χρώμα Βέλη";
+"Additional telemetry for the menu bar." = "Πρόσθετη τηλεμετρία για τη γραμμή μενού.";
+"GPU data is shown inside Temp, Power, Memory and Fan columns when enabled." = "Τα δεδομένα GPU εμφανίζονται μέσα σε στήλες Temp, Power, Memory και Fan όταν ενεργοποιηθεί.";
+"Show GPU VRAM" = "Εμφάνιση GPU VRAM";
+"G:X.XG in Memory column" = "G:X.XG στη στήλη μνήμης";
+"Show GPU Fan Speed" = "Εμφάνιση Ταχύτητας Ανεμιστήρα Gpu";
+"G:XXXX in Fan column" = "G:XXXX στη στήλη ανεμιστήρων";
 
-"No fans detected." = "No fans detected.";
-"SMC driver not available" = "SMC driver not available";
-"Your SMC chip may not be supported." = "Your SMC chip may not be supported.";
+"No fans detected." = "Δεν εντοπίστηκαν ανεμιστήρες.";
+"SMC driver not available" = "Ο οδηγός SMC δεν είναι διαθέσιμος";
+"Your SMC chip may not be supported." = "Το SMC chip σας μπορεί να μην υποστηρίζεται.";
 "RPM" = "RPM";
-"Throttle" = "Throttle";
-"↩ Reset to Auto" = "↩ Reset to Auto";
+"Throttle" = "Φιάλη";
+"↩ Reset to Auto" = "↩️ Επαναφορά στο αυτόματο";
 
-"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Select a profile to adjust the CPU operating range. Changes take effect immediately.";
+"Select a profile to adjust the CPU operating range. Changes take effect immediately." = "Επιλέξτε ένα προφίλ για να ρυθμίσετε το εύρος λειτουργίας της CPU. Οι αλλαγές εφαρμόζονται αμέσως.";
 
-"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.";
-"This will write the raw P-State definitions directly to the CPU. Proceed?" = "This will write the raw P-State definitions directly to the CPU. Proceed?";
-"Disabled — work in progress" = "Disabled — work in progress";
+"Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root." = "Άμεση επεξεργασία ακατέργαστου P-State μητρώα. Απαιτεί kext προνόμιο ελέγχου απενεργοποιημένο μέσω boot-arg ή root.";
+"This will write the raw P-State definitions directly to the CPU. Proceed?" = "Αυτό θα γράψει την ακατέργαστη P-State ορισμούς απευθείας στην CPU. Proceed?";
+"Disabled — work in progress" = "Απενεργοποιημένη — εν εξελίξει εργασία";
 "WIP" = "WIP";
 
-"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Enable in OC: Misc → Security → ExposeSensitiveData = 0x08";
-"Motherboard info not available" = "Motherboard info not available";
+"Enable in OC: Misc → Security → ExposeSensitiveData = 0x08" = "Ενεργοποίηση σε OC: Διάφορα → Ασφάλεια → ExposeSensitiveData = 0x08";
+"Motherboard info not available" = "Οι πληροφορίες μητρικής πλακέτας δεν είναι διαθέσιμες";
 
-"Vista previa de la Barra de Menús:" = "Menu Bar Preview:";
-"Ancho estimado: %dpt" = "Estimated Width: %dpt";
-"Restart the app to fully apply width changes." = "Restart the app to fully apply width changes.";
-"Small (%dpt)" = "Small (%dpt)";
-"Medium (%dpt)" = "Medium (%dpt)";
-"Large (%dpt)" = "Large (%dpt)";
+"Vista previa de la Barra de Menús:" = "Προεπισκόπηση Γραμμής Μενού:";
+"Ancho estimado: %dpt" = "Εκτιμώμενο πλάτος: %dpt";
+"Restart the app to fully apply width changes." = "Επανεκκινήστε την εφαρμογή για να εφαρμόσετε πλήρως τις αλλαγές πλάτους.";
+"Small (%dpt)" = "Μικρό (%dpt)";
+"Medium (%dpt)" = "Μεσαίο (%dpt)";
+"Large (%dpt)" = "Μεγάλο (%dpt)";
 
-"Green" = "Green";
-"Blue" = "Blue";
-"Orange" = "Orange";
-"Red" = "Red";
-"Purple" = "Purple";
-"Pink" = "Pink";
-"Teal" = "Teal";
+"Green" = "Πράσινο";
+"Blue" = "Μπλε";
+"Orange" = "Πορτοκαλί";
+"Red" = "Κόκκινο";
+"Purple" = "Μωβ";
+"Pink" = "Ροζ";
+"Teal" = "Τιρκουάζ";
 "Turquoise" = "Turquoise";
 
-"Verde" = "Green";
-"Azul" = "Blue";
-"Naranja" = "Orange";
-"Rojo" = "Red";
-"Morado" = "Purple";
-"Rosa" = "Pink";
-"Turquesa" = "Teal";
+"Verde" = "Πράσινο";
+"Azul" = "Μπλε";
+"Naranja" = "Πορτοκαλί";
+"Rojo" = "Κόκκινο";
+"Morado" = "Μωβ";
+"Rosa" = "Ροζ";
+"Turquesa" = "Τιρκουάζ";
 
-"Dynamic Colors (Temp Only)" = "Dynamic Colors (Temp Only)";
-"Temp Alert Color" = "Temp Alert Color";
-"Temp Alert Limit" = "Temp Alert Limit";
-"Network" = "Network";
-"Network Arrows Color" = "Network Arrows Color";
-"Exit" = "Exit";
+"Dynamic Colors (Temp Only)" = "Δυναμικά Χρώματα (Temp Only)";
+"Temp Alert Color" = "Χρώμα Προσωρινής Ειδοποίησης";
+"Temp Alert Limit" = "Όριο Προειδοποίησης Προσωρινής Ειδοποίησης";
+"Network" = "Δίκτυο";
+"Network Arrows Color" = "Χρώμα Βέλους Δικτύου";
+"Exit" = "Έξοδος";
 "AMD Power Gadget" = "AMD Power Gadget";
-"AMD Power Tool" = "AMD Power Tool";
-"SMC Fans" = "SMC Fans";
+"AMD Power Tool" = "Εργαλείο Ισχύος AMD";
+"SMC Fans" = "Ανεμιστήρες SMC";
 
-"Fan 1" = "Fan 1";
-"Fan 2" = "Fan 2";
-"Fan 3" = "Fan 3";
-"Fan 4" = "Fan 4";
-"Fan 5" = "Fan 5";
-"Fan 6" = "Fan 6";
-"Fan 7" = "Fan 7";
-"Fan 8" = "Fan 8";
+"Fan 1" = "Ανεμιστήρας 1";
+"Fan 2" = "Ανεμιστήρας 2";
+"Fan 3" = "Ανεμιστήρας 3";
+"Fan 4" = "Ανεμιστήρας 4";
+"Fan 5" = "Ανεμιστήρας 5";
+"Fan 6" = "Ανεμιστήρας 6";
+"Fan 7" = "Ανεμιστήρας 7";
+"Fan 8" = "Ανεμιστήρας 8";
 
 /* Alerts */
-"To enable motherboard display:" = "To enable motherboard display:";
-"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information.";
-"Done" = "Done";
+"To enable motherboard display:" = "Για να ενεργοποιήσετε την οθόνη μητρικής πλακέτας:";
+"Open your OpenCore config file,\n\nGo to Misc -> Security -> ExposeSensitiveData,\n\nSet the value to 0x08 to expose board information." = "Ανοίξτε το αρχείο ρυθμίσεων OpenCore σας,\n\nΠηγαίνετε στο Misc -> Security -> ExposeSensitiveData,\n\nΟρίστε την τιμή σε 0x08 για να εκθέσετε τις πληροφορίες του πίνακα.";
+"Done" = "Ολοκληρώθηκε";
 "Invalid Input" = "Invalid Input";
-"Please type in numbers in hexadecimal." = "Please type in numbers in hexadecimal.";
-"Unable to Set PStateDef" = "Unable to Set PStateDef";
+"Please type in numbers in hexadecimal." = "Παρακαλώ πληκτρολογήστε αριθμούς στο δεκαεξαδικό.";
+"Unable to Set PStateDef" = "Αδυναμία ορισμού PStateDef";
 "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change." = "Action was denied as current user does not have enough privilege,\nor was canceled by current user.\n\nRun AMD Power Gadget as root user or disable privilege check with boot-arg '-amdpnopchk'\n\nOtherwise, click 'Once' in the warning message to allow this change.";
-"Your changes will not be saved" = "Your changes will not be saved";
-"Click apply to save changes before closing this windows." = "Click apply to save changes before closing this windows.";
-"Cancel" = "Cancel";
-"Close without saving" = "Close without saving";
-"Invalid File" = "Invalid File";
-"The selected file could not be read or is not a valid pstate file." = "The selected file could not be read or is not a valid pstate file.";
-"OK" = "OK";
+"Your changes will not be saved" = "Οι αλλαγές σας δεν θα αποθηκευτούν";
+"Click apply to save changes before closing this windows." = "Κάντε κλικ στην εφαρμογή για αποθήκευση αλλαγών πριν κλείσετε αυτά τα παράθυρα.";
+"Cancel" = "Ακύρωση";
+"Close without saving" = "Κλείσιμο χωρίς αποθήκευση";
+"Invalid File" = "Μη Έγκυρο Αρχείο";
+"The selected file could not be read or is not a valid pstate file." = "Το επιλεγμένο αρχείο δεν μπορεί να διαβαστεί ή δεν είναι έγκυρο αρχείο προφίλ.";
+"OK" = "Εντάξει";
 
 /* Dynamic format strings */
 "Avg: %.2f GHz, Max: %.2f GHz" = "Avg: %.2f GHz, Max: %.2f GHz";
@@ -128,87 +128,89 @@
 "%.2f Watt" = "%.2f W";
 
 /* Session Peaks */
-"Session Peaks" = "Session Peaks";
-"Reset Peaks" = "Reset Peaks";
+"Session Peaks" = "Κορυφές Συνεδρίας";
+"Reset Peaks" = "Επαναφορά Κορυφών";
 
 /* GPU Fan Control */
-"GPU Fan Control (Zero RPM / Curves)" = "GPU Fan Control (Zero RPM / Curves)";
-"macOS Hardware Limitation" = "macOS Hardware Limitation";
-"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans.";
-"Standard Hackintosh Solution:" = "Standard Hackintosh Solution:";
-"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties.";
-"Open SPPT Guide" = "Open SPPT Guide";
+"GPU Fan Control (Zero RPM / Curves)" = "Έλεγχος Ανεμιστήρων GPU (Μηδέν RPM / Καμπύλες)";
+"macOS Hardware Limitation" = "Περιορισμός υλικού macOS";
+"Direct software-based GPU fan speed overrides (such as zero-rpm toggle or drawing fan curves in macOS) are not supported by the macOS kernel/IOKit driver for AMD GPUs. The GPU's onboard firmware (vBIOS) manages the fans." = "Η άμεση ταχύτητα του ανεμιστήρα GPU βασισμένη στο λογισμικό (όπως εναλλαγή μηδέν-rpm ή σχεδίαση καμπύλες ανεμιστήρων σε macOS) δεν υποστηρίζεται από τον οδηγό macOS πυρήνα / IOKit για AMD GPUs. Το εποχούμενο υλικολογισμικό της GPU (vBIOS) διαχειρίζεται τους οπαδούς.";
+"Standard Hackintosh Solution:" = "Τυπική Λύση Hackintosh:";
+"The only way to modify this behavior (like forcing fans to spin at lower temperatures or disabling Zero RPM) is by exporting the vBIOS, creating a Soft PowerPlay Table (SPPT), and injecting it via OpenCore's config.plist under DeviceProperties." = "Ο μόνος τρόπος για να τροποποιήσετε αυτή τη συμπεριφορά (όπως ο εξαναγκασμός των ανεμιστήρων να περιστρέφονται σε χαμηλότερες θερμοκρασίες ή η απενεργοποίηση του Zero RPM) είναι με την εξαγωγή του vBIOS, δημιουργία ενός πίνακα Soft PowerPlay (SPPT) και εισαγωγή του μέσω των ρυθμίσεων του OpenCore. λίστα κάτω από τις ιδιότητες συσκευής.";
+"Open SPPT Guide" = "Άνοιγμα Οδηγού SPPT";
 "MorePowerTool" = "MorePowerTool";
 
 /* CPPC & EPP */
-"Native CPPC Active Mode (EPP)" = "Native CPPC Active Mode (EPP)";
-"Enables autonomous hardware frequency scaling (recommended)" = "Enables autonomous hardware frequency scaling (recommended)";
-"Power Management Mode" = "Power Management Mode";
-"Energy Preference (EPP)" = "Energy Preference (EPP)";
-"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Select a hardware autonomous profile. The CPU will scale frequency dynamically.";
-"Performance" = "Performance";
-"Balanced Perf" = "Balanced Perf";
-"Balanced Power" = "Balanced Power";
-"Power Save" = "Power Save";
-"Active Profile Status" = "Active Profile Status";
-"CPU Speed Profiles (Legacy)" = "CPU Speed Profiles (Legacy)";
-"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Select a manual P-State override profile. Frequencies will be restricted to the selected step.";
-"Mode" = "Mode";
-"EPP Profile" = "EPP Profile";
+"Native CPPC Active Mode (EPP)" = "Εγγενής Ενεργός Λειτουργία CPPC (EPP)";
+"Enables autonomous hardware frequency scaling (recommended)" = "Επιτρέπει αυτόνομη κλιμάκωση συχνότητας υλικού (συνιστάται)";
+"Power Management Mode" = "Λειτουργία Διαχείρισης Ενέργειας";
+"Energy Preference (EPP)" = "Προτίμηση Ενέργειας (EPP)";
+"Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Επιλέξτε ένα αυτόνομο προφίλ υλικού. Η CPU θα κλιμακώσει τη συχνότητα δυναμικά.";
+"Performance" = "Επιδόσεις";
+"Balanced Perf" = "Ισορροπημένο Perf";
+"Balanced Power" = "Ισορροπημένη Ισχύς";
+"Power Save" = "Εξοικονόμηση Ενέργειας";
+"Active Profile Status" = "Κατάσταση Ενεργού Προφίλ";
+"CPU Speed Profiles (Legacy)" = "Προφίλ Ταχύτητας CPU (Μεγάλη)";
+"Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Επιλέξτε ένα προφίλ παράκαμψης χειροκίνητης P-Πολιτείας. Οι συχνότητες θα περιορίζονται στο επιλεγμένο βήμα.";
+"Mode" = "Λειτουργία";
+"EPP Profile" = "Προφίλ EPP";
 
 /* Desktop Widgets */
-"Show CPU Widget" = "Show CPU Widget";
-"Show GPU Widget" = "Show GPU Widget";
+"Show CPU Widget" = "Εμφάνιση Συστατικού Επεξεργαστή";
+"Show GPU Widget" = "Εμφάνιση Γραφικού Στοιχείου Gpu";
 "Show RAM Widget" = "Show RAM Widget";
-"Show Disk Widget" = "Show Disk Widget";
-"Show Network Widget" = "Show Network Widget";
-"Show Fan Widget" = "Show Fan Widget";
-"Disable All Widgets" = "Disable All Widgets";
-"Sort by Rank" = "Sort by Rank";
-"Edit Widget Layout" = "Edit Widget Layout";
-"Unlock widgets to drag them around the screen" = "Unlock widgets to drag them around the screen";
-"Widget Options" = "Widget Options";
-"Customize the appearance and behavior of your desktop widgets." = "Customize the appearance and behavior of your desktop widgets.";
-"Auto-Align Active Widgets" = "Auto-Align Active Widgets";
-"Automatically stack active widgets at a corner" = "Automatically stack active widgets at a corner";
-"Alignment Corner" = "Alignment Corner";
-"Top Right" = "Top Right";
-"Top Left" = "Top Left";
-"Bottom Right" = "Bottom Right";
-"Bottom Left" = "Bottom Left";
-"Show Clock Widget" = "Show Clock Widget";
-"Clock" = "Clock";
-"Stats Table" = "Stats Table";
-"Classic Glass" = "Classic Glass";
+"Show Disk Widget" = "Εμφάνιση Γραφικού Στοιχείου Δίσκου";
+"Show Network Widget" = "Εμφάνιση Συστατικού Δικτύου";
+"Show Fan Widget" = "Εμφάνιση Συστατικού Ανεμιστήρα";
+"Disable All Widgets" = "Απενεργοποίηση Όλων Των Συστατικών";
+"Sort by Rank" = "Ταξινόμηση κατά κατάταξη";
+"Edit Widget Layout" = "Επεξεργασία Διάταξης Widget";
+"Unlock widgets to drag them around the screen" = "Ξεκλειδώστε τα widget για να τα σύρετε γύρω από την οθόνη";
+"Widget Options" = "Επιλογές Γραφικού Στοιχείου";
+"Customize the appearance and behavior of your desktop widgets." = "Προσαρμόστε την εμφάνιση και τη συμπεριφορά των γραφικών συστατικών επιφάνειας εργασίας σας.";
+"Auto-Align Active Widgets" = "Αυτόματη Στοίχιση Ενεργών Συστατικών";
+"Automatically stack active widgets at a corner" = "Αυτόματη στοίβα ενεργών widget σε μια γωνία";
+"Alignment Corner" = "Γωνία Στοίχισης";
+"Top Right" = "Πάνω Δεξιά";
+"Top Left" = "Πάνω Αριστερά";
+"Bottom Right" = "Κάτω Δεξιά";
+"Bottom Left" = "Κάτω Αριστερά";
+"Show Clock Widget" = "Εμφάνιση Γραφικού Στοιχείου Ρολογιού";
+"Clock" = "Ρολόι";
+"Stats Table" = "Πίνακας Στατιστικών";
+"Classic Glass" = "Κλασικό Γυαλί";
 "Pro Monitor" = "Pro Monitor";
-"Core Matrix" = "Core Matrix";
+"Core Matrix" = "Πυρήνας Matrix";
 
-"United" = "United";
-"Show United Widget" = "Show United Widget";
-"Configure Combined Metrics" = "Configure Combined Metrics";
-"Include CPU" = "Include CPU";
-"Include GPU" = "Include GPU";
-"Include RAM" = "Include RAM";
-"Include Disk" = "Include Disk";
-"Include Network" = "Include Network";
-"Include Fan" = "Include Fan";
+"United" = "Ηνωμένες Πολιτείες";
+"Show United Widget" = "Εμφάνιση Γραφικού Στοιχείου";
+"Configure Combined Metrics" = "Ρύθμιση Συνδυασμένων Μετρήσεων";
+"Include CPU" = "Συμπερίληψη CPU";
+"Include GPU" = "Συμπερίληψη GPU";
+"Include RAM" = "Συμπερίληψη Ram";
+"Include Disk" = "Συμπερίληψη Δίσκου";
+"Include Network" = "Συμπερίληψη Δικτύου";
+"Include Fan" = "Συμπερίληψη Ανεμιστήρα";
 
-"Temas & Apariencia" = "Themes & Appearance";
-"Análisis" = "Analysis";
+"Temas & Apariencia" = "Θέματα & Εμφάνιση";
+"Análisis" = "Ανάλυση";
 
-"Select Visual Theme (Instant Application)" = "Select Visual Theme (Instant Application)";
-"Custom Theme Creator & Exchange (JSON)" = "Custom Theme Creator & Exchange (JSON)";
-"Chart Rendering Style" = "Chart Rendering Style";
-"Custom Theme Editor" = "Custom Theme Editor";
-"Showing active theme colors. Adjust any color to customize." = "Showing active theme colors. Adjust any color to customize.";
-"Edit Active Theme" = "Edit Active Theme";
-"Export Theme (JSON)" = "Export Theme (JSON)";
-"Import Theme (JSON)" = "Import Theme (JSON)";
-"Card Background" = "Card Background";
-"Cyan Accent" = "Cyan Accent";
-"Orange Accent" = "Orange Accent";
-"Green Accent" = "Green Accent";
-"Purple Accent" = "Purple Accent";
+"Select Visual Theme (Instant Application)" = "Επιλογή Οπτικού Θέματος (Άμεση Εφαρμογή)";
+"Custom Theme Creator & Exchange (JSON)" = "Προσαρμοσμένο Θέμα Δημιουργού & Ανταλλαγής (Jsoon)";
+"Chart Rendering Style" = "Στυλ Αποτύπωσης Γραφήματος";
+"Custom Theme Editor" = "Επεξεργαστής Προσαρμοσμένου Θέματος";
+"Showing active theme colors. Adjust any color to customize." = "Εμφάνιση ενεργών χρωμάτων θέματος. Προσαρμόστε οποιοδήποτε χρώμα για προσαρμογή.";
+"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Χρησιμοποιήστε το ρυθμιστικό αδιαφάνειας για διαφάνεια (ο πίνακας χρωμάτων macOS μόνο του επαναφέρει συχνά άλφα).";
+"Opacity" = "Αδιαφάνεια";
+"Edit Active Theme" = "Επεξεργασία Ενεργού Θέματος";
+"Export Theme (JSON)" = "Εξαγωγή Θέματος (JSON)";
+"Import Theme (JSON)" = "Εισαγωγή Θέματος (JSON)";
+"Card Background" = "Φόντο Κάρτας";
+"Cyan Accent" = "Κυανή Απόχρωση";
+"Orange Accent" = "Πορτοκαλί Απόχρωση";
+"Green Accent" = "Πράσινη Έμφαση";
+"Purple Accent" = "Μωβ Απόχρωση";
 
 /* ===== Auto-extracted / curated for Crowdin (v3.16.1+) ===== */
 "%.0f" = "%.0f";
@@ -572,15 +574,17 @@
 /* Compatibility / format keys */
 "Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again." = "Η AMDRyzenCPUPowerManagement έκδοση σας (%@) είναι ξεπερασμένη και δεν είναι πλέον συμβατή με το API. Παρακαλούμε χρησιμοποιήστε την έκδοση 3.0.0 ή νεότερη και ξεκινήστε ξανά αυτήν την εφαρμογή.";
 
-/* Crowdin sync: language picker, privilege banner, theme opacity */
-"Opacity" = "Opacity";
-"Use the Opacity slider for transparency (macOS color panel alone often resets alpha)." = "Use the Opacity slider for transparency (macOS color panel alone often resets alpha).";
-"App Language" = "App Language";
-"Choose the interface language. The app will restart to apply the change." = "Choose the interface language. The app will restart to apply the change.";
-"Apply & Restart" = "Apply & Restart";
-"System Default" = "System Default";
-"Current: %@" = "Current: %@";
-"Restart required" = "Restart required";
-"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.";
+/* App language picker */
+"Language" = "Γλώσσα";
+"App Language" = "Γλώσσα Εφαρμογής";
+"Choose the interface language. The app will restart to apply the change." = "Επιλέξτε τη γλώσσα της διασύνδεσης. Η εφαρμογή θα κάνει επανεκκίνηση για να εφαρμόσει την αλλαγή.";
+"System Default" = "Προεπιλογή Συστήματος";
+"Current: %@" = "Τρέχουσα: %@";
+"Restart required" = "Απαιτείται επανεκκίνηση";
+"Apply & Restart" = "Εφαρμογή & Επανεκκίνηση";
+"The app needs to restart to load the selected language." = "Η εφαρμογή πρέπει να κάνει επανεκκίνηση για να φορτώσει την επιλεγμένη γλώσσα.";
 
-"The app needs to restart to load the selected language." = "The app needs to restart to load the selected language.";
+/* Privilege UX */
+"This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Αυτή η ενέργεια απαιτεί δικαιώματα διαχειριστή. Εκτελέστε AMD Power Gadget ως root, ή προσθέστε το όρισμα εκκίνησης -amdpnopchk για αποσφαλμάτωση.";
+
+/* Crowdin: recent UI strings */
