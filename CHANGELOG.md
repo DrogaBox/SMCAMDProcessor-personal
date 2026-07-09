@@ -1,5 +1,13 @@
 # Change Summary & Release Changelog
 
+## v3.18.1  Minor fix: CPPC support banner + core-grid label layout
+
+### Fixes
+* **CPPC false “no support”**: Zen family (17h/19h/1Ah) and CAP1 MSR detection so CPUs like 5900XT no longer show *“This CPU did not report CPPC support”* while Active Mode works. `-amdcppcactive` behavior unchanged.
+* **Core-grid HUD toggles**: Temp / Freq / Load labels no longer wrap mid-word in Spanish (and other locales); header controls use a dedicated non-compressing row.
+* **Menu bar i18n** (3.18.x trunk): Max Freq Only / Fahrenheit + descriptions localized (IT/ES).
+
+
 
 ## v3.18.0  Chart style i18n fix, CPPC badge clarity, unit tests in CI
 
