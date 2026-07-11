@@ -4226,6 +4226,232 @@ struct SystemInfoContentView: View {
 }
 
 
+enum PopoverTab: Int, CaseIterable {
+    case telemetry = 0
+    case profiles = 1
+    case settings = 2
+}
+
+struct PopoverTabButton: View {
+    let title: String
+    let icon: String
+    let tab: PopoverTab
+    @Binding var currentTab: PopoverTab
+    let theme: AppTheme
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                currentTab = tab
+            }
+        }) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                Text(title)
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            .foregroundColor(currentTab == tab ? theme.text : theme.subtext)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(currentTab == tab ? theme.cardBorder.opacity(0.8) : Color.clear)
+            .cornerRadius(6)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct PopoverProfilesView: View {
+    @ObservedObject var model: TelemetryModel = TelemetryModel.shared
+    private var theme: AppTheme { AppTheme.current }
+    
+    // activePState: 0=Boost, 1=Base, 2=Eco
+    // KDE Slider: 0=Power Save, 1=Balanced, 2=Performance
+    private var sliderValue: Binding<Double> {
+        Binding<Double>(
+            get: {
+                switch model.selectedSpeedStep {
+                case 0: return 2.0 // Boost -> Performance
+                case 1: return 1.0 // Base -> Balanced
+                case 2: return 0.0 // Eco -> Power Save
+                default: return 1.0
+                }
+            },
+            set: { val in
+                let intVal = Int(round(val))
+                var newPState = 1
+                if intVal == 2 { newPState = 0 }
+                else if intVal == 1 { newPState = 1 }
+                else if intVal == 0 { newPState = 2 }
+                model.setSpeedStep(newPState)
+            }
+        )
+    }
+    
+    private var currentProfileName: String {
+        switch model.selectedSpeedStep {
+        case 0: return "Performance"
+        case 1: return "Balanced"
+        case 2: return "Power Save"
+        default: return "Unknown"
+        }
+    }
+    
+    private var currentProfileIcon: String {
+        switch model.selectedSpeedStep {
+        case 0: return "bolt.fill"
+        case 1: return "scale.3d"
+        case 2: return "leaf.fill"
+        default: return "cpu"
+        }
+    }
+    
+    private var currentProfileColor: Color {
+        switch model.selectedSpeedStep {
+        case 0: return theme.accentRed
+        case 1: return theme.accentCyan
+        case 2: return theme.accentGreen
+        default: return theme.subtext
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // KDE Style Header
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(currentProfileColor.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: currentProfileIcon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(currentProfileColor)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Power Profile")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(theme.subtext)
+                    Text(currentProfileName)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(theme.text)
+                }
+                Spacer()
+            }
+            .padding(.top, 4)
+            
+            // KDE Style Slider
+            VStack(spacing: 8) {
+                Slider(value: sliderValue, in: 0...2, step: 1)
+                    .accentColor(currentProfileColor)
+                
+                HStack {
+                    Text("Power Save")
+                        .font(.system(size: 9))
+                        .foregroundColor(sliderValue.wrappedValue == 0 ? theme.text : theme.subtext)
+                    Spacer()
+                    Text("Balanced")
+                        .font(.system(size: 9))
+                        .foregroundColor(sliderValue.wrappedValue == 1 ? theme.text : theme.subtext)
+                    Spacer()
+                    Text("Performance")
+                        .font(.system(size: 9))
+                        .foregroundColor(sliderValue.wrappedValue == 2 ? theme.text : theme.subtext)
+                }
+            }
+            
+            Divider().background(theme.cardBorder)
+            
+            // Advanced Toggles
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Advanced Controls")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(theme.subtext)
+                
+                Toggle(isOn: $model.autoEPPEnabled) {
+                    HStack {
+                        Image(systemName: "cpu")
+                            .foregroundColor(theme.accentCyan)
+                            .frame(width: 16)
+                        Text("Auto EPP (Zen 3)")
+                            .font(.system(size: 11))
+                            .foregroundColor(theme.text)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentCyan))
+                
+                Toggle(isOn: $model.cpbEnabled) {
+                    HStack {
+                        Image(systemName: "flame.fill")
+                            .foregroundColor(theme.accentOrange)
+                            .frame(width: 16)
+                        Text("Core Performance Boost")
+                            .font(.system(size: 11))
+                            .foregroundColor(theme.text)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: theme.accentOrange))
+                .onChange(of: model.cpbEnabled) { newValue in
+                    model.setCPB(enabled: newValue)
+                }
+            }
+        }
+        .padding(16)
+    }
+}
+
+struct PopoverSettingsView: View {
+    @AppStorage("pop_showCPU") private var showCPU = true
+    @AppStorage("pop_showGPU") private var showGPU = true
+    @AppStorage("pop_showRAM") private var showRAM = true
+    @AppStorage("pop_showDisk") private var showDisk = true
+    @AppStorage("pop_showNetwork") private var showNetwork = true
+    
+    private var theme: AppTheme { AppTheme.current }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Widgets & Telemetry")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(theme.text)
+            
+            Divider().background(theme.cardBorder)
+            
+            VStack(spacing: 8) {
+                Toggle("Show CPU Stats", isOn: $showCPU)
+                Toggle("Show GPU Stats", isOn: $showGPU)
+                Toggle("Show RAM Stats", isOn: $showRAM)
+                Toggle("Show Disk Stats", isOn: $showDisk)
+                Toggle("Show Network Stats", isOn: $showNetwork)
+            }
+            .font(.system(size: 11))
+            
+            Divider().background(theme.cardBorder)
+                .padding(.vertical, 4)
+            
+            Button(action: {
+                NotificationCenter.default.post(name: .init("OpenSettingsWindow"), object: nil)
+                NotificationCenter.default.post(name: .init("CloseMenuBarPopover"), object: nil)
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 10))
+                    Text("Advanced Preferences...")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundColor(theme.text)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+                .background(theme.cardBorder)
+                .cornerRadius(6)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(16)
+        .foregroundColor(theme.text)
+    }
+}
+
 // MARK: - Menu Bar Popover View
 struct MenuBarPopoverView: View {
     @ObservedObject var model: TelemetryModel = TelemetryModel.shared
@@ -4239,6 +4465,8 @@ struct MenuBarPopoverView: View {
     
     private var cfg: MenuBarConfig { MenuBarConfig.shared }
     private var theme: AppTheme { AppTheme.current }
+    
+    @State private var currentTab: PopoverTab = .telemetry
 
     private func formatSpeed(_ mbps: Double) -> String {
         let absMbps = abs(mbps)
@@ -4307,6 +4535,18 @@ struct MenuBarPopoverView: View {
             .padding(.horizontal, 12)
             .padding(.top, 12)
 
+            // Custom Segmented Picker
+            HStack(spacing: 0) {
+                PopoverTabButton(title: "Telemetry", icon: "chart.xyaxis.line", tab: .telemetry, currentTab: $currentTab, theme: theme)
+                PopoverTabButton(title: "Profiles", icon: "bolt.fill", tab: .profiles, currentTab: $currentTab, theme: theme)
+                PopoverTabButton(title: "Settings", icon: "gearshape.fill", tab: .settings, currentTab: $currentTab, theme: theme)
+            }
+            .padding(4)
+            .background(theme.cardBorder.opacity(0.4))
+            .cornerRadius(8)
+            .padding(.horizontal, 12)
+
+            if currentTab == .telemetry {
             // Dynamic Ordered Resource Widgets
             let rings = cfg.popoverRingOrder.split(separator: ",").map(String.init)
             
@@ -4743,6 +4983,11 @@ struct MenuBarPopoverView: View {
                 .padding(.horizontal, 12)
                 .frame(height: 95)
             }
+            } else if currentTab == .profiles {
+                PopoverProfilesView()
+            } else if currentTab == .settings {
+                PopoverSettingsView()
+            }
 
             Divider().background(theme.cardBorder)
 
@@ -4789,6 +5034,8 @@ struct MenuBarPopoverView: View {
             .padding(.bottom, 12)
         }
         .frame(minWidth: 260, maxWidth: 360)
+        .fixedSize(horizontal: false, vertical: true)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentTab)
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
