@@ -4241,9 +4241,7 @@ struct PopoverTabButton: View {
     
     var body: some View {
         Button(action: {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                currentTab = tab
-            }
+            currentTab = tab
         }) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
@@ -4254,8 +4252,11 @@ struct PopoverTabButton: View {
             .foregroundColor(currentTab == tab ? theme.text : theme.subtext)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
-            .background(currentTab == tab ? theme.cardBorder.opacity(0.8) : Color.clear)
-            .cornerRadius(6)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(currentTab == tab ? theme.cardBorder.opacity(0.8) : Color.clear)
+                    .animation(.easeInOut(duration: 0.2), value: currentTab)
+            )
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -4265,22 +4266,24 @@ struct PopoverProfilesView: View {
     @ObservedObject var model: TelemetryModel = TelemetryModel.shared
     private var theme: AppTheme { AppTheme.current }
     
-    // activeEPP: 0x00=Performance, 0x3F=Balanced, 0xC0=Power Save
+    // activeEPP slider values: 0=Ahorro, 1=Eq. Ahorro, 2=Eq. Rendimiento, 3=Rendimiento
     private var sliderValue: Binding<Double> {
         Binding<Double>(
             get: {
                 switch model.cppcEPPValue {
-                case 0x00...0x3E: return 2.0 // Performance
-                case 0x3F...0xBF: return 1.0 // Balanced
-                case 0xC0...0xFF: return 0.0 // Power Save
-                default: return 1.0
+                case 0x00...0x1F: return 3.0 // Rendimiento
+                case 0x20...0x5F: return 2.0 // Equilibrado Rend.
+                case 0x60...0x9F: return 1.0 // Equilibrado Ahorro
+                case 0xA0...0xFF: return 0.0 // Ahorro de Energía
+                default: return 2.0
                 }
             },
             set: { val in
                 let intVal = Int(round(val))
                 var newEPP: UInt8 = 0x3F
-                if intVal == 2 { newEPP = 0x00 }
-                else if intVal == 1 { newEPP = 0x3F }
+                if intVal == 3 { newEPP = 0x00 }
+                else if intVal == 2 { newEPP = 0x3F }
+                else if intVal == 1 { newEPP = 0x80 }
                 else if intVal == 0 { newEPP = 0xC0 }
                 
                 // Disable Auto EPP when user overrides manually
@@ -4292,27 +4295,30 @@ struct PopoverProfilesView: View {
     
     private var currentProfileName: String {
         switch model.cppcEPPValue {
-        case 0x00...0x3E: return "Performance"
-        case 0x3F...0xBF: return "Balanced"
-        case 0xC0...0xFF: return "Power Save"
-        default: return "Unknown"
+        case 0x00...0x1F: return "Rendimiento"
+        case 0x20...0x5F: return "Equilibrado Rend."
+        case 0x60...0x9F: return "Equilibrado Ahorro"
+        case 0xA0...0xFF: return "Ahorro de Energía"
+        default: return "Desconocido"
         }
     }
     
     private var currentProfileIcon: String {
         switch model.cppcEPPValue {
-        case 0x00...0x3E: return "bolt.fill"
-        case 0x3F...0xBF: return "scale.3d"
-        case 0xC0...0xFF: return "leaf.fill"
+        case 0x00...0x1F: return "bolt.fill"
+        case 0x20...0x5F: return "scale.3d"
+        case 0x60...0x9F: return "leaf"
+        case 0xA0...0xFF: return "leaf.fill"
         default: return "cpu"
         }
     }
     
     private var currentProfileColor: Color {
         switch model.cppcEPPValue {
-        case 0x00...0x3E: return theme.accentRed
-        case 0x3F...0xBF: return theme.accentCyan
-        case 0xC0...0xFF: return theme.accentGreen
+        case 0x00...0x1F: return theme.accentRed
+        case 0x20...0x5F: return theme.accentOrange
+        case 0x60...0x9F: return theme.accentCyan
+        case 0xA0...0xFF: return theme.accentGreen
         default: return theme.subtext
         }
     }
@@ -4331,7 +4337,7 @@ struct PopoverProfilesView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Power Profile")
+                    Text("Perfil de Energía")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(theme.subtext)
                     Text(currentProfileName)
@@ -4344,21 +4350,25 @@ struct PopoverProfilesView: View {
             
             // KDE Style Slider
             VStack(spacing: 8) {
-                Slider(value: sliderValue, in: 0...2, step: 1)
+                Slider(value: sliderValue, in: 0...3, step: 1)
                     .accentColor(currentProfileColor)
                 
                 HStack {
-                    Text("Power Save")
+                    Text("Ahorro")
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 0 ? theme.text : theme.subtext)
                     Spacer()
-                    Text("Balanced")
+                    Text("Eq. Ahorro")
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 1 ? theme.text : theme.subtext)
                     Spacer()
-                    Text("Performance")
+                    Text("Eq. Rend.")
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 2 ? theme.text : theme.subtext)
+                    Spacer()
+                    Text("Rendimiento")
+                        .font(.system(size: 9))
+                        .foregroundColor(sliderValue.wrappedValue == 3 ? theme.text : theme.subtext)
                 }
             }
             
@@ -4366,7 +4376,7 @@ struct PopoverProfilesView: View {
             
             // Advanced Toggles
             VStack(alignment: .leading, spacing: 12) {
-                Text("Advanced Controls")
+                Text("Controles Avanzados")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(theme.subtext)
                 
@@ -5037,7 +5047,6 @@ struct MenuBarPopoverView: View {
         }
         .frame(minWidth: 260, maxWidth: 360)
         .fixedSize(horizontal: false, vertical: true)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentTab)
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
