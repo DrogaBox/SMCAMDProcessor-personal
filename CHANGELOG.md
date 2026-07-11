@@ -1,5 +1,15 @@
 # Change Summary & Release Changelog
 
+## v3.18.3  Hotfix: rendezvousLock deadlock fix
+
+### Critical Fix
+* **Boot hang / kernel deadlock**: `rendezvousLock` `IOLockUnlock()` was placed outside the timer callback in `initWorkLoop()`. The lock was taken on every telemetry tick but never released inside the callback — the second tick deadlocked the `IOWorkLoop`, causing a kernel hang at boot. Fix: moved `IOLockUnlock()` inside the callback, right after the last protected-state access. Lock/unlock now balanced 6:6, all within the same scope.
+
+### Verified
+* All six rendezvous call sites balanced (init, telemetry tick, applyPowerControl, applyEPPControl, setCPBState, writePstate).
+* Build verified: kext + app + SMCAMDPlugin compile clean on macOS 26 Tahoe SDK, x86_64 target.
+
+
 ## v3.18.2  Kernel hardening P2-3…P2-8, rendezvousLock, post-sleep lag fix
 
 ### Critical Fix
