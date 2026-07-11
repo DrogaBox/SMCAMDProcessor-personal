@@ -335,7 +335,7 @@ class ProcessorModel {
 
         PStateDef = kernelGetUInt64(count: 8, selector: 0)
         var i = 0
-        while i < 8 {
+        while i < PStateDef.count {
             if (PStateDef[i] & 0x8000000000000000) == 0 { //LOL Swift
                 break
             }
