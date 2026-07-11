@@ -260,9 +260,9 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
         //Read stats from package.
         provider->updatePackageTemp();
         provider->updatePackageEnergy();
-        
 
-        
+        IOLockUnlock(provider->rendezvousLock);
+
         uint32_t now = uint32_t(getCurrentTimeNs() / 1000000); //ms
         uint32_t newInt = max(now - provider->timeOfLastMissedRequest,
                               provider->estimatedRequestTimeInterval);
@@ -270,13 +270,12 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
         provider->actualUpdateTimeInterval = now - provider->timeOfLastUpdate;
         provider->timeOfLastUpdate = now;
         provider->updateTimeInterval = min(1200, max(50, newInt));
-        
+
         provider->timerEvent_main->setTimeoutMS(provider->updateTimeInterval);
 
 //        IOLog("fpp %d %d %.4f.\n", HF_TEMP_SAMPLE_FREQ, HF_TEMP_SAMPLE_PERIOD, (float)HF_TEMP_SAMPLE_REP);
 
     });
-    IOLockUnlock(this->rendezvousLock);
     
 //    tempSamplePeriod = (int)((1.0f / (float)HF_TEMP_SAMPLE_FREQ) * 1000);
     float fillT = getPackageTemp();
