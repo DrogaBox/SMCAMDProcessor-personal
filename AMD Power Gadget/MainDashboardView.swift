@@ -4419,6 +4419,7 @@ struct PopoverSettingsView: View {
     @AppStorage("pop_showRAM") private var showRAM = true
     @AppStorage("pop_showDisk") private var showDisk = true
     @AppStorage("pop_showNetwork") private var showNetwork = true
+    @AppStorage("pop_processApp") private var processApp: String = "Activity Monitor"
     
     private var theme: AppTheme { AppTheme.current }
     
@@ -4438,6 +4439,21 @@ struct PopoverSettingsView: View {
                 Toggle("Show Network Stats", isOn: $showNetwork)
             }
             .font(.system(size: 11))
+            
+            Divider().background(theme.cardBorder)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("App de Procesos / Memoria")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(theme.subtext)
+                
+                TextField("Ej. Activity Monitor", text: $processApp)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .font(.system(size: 11))
+                    .padding(4)
+                    .background(theme.cardBorder.opacity(0.5))
+                    .cornerRadius(4)
+            }
             
             Divider().background(theme.cardBorder)
                 .padding(.vertical, 4)
@@ -4475,6 +4491,7 @@ struct MenuBarPopoverView: View {
     @AppStorage("custom_hex_orange") private var customOrangeHex: String = "#FF8C00"
     @AppStorage("custom_hex_green") private var customGreenHex: String = "#00FF7F"
     @AppStorage("custom_hex_purple") private var customPurpleHex: String = "#A020F0"
+    @AppStorage("pop_processApp") private var processApp: String = "Activity Monitor"
     
     private var cfg: MenuBarConfig { MenuBarConfig.shared }
     private var theme: AppTheme { AppTheme.current }
@@ -4923,30 +4940,41 @@ struct MenuBarPopoverView: View {
 
                     if cfg.popoverShowNetwork {
                         // Network Row
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.up.arrow.down")
-                                .font(.system(size: 9))
-                                .foregroundColor(.green)
-                                .frame(width: 14)
-                            Text("Network")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(theme.text)
-                            Spacer()
-                            Text("↓ \(formatSpeed(model.netDownloadMBps))  ↑ \(formatSpeed(model.netUploadMBps))")
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundColor(theme.text.opacity(0.85))
+                        Button(action: {
+                            let task = Process()
+                            task.launchPath = "/usr/bin/open"
+                            task.arguments = ["/System/Library/PreferencePanes/Network.prefPane"]
+                            try? task.run()
+                        }) {
+                            VStack(spacing: 4) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.up.arrow.down")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(.green)
+                                        .frame(width: 14)
+                                    Text("Network")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundColor(theme.text)
+                                    Spacer()
+                                    Text("↓ \(formatSpeed(model.netDownloadMBps))  ↑ \(formatSpeed(model.netUploadMBps))")
+                                        .font(.system(size: 9, design: .monospaced))
+                                        .foregroundColor(theme.text.opacity(0.85))
+                                }
+                                
+                                if cfg.popoverShowNetSparkline {
+                                    MiniSparkline(
+                                        label: "Net Speed",
+                                        currentVal: formatSpeed(model.netDownloadMBps + model.netUploadMBps),
+                                        color: .green,
+                                        data: model.history,
+                                        value: { $0.netDownloadMBps + $0.netUploadMBps }
+                                    )
+                                    .padding(.top, 2)
+                                }
+                            }
+                            .contentShape(Rectangle())
                         }
-                        
-                        if cfg.popoverShowNetSparkline {
-                            MiniSparkline(
-                                label: "Net Speed",
-                                currentVal: formatSpeed(model.netDownloadMBps + model.netUploadMBps),
-                                color: .green,
-                                data: model.history,
-                                value: { $0.netDownloadMBps + $0.netUploadMBps }
-                            )
-                            .padding(.top, 2)
-                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 12)
@@ -4956,45 +4984,54 @@ struct MenuBarPopoverView: View {
             if cfg.popoverShowProcesses {
                 Divider().background(theme.cardBorder)
                 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Top Processes")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundColor(theme.subtext)
-                        Spacer()
-                        Image(systemName: "list.bullet")
-                            .font(.system(size: 8))
-                            .foregroundColor(theme.subtext.opacity(0.9))
-                    }
-                    .padding(.bottom, 2)
-
-                    if model.topProcesses.isEmpty {
+                Button(action: {
+                    let task = Process()
+                    task.launchPath = "/usr/bin/open"
+                    task.arguments = ["-a", processApp]
+                    try? task.run()
+                }) {
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack {
+                            Text("Top Processes")
+                                .font(.system(size: 9.5, weight: .bold))
+                                .foregroundColor(theme.subtext)
                             Spacer()
-                            Text("Loading...")
-                                .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                            Image(systemName: "list.bullet")
+                                .font(.system(size: 8))
                                 .foregroundColor(theme.subtext.opacity(0.9))
-                                .padding(.vertical, 4)
-                            Spacer()
                         }
-                    } else {
-                        ForEach(model.topProcesses) { proc in
+                        .padding(.bottom, 2)
+
+                        if model.topProcesses.isEmpty {
                             HStack {
-                                Text(proc.name)
-                                    .font(.system(size: 9.5, weight: .semibold))
-                                    .foregroundColor(theme.text.opacity(0.9))
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
                                 Spacer()
-                                Text(String(format: "%.1f%%", proc.cpuUsage))
+                                Text("Loading...")
                                     .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                                    .foregroundColor(proc.cpuUsage > 50 ? theme.accentOrange : theme.subtext)
+                                    .foregroundColor(theme.subtext.opacity(0.9))
+                                    .padding(.vertical, 4)
+                                Spacer()
+                            }
+                        } else {
+                            ForEach(model.topProcesses) { proc in
+                                HStack {
+                                    Text(proc.name)
+                                        .font(.system(size: 9.5, weight: .semibold))
+                                        .foregroundColor(theme.text.opacity(0.9))
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                    Spacer()
+                                    Text(String(format: "%.1f%%", proc.cpuUsage))
+                                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                        .foregroundColor(proc.cpuUsage > 50 ? theme.accentOrange : theme.subtext)
+                                }
                             }
                         }
                     }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, 12)
+                    .frame(height: 95)
                 }
-                .padding(.horizontal, 12)
-                .frame(height: 95)
+                .buttonStyle(.plain)
             }
             } else if currentTab == .profiles {
                 PopoverProfilesView()
