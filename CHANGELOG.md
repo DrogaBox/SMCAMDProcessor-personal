@@ -1,6 +1,31 @@
 # Change Summary & Release Changelog
 
-## v3.18.1  Minor fix: CPPC support banner + core-grid label layout
+## v3.18.2  Kernel hardening P2-3…P2-8, rendezvousLock, LaunchHelper modernization
+
+### Kernel (AMDRyzenCPUPowerManagement.kext)
+* **P2-3 SMU Response codes**: `SMUResponse` enum (`SMU_RSP_OK/INVALID_CMD/INVALID_ARGS/BUSY/TIMEOUT`) documents all SMU mailbox return codes. `setCurveOptimizer` maps them to distinct `int` rc values; UserClient selector 111 translates these to `kIOReturnTimeout`, `kIOReturnUnsupported`, `kIOReturnBadArgument`, `kIOReturnBusy`, or `kIOReturnError` so the Swift UI can show specific error messages.
+* **P2-4 Post-wake `reinitHwState()`**: Extracted CPB (`CPUID 80000007h`), CPPC (MSR `0xC00102B0` + CPUID fallback), RAPL unit MSR, and P-state dump into `reinitHwState()`. Called from both `start()` (boot) and `resumeWorkLoop()` (S3 wake) so CPU features are fully re-probed after sleep.
+* **P2-5 Kernel resolver safety**: `vm_kernel_unslide_or_perm_external` result validated against `slide_address != 0` before computing KASLR base. `find_mach_header_addr` load-command walk now bounds-checked against `sizeofcmds`. `find_symbol` iteration bounds-checked against `symtab_end`.
+* **P2-6 Fan curve `deltaTime`**: Default step duration changed from hardcoded `0.5` s to `HF_TEMP_SAMPLE_PERIOD / 1000.0` (matches actual timer period).
+* **P2-7 Fan array compile-time assertions**: `kMAX_FANS = 16` constant + three `static_assert` guards so any array-size mismatch between `fanToCurveMap`, `lastAppliedPWM`, and `lastPWMUpdateTime` causes a build error.
+* **`rendezvousLock`** (new `IOLock`): Serializes all `mp_rendezvous` / `mp_rendezvous_no_intrs` call sites (init work loop, `applyPowerControl`, `applyEPPControl`, `setCPBState`, `writePstate`) preventing concurrent per-core MSR rendezvous races. Allocated in `init()`, freed in both `stop()` and `free()`. Correctly accessed as `provider->rendezvousLock` inside no-capture IOKit timer lambdas.
+* **`fProvider` / `wentToSleep` default init**: Both members default-initialized in header to avoid undefined-value UB on early teardown paths.
+* **`free()` cleanup**: `pciConfigLock`, `superIOLock`, `smuCmdLock`, `rendezvousLock`, and `fIOPCIDevice` are all released/freed in `free()` (in addition to `stop()`) so resources aren't leaked if `start()` fails after `init()`.
+
+### App (AMD Power Gadget)
+* **P-State loop bound** (`ProcessorModel.swift`): `while i < PStateDef.count` replaces hardcoded `while i < 8` preventing out-of-bounds access.
+* **Notifications guard** (`TelemetryModel.swift`): `didSet` on `notificationsEnabled` guards `guard oldValue != newValue` to break the permission-callback re-assignment infinite loop.
+
+### LaunchHelper (APGLaunchHelper)
+* **P3-3 Modern entry point**: `main.swift` migrated from legacy `NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)` C call to `NSApplication.shared.run()`. `AppDelegate` instantiated as a `private let` before the run loop.
+
+### Build / CI
+* **P2-8**: `scripts/check-format.sh` — `clang-format --dry-run --Werror` dry-run format check script for CI integration.
+
+### Tests
+* **P3-6 `SMUResponseMappingTests`**: New XCTest class covering SMU `kIOReturn*` code mapping and Curve Optimizer offset clamping ([-30, +30]).
+
+
 
 ### Fixes
 * **CPPC false “no support”**: Zen family (17h/19h/1Ah) and CAP1 MSR detection so CPUs like 5900XT no longer show *“This CPU did not report CPPC support”* while Active Mode works. `-amdcppcactive` behavior unchanged.
