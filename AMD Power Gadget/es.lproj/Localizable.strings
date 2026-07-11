@@ -620,3 +620,4 @@
 "Active Mode and Auto-EPP stay off until the kext reports CPPC. Boot-arg -amdcppcactive alone is not enough if MSR/CPUID checks fail — reboot after updating kexts." = "El modo Active y Auto-EPP permanecen apagados hasta que el kext reporte CPPC. El boot-arg -amdcppcactive no basta si fallan MSR/CPUID: reinicia tras actualizar los kexts.";
 "AMDRyzenCPUPowerManagement kext not connected." = "Kext AMDRyzenCPUPowerManagement no conectado.";
 "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot." = "Si el interruptor vuelve a Off: habilita escrituras con -amdpnopchk (o root). Con -amdcppcactive el kext activa Active Mode al arrancar tras reiniciar.";
+"Checking for updates..." = "Buscando actualizaciones...";

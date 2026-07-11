@@ -2556,7 +2556,7 @@ struct AdvancedContentView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Check for Updates").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                                Text(model.updateCheckMessage.isEmpty ? "Current installed version: v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3")" : model.updateCheckMessage)
+                                Text(model.updateCheckMessage.isEmpty ? "Current installed version: v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")" : model.updateCheckMessage)
                                     .font(.system(size: 10))
                                     .foregroundColor(model.updateAvailable ? .tahoeAccentGreen : .tahoeSubtext)
                             }
