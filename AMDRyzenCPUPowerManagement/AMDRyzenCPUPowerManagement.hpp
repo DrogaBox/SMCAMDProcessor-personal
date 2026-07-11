@@ -327,6 +327,7 @@ public:
     ISSuperIOSMCFamily *superIO{nullptr};
     IOLock *superIOLock{nullptr};   // Protects multi-step SuperIO I/O port sequences from concurrent UserClient calls
     IOLock *smuCmdLock{nullptr};    // Serializes full SMU command sequences (audit R-8)
+    IOLock *rendezvousLock{nullptr}; // Serializes all mp_rendezvous calls (timer + UserClient control ops)
     
     static constexpr size_t kMAX_FANS = 16;
     FanCurveConfig fanCurves[MAX_FAN_CURVES];
@@ -365,13 +366,13 @@ private:
     
     CPUInfo::CpuTopology cpuTopology {};
     
-    IOPCIDevice *fIOPCIDevice;
+    IOPCIDevice *fIOPCIDevice{nullptr};
     IOSimpleLock *pciConfigLock{nullptr};
     
     KernelPatcher *liluKernelPatcher;
     
     bool getPCIService();
-    bool wentToSleep;
+    bool wentToSleep{false};
     
     uint32_t smnRead32(uint32_t addr);
     void smnWrite32(uint32_t addr, uint32_t val);

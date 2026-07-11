@@ -72,6 +72,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     pciConfigLock = IOSimpleLockAlloc();
     superIOLock = IOLockAlloc();
     smuCmdLock = IOLockAlloc();
+    rendezvousLock = IOLockAlloc();
     
     pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
     pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
@@ -86,6 +87,14 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
 }
 
 void AMDRyzenCPUPowerManagement::free(){
+    // Cleanup resources allocated in init() in case start() failed partway
+    // and stop() was never called. IOLockFree handles NULL on some XNU versions
+    // but we guard explicitly for safety.
+    if (pciConfigLock)   { IOSimpleLockFree(pciConfigLock);   pciConfigLock = nullptr; }
+    if (superIOLock)     { IOLockFree(superIOLock);           superIOLock = nullptr; }
+    if (smuCmdLock)      { IOLockFree(smuCmdLock);            smuCmdLock = nullptr; }
+    if (rendezvousLock)  { IOLockFree(rendezvousLock);        rendezvousLock = nullptr; }
+    if (fIOPCIDevice)    { fIOPCIDevice->release();           fIOPCIDevice = nullptr; }
     IOService::free();
 }
 
@@ -144,6 +153,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
             IOLog("AMDRyzenCPUPowerManagement::startWorkLoop initialize service");
             
             //Disable interrupts and sync all processor cores.
+            IOLockLock(provider->rendezvousLock);
             mp_rendezvous_no_intrs([](void *obj) {
                 auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
                 
@@ -216,11 +226,13 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
             
             provider->serviceInitialized = true;
             provider->timerEvent_main->setTimeoutMS(1);
+            IOLockUnlock(provider->rendezvousLock);
             return;
         }
-        
+
         if (!provider->serviceInitialized) return;
-        
+
+        IOLockLock(provider->rendezvousLock);
         mp_rendezvous_no_intrs([](void *obj) {
             auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
             uint32_t cpu_num = cpu_number();
@@ -253,8 +265,9 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
         provider->timerEvent_main->setTimeoutMS(provider->updateTimeInterval);
 
 //        IOLog("fpp %d %d %.4f.\n", HF_TEMP_SAMPLE_FREQ, HF_TEMP_SAMPLE_PERIOD, (float)HF_TEMP_SAMPLE_REP);
-        
+
     });
+    IOLockUnlock(this->rendezvousLock);
     
 //    tempSamplePeriod = (int)((1.0f / (float)HF_TEMP_SAMPLE_FREQ) * 1000);
     float fillT = getPackageTemp();
@@ -576,6 +589,10 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
         IOLockFree(superIOLock);
         superIOLock = nullptr;
     }
+    if (rendezvousLock) {
+        IOLockFree(rendezvousLock);
+        rendezvousLock = nullptr;
+    }
     if (workLoop) {
         workLoop->release();
         workLoop = nullptr;
@@ -811,35 +828,39 @@ void AMDRyzenCPUPowerManagement::applyPowerControl(){
         IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored since CPPC Active Mode is active\n");
         return;
     }
+    IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
         provider->write_msr(kMSR_PSTATE_CTL, (uint64_t)(provider->PStateCtl & 0x7));
     }, nullptr, this);
+    IOLockUnlock(rendezvousLock);
 }
 
 void AMDRyzenCPUPowerManagement::applyEPPControl() {
     if (!cppcSupported) return;
-    
+
+    IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
-        
+
         uint64_t cppcCap = 0;
         if (provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap)) {
             uint8_t highestPerf = cppcCap & 0xFF;
             uint8_t lowestPerf = (cppcCap >> 24) & 0xFF;
-            
+
             uint64_t reqVal = 0;
             reqVal |= (uint64_t)lowestPerf;
             reqVal |= ((uint64_t)highestPerf) << 8;
             reqVal |= 0ULL << 16; // Desired Performance = 0 (autonomous)
-            
+
             uint8_t effectiveEPP = provider->cppcThrottled ? 0xFF : provider->cppcEPPValue;
             reqVal |= ((uint64_t)effectiveEPP) << 24;
-            
+
             provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
             provider->write_msr(kMSR_AMD_CPPC_REQ, reqVal);
         }
     }, nullptr, this);
+    IOLockUnlock(rendezvousLock);
 }
 
 void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
@@ -861,11 +882,13 @@ void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
         AMDRyzenCPUPowerManagement *provider;
         uint64_t hwConfig;
     } cpbArgs{this, hwConfig};
-    
+
+    IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
         auto args = static_cast<CPBArgs*>(obj);
         args->provider->write_msr(kMSR_HWCR, args->hwConfig);
     }, nullptr, &cpbArgs);
+    IOLockUnlock(rendezvousLock);
 }
 
 bool AMDRyzenCPUPowerManagement::getCPBState(){
@@ -1212,8 +1235,9 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
     
     //A bit hacky but at least works for now.
     void* args[] = {this, (void*)buf};
-    
-    
+
+
+    IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
         auto v = static_cast<uint64_t*>(((uint64_t**)obj)[1]);
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(*((AMDRyzenCPUPowerManagement**)obj));
@@ -1261,9 +1285,10 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
         
         if(!pmRyzen_cpu_is_master(cpu_number())) return;
         provider->dumpPstate();
-        
+
     }, nullptr, args);
-        
+    IOLockUnlock(rendezvousLock);
+
 }
 
 bool AMDRyzenCPUPowerManagement::initSuperIO(uint16_t *chipIntel){
