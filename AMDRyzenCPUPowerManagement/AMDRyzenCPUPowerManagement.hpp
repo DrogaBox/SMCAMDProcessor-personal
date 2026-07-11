@@ -373,6 +373,9 @@ private:
     
     bool getPCIService();
     bool wentToSleep{false};
+    /// Set by resumeWorkLoop() on S3 wake. The main timer processes it on its
+    /// first tick (workLoop thread) so reinitHwState() never runs on the PM thread.
+    bool pendingReinit{false};
     
     uint32_t smnRead32(uint32_t addr);
     void smnWrite32(uint32_t addr, uint32_t val);

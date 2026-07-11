@@ -232,6 +232,15 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
 
         if (!provider->serviceInitialized) return;
 
+        // Post-wake deferred reinit: consume the flag set by resumeWorkLoop()
+        // so reinitHwState() runs here on the workLoop thread, not the PM thread.
+        if (provider->pendingReinit) {
+            provider->pendingReinit = false;
+            provider->reinitHwState();
+            sender->setTimeoutMS(provider->updateTimeInterval);
+            return;
+        }
+
         IOLockLock(provider->rendezvousLock);
         mp_rendezvous_no_intrs([](void *obj) {
             auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
@@ -311,11 +320,18 @@ void AMDRyzenCPUPowerManagement::stopWorkLoop() {
 
 void AMDRyzenCPUPowerManagement::resumeWorkLoop() {
     if (!workLoop) return;
-    reinitHwState();
+    // NOTE: Do NOT call reinitHwState() here — this runs on the IOKit PM thread
+    // during the wake sequence. Blocking the PM thread with MSR reads + CPPC
+    // write + dumpPstate() (up to 128 MSR reads on 16-core Zen 3) causes
+    // perceptible lag right after S3 resume. Instead, set the pending flag and
+    // let the first timer tick on the workLoop thread do the reinit safely.
+    pendingReinit = true;
     workLoop->enableAllEventSources();
     serviceInitialized = true;
     pwrLastTSC = rdtsc64();
-    if (timerEvent_main) timerEvent_main->setTimeoutMS(1);
+    // Give the system 250ms to complete the wake sequence before the kext
+    // starts its own rendezvous / MSR work. 1ms was causing a CPU stall spike.
+    if (timerEvent_main) timerEvent_main->setTimeoutMS(250);
     if (timerEvent_tempe) timerEvent_tempe->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
 }
 
