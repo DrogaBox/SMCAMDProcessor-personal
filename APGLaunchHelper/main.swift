@@ -1,12 +1,9 @@
-//
-//  main.swift
-//  APGLaunchHelper
-//
-//  Created by trulyspinach, modified by Droga (2026) on 7/30/21.
-//
+// main.swift — APGLaunchHelper
+// Entry point for the login-item helper process.
+// Bootstraps NSApplication with AppDelegate.
 
 import Cocoa
 
-let delegate = AppDelegate()
+private let delegate = AppDelegate()
 NSApplication.shared.delegate = delegate
-_ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+NSApplication.shared.run()
