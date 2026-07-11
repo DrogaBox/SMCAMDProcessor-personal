@@ -73,7 +73,7 @@ pmDispatch_t pmRyzen_cpuFuncs = {
     .pmThreadGoingOffCore = 0,
 };
 
-void pmRyzen_init_PState(){
+void pmRyzen_init_PState(void){
     uint64_t p0 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0);
     if (!(p0 & (1ULL << 63))) return;
     
@@ -108,14 +108,14 @@ inline void set_PState(pmProcessor_t *cpu, uint8_t state){
     }
 }
 
-void pmRyzen_doPState_reset(){
+void pmRyzen_doPState_reset(void *arg){
     uint32_t cn = cpu_number();
     pmProcessor_t *self = &pmRyzen_cpus[cn];
     self->PState = 8;
     set_PState(self, 0);
 }
 
-void pmRyzen_PState_reset(){
+void pmRyzen_PState_reset(void){
     pmRyzen_hpcpus = 0;
     if(pmRyzen_pstatelimit == 0) pmRyzen_pstatelimit = 1;
     mp_rendezvous_no_intrs(&pmRyzen_doPState_reset, NULL);
@@ -207,7 +207,7 @@ void pmRyzen_init(void *handle){
     cb.initComplete();
 }
 
-void pmRyzen_stop(){
+void pmRyzen_stop(void){
     
     if (pmRyzen_pmUnRegister) {
         (*pmRyzen_pmUnRegister)(&pmRyzen_cpuFuncs);

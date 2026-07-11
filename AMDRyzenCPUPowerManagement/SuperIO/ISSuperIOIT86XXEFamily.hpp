@@ -43,11 +43,11 @@ class ISSuperIOIT86XXEFamily : public ISSuperIOSMCFamily
 
     static ISSuperIOIT86XXEFamily* getDevice(uint16_t* chipIntel);
 
-    ISSuperIOIT86XXEFamily(int psel, uint16_t addr, uint16_t chipIntel);
+    ISSuperIOIT86XXEFamily(int psel, uint16_t addr, uint16_t chipIntel, uint16_t gpioAddr);
 
     int fanRPMs[IT86XXE_MAX_NUMFAN];
-    uint8_t fanControlMode[IT86XXE_MAX_NUMFAN];
-    uint8_t fanThrottles[IT86XXE_MAX_NUMFAN]{};
+    int fanControlMode[IT86XXE_MAX_NUMFAN];
+    int fanThrottles[IT86XXE_MAX_NUMFAN]{};
 
     int activeFansOnSystem = 0;
 
@@ -77,6 +77,7 @@ class ISSuperIOIT86XXEFamily : public ISSuperIOSMCFamily
     int lpcPortSel = 0;
 
     uint16_t chipAddr = 0;
+    uint16_t gpioAddr = 0;
     uint8_t fanDefaultControlMode[IT86XXE_MAX_NUMFAN];
     uint8_t fanDefaultExtControlMode[IT86XXE_MAX_NUMFAN];
 
