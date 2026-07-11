@@ -427,6 +427,10 @@ final class TelemetryModel: ObservableObject {
     // Notifications properties
     @Published var notificationsEnabled: Bool = false {
         didSet {
+            // Guard against no-op writes: without this, the permission callback
+            // re-assigns notificationsEnabled (e.g. = granted true) which re-fires
+            // didSet and calls requestNotificationPermission() again -> infinite loop.
+            guard notificationsEnabled != oldValue else { return }
             UserDefaults.standard.set(notificationsEnabled, forKey: "notificationsEnabled")
             if notificationsEnabled {
                 requestNotificationPermission()

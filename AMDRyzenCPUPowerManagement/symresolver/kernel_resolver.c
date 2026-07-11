@@ -66,6 +66,9 @@ void find_mach_header_addr(uint8_t kc){
     load_command_t* lcp = (load_command_t*)(base_address + sizeof(mach_header_64_t));
     for (uint32_t i = 0; i < mach_header->ncmds; i++) {
         if (lcp->cmdsize == 0) break;
+        // Bound the walk so an inflated ncmds can't read past sizeofcmds
+        // (same guard used by find_segment_64 / find_load_command).
+        if ((uint64_t)lcp + lcp->cmdsize > (uint64_t)mach_header + mach_header->sizeofcmds) break;
         if (lcp->cmd == LC_SEGMENT_64) {
             seg_command_64_t *sc = (seg_command_64_t*)lcp;
             if (!strncmp(sc->segname, "__TEXT_EXEC", sizeof(sc->segname))) {
@@ -184,8 +187,11 @@ find_symbol(mach_header_64_t *mh, const char *name)
     uint64_t strtab_size = (uint64_t)symtab->strsize;
     char *strtab_end = strtab + strtab_size;
 
+    nlist_64_t *symtab_end = (nlist_64_t*)(symtab_addr + (uint64_t)symtab->nsyms * sizeof(nlist_64_t));
+
     for (i = 0, nl = (nlist_64_t*)symtab_addr; i < symtab->nsyms; i++, nl++)
     {
+        if ((uint64_t)nl + sizeof(nlist_64_t) > (uint64_t)symtab_end) break;
         if (nl->n_un.n_strx >= strtab_size) {
             continue;
         }
