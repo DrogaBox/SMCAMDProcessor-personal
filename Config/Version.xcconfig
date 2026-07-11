@@ -1,0 +1,11 @@
+// ============================================================
+// Version.xcconfig — ÚNICA fuente de verdad para la versión
+// ============================================================
+// Para bumpar la versión de todo el proyecto, solo edita
+// MARKETING_VERSION y CURRENT_PROJECT_VERSION aquí.
+// Todos los targets (kext, app, SMCAMDPlugin, APGLaunchHelper)
+// heredan estos valores automáticamente.
+// ============================================================
+
+MARKETING_VERSION = 3.18.4
+CURRENT_PROJECT_VERSION = 3.18.4

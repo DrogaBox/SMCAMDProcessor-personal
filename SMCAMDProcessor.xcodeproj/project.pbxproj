@@ -172,6 +172,7 @@
 		C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegeAndFanCurveTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000024 /* PStateRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PStateRowTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMUResponseMappingTests.swift; sourceTree = "<group>"; };
+		C0FF0000000000001EE7C0DE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Version.xcconfig; path = Config/Version.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -313,7 +314,8 @@
 		B57D27EA23F66AE7002BC699 = {
 			isa = PBXGroup;
 			children = (
-				B57D27F623F66AE7002BC699 /* AMDRyzenCPUPowerManagement */,
+				C0FF0000000000001EE7C0DE /* Version.xcconfig */,
+			B57D27F623F66AE7002BC699 /* AMDRyzenCPUPowerManagement */,
 				B5011E9F242E01CC009FB2A2 /* SMCAMDProcessor */,
 				B56162C52400EF770006A7D8 /* AMD Power Gadget */,
 				C0FFEE000000000000000011 /* AMDPowerGadgetTests */,
@@ -784,11 +786,11 @@
 /* Begin XCBuildConfiguration section */
 		B5011EA5242E01CC009FB2A2 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FF0000000000001EE7C0DE /* Version.xcconfig */;
 			buildSettings = {
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.18.3;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/Lilu.kext/Contents/Resources",
 					"${PROJECT_DIR}/VirtualSMC.kext/Contents/Resources",
@@ -801,7 +803,6 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.18.3;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
 				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				OTHER_CFLAGS = "";
@@ -813,11 +814,11 @@
 		};
 		B5011EA6242E01CC009FB2A2 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FF0000000000001EE7C0DE /* Version.xcconfig */;
 			buildSettings = {
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.18.3;
 				HEADER_SEARCH_PATHS = (
 					"${PROJECT_DIR}/Lilu.kext/Contents/Resources",
 					"${PROJECT_DIR}/VirtualSMC.kext/Contents/Resources",
@@ -830,7 +831,6 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.18.3;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
 				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				OTHER_CFLAGS = "";
@@ -842,12 +842,12 @@
 		};
 		B56162D12400EF780006A7D8 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FF0000000000001EE7C0DE /* Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "AMD Power Gadget/AMD_Power_Gadget.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.18.3;
 				ENABLE_TESTABILITY = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -860,7 +860,6 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.18.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMD-Power-Gadget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -871,12 +870,12 @@
 		};
 		B56162D22400EF780006A7D8 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FF0000000000001EE7C0DE /* Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "AMD Power Gadget/AMD_Power_Gadget.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.18.3;
 				ENABLE_TESTABILITY = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = "VERSION_STRING=$(CURRENT_PROJECT_VERSION)";
 				INFOPLIST_FILE = "AMD Power Gadget/Info.plist";
@@ -885,7 +884,6 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.18.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "wtf.spinach.AMD-Power-Gadget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1006,11 +1004,11 @@
 		};
 		B57D27FF23F66AE7002BC699 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FF0000000000001EE7C0DE /* Version.xcconfig */;
 			buildSettings = {
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.18.3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -1028,7 +1026,6 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.18.3;
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
@@ -1057,11 +1054,11 @@
 		};
 		B57D280023F66AE7002BC699 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FF0000000000001EE7C0DE /* Version.xcconfig */;
 			buildSettings = {
 				ARCHS = x86_64;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.18.3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"PRODUCT_NAME=$(PRODUCT_NAME)",
 					"MODULE_VERSION=$(MODULE_VERSION)",
@@ -1077,7 +1074,6 @@
 				KERNEL_FRAMEWORK_HEADERS = "${PROJECT_DIR}/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 3.18.3;
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
