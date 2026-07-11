@@ -615,6 +615,12 @@ final class TelemetryModel: ObservableObject {
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             self?.csvConfigDirty = true
         }
+
+        // Background update check on launch — 5 s delay so the UI is fully ready
+        // and the kext connection is stable before hitting the network.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.checkForUpdates(manual: false)
+        }
     }
 
     private func buildSystemInfo() {
@@ -1880,7 +1886,7 @@ final class TelemetryModel: ObservableObject {
     func checkForUpdates(manual: Bool = true) {
         guard !isCheckingForUpdates else { return }
         isCheckingForUpdates = true
-        updateCheckMessage = manual ? "Buscando actualizaciones..." : ""
+        updateCheckMessage = manual ? NSLocalizedString("Checking for updates...", comment: "Update check in progress") : ""
         
         let urlString = "https://api.github.com/repos/DrogaBox/SMCAMDProcessor-personal/releases/latest"
         guard let url = URL(string: urlString) else {
@@ -1916,7 +1922,7 @@ final class TelemetryModel: ObservableObject {
                 
                 let fallbackBody = NSLocalizedString("No release notes available.", comment: "")
                 let bodyText = (json["body"] as? String) ?? fallbackBody
-                let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
+                let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
                 let cleanTag = tagName.replacingOccurrences(of: "v", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
                 let cleanCurrent = currentVersion.replacingOccurrences(of: "v", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
                 
