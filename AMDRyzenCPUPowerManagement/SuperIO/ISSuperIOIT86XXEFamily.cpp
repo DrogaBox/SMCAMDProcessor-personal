@@ -7,10 +7,11 @@
 
 #include "ISSuperIOIT86XXEFamily.hpp"
 
-ISSuperIOIT86XXEFamily::ISSuperIOIT86XXEFamily(int psel, uint16_t addr, uint16_t chipIntel)
+ISSuperIOIT86XXEFamily::ISSuperIOIT86XXEFamily(int psel, uint16_t addr, uint16_t chipIntel, uint16_t gpioAddr)
 {
     lpcPortSel = psel;
     chipAddr = addr;
+    this->gpioAddr = gpioAddr;
 
     switch (chipIntel)
     {
@@ -130,7 +131,7 @@ ISSuperIOIT86XXEFamily* ISSuperIOIT86XXEFamily::getDevice(uint16_t* chipIntel)
         outb(regport, 0x02);
     }
 
-    return new ISSuperIOIT86XXEFamily(portSel, devAddr, *chipIntel);  //TODO: Add GPIO Addr
+    return new ISSuperIOIT86XXEFamily(portSel, devAddr, *chipIntel, gpioAddress);
 }
 
 uint8_t ISSuperIOIT86XXEFamily::readByte(uint16_t addr)

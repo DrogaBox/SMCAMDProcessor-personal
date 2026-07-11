@@ -1,6 +1,6 @@
 # Change Summary & Release Changelog
 
-## v3.18.3  Hotfix: rendezvousLock deadlock fix
+## v3.18.4  Hotfix: rendezvousLock deadlock fix
 
 ### Critical Fix
 * **Boot hang / kernel deadlock**: `rendezvousLock` `IOLockUnlock()` was placed outside the timer callback in `initWorkLoop()`. The lock was taken on every telemetry tick but never released inside the callback — the second tick deadlocked the `IOWorkLoop`, causing a kernel hang at boot. Fix: moved `IOLockUnlock()` inside the callback, right after the last protected-state access. Lock/unlock now balanced 6:6, all within the same scope.
@@ -10,7 +10,7 @@
 * Build verified: kext + app + SMCAMDPlugin compile clean on macOS 26 Tahoe SDK, x86_64 target.
 
 
-## v3.18.2  Kernel hardening P2-3…P2-8, rendezvousLock, post-sleep lag fix
+## v3.18.4  Kernel hardening P2-3…P2-8, rendezvousLock, post-sleep lag fix
 
 ### Critical Fix
 * **Post-sleep system lag**: `resumeWorkLoop()` was blocking the IOKit Power Management thread with ~128 synchronous MSR reads (`reinitHwState()` + `dumpPstate()`) during S3 wake. Root cause: all hardware re-probe work ran inline on the PM thread — same thread macOS uses to complete the wake sequence and restore interactive use. Fix: `resumeWorkLoop()` now sets `pendingReinit = true` and schedules the timer at 250 ms; the first workLoop-thread tick calls `reinitHwState()` and returns — completely off the PM thread. Timer was also changed from 1 ms to 250 ms post-wake to give the system time to finish its own wake sequence before the kext starts rendezvous / MSR writes.
