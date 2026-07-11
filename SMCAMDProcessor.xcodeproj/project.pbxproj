@@ -56,6 +56,7 @@
 		C0FFEE000000000000000042 /* FormatInstTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000022 /* FormatInstTests.swift */; };
 		C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */; };
 		C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000024 /* PStateRowTests.swift */; };
+		C0FFEE000000000000000045 /* SMUResponseMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */; };
 		C0FFEE000000000000000013 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000012 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
@@ -159,6 +160,7 @@
 		C0FFEE000000000000000022 /* FormatInstTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatInstTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegeAndFanCurveTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000024 /* PStateRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PStateRowTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMUResponseMappingTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000002 /* AMDPowerGadgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AMDPowerGadgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0FFEE000000000000000012 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
@@ -404,6 +406,7 @@
 				C0FFEE000000000000000022 /* FormatInstTests.swift */,
 				C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */,
 				C0FFEE000000000000000024 /* PStateRowTests.swift */,
+				C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */,
 			);
 			path = AMDPowerGadgetTests;
 			sourceTree = "<group>";
@@ -733,6 +736,7 @@
 				C0FFEE000000000000000042 /* FormatInstTests.swift in Sources */,
 				C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */,
 				C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */,
+				C0FFEE000000000000000045 /* SMUResponseMappingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
