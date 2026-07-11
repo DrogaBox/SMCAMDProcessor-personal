@@ -4252,6 +4252,7 @@ struct PopoverTabButton: View {
             .foregroundColor(currentTab == tab ? theme.text : theme.subtext)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
+            .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(currentTab == tab ? theme.cardBorder.opacity(0.8) : Color.clear)
