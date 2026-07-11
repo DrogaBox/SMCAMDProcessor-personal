@@ -4265,52 +4265,54 @@ struct PopoverProfilesView: View {
     @ObservedObject var model: TelemetryModel = TelemetryModel.shared
     private var theme: AppTheme { AppTheme.current }
     
-    // activePState: 0=Boost, 1=Base, 2=Eco
-    // KDE Slider: 0=Power Save, 1=Balanced, 2=Performance
+    // activeEPP: 0x00=Performance, 0x3F=Balanced, 0xC0=Power Save
     private var sliderValue: Binding<Double> {
         Binding<Double>(
             get: {
-                switch model.selectedSpeedStep {
-                case 0: return 2.0 // Boost -> Performance
-                case 1: return 1.0 // Base -> Balanced
-                case 2: return 0.0 // Eco -> Power Save
+                switch model.cppcEPPValue {
+                case 0x00...0x3E: return 2.0 // Performance
+                case 0x3F...0xBF: return 1.0 // Balanced
+                case 0xC0...0xFF: return 0.0 // Power Save
                 default: return 1.0
                 }
             },
             set: { val in
                 let intVal = Int(round(val))
-                var newPState = 1
-                if intVal == 2 { newPState = 0 }
-                else if intVal == 1 { newPState = 1 }
-                else if intVal == 0 { newPState = 2 }
-                model.setSpeedStep(newPState)
+                var newEPP: UInt8 = 0x3F
+                if intVal == 2 { newEPP = 0x00 }
+                else if intVal == 1 { newEPP = 0x3F }
+                else if intVal == 0 { newEPP = 0xC0 }
+                
+                // Disable Auto EPP when user overrides manually
+                if model.autoEPPEnabled { model.autoEPPEnabled = false }
+                model.setCPPCEPPValue(epp: newEPP)
             }
         )
     }
     
     private var currentProfileName: String {
-        switch model.selectedSpeedStep {
-        case 0: return "Performance"
-        case 1: return "Balanced"
-        case 2: return "Power Save"
+        switch model.cppcEPPValue {
+        case 0x00...0x3E: return "Performance"
+        case 0x3F...0xBF: return "Balanced"
+        case 0xC0...0xFF: return "Power Save"
         default: return "Unknown"
         }
     }
     
     private var currentProfileIcon: String {
-        switch model.selectedSpeedStep {
-        case 0: return "bolt.fill"
-        case 1: return "scale.3d"
-        case 2: return "leaf.fill"
+        switch model.cppcEPPValue {
+        case 0x00...0x3E: return "bolt.fill"
+        case 0x3F...0xBF: return "scale.3d"
+        case 0xC0...0xFF: return "leaf.fill"
         default: return "cpu"
         }
     }
     
     private var currentProfileColor: Color {
-        switch model.selectedSpeedStep {
-        case 0: return theme.accentRed
-        case 1: return theme.accentCyan
-        case 2: return theme.accentGreen
+        switch model.cppcEPPValue {
+        case 0x00...0x3E: return theme.accentRed
+        case 0x3F...0xBF: return theme.accentCyan
+        case 0xC0...0xFF: return theme.accentGreen
         default: return theme.subtext
         }
     }
@@ -4538,7 +4540,7 @@ struct MenuBarPopoverView: View {
             // Custom Segmented Picker
             HStack(spacing: 0) {
                 PopoverTabButton(title: "Telemetry", icon: "chart.xyaxis.line", tab: .telemetry, currentTab: $currentTab, theme: theme)
-                PopoverTabButton(title: "Profiles", icon: "bolt.fill", tab: .profiles, currentTab: $currentTab, theme: theme)
+                PopoverTabButton(title: "Perfiles", icon: "bolt.fill", tab: .profiles, currentTab: $currentTab, theme: theme)
                 PopoverTabButton(title: "Settings", icon: "gearshape.fill", tab: .settings, currentTab: $currentTab, theme: theme)
             }
             .padding(4)
