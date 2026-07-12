@@ -621,10 +621,6 @@ private struct TahoeCard<Content: View>: View {
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(cardFill)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(materialStyle)
-                    )
             )
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(accent, lineWidth: 1))
             .cornerRadius(14)
