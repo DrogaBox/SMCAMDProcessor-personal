@@ -956,9 +956,13 @@ struct ChartContextMenu: View {
     }
 
     private func moveChart(_ chart: String, direction: Int) {
-        if ["freq", "temp", "pwr"].contains(chart) {
+        // 1. Normalizamos el ID eliminando el prefijo "dash_" para que sea más fácil comparar
+        let normalizedId = chart.replacingOccurrences(of: "dash_", with: "")
+        
+        // 2. Identificamos si es un gráfico horizontal (frecuencia, temperatura o potencia)
+        if ["freq", "temp", "pwr"].contains(normalizedId) {
             var arr = chartOrder.split(separator: ",").map(String.init)
-            if let idx = arr.firstIndex(of: chart) {
+            if let idx = arr.firstIndex(of: normalizedId) {
                 let newIdx = idx + direction
                 if newIdx >= 0 && newIdx < arr.count {
                     arr.swapAt(idx, newIdx)
@@ -966,12 +970,23 @@ struct ChartContextMenu: View {
                 }
             }
         } else {
-            var arr = verticalOrder.split(separator: ",").map(String.init)
-            if let idx = arr.firstIndex(of: chart) {
-                let newIdx = idx + direction
-                if newIdx >= 0 && newIdx < arr.count {
-                    arr.swapAt(idx, newIdx)
-                    verticalOrder = arr.joined(separator: ",")
+            // 3. Si no es horizontal, es un bloque vertical. 
+            // Mapeamos el ID del gráfico al ID correspondiente en 'verticalOrder'
+            let verticalId: String? = {
+                if normalizedId.contains("mem") { return "memory" }
+                if normalizedId.contains("net") { return "network" }
+                if normalizedId.contains("cores") { return "cores" }
+                return nil
+            }()
+            
+            if let targetId = verticalId {
+                var arr = verticalOrder.split(separator: ",").map(String.init)
+                if let idx = arr.firstIndex(of: targetId) {
+                    let newIdx = idx + direction
+                    if newIdx >= 0 && newIdx < arr.count {
+                        arr.swapAt(idx, newIdx)
+                        verticalOrder = arr.joined(separator: ",")
+                    }
                 }
             }
         }
@@ -4878,6 +4893,35 @@ struct MenuBarPopoverView: View {
                         }
                     }
                     Spacer()
+                    
+                    // Compact Uptime
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                        Text(model.systemUptimeFormatted)
+                    }
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(theme.subtext)
+                    .padding(.trailing, 4)
+                    
+                    // Compact Battery / AC
+                    if model.hasBattery {
+                        HStack(spacing: 2) {
+                            Image(systemName: model.batteryIsCharging ? "battery.100.bolt" : "battery.100")
+                            Text("\(model.batteryPercentage)%")
+                        }
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(theme.subtext)
+                        .padding(.trailing, 6)
+                    } else {
+                        HStack(spacing: 3) {
+                            Image(systemName: "powerplug")
+                            Text("AC")
+                        }
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(theme.subtext)
+                        .padding(.trailing, 6)
+                    }
+
                     Button(action: {
                         MenuBarConfig.shared.popoverPinOpen.toggle()
                         NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
@@ -5135,7 +5179,8 @@ struct MenuBarPopoverView: View {
             }
             
             // 2. Render Vertical List for Bars and Sparklines (style > 0 or sparkline enabled)
-            let showLinearOrGraphs = rings.contains(where: { ring in
+            let vertItems = cfg.popoverVerticalOrder.split(separator: ",").map(String.init)
+            let showLinearOrGraphs = vertItems.contains(where: { ring in
                 if ring == "cpu" && cfg.popoverShowCPU && (cfg.popoverCPUStyle == 1 || cfg.popoverShowCPUSparkline || cfg.popoverShowCores) { return true }
                 if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 1 { return true }
                 if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 1 { return true }
@@ -5150,7 +5195,7 @@ struct MenuBarPopoverView: View {
                 Divider().background(theme.cardBorder)
                 
                 VStack(spacing: 10) {
-                    ForEach(rings, id: \.self) { ring in
+                    ForEach(vertItems, id: \.self) { ring in
                         if ring == "cpu" && cfg.popoverShowCPU {
                             if cfg.popoverCPUStyle == 1 {
                                 let cpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.cpuTempC) : ""
@@ -5414,20 +5459,16 @@ struct MenuBarPopoverView: View {
         .fixedSize(horizontal: false, vertical: true)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(theme.background.opacity(0.92))
+                theme.background.opacity(0.92)
                 VisualEffectBackground(
                     material: .hudWindow,
                     blendingMode: .behindWindow,
                     state: .active,
-                    cornerRadius: 16
+                    cornerRadius: 0
                 )
                 .opacity(theme.glassOpacity)
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(theme.cardBorder, lineWidth: 1)
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .id(themePreset) // force rebuild when theme changes
     }
 }
@@ -5436,7 +5477,8 @@ struct MenuBarPopoverView: View {
 struct PopoverConfigView: View {
     @ObservedObject var model: TelemetryModel
     @State private var cfg = MenuBarConfig.shared
-    @State private var items: [RingOrderItem] = []
+    @State private var ringItems: [RingOrderItem] = []
+    @State private var verticalItems: [RingOrderItem] = []
     @AppStorage("app_theme_preset") private var themePreset: String = AppTheme.tahoe.rawValue
 
     struct RingOrderItem: Identifiable, Equatable {
@@ -5465,20 +5507,20 @@ struct PopoverConfigView: View {
                 if cfg.enablePopover {
                     Divider().background(Color.tahoeCardBorder)
                     
-                    SectionTitle("Widget Reordering")
-                    Text("Arrange the order in which resource widgets appear. Click arrows to swap position.")
+                    SectionTitle("Horizontal Rings Order")
+                    Text("Arrange the order of circular rings displayed in the top row of the popover.")
                         .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(items) { item in
-                            let index = items.firstIndex(where: { $0.id == item.id }) ?? 0
+                        ForEach(ringItems) { item in
+                            let index = ringItems.firstIndex(where: { $0.id == item.id }) ?? 0
                             HStack {
                                 Circle().fill(item.color).frame(width: 8, height: 8)
                                 Text(item.name)
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundColor(.tahoeText)
                                 Spacer()
-                                Button(action: { moveUp(index: index) }) {
+                                Button(action: { moveRingUp(index: index) }) {
                                     Image(systemName: "arrow.up")
                                         .font(.system(size: 10, weight: .bold))
                                 }
@@ -5489,13 +5531,57 @@ struct PopoverConfigView: View {
                                 .background(Color.white.opacity(0.04))
                                 .cornerRadius(4)
                                 
-                                Button(action: { moveDown(index: index) }) {
+                                Button(action: { moveRingDown(index: index) }) {
                                     Image(systemName: "arrow.down")
                                         .font(.system(size: 10, weight: .bold))
                                 }
-                                .disabled(index == items.count - 1)
+                                .disabled(index == ringItems.count - 1)
                                 .buttonStyle(PlainButtonStyle())
-                                .foregroundColor(index == items.count - 1 ? .gray.opacity(0.3) : .tahoeAccentCyan)
+                                .foregroundColor(index == ringItems.count - 1 ? .gray.opacity(0.3) : .tahoeAccentCyan)
+                                .frame(width: 24, height: 24)
+                                .background(Color.white.opacity(0.04))
+                                .cornerRadius(4)
+                            }
+                            .padding(.vertical, 6).padding(.horizontal, 12)
+                            .background(Color.tahoeCard)
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))
+                            .cornerRadius(8)
+                        }
+                    }
+
+                    Divider().background(Color.tahoeCardBorder)
+                    
+                    SectionTitle("Vertical Charts & Info Order")
+                    Text("Arrange the vertical order of progress bars, sparklines, and list charts in the popover.")
+                        .font(.system(size: 12)).foregroundColor(.tahoeSubtext)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(verticalItems) { item in
+                            let index = verticalItems.firstIndex(where: { $0.id == item.id }) ?? 0
+                            HStack {
+                                Circle().fill(item.color).frame(width: 8, height: 8)
+                                Text(item.name)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.tahoeText)
+                                Spacer()
+                                Button(action: { moveVerticalUp(index: index) }) {
+                                    Image(systemName: "arrow.up")
+                                        .font(.system(size: 10, weight: .bold))
+                                }
+                                .disabled(index == 0)
+                                .buttonStyle(PlainButtonStyle())
+                                .foregroundColor(index == 0 ? .gray.opacity(0.3) : .tahoeAccentCyan)
+                                .frame(width: 24, height: 24)
+                                .background(Color.white.opacity(0.04))
+                                .cornerRadius(4)
+                                
+                                Button(action: { moveVerticalDown(index: index) }) {
+                                    Image(systemName: "arrow.down")
+                                        .font(.system(size: 10, weight: .bold))
+                                }
+                                .disabled(index == verticalItems.count - 1)
+                                .buttonStyle(PlainButtonStyle())
+                                .foregroundColor(index == verticalItems.count - 1 ? .gray.opacity(0.3) : .tahoeAccentCyan)
                                 .frame(width: 24, height: 24)
                                 .background(Color.white.opacity(0.04))
                                 .cornerRadius(4)
@@ -5543,27 +5629,25 @@ struct PopoverConfigView: View {
                                 .foregroundColor(.tahoeSubtext)
                             if cfg.popoverShowCPU {
                                 Divider().background(Color.white.opacity(0.1)).padding(.vertical, 2)
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Toggle(isOn: .init(
-                                        get: { cfg.popoverShowCPUSparkline },
-                                        set: { cfg.popoverShowCPUSparkline = $0; notify(widthChanged: false) }
-                                    )) {
-                                        Text("Show Temperature Sparkline Graph below")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(.tahoeText)
-                                    }
-                                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
-                                    
-                                    Toggle(isOn: .init(
-                                        get: { cfg.popoverShowCores },
-                                        set: { cfg.popoverShowCores = $0; notify(widthChanged: false) }
-                                    )) {
-                                        Text("Show Per-Core Utilization Grid below")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(.tahoeText)
-                                    }
-                                    .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
+                                Toggle(isOn: .init(
+                                    get: { cfg.popoverShowCPUSparkline },
+                                    set: { cfg.popoverShowCPUSparkline = $0; notify(widthChanged: false) }
+                                )) {
+                                    Text("Show Temperature Sparkline Graph below")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(.tahoeText)
                                 }
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
+                                
+                                Toggle(isOn: .init(
+                                    get: { cfg.popoverShowCores },
+                                    set: { cfg.popoverShowCores = $0; notify(widthChanged: false) }
+                                )) {
+                                    Text("Show Per-Core Utilization Grid below")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(.tahoeText)
+                                }
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
                             }
                         }
                         .padding(12)
@@ -5774,51 +5858,69 @@ struct PopoverConfigView: View {
     }
 
     private func loadOrder() {
-        let orderStr = cfg.popoverRingOrder
-        let keys = orderStr.split(separator: ",").map(String.init)
-        
-        var loadedItems: [RingOrderItem] = []
-        for key in keys {
-            if key == "cpu" { loadedItems.append(RingOrderItem(id: "cpu", name: "CPU Tracker", color: .tahoeAccentCyan)) }
-            if key == "ram" { loadedItems.append(RingOrderItem(id: "ram", name: "RAM Tracker", color: .tahoeAccentOrange)) }
-            if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
-            if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
-            if key == "vram" { loadedItems.append(RingOrderItem(id: "vram", name: "VRAM Tracker", color: .tahoeAccentPurple.opacity(0.8))) }
-            if key == "net" { loadedItems.append(RingOrderItem(id: "net", name: "Network Tracker", color: .tahoeAccentGreen)) }
-            if key == "proc" { loadedItems.append(RingOrderItem(id: "proc", name: "Top Processes", color: .gray)) }
+        // Load Ring Items
+        let ringOrderStr = cfg.popoverRingOrder
+        let ringKeys = ringOrderStr.split(separator: ",").map(String.init)
+        var loadedRings: [RingOrderItem] = []
+        for key in ringKeys {
+            if key == "cpu" { loadedRings.append(RingOrderItem(id: "cpu", name: "CPU Ring", color: .tahoeAccentCyan)) }
+            if key == "ram" { loadedRings.append(RingOrderItem(id: "ram", name: "RAM Ring", color: .tahoeAccentOrange)) }
+            if key == "disk" { loadedRings.append(RingOrderItem(id: "disk", name: "Disk Ring", color: .tahoeAccentBlue)) }
+            if key == "gpu" { loadedRings.append(RingOrderItem(id: "gpu", name: "GPU Ring", color: .tahoeAccentPurple)) }
+            if key == "vram" { loadedRings.append(RingOrderItem(id: "vram", name: "VRAM Ring", color: .tahoeAccentPurple.opacity(0.8))) }
         }
-        
-        let allKeys = ["cpu", "ram", "gpu", "vram", "disk", "net", "proc"]
-        for key in allKeys {
-            if !loadedItems.contains(where: { $0.id == key }) {
-                if key == "cpu" { loadedItems.append(RingOrderItem(id: "cpu", name: "CPU Tracker", color: .tahoeAccentCyan)) }
-                if key == "ram" { loadedItems.append(RingOrderItem(id: "ram", name: "RAM Tracker", color: .tahoeAccentOrange)) }
-                if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
-                if key == "vram" { loadedItems.append(RingOrderItem(id: "vram", name: "VRAM Tracker", color: .tahoeAccentPurple.opacity(0.8))) }
-                if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
-                if key == "net" { loadedItems.append(RingOrderItem(id: "net", name: "Network Tracker", color: .tahoeAccentGreen)) }
-                if key == "proc" { loadedItems.append(RingOrderItem(id: "proc", name: "Top Processes", color: .gray)) }
-            }
+        self.ringItems = loadedRings
+
+        // Load Vertical Items
+        let vertOrderStr = cfg.popoverVerticalOrder
+        let vertKeys = vertOrderStr.split(separator: ",").map(String.init)
+        var loadedVerts: [RingOrderItem] = []
+        for key in vertKeys {
+            if key == "cpu" { loadedVerts.append(RingOrderItem(id: "cpu", name: "CPU Charts/Bars", color: .tahoeAccentCyan)) }
+            if key == "ram" { loadedVerts.append(RingOrderItem(id: "ram", name: "RAM Bar", color: .tahoeAccentOrange)) }
+            if key == "disk" { loadedVerts.append(RingOrderItem(id: "disk", name: "Disk Bar", color: .tahoeAccentBlue)) }
+            if key == "gpu" { loadedVerts.append(RingOrderItem(id: "gpu", name: "GPU Info & Charts", color: .tahoeAccentPurple)) }
+            if key == "vram" { loadedVerts.append(RingOrderItem(id: "vram", name: "VRAM Bar", color: .tahoeAccentPurple.opacity(0.8))) }
+            if key == "net" { loadedVerts.append(RingOrderItem(id: "net", name: "Network Tracker", color: .tahoeAccentGreen)) }
+            if key == "proc" { loadedVerts.append(RingOrderItem(id: "proc", name: "Top Processes", color: .gray)) }
         }
-        self.items = loadedItems
+        self.verticalItems = loadedVerts
     }
 
-    private func saveOrder() {
-        let orderStr = items.map { $0.id }.joined(separator: ",")
+    private func saveRingOrder() {
+        let orderStr = ringItems.map { $0.id }.joined(separator: ",")
         cfg.popoverRingOrder = orderStr
         notify(widthChanged: false)
     }
 
-    private func moveUp(index: Int) {
-        guard index > 0 else { return }
-        items.swapAt(index, index - 1)
-        saveOrder()
+    private func saveVerticalOrder() {
+        let orderStr = verticalItems.map { $0.id }.joined(separator: ",")
+        cfg.popoverVerticalOrder = orderStr
+        notify(widthChanged: false)
     }
 
-    private func moveDown(index: Int) {
-        guard index < items.count - 1 else { return }
-        items.swapAt(index, index + 1)
-        saveOrder()
+    private func moveRingUp(index: Int) {
+        guard index > 0 else { return }
+        ringItems.swapAt(index, index - 1)
+        saveRingOrder()
+    }
+
+    private func moveRingDown(index: Int) {
+        guard index < ringItems.count - 1 else { return }
+        ringItems.swapAt(index, index + 1)
+        saveRingOrder()
+    }
+
+    private func moveVerticalUp(index: Int) {
+        guard index > 0 else { return }
+        verticalItems.swapAt(index, index - 1)
+        saveVerticalOrder()
+    }
+
+    private func moveVerticalDown(index: Int) {
+        guard index < verticalItems.count - 1 else { return }
+        verticalItems.swapAt(index, index + 1)
+        saveVerticalOrder()
     }
 
     private func notify(widthChanged: Bool = true) {

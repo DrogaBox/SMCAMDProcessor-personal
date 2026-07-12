@@ -79,9 +79,9 @@ struct MenuBarConfig {
     var popoverGPUStyle:  Int { get { ud.integer(forKey: "pop_gpuStyle")  } set { ud.set(newValue, forKey: "pop_gpuStyle")  } }
     var popoverRingOrder: String {
         get {
-            let order = ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,gpu,vram,disk,net,proc"
+            let order = ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,gpu,vram,disk"
             var keys = order.split(separator: ",").map(String.init)
-            let allKeys = ["cpu", "ram", "gpu", "vram", "disk", "net", "proc"]
+            let allKeys = ["cpu", "ram", "gpu", "vram", "disk"]
             var migrated = false
             for key in allKeys {
                 if !keys.contains(key) {
@@ -97,6 +97,29 @@ struct MenuBarConfig {
         }
         set {
             ud.set(newValue, forKey: "pop_ringOrder")
+        }
+    }
+
+    var popoverVerticalOrder: String {
+        get {
+            let order = ud.string(forKey: "pop_verticalOrder") ?? "cpu,ram,gpu,vram,disk,net,proc"
+            var keys = order.split(separator: ",").map(String.init)
+            let allKeys = ["cpu", "ram", "gpu", "vram", "disk", "net", "proc"]
+            var migrated = false
+            for key in allKeys {
+                if !keys.contains(key) {
+                    keys.append(key)
+                    migrated = true
+                }
+            }
+            let migratedStr = keys.joined(separator: ",")
+            if migrated {
+                ud.set(migratedStr, forKey: "pop_verticalOrder")
+            }
+            return migratedStr
+        }
+        set {
+            ud.set(newValue, forKey: "pop_verticalOrder")
         }
     }
 
