@@ -748,6 +748,7 @@ struct DashboardContentView: View {
                             MemoryCard(model: model)
                                 .frame(height: height)
                         }
+                        .id("memory_chart_wrapper")
                         .contextMenu { chartContextMenu(for: "memory") }
                     } else if itemId == "network" && showNetwork {
                         ResizableChart(chartId: "dash_net", small: 70, medium: 100, large: 150) { height in
@@ -757,6 +758,7 @@ struct DashboardContentView: View {
                                 height: height
                             )
                         }
+                        .id("network_chart_wrapper")
                         .contextMenu { chartContextMenu(for: "network") }
                     } else if itemId == "cores" && showCores {
                         ResizableChart(chartId: "dash_cores_size", small: 120, medium: 200, large: 300) { height in
@@ -765,6 +767,7 @@ struct DashboardContentView: View {
                             }
                             .frame(height: height)
                         }
+                        .id("cores_chart_wrapper")
                         .contextMenu { chartContextMenu(for: "cores") }
                     }
                 }
@@ -895,6 +898,7 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
+                    .id("freq_chart_wrapper")
                     .contextMenu { horizontalContextMenu(for: "freq") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
@@ -912,6 +916,7 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
+                    .id("temp_chart_wrapper")
                     .contextMenu { horizontalContextMenu(for: "temp") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
@@ -929,6 +934,7 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
+                    .id("pwr_chart_wrapper")
                     .contextMenu { horizontalContextMenu(for: "pwr") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
