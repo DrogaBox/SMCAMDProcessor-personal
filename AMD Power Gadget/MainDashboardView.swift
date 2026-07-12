@@ -720,16 +720,18 @@ struct ResizableChart<Content: View>: View {
 
 struct DashboardContentView: View {
     @ObservedObject var model: TelemetryModel
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var cfg = MenuBarConfig.shared
     @AppStorage("mb_showNet") private var showNetwork: Bool = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
-                    StatCard(label: "CPU Temp",  value: String(format: "%.1f°C",   model.cpuTempC),     accent: .tahoeAccentCyan,   icon: "thermometer.medium")
-                    StatCard(label: "CPU Power", value: String(format: "%.1fW",    model.cpuWatts),     accent: .tahoeAccentOrange, icon: "bolt.fill")
-                    StatCard(label: "GPU Temp",  value: String(format: "%.1f°C",   model.gpuTempC),     accent: .tahoeAccentGreen,  icon: "cpu.fill")
-                    StatCard(label: "GPU Power", value: String(format: "%.1fW",    model.gpuPowerW),    accent: .tahoeAccentPurple, icon: "bolt.square.fill")
+                    StatCard(label: "CPU Temp",  value: String(format: "%.1f°C",   model.cpuTempC),     accent: PanelMetricColor.cyan(for: colorScheme),   icon: "thermometer.medium", history: model.cpuTempHistory)
+                    StatCard(label: "CPU Power", value: String(format: "%.1fW",    model.cpuWatts),     accent: PanelMetricColor.orange(for: colorScheme), icon: "bolt.fill", history: model.cpuPowerHistory)
+                    StatCard(label: "GPU Temp",  value: String(format: "%.1f°C",   model.gpuTempC),     accent: PanelMetricColor.green(for: colorScheme),  icon: "cpu.fill", history: model.gpuTempHistory)
+                    StatCard(label: "GPU Power", value: String(format: "%.1fW",    model.gpuPowerW),    accent: PanelMetricColor.pink(for: colorScheme),   icon: "bolt.square.fill", history: model.gpuPowerHistory)
                 }
 
                 HStack(alignment: .top, spacing: 12) {
@@ -790,14 +792,21 @@ struct DashboardContentView: View {
                 }
 
                 CoreGridCard(model: model)
+                if cfg.showMemory {
+                    MemoryCard(model: model)
+                }
             }
             .padding(18)
+            .background(HUDBackdrop(cornerRadius: 18))
         }
     }
 }
 
 private struct StatCard: View {
+    @Environment(\.colorScheme) private var colorScheme
     let label: LocalizedStringKey; let value: String; let accent: Color; let icon: String
+    var history: MetricHistory? = nil
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -805,19 +814,15 @@ private struct StatCard: View {
                 Text(label).font(.system(size: 11, weight: .medium)).foregroundColor(.tahoeSubtext)
             }
             Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundColor(.tahoeText)
+            
+            if let h = history {
+                Sparkline(history: h, accent: accent)
+                    .frame(height: 24)
+                    .padding(.top, 4)
+            }
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.tahoeCard)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                )
-        )
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(accent.opacity(0.18)))
-        .cornerRadius(12)
+        .panelCard(scheme: colorScheme)
     }
 }
 
@@ -4338,9 +4343,9 @@ struct PopoverProfilesView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Perfil de Energía")
+                    Text(model.autoEPPEnabled ? "Perfil de Energía (Auto-EPP Activo)" : "Perfil de Energía")
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(theme.subtext)
+                        .foregroundColor(model.autoEPPEnabled ? theme.accentCyan : theme.subtext)
                     Text(currentProfileName)
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(theme.text)
@@ -4353,6 +4358,7 @@ struct PopoverProfilesView: View {
             VStack(spacing: 8) {
                 Slider(value: sliderValue, in: 0...3, step: 1)
                     .accentColor(currentProfileColor)
+                    .disabled(model.autoEPPEnabled)
                 
                 HStack {
                     Text("Ahorro")
@@ -4371,6 +4377,7 @@ struct PopoverProfilesView: View {
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 3 ? theme.text : theme.subtext)
                 }
+                .opacity(model.autoEPPEnabled ? 0.5 : 1.0)
             }
             
             Divider().background(theme.cardBorder)
@@ -6925,4 +6932,240 @@ struct BlockWindowDragView: NSViewRepresentable {
         BlockDragNSView()
     }
     func updateNSView(_ nsView: BlockDragNSView, context: Context) {}
+}
+
+/// A small history graph: a filled area under a smooth polyline. Hand-drawn with
+/// `Path` so the app needs no charting framework.
+///
+/// `maxValue` fixes the vertical scale (CPU/memory use 1.0 for an absolute 0–100%
+/// reading); when nil the graph auto-scales to its own peak (network, power).
+struct Sparkline: View {
+    var history: MetricHistory
+    var color: Color
+    var maxValue: Double? = nil
+    var fillOpacity: Double = 0.16
+    var lineWidth: CGFloat = 1.5
+    var showsZeroBaseline = false
+
+    init(history: MetricHistory, accent: Color, maxValue: Double? = nil) {
+        self.history = history
+        self.color = accent
+        self.maxValue = maxValue
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let baselineY = max(0.5, geometry.size.height - 0.5)
+            let points = points(in: geometry.size, baselineY: baselineY)
+            if points.count >= 2 {
+                ZStack {
+                    Path { path in
+                        path.move(to: CGPoint(x: points[0].x, y: baselineY))
+                        points.forEach { path.addLine(to: $0) }
+                        path.addLine(to: CGPoint(x: points[points.count - 1].x, y: baselineY))
+                        path.closeSubpath()
+                    }
+                    .fill(
+                        LinearGradient(colors: [color.opacity(fillOpacity), color.opacity(0)],
+                                       startPoint: .top, endPoint: .bottom)
+                    )
+                    if showsZeroBaseline {
+                        Path { path in
+                            path.move(to: CGPoint(x: 0, y: baselineY))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: baselineY))
+                        }
+                        .stroke(Color.secondary.opacity(0.28), lineWidth: 1)
+                    }
+                    Path { path in
+                        path.move(to: points[0])
+                        points.dropFirst().forEach { path.addLine(to: $0) }
+                    }
+                    .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+                }
+            }
+        }
+    }
+
+    private func points(in size: CGSize, baselineY: CGFloat) -> [CGPoint] {
+        let values = history.values
+        guard values.count >= 2 else { return [] }
+        let peak = max(maxValue ?? (values.max() ?? 1), 0.0001)
+        let topY: CGFloat = 0.5
+        let plotHeight = max(1, baselineY - topY)
+        let lastIndex = values.count - 1
+        return values.enumerated().map { index, value in
+            let x = size.width * CGFloat(index) / CGFloat(lastIndex)
+            let normalized = min(1, max(0, value / peak))
+            let y = baselineY - plotHeight * CGFloat(normalized)
+            return CGPoint(x: x, y: y)
+        }
+    }
+}
+
+// MARK: - Premium Liquid Glass & Theme
+/// Translucent HUD material behind floating panels.
+struct HUDBackdrop: NSViewRepresentable {
+    var cornerRadius: CGFloat = 0
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .hudWindow
+        view.blendingMode = .behindWindow
+        view.state = .active
+        apply(to: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        apply(to: nsView)
+    }
+
+    private func apply(to view: NSVisualEffectView) {
+        view.wantsLayer = true
+        view.layer?.cornerRadius = cornerRadius
+        view.layer?.cornerCurve = .continuous
+        view.layer?.masksToBounds = true
+    }
+}
+
+enum Theme {
+    static let spaceGradient = LinearGradient(
+        colors: [Color(white: 0.10), Color(white: 0.04), Color.black],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+}
+
+enum PanelMetricColor {
+    static func green(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.00, green: 0.44, blue: 0.18) : .green }
+    static func cyan(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.00, green: 0.43, blue: 0.54) : .cyan }
+    static func mint(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.00, green: 0.44, blue: 0.40) : .mint }
+    static func yellow(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.56, green: 0.36, blue: 0.00) : .yellow }
+    static func red(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.68, green: 0.08, blue: 0.10) : .red }
+    static func orange(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.68, green: 0.30, blue: 0.00) : .orange }
+    static func pink(for scheme: ColorScheme) -> Color { scheme == .light ? Color(red: 0.68, green: 0.06, blue: 0.34) : .pink }
+}
+
+enum PanelSurface {
+    static func baseFill(for scheme: ColorScheme) -> Color { scheme == .light ? Color.white.opacity(0.68) : Color.black.opacity(0.42) }
+    static func cardFill(for scheme: ColorScheme) -> Color { scheme == .light ? Color.white.opacity(0.38) : Color.white.opacity(0.075) }
+    static func controlFill(for scheme: ColorScheme) -> Color { scheme == .light ? Color.black.opacity(0.055) : Color.white.opacity(0.085) }
+    static func border(for scheme: ColorScheme) -> Color { scheme == .light ? Color.black.opacity(0.09) : Color.white.opacity(0.11) }
+}
+
+extension View {
+    func panelCard(scheme: ColorScheme) -> some View {
+        self.padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(PanelSurface.cardFill(for: scheme))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(PanelSurface.border(for: scheme), lineWidth: 0.7)
+            )
+    }
+
+    func panelGlassSurface(cornerRadius: CGFloat = 18, scheme: ColorScheme) -> some View {
+        self.background(
+            ZStack {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.regularMaterial)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(PanelSurface.baseFill(for: scheme))
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(PanelSurface.border(for: scheme), lineWidth: 0.8)
+            }
+        )
+    }
+}
+
+// MARK: - MemoryCard (Memory details, Uptime, Battery)
+struct MemoryCard: View {
+    @ObservedObject var model: TelemetryModel
+    @Environment(\.colorScheme) private var colorScheme
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Memory")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.tahoeText)
+            
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.tahoeSubtext)
+                    Text("Pressure")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                    
+                    // Green dot + Normal badge
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(model.memoryPressureColor)
+                            .frame(width: 5, height: 5)
+                        Text(model.memoryPressure)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(model.memoryPressureColor)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(model.memoryPressureColor.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                
+                Spacer()
+                
+                let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+                let totalRAM = Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0)
+                Text(String(format: "%.2f GB / %.0f GB", usedGB, totalRAM))
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.tahoeText)
+            }
+            
+            Sparkline(history: model.ramHistory, accent: .orange, maxValue: Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+                .frame(height: 24)
+                .padding(.top, 4)
+            
+            Divider().background(Color.tahoeCardBorder)
+            
+            HStack(spacing: 12) {
+                // Uptime
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeSubtext)
+                    Text("Up for \(model.systemUptimeFormatted)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeSubtext)
+                }
+                
+                Spacer()
+                
+                // Battery (if present)
+                if model.hasBattery {
+                    HStack(spacing: 4) {
+                        Image(systemName: model.batteryIsCharging ? "battery.100.bolt" : "battery.100")
+                            .font(.system(size: 10))
+                            .foregroundColor(.tahoeSubtext)
+                        Text("Battery: \(model.batteryPercentage)%")
+                            .font(.system(size: 10))
+                            .foregroundColor(.tahoeSubtext)
+                    }
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "powerplug")
+                            .font(.system(size: 10))
+                            .foregroundColor(.tahoeSubtext)
+                        Text("AC Power")
+                            .font(.system(size: 10))
+                            .foregroundColor(.tahoeSubtext)
+                    }
+                }
+            }
+            .padding(.top, 2)
+        }
+        .panelCard(scheme: colorScheme)
+    }
 }
