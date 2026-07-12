@@ -11,6 +11,7 @@ import SwiftUI
 class ViewController: NSViewController, NSWindowDelegate {
 
     static var activeSelf: ViewController?
+    static var activeWindowController: NSWindowController?
 
     private var telemetryModel: TelemetryModel?
     private var hasAdjustedInitialSize = false
@@ -20,13 +21,18 @@ class ViewController: NSViewController, NSWindowDelegate {
     static func launch(forceFocus: Bool = false) {
         if let vc = ViewController.activeSelf {
             vc.view.window?.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
         } else {
             let mainStoryboard = NSStoryboard(name: "Main", bundle: nil)
             guard let controller = mainStoryboard.instantiateController(
                 withIdentifier: NSStoryboard.SceneIdentifier("AMDPowerGadget")
             ) as? NSWindowController else { return }
+            ViewController.activeWindowController = controller
             controller.showWindow(self)
-            if forceFocus { controller.window?.orderFrontRegardless() }
+            if forceFocus {
+                controller.window?.orderFrontRegardless()
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 
@@ -97,6 +103,7 @@ class ViewController: NSViewController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         ViewController.activeSelf = nil
+        ViewController.activeWindowController = nil
         AppDelegate.updateDockIcon()
     }
 }
