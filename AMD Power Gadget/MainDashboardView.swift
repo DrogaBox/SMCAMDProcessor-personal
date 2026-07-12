@@ -699,12 +699,21 @@ struct ResizableChart<Content: View>: View {
 
     var body: some View {
         content(currentHeight)
+            .contextMenu { ChartContextMenu(chart: cleanChartName) }
             .onReceive(NotificationCenter.default.publisher(for: .init("DashboardLayoutChanged"))) { _ in
                 let saved = UserDefaults.standard.double(forKey: "chart_h_\(chartId)")
                 if saved > 0 {
                     currentHeight = CGFloat(saved)
                 }
             }
+    }
+
+    private var cleanChartName: String {
+        chartId
+            .replacingOccurrences(of: "dash_", with: "")
+            .replacingOccurrences(of: "_size", with: "")
+            .replacingOccurrences(of: "mem", with: "memory")
+            .replacingOccurrences(of: "net", with: "network")
     }
 
     private func setHeight(_ h: CGFloat) {
@@ -748,8 +757,6 @@ struct DashboardContentView: View {
                             MemoryCard(model: model)
                                 .frame(height: height)
                         }
-                        .id("memory_chart_wrapper")
-                        .contextMenu { ChartContextMenu(chart: "memory") }
                     } else if itemId == "network" && showNetwork {
                         ResizableChart(chartId: "dash_net", small: 70, medium: 100, large: 150) { height in
                             NetworkLineChartCard(
@@ -758,8 +765,6 @@ struct DashboardContentView: View {
                                 height: height
                             )
                         }
-                        .id("network_chart_wrapper")
-                        .contextMenu { ChartContextMenu(chart: "network") }
                     } else if itemId == "cores" && showCores {
                         ResizableChart(chartId: "dash_cores_size", small: 120, medium: 200, large: 300) { height in
                             ScrollView {
@@ -767,8 +772,6 @@ struct DashboardContentView: View {
                             }
                             .frame(height: height)
                         }
-                        .id("cores_chart_wrapper")
-                        .contextMenu { ChartContextMenu(chart: "cores") }
                     }
                 }
             }
@@ -920,8 +923,6 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
-                    .id("freq_chart_wrapper")
-                    .contextMenu { ChartContextMenu(chart: "freq") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
                 if chartId == "temp" && showTemperature {
@@ -938,8 +939,6 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
-                    .id("temp_chart_wrapper")
-                    .contextMenu { ChartContextMenu(chart: "temp") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
                 if chartId == "pwr" && showPower {
@@ -956,8 +955,6 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
-                    .id("pwr_chart_wrapper")
-                    .contextMenu { ChartContextMenu(chart: "pwr") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
             }
