@@ -5,6 +5,8 @@
 
 High-performance XNU kernel extensions and modern SwiftUI telemetry suite for AMD Zen processors (Zen 1 through Zen 5) on macOS 13 Ventura up to macOS 26 Tahoe.
 
+![AMD Power Gadget Tahoe Edition Animated Preview](imgs/ani.gif)
+
 ---
 
 ## Overview & Architecture
