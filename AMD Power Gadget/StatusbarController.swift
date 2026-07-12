@@ -468,8 +468,11 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     fileprivate var view: StatusbarView!
 
     var updateTimer: Timer?
+    var statusBarButton: NSStatusBarButton?
+    private var customPanel: NSPanel!
+    private var eventMonitor: Any?
+    
     var menu: NSMenu?
-    private var popover: NSPopover!
     private var telemetrySubscription: AnyCancellable?
 
     private var smcReady = false
@@ -519,14 +522,21 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             button.action = #selector(itemClicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
-
-        // Setup NSPopover with MenuBarPopoverView
-        popover = NSPopover()
-        popover.behavior = MenuBarConfig.shared.popoverPinOpen ? .applicationDefined : .transient
-        popover.appearance = NSAppearance(named: .vibrantDark)
-        popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView())
-        popover.delegate = self
-
+        // Setup custom panel instead of NSPopover for edge-to-edge custom coloring
+        let hostingController = NSHostingController(rootView: MenuBarPopoverView())
+        
+        customPanel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 340, height: 600),
+                              styleMask: [.nonactivatingPanel, .fullSizeContentView, .borderless],
+                              backing: .buffered,
+                              defer: false)
+        customPanel.isFloatingPanel = true
+        customPanel.level = .statusBar
+        customPanel.collectionBehavior = [.canJoinAllSpaces, .ignoresCycle]
+        customPanel.backgroundColor = .clear
+        customPanel.isOpaque = false
+        customPanel.hasShadow = true
+        customPanel.contentViewController = hostingController
+        
         updateLength()
         if let btn = statusItem.button {
             view?.frame = btn.bounds
@@ -563,8 +573,8 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         statusItem.length = w
         view?.frame = statusItem.button?.bounds ?? NSRect(x: 0, y: 0, width: w, height: 22)
         lastReportedTemp = -1 // Reset snapshot to force redraw on layout change
-        if popover != nil {
-            popover.behavior = MenuBarConfig.shared.popoverPinOpen ? .applicationDefined : .transient
+        if customPanel != nil {
+            // Panel behavior is handled manually via eventMonitor and pin open config
         }
         update()
     }
@@ -669,50 +679,51 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         case .leftMouseUp:
             if let button = statusItem.button {
                 if MenuBarConfig.shared.enablePopover {
-                    if popover.isShown {
+                    if customPanel.isVisible {
                         closePopover()
                     } else {
-                        let clickLocation = button.convert(event.locationInWindow, from: nil)
-                        let w = MenuBarConfig.shared.totalWidth
-                        let clampedX = max(5, min(w - 5, clickLocation.x))
-                        
-                        // Physical bottom of the button inside bounds (keep within bounds to prevent AppKit from discarding the rect):
-                        // If flipped: bottom is y = bounds.height - 1, edge is .maxY
-                        // If not flipped: bottom is y = 0, edge is .minY
-                        let bottomY = button.isFlipped ? (button.bounds.height - 1) : 0
-                        let edge: NSRectEdge = button.isFlipped ? .maxY : .minY
-                        let rect = NSRect(x: clampedX - 5, y: bottomY, width: 10, height: 1)
-                        
-                        popover.behavior = MenuBarConfig.shared.popoverPinOpen ? .applicationDefined : .transient
-                        popover.show(relativeTo: rect, of: button, preferredEdge: edge)
-                        
-                        // Force the popover window to align perfectly below the status bar button in screen coordinates
-                        if let popoverWindow = popover.contentViewController?.view.window,
-                           let buttonWindow = button.window {
+                        // Force the custom panel window to align perfectly below the status bar button in screen coordinates
+                        if let buttonWindow = button.window {
                             let rectInWindow = button.convert(button.bounds, to: nil)
                             let buttonRectInScreen = buttonWindow.convertToScreen(rectInWindow)
-                            var popoverFrame = popoverWindow.frame
+                            
+                            if let host = customPanel.contentViewController as? NSHostingController<MenuBarPopoverView> {
+                                let targetSize = host.sizeThatFits(in: NSSize(width: 340, height: 10000))
+                                customPanel.setContentSize(NSSize(width: 340, height: targetSize.height))
+                            }
+                            
+                            var panelFrame = customPanel.frame
                             
                             // Set vertical position exactly 2pt below the status bar button
-                            popoverFrame.origin.y = buttonRectInScreen.origin.y - popoverFrame.height - 2
+                            panelFrame.origin.y = buttonRectInScreen.origin.y - panelFrame.height - 4
                             
                             // Center horizontally relative to the button
                             let buttonCenterX = buttonRectInScreen.origin.x + buttonRectInScreen.width / 2
-                            popoverFrame.origin.x = buttonCenterX - popoverFrame.width / 2
+                            panelFrame.origin.x = buttonCenterX - panelFrame.width / 2
                             
                             // Clamp horizontally to the screen's visible frame (multi-monitor safe)
                             if let screen = buttonWindow.screen {
                                 let screenFrame = screen.visibleFrame
                                 let minX = screenFrame.origin.x + 8
-                                let maxX = screenFrame.origin.x + screenFrame.width - popoverFrame.width - 8
-                                popoverFrame.origin.x = max(minX, min(maxX, popoverFrame.origin.x))
+                                let maxX = screenFrame.origin.x + screenFrame.width - panelFrame.width - 8
+                                panelFrame.origin.x = max(minX, min(maxX, panelFrame.origin.x))
                             }
                             
-                            popoverWindow.setFrame(popoverFrame, display: true, animate: false)
+                            customPanel.setFrame(panelFrame, display: true, animate: false)
                         }
                         
+                        customPanel.makeKeyAndOrderFront(nil)
+                        NSApp.activate(ignoringOtherApps: true)
                         TelemetryModel.shared.setPopoverVisible(true)
-                        popover.contentViewController?.view.window?.makeKey()
+                        
+                        // Setup global monitor to dismiss panel when clicking outside
+                        if eventMonitor == nil && !MenuBarConfig.shared.popoverPinOpen {
+                            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+                                if !MenuBarConfig.shared.popoverPinOpen {
+                                    self?.closePopover()
+                                }
+                            }
+                        }
                     }
                 } else {
                     // Fallback to showing the classic dropdown menu
@@ -734,22 +745,27 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     }
 
     @objc func closePopover() {
-        if popover.isShown {
-            popover.close()
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        if customPanel.isVisible {
+            customPanel.orderOut(nil)
             TelemetryModel.shared.setPopoverVisible(false)
         }
     }
 
     /// Rebuild SwiftUI root when app theme changes (RTL-aligned presets).
     @objc func rebuildPopoverTheme() {
-        let wasOpen = popover.isShown
         let wasPinned = MenuBarConfig.shared.popoverPinOpen
-        popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView())
-        popover.behavior = wasPinned ? .applicationDefined : .transient
-        // If it was open, re-show so chrome refreshes immediately
-        if wasOpen, let button = statusItem.button {
-            let rect = button.bounds
-            popover.show(relativeTo: rect, of: button, preferredEdge: .minY)
+        if let host = customPanel.contentViewController as? NSHostingController<MenuBarPopoverView> {
+            host.rootView = MenuBarPopoverView()
+        }
+        
+        if wasPinned && !customPanel.isVisible {
+            if let button = statusItem.button {
+                itemClicked() // Re-trigger open to reposition if needed
+            }
         }
     }
 
@@ -1066,7 +1082,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     @objc func togglePopover(_ sender: NSMenuItem) {
         MenuBarConfig.shared.enablePopover = !MenuBarConfig.shared.enablePopover
         sender.state = MenuBarConfig.shared.enablePopover ? .on : .off
-        if !MenuBarConfig.shared.enablePopover && popover.isShown {
+        if !MenuBarConfig.shared.enablePopover && customPanel.isVisible {
             closePopover()
         }
         NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
