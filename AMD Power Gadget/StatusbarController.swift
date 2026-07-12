@@ -466,12 +466,15 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
         view = StatusbarView()
         view.setup()
-        statusItem.button?.wantsLayer = true
-        statusItem.button?.addSubview(view)
-
-        statusItem.button?.target = self
-        statusItem.button?.action = #selector(itemClicked)
-        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        
+        if let button = statusItem.button {
+            button.wantsLayer = true
+            button.addSubview(view)
+            button.cell?.usesSingleLineMode = false // Allow stacked multi-line custom views
+            button.target = self
+            button.action = #selector(itemClicked)
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        }
 
         // Setup NSPopover with MenuBarPopoverView
         popover = NSPopover()
@@ -800,6 +803,16 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         NotificationCenter.default.post(name: .init("WidgetSettingsChanged"), object: nil)
     }
 
+    @objc func toggleKeepAwake(_ sender: NSMenuItem) {
+        CaffeinateManager.shared.toggle()
+        sender.state = CaffeinateManager.shared.isAwake ? .on : .off
+    }
+    
+    @objc func keepAwakeFor(_ sender: NSMenuItem) {
+        guard let hours = sender.representedObject as? Double else { return }
+        CaffeinateManager.shared.keepAwakeFor(hours: hours)
+    }
+
     @objc func disableAllWidgets(_ sender: NSMenuItem) {
         for type in DesktopWidgetType.allCases {
             UserDefaults.standard.set(false, forKey: "widget_enabled_\(type.rawValue)")
@@ -971,6 +984,37 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         m.addItem(popoverItem)
         
         m.addItem(NSMenuItem.separator())
+        
+        // Caffeinate Submenu
+        let caffeinateMenu = NSMenu()
+        
+        let toggleAwake = NSMenuItem(title: NSLocalizedString("Keep Awake", comment: ""), action: #selector(toggleKeepAwake(_:)), keyEquivalent: "")
+        toggleAwake.target = self
+        toggleAwake.state = CaffeinateManager.shared.isAwake ? .on : .off
+        caffeinateMenu.addItem(toggleAwake)
+        
+        caffeinateMenu.addItem(NSMenuItem.separator())
+        
+        let times: [(String, Double)] = [
+            ("For 1 Hour", 1.0),
+            ("For 2 Hours", 2.0),
+            ("For 4 Hours", 4.0),
+            ("For 8 Hours", 8.0)
+        ]
+        
+        for time in times {
+            let timeItem = NSMenuItem(title: NSLocalizedString(time.0, comment: ""), action: #selector(keepAwakeFor(_:)), keyEquivalent: "")
+            timeItem.target = self
+            timeItem.representedObject = time.1
+            caffeinateMenu.addItem(timeItem)
+        }
+        
+        let caffeinateMenuItem = NSMenuItem(title: NSLocalizedString("Sleep Prevention", comment: ""), action: nil, keyEquivalent: "")
+        caffeinateMenuItem.submenu = caffeinateMenu
+        m.addItem(caffeinateMenuItem)
+        
+        m.addItem(NSMenuItem.separator())
+
         item = NSMenuItem(title: NSLocalizedString("Exit", comment: ""), action: #selector(exitApp), keyEquivalent: ""); item.target = self
         m.addItem(item)
     }
