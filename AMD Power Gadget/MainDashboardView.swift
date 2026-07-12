@@ -4891,6 +4891,9 @@ struct MenuBarPopoverView: View {
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundColor(theme.accentCyan)
                         }
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .minimumScaleFactor(0.8)
                     }
                     Spacer()
                     
@@ -5455,20 +5458,21 @@ struct MenuBarPopoverView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 12)
         }
-        .frame(minWidth: 260, maxWidth: 360)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 340)
+        .fixedSize(horizontal: true, vertical: true)
         .background(
             ZStack {
                 theme.background.opacity(0.92)
-                VisualEffectBackground(
-                    material: .hudWindow,
-                    blendingMode: .behindWindow,
-                    state: .active,
-                    cornerRadius: 0
-                )
-                .opacity(theme.glassOpacity)
+                VisualEffectBackground(material: .hudWindow, blendingMode: .behindWindow, state: .active, cornerRadius: 14)
+                    .opacity(theme.glassOpacity)
             }
         )
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .edgesIgnoringSafeArea(.all)
         .id(themePreset) // force rebuild when theme changes
     }
 }
