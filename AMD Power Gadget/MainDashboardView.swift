@@ -5134,14 +5134,15 @@ struct MenuBarPopoverView: View {
                 .padding(.vertical, 4)
             }
             
-            // 2. Render Vertical List for Bars and Sparklines (style > 0)
             // 2. Render Vertical List for Bars and Sparklines (style > 0 or sparkline enabled)
             let showLinearOrGraphs = rings.contains(where: { ring in
                 if ring == "cpu" && cfg.popoverShowCPU && (cfg.popoverCPUStyle == 1 || cfg.popoverShowCPUSparkline || cfg.popoverShowCores) { return true }
                 if ring == "ram" && cfg.popoverShowRAM && cfg.popoverRAMStyle == 1 { return true }
                 if ring == "disk" && cfg.popoverShowDisk && cfg.popoverDiskStyle == 1 { return true }
-                if ring == "gpu" && cfg.popoverShowGPURing && (cfg.popoverGPUStyle == 1 || cfg.popoverShowGPUSparkline) { return true }
+                if ring == "gpu" && ((cfg.popoverShowGPURing && (cfg.popoverGPUStyle == 1 || cfg.popoverShowGPUSparkline)) || cfg.popoverShowGPU) { return true }
                 if ring == "vram" && cfg.popoverShowVRAM && cfg.popoverGPUStyle == 1 { return true }
+                if ring == "net" && cfg.popoverShowNetwork { return true }
+                if ring == "proc" && cfg.popoverShowProcesses { return true }
                 return false
             })
             
@@ -5196,26 +5197,63 @@ struct MenuBarPopoverView: View {
                                     color: .blue
                                 )
                             }
-                        } else if ring == "gpu" && cfg.popoverShowGPURing {
-                            if cfg.popoverGPUStyle == 1 {
-                                let gpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.gpuTempC) : ""
-                                LinearProgressBar(
-                                    label: "GPU",
-                                    pct: model.gpuLoadPct,
-                                    detailText: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
-                                    color: theme.accentPurple
-                                )
+                        } else if ring == "gpu" {
+                            if cfg.popoverShowGPURing {
+                                if cfg.popoverGPUStyle == 1 {
+                                    let gpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.gpuTempC) : ""
+                                    LinearProgressBar(
+                                        label: "GPU",
+                                        pct: model.gpuLoadPct,
+                                        detailText: String(format: "%.0f%%%@", model.gpuLoadPct, gpuTempStr),
+                                        color: theme.accentPurple
+                                    )
+                                }
+                                if cfg.popoverShowGPUSparkline {
+                                    MiniSparkline(
+                                        label: "GPU Temp",
+                                        currentVal: String(format: "%.0f°C", model.gpuTempC),
+                                        color: theme.accentPurple,
+                                        data: model.history,
+                                        value: { $0.gpuTempC },
+                                        filterZeros: true
+                                    )
+                                    .padding(.top, 2)
+                                }
                             }
-                            if cfg.popoverShowGPUSparkline {
-                                MiniSparkline(
-                                    label: "GPU Temp",
-                                    currentVal: String(format: "%.0f°C", model.gpuTempC),
-                                    color: theme.accentPurple,
-                                    data: model.history,
-                                    value: { $0.gpuTempC },
-                                    filterZeros: true
-                                )
-                                .padding(.top, 2)
+                            if cfg.popoverShowGPU {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "sparkles")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(theme.accentPurple)
+                                            .frame(width: 14)
+                                        Text(model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundColor(theme.text)
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                        Spacer()
+                                        if model.gpuTempC > 0 {
+                                            Text(String(format: "%.0f°C • %.0fW", model.gpuTempC, model.gpuPowerW))
+                                                .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                                                .foregroundColor(theme.text.opacity(0.9))
+                                        } else {
+                                            Text("Inactive")
+                                                .font(.system(size: 9.5, weight: .semibold))
+                                                .foregroundColor(theme.subtext.opacity(0.9))
+                                        }
+                                    }
+                                    if model.gpuTempC > 0 {
+                                        HStack {
+                                            Spacer()
+                                            let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
+                                            let fanRPMStr = model.gpuFanRPM > 0 ? String(format: " • %.0f RPM", model.gpuFanRPM) : ""
+                                            Text(String(format: "VRAM: %.2fG%@", vramGB, fanRPMStr))
+                                                .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                                                .foregroundColor(theme.subtext)
+                                        }
+                                    }
+                                }
                             }
                         } else if ring == "vram" && cfg.popoverShowVRAM {
                             if cfg.popoverGPUStyle == 1 {
@@ -5232,148 +5270,95 @@ struct MenuBarPopoverView: View {
                                     color: theme.accentPurple.opacity(0.8)
                                 )
                             }
-                        }
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-
-            // GPU & Network Stats
-            if cfg.popoverShowGPU || cfg.popoverShowNetwork {
-                Divider().background(theme.cardBorder)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    if cfg.popoverShowGPU {
-                        // GPU Row
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "sparkles")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(theme.accentPurple)
-                                    .frame(width: 14)
-                                Text(model.sysInfo.gpuModel.isEmpty || model.sysInfo.gpuModel == "Unknown" ? "Radeon GPU" : model.sysInfo.gpuModel)
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(theme.text)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                                Spacer()
-                                if model.gpuTempC > 0 {
-                                    Text(String(format: "%.0f°C • %.0fW", model.gpuTempC, model.gpuPowerW))
-                                        .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                                        .foregroundColor(theme.text.opacity(0.9))
-                                } else {
-                                    Text("Inactive")
-                                        .font(.system(size: 9.5, weight: .semibold))
-                                        .foregroundColor(theme.subtext.opacity(0.9))
+                        } else if ring == "net" && cfg.popoverShowNetwork {
+                            Button(action: {
+                                let task = Process()
+                                task.launchPath = "/usr/bin/open"
+                                task.arguments = ["/System/Library/PreferencePanes/Network.prefPane"]
+                                try? task.run()
+                            }) {
+                                VStack(spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "arrow.up.arrow.down")
+                                            .font(.system(size: 9))
+                                            .foregroundColor(.green)
+                                            .frame(width: 14)
+                                        Text("Network")
+                                            .font(.system(size: 10, weight: .semibold))
+                                            .foregroundColor(theme.text)
+                                        Spacer()
+                                        Text("↓ \(formatSpeed(model.netDownloadMBps))  ↑ \(formatSpeed(model.netUploadMBps))")
+                                            .font(.system(size: 9, design: .monospaced))
+                                            .foregroundColor(theme.text.opacity(0.85))
+                                    }
+                                    
+                                    if cfg.popoverShowNetSparkline {
+                                        MiniSparkline(
+                                            label: "Net Speed",
+                                            currentVal: formatSpeed(model.netDownloadMBps + model.netUploadMBps),
+                                            color: .green,
+                                            data: model.history,
+                                            value: { $0.netDownloadMBps + $0.netUploadMBps }
+                                        )
+                                        .padding(.top, 2)
+                                    }
                                 }
+                                .contentShape(Rectangle())
                             }
-                            if model.gpuTempC > 0 {
-                                HStack {
-                                    Spacer()
-                                    let vramGB = model.gpuVramUsedBytes / (1024.0 * 1024.0 * 1024.0)
-                                    let fanRPMStr = model.gpuFanRPM > 0 ? String(format: " • %.0f RPM", model.gpuFanRPM) : ""
-                                    Text(String(format: "VRAM: %.2fG%@", vramGB, fanRPMStr))
-                                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                                        .foregroundColor(theme.subtext)
+                            .buttonStyle(.plain)
+                        } else if ring == "proc" && cfg.popoverShowProcesses {
+                            Button(action: {
+                                let task = Process()
+                                task.launchPath = "/usr/bin/open"
+                                task.arguments = ["-a", processApp]
+                                try? task.run()
+                            }) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text("Top Processes")
+                                            .font(.system(size: 9.5, weight: .bold))
+                                            .foregroundColor(theme.subtext)
+                                        Spacer()
+                                        Image(systemName: "list.bullet")
+                                            .font(.system(size: 8))
+                                            .foregroundColor(theme.subtext.opacity(0.9))
+                                    }
+                                    .padding(.bottom, 2)
+                                    
+                                    if model.topProcesses.isEmpty {
+                                        HStack {
+                                            Spacer()
+                                            Text("Loading...")
+                                                .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                                .foregroundColor(theme.subtext.opacity(0.9))
+                                                .padding(.vertical, 4)
+                                            Spacer()
+                                        }
+                                    } else {
+                                        ForEach(model.topProcesses.prefix(5)) { proc in
+                                            HStack {
+                                                Text(proc.name)
+                                                    .font(.system(size: 9.5, weight: .semibold))
+                                                    .foregroundColor(theme.text.opacity(0.9))
+                                                    .lineLimit(1)
+                                                    .truncationMode(.tail)
+                                                Spacer()
+                                                Text(String(format: "%.1f%%", proc.cpuUsage))
+                                                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                                                    .foregroundColor(proc.cpuUsage > 50 ? theme.accentOrange : theme.subtext)
+                                            }
+                                        }
+                                    }
                                 }
+                                .contentShape(Rectangle())
+                                .frame(height: 95)
                             }
+                            .buttonStyle(.plain)
                         }
-                    }
-
-                    if cfg.popoverShowNetwork {
-                        // Network Row
-                        Button(action: {
-                            let task = Process()
-                            task.launchPath = "/usr/bin/open"
-                            task.arguments = ["/System/Library/PreferencePanes/Network.prefPane"]
-                            try? task.run()
-                        }) {
-                            VStack(spacing: 4) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "arrow.up.arrow.down")
-                                        .font(.system(size: 9))
-                                        .foregroundColor(.green)
-                                        .frame(width: 14)
-                                    Text("Network")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundColor(theme.text)
-                                    Spacer()
-                                    Text("↓ \(formatSpeed(model.netDownloadMBps))  ↑ \(formatSpeed(model.netUploadMBps))")
-                                        .font(.system(size: 9, design: .monospaced))
-                                        .foregroundColor(theme.text.opacity(0.85))
-                                }
-                                
-                                if cfg.popoverShowNetSparkline {
-                                    MiniSparkline(
-                                        label: "Net Speed",
-                                        currentVal: formatSpeed(model.netDownloadMBps + model.netUploadMBps),
-                                        color: .green,
-                                        data: model.history,
-                                        value: { $0.netDownloadMBps + $0.netUploadMBps }
-                                    )
-                                    .padding(.top, 2)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 12)
-            }
-
-            // Top Processes List
-            if cfg.popoverShowProcesses {
-                Divider().background(theme.cardBorder)
-                
-                Button(action: {
-                    let task = Process()
-                    task.launchPath = "/usr/bin/open"
-                    task.arguments = ["-a", processApp]
-                    try? task.run()
-                }) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Top Processes")
-                                .font(.system(size: 9.5, weight: .bold))
-                                .foregroundColor(theme.subtext)
-                            Spacer()
-                            Image(systemName: "list.bullet")
-                                .font(.system(size: 8))
-                                .foregroundColor(theme.subtext.opacity(0.9))
-                        }
-                        .padding(.bottom, 2)
-
-                        if model.topProcesses.isEmpty {
-                            HStack {
-                                Spacer()
-                                Text("Loading...")
-                                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                                    .foregroundColor(theme.subtext.opacity(0.9))
-                                    .padding(.vertical, 4)
-                                Spacer()
-                            }
-                        } else {
-                            ForEach(model.topProcesses) { proc in
-                                HStack {
-                                    Text(proc.name)
-                                        .font(.system(size: 9.5, weight: .semibold))
-                                        .foregroundColor(theme.text.opacity(0.9))
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                    Spacer()
-                                    Text(String(format: "%.1f%%", proc.cpuUsage))
-                                        .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                                        .foregroundColor(proc.cpuUsage > 50 ? theme.accentOrange : theme.subtext)
-                                }
-                            }
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .padding(.horizontal, 12)
-                    .frame(height: 95)
-                }
-                .buttonStyle(.plain)
+                .padding(.vertical, 4)
             }
             } else if currentTab == .profiles {
                 PopoverProfilesView()
@@ -5799,9 +5784,11 @@ struct PopoverConfigView: View {
             if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
             if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
             if key == "vram" { loadedItems.append(RingOrderItem(id: "vram", name: "VRAM Tracker", color: .tahoeAccentPurple.opacity(0.8))) }
+            if key == "net" { loadedItems.append(RingOrderItem(id: "net", name: "Network Tracker", color: .tahoeAccentGreen)) }
+            if key == "proc" { loadedItems.append(RingOrderItem(id: "proc", name: "Top Processes", color: .gray)) }
         }
         
-        let allKeys = ["cpu", "ram", "gpu", "vram", "disk"]
+        let allKeys = ["cpu", "ram", "gpu", "vram", "disk", "net", "proc"]
         for key in allKeys {
             if !loadedItems.contains(where: { $0.id == key }) {
                 if key == "cpu" { loadedItems.append(RingOrderItem(id: "cpu", name: "CPU Tracker", color: .tahoeAccentCyan)) }
@@ -5809,6 +5796,8 @@ struct PopoverConfigView: View {
                 if key == "gpu" { loadedItems.append(RingOrderItem(id: "gpu", name: "GPU Tracker", color: .tahoeAccentPurple)) }
                 if key == "vram" { loadedItems.append(RingOrderItem(id: "vram", name: "VRAM Tracker", color: .tahoeAccentPurple.opacity(0.8))) }
                 if key == "disk" { loadedItems.append(RingOrderItem(id: "disk", name: "Disk Tracker", color: .tahoeAccentBlue)) }
+                if key == "net" { loadedItems.append(RingOrderItem(id: "net", name: "Network Tracker", color: .tahoeAccentGreen)) }
+                if key == "proc" { loadedItems.append(RingOrderItem(id: "proc", name: "Top Processes", color: .gray)) }
             }
         }
         self.items = loadedItems
