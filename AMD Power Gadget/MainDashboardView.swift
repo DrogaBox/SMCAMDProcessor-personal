@@ -318,6 +318,7 @@ struct MainDashboardView: View {
             HStack(spacing: 0) {
                 SidebarView(selectedTab: $model.selectedTab, model: model)
                     .frame(width: 188)
+                    .id(themeRevision)
                 Divider().background(Color.tahoeCardBorder)
                 ZStack {
                     VisualEffectBackground(
@@ -327,11 +328,17 @@ struct MainDashboardView: View {
                         cornerRadius: 0
                     )
                     .ignoresSafeArea()
-                    contentForTab
-                        .transition(.opacity)
+                    
+                    if model.selectedTab == .themes {
+                        contentForTab
+                            .transition(.opacity)
+                    } else {
+                        contentForTab
+                            .transition(.opacity)
+                            .id(themeRevision)
+                    }
                 }
             }
-            .id(themeRevision)
             .background(
                 VisualEffectBackground(
                     material: .sidebar,
@@ -869,7 +876,6 @@ struct DashboardContentView: View {
                 }
             }
             .padding(18)
-            .background(HUDBackdrop(cornerRadius: 18))
         }
     }
 }
