@@ -475,6 +475,28 @@ struct MainDashboardView: View {
     }
 }
 
+// Mini Buttons Style
+private struct SidebarMiniButtonStyle: ButtonStyle {
+    let accent: Color
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundColor(.tahoeText)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(accent.opacity(configuration.isPressed ? 0.22 : 0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(accent.opacity(0.18), lineWidth: 0.5)
+            )
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+    }
+}
+
 // MARK: - Sidebar
 private struct SidebarView: View {
     @Binding var selectedTab: DashboardTab
@@ -523,6 +545,70 @@ private struct SidebarView: View {
                     }
                 }
                 Spacer()
+
+                // Compact buttons stack
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Button(action: {
+                            if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "safari")
+                                    .font(.system(size: 8))
+                                Text("GitHub")
+                            }
+                        }
+                        .buttonStyle(SidebarMiniButtonStyle(accent: .tahoeAccentCyan))
+
+                        Button(action: {
+                            DispatchQueue.global(qos: .userInitiated).async {
+                                if let url = Bundle.main.url(forResource: "bravo", withExtension: "mp3") {
+                                    if let sound = NSSound(contentsOf: url, byReference: true) {
+                                        sound.play()
+                                    }
+                                }
+                            }
+                            if let url = URL(string: "https://www.paypal.com/donate/?business=mrleisures@gmail.com") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "heart.fill")
+                                    .font(.system(size: 8))
+                                Text("Donar")
+                            }
+                        }
+                        .buttonStyle(SidebarMiniButtonStyle(accent: .tahoeAccentOrange))
+                    }
+
+                    if model.isCheckingForUpdates {
+                        HStack(spacing: 4) {
+                            ProgressView().scaleEffect(0.5).frame(width: 10, height: 10)
+                            Text("Buscando...").font(.system(size: 8.5)).foregroundColor(.tahoeSubtext)
+                        }
+                        .padding(.horizontal, 6)
+                    } else {
+                        Button(action: {
+                            if model.updateAvailable {
+                                if let u = URL(string: model.releaseURLString) { NSWorkspace.shared.open(u) }
+                            } else {
+                                model.checkForUpdates(manual: true)
+                            }
+                        }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: model.updateAvailable ? "arrow.down.circle" : "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 8))
+                                Text(model.updateAvailable ? "Download Update" : "Buscar Updates")
+                            }
+                        }
+                        .buttonStyle(SidebarMiniButtonStyle(accent: model.updateAvailable ? .tahoeAccentGreen : .tahoeAccentCyan))
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 10)
+
                 Link(destination: URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") ?? URL(fileURLWithPath: "/")) {
                     let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.13.3"
                     let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
@@ -2719,34 +2805,7 @@ struct AdvancedContentView: View {
                     }
                 }
 
-                Divider().background(Color.tahoeCardBorder)
-                SectionTitle("Software Updates")
-                Text("Check for new releases of SMCAMDProcessor and AMD Power Gadget on GitHub.")
-                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
-                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Check for Updates").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                                Text(model.updateCheckMessage.isEmpty ? "Current installed version: v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")" : model.updateCheckMessage)
-                                    .font(.system(size: 10))
-                                    .foregroundColor(model.updateAvailable ? .tahoeAccentGreen : .tahoeSubtext)
-                            }
-                            Spacer()
-                            if model.isCheckingForUpdates {
-                                ProgressView().scaleEffect(0.8)
-                            } else {
-                                TahoeButton(label: model.updateAvailable ? "Download Update" : "Check Now", icon: model.updateAvailable ? "arrow.down.circle" : "arrow.triangle.2.circlepath", accent: model.updateAvailable ? .tahoeAccentGreen : .tahoeAccentCyan) {
-                                    if model.updateAvailable {
-                                        if let u = URL(string: model.releaseURLString) { NSWorkspace.shared.open(u) }
-                                    } else {
-                                        model.checkForUpdates(manual: true)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+
                 
                 Text("DISCLAIMER: This software interacts directly with low-level hardware control registers. By using it, you agree that absolute responsibility for any system instability, hardware damage, or alien invasion lies entirely with the user.")
                     .font(.system(size: 9))
@@ -4370,27 +4429,7 @@ struct SystemInfoContentView: View {
                     InfoRow(label: "CPU Supported",   value: model.sysInfo.kextSupported ? "Yes" : "Not yet")
                 }
 
-                Divider().background(Color.tahoeCardBorder)
-                SectionTitle("Links & Support")
-                HStack(spacing: 10) {
-                    TahoeButton(label: "GitHub Repository", icon: "link", accent: .tahoeAccentCyan) {
-                        if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                    TahoeButton(label: "Donate (PayPal)", icon: "heart.fill", accent: .tahoeAccentOrange) {
-                        DispatchQueue.global(qos: .userInitiated).async {
-                            if let url = Bundle.main.url(forResource: "bravo", withExtension: "mp3") {
-                                if let sound = NSSound(contentsOf: url, byReference: true) {
-                                    sound.play()
-                                }
-                            }
-                        }
-                        if let url = URL(string: "https://www.paypal.com/donate/?business=mrleisures@gmail.com") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                }
+
             }
             .padding(18)
         }
