@@ -110,20 +110,20 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var card: Color {
         switch self {
-        // Match RTL ThemePalette.card (powerGadget / classic / …)
-        case .tahoe: return Color(red: 0.13, green: 0.13, blue: 0.16).opacity(0.92)
-        case .classic: return Color(red: 0.12, green: 0.14, blue: 0.19).opacity(0.92)
-        case .midnight: return Color(red: 0.08, green: 0.11, blue: 0.22).opacity(0.92)
-        case .ember: return Color(red: 0.18, green: 0.11, blue: 0.09).opacity(0.92)
-        case .matrix: return Color(red: 0.05, green: 0.10, blue: 0.07).opacity(0.92)
-        case .rose: return Color(red: 0.16, green: 0.10, blue: 0.18).opacity(0.92)
-        case .cyberpunk: return Color(red: 0.12, green: 0.08, blue: 0.22).opacity(0.85)
-        case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(0.85)
-        case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(0.85)
-        case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(0.85)
+        // Match RTL ThemePalette.card (powerGadget / classic / …) with 0.15 opacity for premium glass translucency
+        case .tahoe: return Color(red: 0.13, green: 0.13, blue: 0.16).opacity(0.15)
+        case .classic: return Color(red: 0.12, green: 0.14, blue: 0.19).opacity(0.15)
+        case .midnight: return Color(red: 0.08, green: 0.11, blue: 0.22).opacity(0.15)
+        case .ember: return Color(red: 0.18, green: 0.11, blue: 0.09).opacity(0.15)
+        case .matrix: return Color(red: 0.05, green: 0.10, blue: 0.07).opacity(0.15)
+        case .rose: return Color(red: 0.16, green: 0.10, blue: 0.18).opacity(0.15)
+        case .cyberpunk: return Color(red: 0.12, green: 0.08, blue: 0.22).opacity(0.15)
+        case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(0.15)
+        case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(0.15)
+        case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(0.15)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_card") ?? "#16213E"
-            return Color(hexString: hex) ?? Color(red: 0.13, green: 0.13, blue: 0.16).opacity(0.92)
+            return (Color(hexString: hex) ?? Color(red: 0.13, green: 0.13, blue: 0.16)).opacity(0.15)
         }
     }
 
