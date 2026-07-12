@@ -779,16 +779,26 @@ final class TelemetryModel: ObservableObject {
 
             // Light mode: menu bar only (no dashboard/popover) — fewer kext/GPU calls
             let lightMode = !self.activeWindows && !self.popoverVisible
+            let logging = self.isLoggingEnabled
+            let mbc = MenuBarConfig.shared
 
             let metric   = pm.getMetric(forced: true)
             let loadIndex = pm.getLoadIndex()
-            let rawGPUTemp = pm.getGPUTemp()
-            let rawGPUPower = pm.getGPUPower()
+            
+            let skipGPU = lightMode && !logging && !mbc.showGPU && !mbc.showGPUvram && !mbc.showGPUfan
+            let skipGPUThermals = lightMode && !logging && !mbc.showGPUtemp && !mbc.showGPUpwr
+            
+            let rawGPUTemp = skipGPUThermals ? Float(self.gpuTempC) : pm.getGPUTemp()
+            let rawGPUPower = skipGPUThermals ? Float(self.gpuPowerW) : pm.getGPUPower()
             let nowTime = Date()
             let rawGPULoad: Float
             let rawGPUVram: Float
             let rawGPUFan: Float
-            if lightMode, nowTime.timeIntervalSince(self.lastGPUExtraSample) < 3.0 {
+            if skipGPU {
+                rawGPULoad = Float(self.gpuLoadPct)
+                rawGPUVram = Float(self.gpuVramUsedBytes)
+                rawGPUFan = Float(self.gpuFanRPM)
+            } else if lightMode, nowTime.timeIntervalSince(self.lastGPUExtraSample) < 3.0 {
                 rawGPULoad = Float(self.gpuLoadPct)
                 rawGPUVram = Float(self.gpuVramUsedBytes)
                 rawGPUFan = Float(self.gpuFanRPM)
@@ -799,51 +809,73 @@ final class TelemetryModel: ObservableObject {
                 self.lastGPUExtraSample = nowTime
             }
             let ccdTemps: [Float]
-            let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
-            if nowTime.timeIntervalSince(self.lastCCDCheck) >= ccdTTL {
-                ccdTemps = pm.getCCDTemperatures()
-                self.cachedCCDTemps = ccdTemps
-                self.lastCCDCheck = nowTime
-            } else {
+            if lightMode && !logging {
                 ccdTemps = self.cachedCCDTemps
+            } else {
+                let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
+                if nowTime.timeIntervalSince(self.lastCCDCheck) >= ccdTTL {
+                    ccdTemps = pm.getCCDTemperatures()
+                    self.cachedCCDTemps = ccdTemps
+                    self.lastCCDCheck = nowTime
+                } else {
+                    ccdTemps = self.cachedCCDTemps
+                }
             }
             let instDelta = pm.getInstructionDelta()
 
             let numFansCount = self.numFans
             var fanRpms: [UInt64] = []
             var fanCtrls: [UInt64] = []
-            let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
-            if self.smcDriverLoaded && numFansCount > 0,
-               nowTime.timeIntervalSince(self.lastFanSampleTime) >= fanTTL {
-                fanRpms  = pm.kernelGetUInt64(count: numFansCount, selector: 93)
-                fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
-                self.lastFanSampleTime = nowTime
+            if lightMode && !logging && !mbc.showFanRPM {
+                // skip polling fans
+            } else {
+                let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
+                if self.smcDriverLoaded && numFansCount > 0,
+                   nowTime.timeIntervalSince(self.lastFanSampleTime) >= fanTTL {
+                    fanRpms  = pm.kernelGetUInt64(count: numFansCount, selector: 93)
+                    fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
+                    self.lastFanSampleTime = nowTime
+                }
             }
 
             let ramUsage: Double
-            let diskUsage: Double
             let now = Date()
-            if now.timeIntervalSince(self.lastRAMCheck) >= 2.0 {
-                ramUsage = self.getRAMUsagePct()
-                self.cachedRAMUsage = ramUsage
-                self.lastRAMCheck = now
-            } else {
+            if lightMode && !logging && !mbc.showMemory {
                 ramUsage = self.cachedRAMUsage
-            }
-            if now.timeIntervalSince(self.lastDiskUsageCheck) >= 10.0 {
-                diskUsage = self.getDiskUsagePct()
-                self.cachedDiskUsage = diskUsage
-                self.lastDiskUsageCheck = now
             } else {
+                if now.timeIntervalSince(self.lastRAMCheck) >= 2.0 {
+                    ramUsage = self.getRAMUsagePct()
+                    self.cachedRAMUsage = ramUsage
+                    self.lastRAMCheck = now
+                } else {
+                    ramUsage = self.cachedRAMUsage
+                }
+            }
+            
+            let diskUsage: Double
+            if lightMode && !logging {
                 diskUsage = self.cachedDiskUsage
-            }
-            let diskIO: (read: UInt64, write: UInt64)
-            if now.timeIntervalSince(self.lastDiskIOCheck) >= 2.0 {
-                diskIO = self.getDiskIOBytes()
-                self.cachedDiskIO = diskIO
-                self.lastDiskIOCheck = now
             } else {
+                if now.timeIntervalSince(self.lastDiskUsageCheck) >= 10.0 {
+                    diskUsage = self.getDiskUsagePct()
+                    self.cachedDiskUsage = diskUsage
+                    self.lastDiskUsageCheck = now
+                } else {
+                    diskUsage = self.cachedDiskUsage
+                }
+            }
+            
+            let diskIO: (read: UInt64, write: UInt64)
+            if lightMode && !logging {
                 diskIO = self.cachedDiskIO
+            } else {
+                if now.timeIntervalSince(self.lastDiskIOCheck) >= 2.0 {
+                    diskIO = self.getDiskIOBytes()
+                    self.cachedDiskIO = diskIO
+                    self.lastDiskIOCheck = now
+                } else {
+                    diskIO = self.cachedDiskIO
+                }
             }
 
             DispatchQueue.main.async { [weak self] in
@@ -1064,9 +1096,18 @@ final class TelemetryModel: ObservableObject {
         var netUp: Double = 0
         var netDown: Double = 0
         let isNetActive = (selectedTab == .dashboard || selectedTab == .telemetry || popoverVisible)
-        if let netSnap = NetworkStats.shared.update(lowFrequency: !isNetActive) {
-            netUp = netSnap.uploadMBps
-            netDown = netSnap.downloadMBps
+        
+        // Skip network polling entirely if in menubar mode and networking is hidden
+        let skipNetwork = lightMode && !isLoggingEnabled && !MenuBarConfig.shared.showNetwork
+        
+        if !skipNetwork {
+            if let netSnap = NetworkStats.shared.update(lowFrequency: !isNetActive) {
+                netUp = netSnap.uploadMBps
+                netDown = netSnap.downloadMBps
+            }
+        } else {
+            netUp = self.netUploadMBps
+            netDown = self.netDownloadMBps
         }
         self.netUploadMBps = netUp
         self.netDownloadMBps = netDown

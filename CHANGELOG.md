@@ -1,5 +1,26 @@
 # Change Summary & Release Changelog
 
+## v3.19.1  UI Refinements, Telemetry Optimizations & UX Fixes
+
+### App (AMD Power Gadget)
+* **Background Polling Optimization (Light Mode)**: Drastically reduced CPU and SMC overhead when only the status bar is visible. The telemetry engine now dynamically skips heavy PCI, NVMe, and CCD hardware queries for any metrics (GPU, RAM, Disk, Fans) that the user has chosen to hide from the menu bar, provided CSV logging is disabled.
+* **Popover Native Aesthetics**: Removed custom clipping and dual borders from the popover window to let macOS natively render the glassmorphism and arrow stroke (fixing the double-border artifact).
+* **StatusBar Uptime & Battery**: Integrated real-time Battery (or AC status) and System Uptime directly into the MenuBarPopover header.
+* **Configuration Persistence**: Architecturally decoupled `popoverRingOrder` from the vertical item lists to resolve persistence and configuration bugs where "Top Processes" or Network cards wouldn't load or respect user ordering.
+* **Context Menu Decoupling**: Moved context menus out of the main telemetry tick loops into standalone `Equatable` views with stable IDs, completely resolving right-click flickering.
+* **Sidebar Relocation**: Moved GitHub, Donate, and Updates buttons to the left sidebar for cleaner layout.
+
+## v3.19.0  Tahoe UI Overhaul, Liquid Glass & Interactive Menus
+
+### App (AMD Power Gadget)
+* **Premium Liquid Glass UI**: Massive visual overhaul integrating macOS Tahoe-style `vibrantDark` glassmorphism, translucent card backgrounds (0.15 opacity), and smooth visual effects across the entire dashboard.
+* **Interactive MenuBar Popover**: Introduced KDE-style interactive tabs and profiles inside the status bar popover. 
+* **Dynamic Dashboard Ordering**: Added support for fully customizable dashboard ring item ordering and individual context menu sizing.
+* **Caffeinate Manager**: Integrated system sleep prevention (Caffeinate) toggles directly into the UI.
+* **Optional Memory Card**: Added a new RAM usage ring/dashboard card.
+* **Preferences Redesign**: Complete overhaul of the Settings view with a premium layout, preset shortcut selectors, and better organization.
+
+
 ## v3.18.4  Hotfix: rendezvousLock deadlock fix
 
 ### Critical Fix
