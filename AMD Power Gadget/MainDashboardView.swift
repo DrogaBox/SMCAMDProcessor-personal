@@ -749,7 +749,7 @@ struct DashboardContentView: View {
                                 .frame(height: height)
                         }
                         .id("memory_chart_wrapper")
-                        .contextMenu { chartContextMenu(for: "memory") }
+                        .contextMenu { ChartContextMenu(chart: "memory") }
                     } else if itemId == "network" && showNetwork {
                         ResizableChart(chartId: "dash_net", small: 70, medium: 100, large: 150) { height in
                             NetworkLineChartCard(
@@ -759,7 +759,7 @@ struct DashboardContentView: View {
                             )
                         }
                         .id("network_chart_wrapper")
-                        .contextMenu { chartContextMenu(for: "network") }
+                        .contextMenu { ChartContextMenu(chart: "network") }
                     } else if itemId == "cores" && showCores {
                         ResizableChart(chartId: "dash_cores_size", small: 120, medium: 200, large: 300) { height in
                             ScrollView {
@@ -768,7 +768,7 @@ struct DashboardContentView: View {
                             .frame(height: height)
                         }
                         .id("cores_chart_wrapper")
-                        .contextMenu { chartContextMenu(for: "cores") }
+                        .contextMenu { ChartContextMenu(chart: "cores") }
                     }
                 }
             }
@@ -779,9 +779,20 @@ struct DashboardContentView: View {
 }
 
 // MARK: - Dashboard Sub-views & Helper Extensions
-extension DashboardContentView {
-    @ViewBuilder
-    func chartContextMenu(for chart: String) -> some View {
+struct ChartContextMenu: View {
+    let chart: String
+    
+    @AppStorage("dash_showFreq") var showFrequency = true
+    @AppStorage("dash_showTemp") var showTemperature = true
+    @AppStorage("dash_showPwr") var showPower = true
+    @AppStorage("dash_showCores") var showCores = true
+    @AppStorage("mb_showNet") var showNetwork = false
+    @AppStorage("mb_showMem") var showMemory = true
+    
+    @AppStorage("dash_chart_order") var chartOrder = "freq,temp,pwr"
+    @AppStorage("dash_vertical_order") var verticalOrder = "charts,memory,network,cores"
+
+    var body: some View {
         Menu("Size") {
             Button("Small") { setChartHeight(for: chart, heightType: "small") }
             Button("Medium") { setChartHeight(for: chart, heightType: "medium") }
@@ -815,7 +826,7 @@ extension DashboardContentView {
         }
     }
 
-    func setChartHeight(for chart: String, heightType: String) {
+    private func setChartHeight(for chart: String, heightType: String) {
         let key = "chart_h_dash_" + (chart == "memory" ? "mem_size" : chart == "cores" ? "cores_size" : chart)
         let actualHeight: CGFloat
         switch chart {
@@ -830,7 +841,7 @@ extension DashboardContentView {
         NotificationCenter.default.post(name: .init("DashboardLayoutChanged"), object: nil)
     }
 
-    func setChartVisibility(for chart: String, visible: Bool) {
+    private func setChartVisibility(for chart: String, visible: Bool) {
         switch chart {
         case "freq": showFrequency = visible
         case "temp": showTemperature = visible
@@ -842,13 +853,24 @@ extension DashboardContentView {
         }
     }
 
-    func moveChart(_ chart: String, direction: Int) {
-        var arr = verticalOrder.split(separator: ",").map(String.init)
-        if let idx = arr.firstIndex(of: chart) {
-            let newIdx = idx + direction
-            if newIdx >= 0 && newIdx < arr.count {
-                arr.swapAt(idx, newIdx)
-                verticalOrder = arr.joined(separator: ",")
+    private func moveChart(_ chart: String, direction: Int) {
+        if ["freq", "temp", "pwr"].contains(chart) {
+            var arr = chartOrder.split(separator: ",").map(String.init)
+            if let idx = arr.firstIndex(of: chart) {
+                let newIdx = idx + direction
+                if newIdx >= 0 && newIdx < arr.count {
+                    arr.swapAt(idx, newIdx)
+                    chartOrder = arr.joined(separator: ",")
+                }
+            }
+        } else {
+            var arr = verticalOrder.split(separator: ",").map(String.init)
+            if let idx = arr.firstIndex(of: chart) {
+                let newIdx = idx + direction
+                if newIdx >= 0 && newIdx < arr.count {
+                    arr.swapAt(idx, newIdx)
+                    verticalOrder = arr.joined(separator: ",")
+                }
             }
         }
     }
@@ -899,7 +921,7 @@ struct HorizontalChartsContainer: View {
                         )
                     }
                     .id("freq_chart_wrapper")
-                    .contextMenu { horizontalContextMenu(for: "freq") }
+                    .contextMenu { ChartContextMenu(chart: "freq") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
                 if chartId == "temp" && showTemperature {
@@ -917,7 +939,7 @@ struct HorizontalChartsContainer: View {
                         )
                     }
                     .id("temp_chart_wrapper")
-                    .contextMenu { horizontalContextMenu(for: "temp") }
+                    .contextMenu { ChartContextMenu(chart: "temp") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
                 if chartId == "pwr" && showPower {
@@ -935,66 +957,9 @@ struct HorizontalChartsContainer: View {
                         )
                     }
                     .id("pwr_chart_wrapper")
-                    .contextMenu { horizontalContextMenu(for: "pwr") }
+                    .contextMenu { ChartContextMenu(chart: "pwr") }
                     .frame(maxHeight: .infinity, alignment: .top)
                 }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func horizontalContextMenu(for chart: String) -> some View {
-        Menu("Size") {
-            Button("Small") { setChartHeight(for: chart, heightType: "small") }
-            Button("Medium") { setChartHeight(for: chart, heightType: "medium") }
-            Button("Large") { setChartHeight(for: chart, heightType: "large") }
-        }
-        
-        Button("Hide Chart") {
-            setChartVisibility(for: chart, visible: false)
-        }
-        
-        let hasHiddenCharts = !showFrequency || !showTemperature || !showPower || !showMemory || !showNetwork || !showCores
-        if hasHiddenCharts {
-            Menu("Show Chart") {
-                if !showFrequency { Button("Frequency") { showFrequency = true } }
-                if !showTemperature { Button("Temperature") { showTemperature = true } }
-                if !showPower { Button("Power") { showPower = true } }
-                if !showMemory { Button("Memory") { showMemory = true } }
-                if !showNetwork { Button("Network") { showNetwork = true } }
-                if !showCores { Button("Core Grid") { showCores = true } }
-            }
-        }
-        
-        Menu("Move Position") {
-            Button("Move Left") { moveChart(chart, direction: -1) }
-            Button("Move Right") { moveChart(chart, direction: 1) }
-        }
-    }
-
-    private func setChartHeight(for chart: String, heightType: String) {
-        let key = "chart_h_dash_" + chart
-        let actualHeight = (heightType == "small") ? 70 : (heightType == "medium") ? 100 : CGFloat(150)
-        UserDefaults.standard.set(Double(actualHeight), forKey: key)
-        NotificationCenter.default.post(name: .init("DashboardLayoutChanged"), object: nil)
-    }
-
-    private func setChartVisibility(for chart: String, visible: Bool) {
-        switch chart {
-        case "freq": showFrequency = visible
-        case "temp": showTemperature = visible
-        case "pwr": showPower = visible
-        default: break
-        }
-    }
-
-    private func moveChart(_ chart: String, direction: Int) {
-        var arr = chartOrder.split(separator: ",").map(String.init)
-        if let idx = arr.firstIndex(of: chart) {
-            let newIdx = idx + direction
-            if newIdx >= 0 && newIdx < arr.count {
-                arr.swapAt(idx, newIdx)
-                chartOrder = arr.joined(separator: ",")
             }
         }
     }
