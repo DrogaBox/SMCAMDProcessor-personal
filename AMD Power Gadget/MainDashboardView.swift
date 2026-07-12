@@ -7319,7 +7319,21 @@ struct Sparkline: View {
 
 // MARK: - Premium Liquid Glass & Theme
 /// Translucent HUD material behind floating panels.
-struct HUDBackdrop: NSViewRepresentable {
+struct HUDBackdrop: View {
+    var cornerRadius: CGFloat = 0
+    @AppStorage("low_performance_mode") private var isLowPerformanceMode = false
+
+    var body: some View {
+        if isLowPerformanceMode {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color(red: 0.10, green: 0.10, blue: 0.12)) // Solid fallback
+        } else {
+            HUDBackdropNSView(cornerRadius: cornerRadius)
+        }
+    }
+}
+
+struct HUDBackdropNSView: NSViewRepresentable {
     var cornerRadius: CGFloat = 0
 
     func makeNSView(context: Context) -> NSVisualEffectView {
