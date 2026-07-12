@@ -77,7 +77,7 @@ struct MenuBarConfig {
     var popoverRAMStyle:  Int { get { ud.integer(forKey: "pop_ramStyle")  } set { ud.set(newValue, forKey: "pop_ramStyle")  } }
     var popoverDiskStyle: Int { get { ud.integer(forKey: "pop_diskStyle") } set { ud.set(newValue, forKey: "pop_diskStyle") } }
     var popoverGPUStyle:  Int { get { ud.integer(forKey: "pop_gpuStyle")  } set { ud.set(newValue, forKey: "pop_gpuStyle")  } }
-    var popoverRingOrder: String { get { ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,gpu,vram,disk" } set { ud.set(newValue, forKey: "pop_ringOrder") } }
+    var popoverRingOrder: String { get { ud.string(forKey: "pop_ringOrder") ?? "cpu,ram,gpu,vram,disk,net,proc" } set { ud.set(newValue, forKey: "pop_ringOrder") } }
 
     var popoverShowCPUSparkline: Bool { get { ud.bool(forKey: "pop_showCPUSparkline") } set { ud.set(newValue, forKey: "pop_showCPUSparkline") } }
     var popoverShowGPUSparkline: Bool { get { ud.bool(forKey: "pop_showGPUSparkline") } set { ud.set(newValue, forKey: "pop_showGPUSparkline") } }
