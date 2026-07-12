@@ -271,6 +271,22 @@ final class TelemetryModel: ObservableObject {
     }
     @Published var history: [TelemetryPoint] = []
 
+    // Sparkline history buffers
+    @Published var cpuLoadHistory = MetricHistory(capacity: 30)
+    @Published var gpuLoadHistory = MetricHistory(capacity: 30)
+    @Published var cpuTempHistory = MetricHistory(capacity: 30)
+    @Published var gpuTempHistory = MetricHistory(capacity: 30)
+    @Published var cpuPowerHistory = MetricHistory(capacity: 30)
+    @Published var gpuPowerHistory = MetricHistory(capacity: 30)
+    @Published var ramHistory = MetricHistory(capacity: 30)
+    
+    // Memory pressure, Battery status, Uptime
+    @Published var memoryPressure: String = "Normal"
+    @Published var memoryPressureColor: Color = .green
+    @Published var batteryPercentage: Int = -1
+    @Published var batteryIsCharging: Bool = false
+    @Published var hasBattery: Bool = false
+
     // Cache structures for performance optimization
     private var lastDiskIOCheck: Date = Date.distantPast
     private var cachedDiskIO: (read: UInt64, write: UInt64) = (0, 0)
@@ -1086,6 +1102,20 @@ final class TelemetryModel: ObservableObject {
         )
         historyCounter += 1
         historyBuffer.append(point)
+        
+        cpuLoadHistory.push(cpuLoadAvg)
+        gpuLoadHistory.push(gpuLoadPct)
+        cpuTempHistory.push(cpuTempC)
+        cpuPowerHistory.push(cpuWatts)
+        gpuTempHistory.push(gpuTempC)
+        gpuPowerHistory.push(gpuPowerW)
+        
+        let usedRAM = (ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+        ramHistory.push(usedRAM)
+        
+        updateMemoryPressure()
+        getBatteryStatus()
+
         // Publishing full history array every tick is expensive for SwiftUI charts.
         // Light mode (menu bar only): refresh history less often.
         let historyTTL: TimeInterval = lightMode ? 2.0 : 0.0
@@ -1647,6 +1677,50 @@ final class TelemetryModel: ObservableObject {
             return "\(minutes)m"
         }
     }
+    
+    private func updateMemoryPressure() {
+        var pressure: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        if sysctlbyname("kern.memorystatus_vm_pressure_level", &pressure, &size, nil, 0) == 0 {
+            switch pressure {
+            case 1: 
+                memoryPressure = "Normal"
+                memoryPressureColor = .green
+            case 2: 
+                memoryPressure = "Warning"
+                memoryPressureColor = .orange
+            case 4: 
+                memoryPressure = "Critical"
+                memoryPressureColor = .red
+            default: 
+                memoryPressure = "Normal"
+                memoryPressureColor = .green
+            }
+        } else {
+            memoryPressure = "Normal"
+            memoryPressureColor = .green
+        }
+    }
+    
+    private func getBatteryStatus() {
+        guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue() else { return }
+        guard let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [CFTypeRef] else { return }
+        var foundBattery = false
+        for source in sources {
+            if let description = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any] {
+                if let type = description[kIOPSTypeKey] as? String, type == kIOPSInternalBatteryType {
+                    foundBattery = true
+                    if let capacity = description[kIOPSCurrentCapacityKey] as? Int {
+                        batteryPercentage = capacity
+                    }
+                    if let isCharging = description[kIOPSIsChargingKey] as? Bool {
+                        batteryIsCharging = isCharging
+                    }
+                }
+            }
+        }
+        hasBattery = foundBattery
+    }
 
     nonisolated private func fetchTopProcesses() -> [ProcessInfoRow] {
         let task = Process()
@@ -2101,5 +2175,83 @@ struct SimpleDeque<T> {
             }
         }
         return result
+    }
+}
+
+// MARK: - MetricHistory
+struct MetricHistory {
+    let capacity: Int
+    private(set) var values: [Double] = []
+
+    init(capacity: Int) {
+        self.capacity = max(1, capacity)
+    }
+
+    mutating func push(_ value: Double) {
+        values.append(value)
+        if values.count > capacity {
+            values.removeFirst(values.count - capacity)
+        }
+    }
+}
+
+// MARK: - CaffeinateManager
+import IOKit.pwr_mgt
+
+@MainActor
+final class CaffeinateManager: ObservableObject {
+    static let shared = CaffeinateManager()
+    
+    @Published var isAwake: Bool = false {
+        didSet {
+            if isAwake {
+                startAssertion()
+            } else {
+                releaseAssertion()
+            }
+        }
+    }
+    
+    private var assertionID: IOPMAssertionID = 0
+    private var assertionCreated: Bool = false
+    private var timer: Timer?
+
+    func toggle() {
+        isAwake.toggle()
+    }
+    
+    func keepAwakeFor(hours: Double) {
+        isAwake = true
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: hours * 3600, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.isAwake = false
+            }
+        }
+    }
+
+    private func startAssertion() {
+        guard !assertionCreated else { return }
+        let reasonForActivity = "AMD Power Gadget User Requested Keep Awake" as CFString
+        let success = IOPMAssertionCreateWithName(
+            kIOPMAssertionTypeNoDisplaySleep as CFString,
+            IOPMAssertionLevel(kIOPMAssertionLevelOn),
+            reasonForActivity,
+            &assertionID
+        )
+        if success == kIOReturnSuccess {
+            assertionCreated = true
+        } else {
+            isAwake = false
+        }
+    }
+    
+    private func releaseAssertion() {
+        if assertionCreated {
+            IOPMAssertionRelease(assertionID)
+            assertionCreated = false
+        }
+        timer?.invalidate()
+        timer = nil
     }
 }
