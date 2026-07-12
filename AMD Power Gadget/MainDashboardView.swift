@@ -1000,21 +1000,21 @@ private struct StatCard: View {
     var history: MetricHistory? = nil
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: icon).font(.system(size: 12)).foregroundColor(accent)
-                Text(label).font(.system(size: 11, weight: .medium)).foregroundColor(.tahoeSubtext)
-            }
-            Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundColor(.tahoeText)
-            
-            if let h = history {
-                Sparkline(history: h, accent: accent)
-                    .frame(height: 24)
-                    .padding(.top, 4)
+        TahoeCard(accent: accent.opacity(0.18)) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: icon).font(.system(size: 12)).foregroundColor(accent)
+                    Text(label).font(.system(size: 11, weight: .medium)).foregroundColor(.tahoeSubtext)
+                }
+                Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundColor(.tahoeText)
+                
+                if let h = history {
+                    Sparkline(history: h, accent: accent)
+                        .frame(height: 24)
+                        .padding(.top, 4)
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panelCard(scheme: colorScheme)
     }
 }
 
@@ -7415,87 +7415,88 @@ struct MemoryCard: View {
     @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Memory")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.tahoeText)
-            
-            HStack {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.tahoeSubtext)
-                    Text("Pressure")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.tahoeSubtext)
-                    
-                    // Green dot + Normal badge
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(model.memoryPressureColor)
-                            .frame(width: 5, height: 5)
-                        Text(model.memoryPressure)
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(model.memoryPressureColor)
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(model.memoryPressureColor.opacity(0.12))
-                    .clipShape(Capsule())
-                }
-                
-                Spacer()
-                
-                let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
-                let totalRAM = Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0)
-                Text(String(format: "%.2f GB / %.0f GB", usedGB, totalRAM))
-                    .font(.system(size: 11, design: .monospaced))
+        TahoeCard(accent: Color.tahoeCardBorder) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Memory")
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.tahoeText)
-            }
-            
-            Sparkline(history: model.ramHistory, accent: .orange, maxValue: Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
-                .frame(maxHeight: .infinity)
-                .frame(minHeight: 20)
-                .padding(.top, 4)
-            
-            Divider().background(Color.tahoeCardBorder)
-            
-            HStack(spacing: 12) {
-                // Uptime
-                HStack(spacing: 4) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 10))
-                        .foregroundColor(.tahoeSubtext)
-                    Text("Up for \(model.systemUptimeFormatted)")
-                        .font(.system(size: 10))
-                        .foregroundColor(.tahoeSubtext)
+                
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.tahoeSubtext)
+                        Text("Pressure")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.tahoeSubtext)
+                        
+                        // Green dot + Normal badge
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(model.memoryPressureColor)
+                                .frame(width: 5, height: 5)
+                            Text(model.memoryPressure)
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(model.memoryPressureColor)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(model.memoryPressureColor.opacity(0.12))
+                        .clipShape(Capsule())
+                    }
+                    
+                    Spacer()
+                    
+                    let usedGB = (model.ramUsagePct / 100.0) * (Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+                    let totalRAM = Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0)
+                    Text(String(format: "%.2f GB / %.0f GB", usedGB, totalRAM))
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.tahoeText)
                 }
                 
-                Spacer()
+                Sparkline(history: model.ramHistory, accent: .orange, maxValue: Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0))
+                    .frame(maxHeight: .infinity)
+                    .frame(minHeight: 20)
+                    .padding(.top, 4)
                 
-                // Battery (if present)
-                if model.hasBattery {
+                Divider().background(Color.tahoeCardBorder)
+                
+                HStack(spacing: 12) {
+                    // Uptime
                     HStack(spacing: 4) {
-                        Image(systemName: model.batteryIsCharging ? "battery.100.bolt" : "battery.100")
+                        Image(systemName: "clock")
                             .font(.system(size: 10))
                             .foregroundColor(.tahoeSubtext)
-                        Text("Battery: \(model.batteryPercentage)%")
+                        Text("Up for \(model.systemUptimeFormatted)")
                             .font(.system(size: 10))
                             .foregroundColor(.tahoeSubtext)
                     }
-                } else {
-                    HStack(spacing: 4) {
-                        Image(systemName: "powerplug")
-                            .font(.system(size: 10))
-                            .foregroundColor(.tahoeSubtext)
-                        Text("AC Power")
-                            .font(.system(size: 10))
-                            .foregroundColor(.tahoeSubtext)
+                    
+                    Spacer()
+                    
+                    // Battery (if present)
+                    if model.hasBattery {
+                        HStack(spacing: 4) {
+                            Image(systemName: model.batteryIsCharging ? "battery.100.bolt" : "battery.100")
+                                .font(.system(size: 10))
+                                .foregroundColor(.tahoeSubtext)
+                            Text("Battery: \(model.batteryPercentage)%")
+                                .font(.system(size: 10))
+                                .foregroundColor(.tahoeSubtext)
+                        }
+                    } else {
+                        HStack(spacing: 4) {
+                            Image(systemName: "powerplug")
+                                .font(.system(size: 10))
+                                .foregroundColor(.tahoeSubtext)
+                            Text("AC Power")
+                                .font(.system(size: 10))
+                                .foregroundColor(.tahoeSubtext)
+                        }
                     }
                 }
+                .padding(.top, 2)
             }
-            .padding(.top, 2)
         }
-        .panelCard(scheme: colorScheme)
     }
 }
