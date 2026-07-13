@@ -490,6 +490,8 @@ private struct SidebarMiniButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 9, weight: .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
             .foregroundColor(.tahoeText)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -869,7 +871,7 @@ struct DashboardContentView: View {
                             )
                         }
                     } else if itemId == "cores" && showCores {
-                        ResizableChart(chartId: "dash_cores_size", small: 120, medium: 200, large: 300) { height in
+                        ResizableChart(chartId: "dash_cores_size", small: 200, medium: 280, large: 380) { height in
                             ScrollView {
                                 CoreGridCard(model: model)
                             }
@@ -932,13 +934,14 @@ struct ChartContextMenu: View {
     }
 
     private func setChartHeight(for chart: String, heightType: String) {
-        let key = "chart_h_dash_" + (chart == "memory" ? "mem_size" : chart == "cores" ? "cores_size" : chart)
+        let mappedChart = (chart == "network") ? "net" : chart
+        let key = "chart_h_dash_" + (mappedChart == "memory" ? "mem_size" : mappedChart == "cores" ? "cores_size" : mappedChart)
         let actualHeight: CGFloat
         switch chart {
         case "memory":
             actualHeight = (heightType == "small") ? 130 : (heightType == "medium") ? 160 : 220
         case "cores":
-            actualHeight = (heightType == "small") ? 120 : (heightType == "medium") ? 200 : 300
+            actualHeight = (heightType == "small") ? 200 : (heightType == "medium") ? 280 : 380
         default:
             actualHeight = (heightType == "small") ? 70 : (heightType == "medium") ? 100 : 150
         }
