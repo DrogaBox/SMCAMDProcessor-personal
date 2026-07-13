@@ -856,7 +856,7 @@ struct DashboardContentView: View {
                             HorizontalChartsContainer(model: model)
                         }
                     } else if itemId == "memory" && showMemory {
-                        ResizableChart(chartId: "dash_mem_size", small: 100, medium: 140, large: 200) { height in
+                        ResizableChart(chartId: "dash_mem_size", small: 130, medium: 160, large: 220) { height in
                             MemoryCard(model: model)
                                 .frame(height: height)
                         }
@@ -936,7 +936,7 @@ struct ChartContextMenu: View {
         let actualHeight: CGFloat
         switch chart {
         case "memory":
-            actualHeight = (heightType == "small") ? 100 : (heightType == "medium") ? 140 : 200
+            actualHeight = (heightType == "small") ? 130 : (heightType == "medium") ? 160 : 220
         case "cores":
             actualHeight = (heightType == "small") ? 120 : (heightType == "medium") ? 200 : 300
         default:
