@@ -142,6 +142,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.alertStyle = .critical
         alert.addButton(withTitle: NSLocalizedString("Yes", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("No", comment: ""))
+        NSApp.activate(ignoringOtherApps: true)
         let res = alert.runModal()
 
         if res == .alertFirstButtonReturn {

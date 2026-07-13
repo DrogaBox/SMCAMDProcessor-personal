@@ -878,7 +878,7 @@ final class TelemetryModel: ObservableObject {
                 }
             }
 
-            DispatchQueue.main.async { [weak self] in
+            Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 self.isSampling = false
                 self.processSampleData(
@@ -1959,7 +1959,7 @@ final class TelemetryModel: ObservableObject {
     func fetchCurveOptimizerOffsets() {
         let pm = ProcessorModel.shared
         let offsets = pm.getCurveOptimizerOffsets()
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.curveOptimizerOffsets = offsets
         }
     }
@@ -1975,7 +1975,7 @@ final class TelemetryModel: ObservableObject {
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.notificationsEnabled = granted
                 if !granted {
                     UserDefaults.standard.set(false, forKey: "notificationsEnabled")
@@ -2010,24 +2010,23 @@ final class TelemetryModel: ObservableObject {
         request.timeoutInterval = 10.0
         request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
         
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.isCheckingForUpdates = false
-                
-                if let error = error {
-                    if manual {
-                        let format = NSLocalizedString("Connection Error: %@", comment: "")
-                        self.updateCheckMessage = String(format: format, error.localizedDescription)
-                    }
-                    return
-                }
-                
-                guard let data = data,
-                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            defer { self.isCheckingForUpdates = false }
+            
+            do {
+                let (data, _) = try await URLSession.shared.data(for: request)
+                guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let tagName = json["tag_name"] as? String else {
                     if manual {
                         self.updateCheckMessage = NSLocalizedString("Could not fetch release info.", comment: "")
+                        let alert = NSAlert()
+                        alert.messageText = NSLocalizedString("Update Check Failed", comment: "")
+                        alert.informativeText = NSLocalizedString("Could not parse the release information from GitHub. You may have hit the API rate limit.", comment: "")
+                        alert.alertStyle = .warning
+                        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+                        NSApp.activate(ignoringOtherApps: true)
+                        alert.runModal()
                     }
                     return
                 }
@@ -2055,6 +2054,7 @@ final class TelemetryModel: ObservableObject {
                         alert.alertStyle = .informational
                         alert.addButton(withTitle: NSLocalizedString("Download on GitHub", comment: ""))
                         alert.addButton(withTitle: NSLocalizedString("Later", comment: ""))
+                        NSApp.activate(ignoringOtherApps: true)
                         if alert.runModal() == .alertFirstButtonReturn {
                             if let openUrl = URL(string: self.releaseURLString) {
                                 NSWorkspace.shared.open(openUrl)
@@ -2072,11 +2072,24 @@ final class TelemetryModel: ObservableObject {
                         alert.informativeText = String(format: infoFormat, currentVersion)
                         alert.alertStyle = .informational
                         alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+                        NSApp.activate(ignoringOtherApps: true)
                         alert.runModal()
                     }
                 }
+            } catch {
+                if manual {
+                    let format = NSLocalizedString("Connection Error: %@", comment: "")
+                    self.updateCheckMessage = String(format: format, error.localizedDescription)
+                    let alert = NSAlert()
+                    alert.messageText = NSLocalizedString("Connection Error", comment: "")
+                    alert.informativeText = error.localizedDescription
+                    alert.alertStyle = .warning
+                    alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+                    NSApp.activate(ignoringOtherApps: true)
+                    alert.runModal()
+                }
             }
-        }.resume()
+        }
     }
     
     // MARK: - Physical Core Ranking

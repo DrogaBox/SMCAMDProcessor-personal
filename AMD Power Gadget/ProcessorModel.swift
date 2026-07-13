@@ -88,6 +88,7 @@ class ProcessorModel {
             alert.informativeText = NSLocalizedString("This application can not be launched due to AMDRyzenCPUPowerManagement is reporting incorrect data.", comment: "")
             alert.alertStyle = .critical
             alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
+            NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
             NSApplication.shared.terminate(self)
         }
@@ -124,6 +125,7 @@ class ProcessorModel {
         alert.alertStyle = .critical
         alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("Quit and Download", comment: ""))
+        NSApp.activate(ignoringOtherApps: true)
         let res = alert.runModal()
 
         if res == .alertSecondButtonReturn {
@@ -142,6 +144,7 @@ class ProcessorModel {
         alert.alertStyle = .warning
         alert.addButton(withTitle: NSLocalizedString("Later", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("Download", comment: ""))
+        NSApp.activate(ignoringOtherApps: true)
         let res = alert.runModal()
 
         if res == .alertSecondButtonReturn {
