@@ -4,7 +4,6 @@
 
 ### App (AMD Power Gadget)
 * **Magnetic Grid-Snapping (Desktop Widgets)**: Completely redesigned the `NSWindow` foundation for Desktop Widgets. Dragging widgets across the screen now automatically intercepts window coordinates and snaps them to a 20x20 pixel magnetic grid, perfectly replicating native macOS desktop icon alignment behavior.
-* **Architecture Documentation**: Updated `COMPARISON.md` detailing the transition from `NSPopover` to native `NSPanel` structures and the new Core Animation pipelines.
 
 ## v3.19.2  Liquid Glass NSPanel Migration
 
