@@ -843,8 +843,6 @@ final class TelemetryModel: ObservableObject {
         let gpuLoadPct: Double
         let gpuVramUsedBytes: Double
         let gpuFanRPM: Double
-        let netUploadMBps: Double
-        let netDownloadMBps: Double
         let cpuLoadAvg: Double
     }
 
@@ -1050,8 +1048,6 @@ final class TelemetryModel: ObservableObject {
             gpuLoadPct: Double(rawGPULoad),
             gpuVramUsedBytes: Double(rawGPUVram),
             gpuFanRPM: Double(rawGPUFan),
-            netUploadMBps: snapshot.menu.showNetwork ? (diskIO.read > 0 ? Double(diskIO.read) / 1_000_000.0 : 0.0) : 0.0,
-            netDownloadMBps: snapshot.menu.showNetwork ? (diskIO.write > 0 ? Double(diskIO.write) / 1_000_000.0 : 0.0) : 0.0,
             cpuLoadAvg: Double(loadIndex.prefix(numPhysicalCores).reduce(0, +)) / Double(numPhysicalCores)
         )
     }
@@ -1077,8 +1073,6 @@ final class TelemetryModel: ObservableObject {
         gpuLoadPct = result.gpuLoadPct
         gpuVramUsedBytes = result.gpuVramUsedBytes
         gpuFanRPM = result.gpuFanRPM
-        netUploadMBps = result.netUploadMBps
-        netDownloadMBps = result.netDownloadMBps
         cpuLoadAvg = result.cpuLoadAvg
 
         gpuTempC = Double(result.rawGPUTemp)
