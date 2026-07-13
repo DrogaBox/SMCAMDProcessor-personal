@@ -1283,7 +1283,7 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         }
         
         let styleMask: NSWindow.StyleMask = isEditingWidgets ? [.borderless, .resizable] : [.borderless]
-        let widgetWindow = NSWindow(
+        let widgetWindow = DesktopWidgetWindow(
             contentRect: windowRect,
             styleMask: styleMask,
             backing: .buffered,
@@ -2355,5 +2355,31 @@ struct MiniCalendarView: View {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMMM"
         return fmt.string(from: date)
+    }
+}
+
+class DesktopWidgetWindow: NSWindow {
+    let gridSize: CGFloat = 20.0
+    
+    override func setFrameOrigin(_ newOrigin: NSPoint) {
+        let snappedX = round(newOrigin.x / gridSize) * gridSize
+        let snappedY = round(newOrigin.y / gridSize) * gridSize
+        super.setFrameOrigin(NSPoint(x: snappedX, y: snappedY))
+    }
+    
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        let snappedX = round(frameRect.origin.x / gridSize) * gridSize
+        let snappedY = round(frameRect.origin.y / gridSize) * gridSize
+        var newRect = frameRect
+        newRect.origin = NSPoint(x: snappedX, y: snappedY)
+        super.setFrame(newRect, display: flag)
+    }
+    
+    override func setFrame(_ frameRect: NSRect, display displayFlag: Bool, animate animateFlag: Bool) {
+        let snappedX = round(frameRect.origin.x / gridSize) * gridSize
+        let snappedY = round(frameRect.origin.y / gridSize) * gridSize
+        var newRect = frameRect
+        newRect.origin = NSPoint(x: snappedX, y: snappedY)
+        super.setFrame(newRect, display: displayFlag, animate: animateFlag)
     }
 }
