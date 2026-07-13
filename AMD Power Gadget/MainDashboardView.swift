@@ -846,7 +846,7 @@ struct DashboardContentView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 StatCardsHeaderRow(model: model, colorScheme: colorScheme)
 
                 let verticalItems = verticalOrder.split(separator: ",").map(String.init)
