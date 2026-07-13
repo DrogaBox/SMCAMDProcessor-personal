@@ -127,7 +127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !UserDefaults.standard.bool(forKey: "user_forced_low_performance") {
             let device = MTLCreateSystemDefaultDevice()
             if device == nil {
-                print("No Metal acceleration detected. Enabling Low Performance Mode.")
+                NSLog("No Metal acceleration detected. Enabling Low Performance Mode.")
                 UserDefaults.standard.set(true, forKey: "low_performance_mode")
             } else {
                 UserDefaults.standard.set(false, forKey: "low_performance_mode")
@@ -190,13 +190,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 if enabled {
                     try service.register()
-                    print("SMAppService: Registered main app successfully")
+                    NSLog("SMAppService: Registered main app successfully")
                 } else {
                     try service.unregister()
-                    print("SMAppService: Unregistered main app successfully")
+                    NSLog("SMAppService: Unregistered main app successfully")
                 }
             } catch {
-                print("SMAppService failed to update status: \(error)")
+                NSLog("SMAppService failed to update status: %@", error.localizedDescription)
             }
         } else {
             // Fallback for legacy macOS versions below 13.0
