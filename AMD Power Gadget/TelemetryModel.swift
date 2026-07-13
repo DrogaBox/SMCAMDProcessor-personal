@@ -759,147 +759,326 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
+    // MARK: - Sampling Snapshot
+
+    private struct MenuSamplingConfig {
+        let showGPU: Bool
+        let showGPUvram: Bool
+        let showGPUfan: Bool
+        let showGPUtemp: Bool
+        let showGPUpwr: Bool
+        let showFanRPM: Bool
+        let showMemory: Bool
+        let showNetwork: Bool
+        let popoverShowProcesses: Bool
+    }
+
+    private struct SamplingInputSnapshot {
+        let smcDriverLoaded: Bool
+        let cachedNumPhysicalCores: Int
+        let logicalCores: Int
+        let activeWindows: Bool
+        let popoverVisible: Bool
+        let isLoggingEnabled: Bool
+        let selectedTab: DashboardTab
+        let numFans: Int
+
+        let gpuTempC: Double
+        let gpuPowerW: Double
+        let gpuLoadPct: Double
+        let gpuVramUsedBytes: Double
+        let gpuFanRPM: Double
+        let lastGPUExtraSample: Date
+
+        let cachedCCDTemps: [Float]
+        let lastCCDCheck: Date
+        let lastFanSampleTime: Date
+
+        let cachedRAMUsage: Double
+        let lastRAMCheck: Date
+        let cachedDiskUsage: Double
+        let lastDiskUsageCheck: Date
+        let cachedDiskIO: (read: UInt64, write: UInt64)
+        let lastDiskIOCheck: Date
+
+        let menu: MenuSamplingConfig
+    }
+
+    private struct SamplingResult {
+        let numPhys: Int
+        let numLogi: Int
+        let metric: [Float]
+        let loadIndex: [Float]
+        let rawGPUTemp: Float
+        let rawGPUPower: Float
+        let rawGPULoad: Float
+        let rawGPUVram: Float
+        let rawGPUFan: Float
+        let ccdTemps: [Float]
+        let instDelta: [UInt64]
+        let fanRpms: [UInt64]
+        let fanCtrls: [UInt64]
+        let ramUsage: Double
+        let diskUsage: Double
+        let diskIO: (read: UInt64, write: UInt64)
+        let lightMode: Bool
+
+        let newLastGPUExtraSample: Date?
+        let newCachedCCDTemps: [Float]?
+        let newLastCCDCheck: Date?
+        let newLastFanSampleTime: Date?
+        let newCachedRAMUsage: Double?
+        let newLastRAMCheck: Date?
+        let newCachedDiskUsage: Double?
+        let newLastDiskUsageCheck: Date?
+        let newCachedDiskIO: (read: UInt64, write: UInt64)?
+        let newLastDiskIOCheck: Date?
+    }
+
+    private func captureSnapshot() -> SamplingInputSnapshot {
+        let cfg = MenuBarConfig.shared
+        let menu = MenuSamplingConfig(
+            showGPU: cfg.showGPU,
+            showGPUvram: cfg.showGPUvram,
+            showGPUfan: cfg.showGPUfan,
+            showGPUtemp: cfg.showGPUtemp,
+            showGPUpwr: cfg.showGPUpwr,
+            showFanRPM: cfg.showFanRPM,
+            showMemory: cfg.showMemory,
+            showNetwork: cfg.showNetwork,
+            popoverShowProcesses: cfg.popoverShowProcesses
+        )
+        return SamplingInputSnapshot(
+            smcDriverLoaded: smcDriverLoaded,
+            cachedNumPhysicalCores: cachedNumPhysicalCores,
+            logicalCores: sysInfo.logicalCores,
+            activeWindows: activeWindows,
+            popoverVisible: popoverVisible,
+            isLoggingEnabled: isLoggingEnabled,
+            selectedTab: selectedTab,
+            numFans: numFans,
+            gpuTempC: gpuTempC,
+            gpuPowerW: gpuPowerW,
+            gpuLoadPct: gpuLoadPct,
+            gpuVramUsedBytes: gpuVramUsedBytes,
+            gpuFanRPM: gpuFanRPM,
+            lastGPUExtraSample: lastGPUExtraSample,
+            cachedCCDTemps: cachedCCDTemps,
+            lastCCDCheck: lastCCDCheck,
+            lastFanSampleTime: lastFanSampleTime,
+            cachedRAMUsage: cachedRAMUsage,
+            lastRAMCheck: lastRAMCheck,
+            cachedDiskUsage: cachedDiskUsage,
+            lastDiskUsageCheck: lastDiskUsageCheck,
+            cachedDiskIO: cachedDiskIO,
+            lastDiskIOCheck: lastDiskIOCheck,
+            menu: menu
+        )
+    }
+
+    nonisolated private func performBackgroundSample(snapshot: SamplingInputSnapshot) -> SamplingResult? {
+        let pm = ProcessorModel.shared
+
+        var numPhys = snapshot.cachedNumPhysicalCores
+        if numPhys == 0 {
+            numPhys = pm.getNumOfCore()
+        }
+        let numLogi = snapshot.logicalCores > 0 ? snapshot.logicalCores : numPhys
+
+        let lightMode = !snapshot.activeWindows && !snapshot.popoverVisible
+        let logging = snapshot.isLoggingEnabled
+        let mbc = snapshot.menu
+
+        let metric = pm.getMetric(forced: true)
+        let loadIndex = pm.getLoadIndex()
+
+        let skipGPU = lightMode && !logging && !mbc.showGPU && !mbc.showGPUvram && !mbc.showGPUfan
+        let skipGPUThermals = lightMode && !logging && !mbc.showGPUtemp && !mbc.showGPUpwr
+
+        let rawGPUTemp = skipGPUThermals ? Float(snapshot.gpuTempC) : pm.getGPUTemp()
+        let rawGPUPower = skipGPUThermals ? Float(snapshot.gpuPowerW) : pm.getGPUPower()
+        let nowTime = Date()
+        var newLastGPUExtraSample: Date? = nil
+        let rawGPULoad: Float
+        let rawGPUVram: Float
+        let rawGPUFan: Float
+        if skipGPU {
+            rawGPULoad = Float(snapshot.gpuLoadPct)
+            rawGPUVram = Float(snapshot.gpuVramUsedBytes)
+            rawGPUFan = Float(snapshot.gpuFanRPM)
+        } else if lightMode, nowTime.timeIntervalSince(snapshot.lastGPUExtraSample) < 3.0 {
+            rawGPULoad = Float(snapshot.gpuLoadPct)
+            rawGPUVram = Float(snapshot.gpuVramUsedBytes)
+            rawGPUFan = Float(snapshot.gpuFanRPM)
+        } else {
+            rawGPULoad = pm.getGPUUtilization()
+            rawGPUVram = pm.getGPUVramUsed()
+            rawGPUFan = pm.getGPUFanRPM()
+            newLastGPUExtraSample = nowTime
+        }
+
+        var newCachedCCDTemps: [Float]? = nil
+        var newLastCCDCheck: Date? = nil
+        let ccdTemps: [Float]
+        if lightMode && !logging {
+            ccdTemps = snapshot.cachedCCDTemps
+        } else {
+            let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
+            if nowTime.timeIntervalSince(snapshot.lastCCDCheck) >= ccdTTL {
+                ccdTemps = pm.getCCDTemperatures()
+                newCachedCCDTemps = ccdTemps
+                newLastCCDCheck = nowTime
+            } else {
+                ccdTemps = snapshot.cachedCCDTemps
+            }
+        }
+
+        let instDelta = pm.getInstructionDelta()
+
+        let numFansCount = snapshot.numFans
+        var fanRpms: [UInt64] = []
+        var fanCtrls: [UInt64] = []
+        var newLastFanSampleTime: Date? = nil
+        if !(lightMode && !logging && !mbc.showFanRPM) {
+            let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
+            if snapshot.smcDriverLoaded && numFansCount > 0,
+               nowTime.timeIntervalSince(snapshot.lastFanSampleTime) >= fanTTL {
+                fanRpms = pm.kernelGetUInt64(count: numFansCount, selector: 93)
+                fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
+                newLastFanSampleTime = nowTime
+            }
+        }
+
+        var newCachedRAMUsage: Double? = nil
+        var newLastRAMCheck: Date? = nil
+        let ramUsage: Double
+        if lightMode && !logging && !mbc.showMemory {
+            ramUsage = snapshot.cachedRAMUsage
+        } else {
+            let now = Date()
+            if now.timeIntervalSince(snapshot.lastRAMCheck) >= 2.0 {
+                ramUsage = getRAMUsagePct()
+                newCachedRAMUsage = ramUsage
+                newLastRAMCheck = now
+            } else {
+                ramUsage = snapshot.cachedRAMUsage
+            }
+        }
+
+        var newCachedDiskUsage: Double? = nil
+        var newLastDiskUsageCheck: Date? = nil
+        let diskUsage: Double
+        if lightMode && !logging {
+            diskUsage = snapshot.cachedDiskUsage
+        } else {
+            let now = Date()
+            if now.timeIntervalSince(snapshot.lastDiskUsageCheck) >= 10.0 {
+                diskUsage = getDiskUsagePct()
+                newCachedDiskUsage = diskUsage
+                newLastDiskUsageCheck = now
+            } else {
+                diskUsage = snapshot.cachedDiskUsage
+            }
+        }
+
+        var newCachedDiskIO: (read: UInt64, write: UInt64)? = nil
+        var newLastDiskIOCheck: Date? = nil
+        let diskIO: (read: UInt64, write: UInt64)
+        if lightMode && !logging {
+            diskIO = snapshot.cachedDiskIO
+        } else {
+            let now = Date()
+            if now.timeIntervalSince(snapshot.lastDiskIOCheck) >= 2.0 {
+                diskIO = getDiskIOBytes()
+                newCachedDiskIO = diskIO
+                newLastDiskIOCheck = now
+            } else {
+                diskIO = snapshot.cachedDiskIO
+            }
+        }
+
+        return SamplingResult(
+            numPhys: numPhys,
+            numLogi: numLogi,
+            metric: metric,
+            loadIndex: loadIndex,
+            rawGPUTemp: rawGPUTemp,
+            rawGPUPower: rawGPUPower,
+            rawGPULoad: rawGPULoad,
+            rawGPUVram: rawGPUVram,
+            rawGPUFan: rawGPUFan,
+            ccdTemps: ccdTemps,
+            instDelta: instDelta,
+            fanRpms: fanRpms,
+            fanCtrls: fanCtrls,
+            ramUsage: ramUsage,
+            diskUsage: diskUsage,
+            diskIO: diskIO,
+            lightMode: lightMode,
+            newLastGPUExtraSample: newLastGPUExtraSample,
+            newCachedCCDTemps: newCachedCCDTemps,
+            newLastCCDCheck: newLastCCDCheck,
+            newLastFanSampleTime: newLastFanSampleTime,
+            newCachedRAMUsage: newCachedRAMUsage,
+            newLastRAMCheck: newLastRAMCheck,
+            newCachedDiskUsage: newCachedDiskUsage,
+            newLastDiskUsageCheck: newLastDiskUsageCheck,
+            newCachedDiskIO: newCachedDiskIO,
+            newLastDiskIOCheck: newLastDiskIOCheck
+        )
+    }
+
+    private func applySampleResult(_ result: SamplingResult) {
+        isSampling = false
+
+        if let val = result.newLastGPUExtraSample { lastGPUExtraSample = val }
+        if let val = result.newCachedCCDTemps { cachedCCDTemps = val }
+        if let val = result.newLastCCDCheck { lastCCDCheck = val }
+        if let val = result.newLastFanSampleTime { lastFanSampleTime = val }
+        if let val = result.newCachedRAMUsage { cachedRAMUsage = val }
+        if let val = result.newLastRAMCheck { lastRAMCheck = val }
+        if let val = result.newCachedDiskUsage { cachedDiskUsage = val }
+        if let val = result.newLastDiskUsageCheck { lastDiskUsageCheck = val }
+        if let val = result.newCachedDiskIO { cachedDiskIO = val }
+        if let val = result.newLastDiskIOCheck { lastDiskIOCheck = val }
+
+        processSampleData(
+            numPhys: result.numPhys,
+            numLogi: result.numLogi,
+            metric: result.metric,
+            loadIndex: result.loadIndex,
+            rawGPUTemp: result.rawGPUTemp,
+            rawGPUPower: result.rawGPUPower,
+            rawGPULoad: result.rawGPULoad,
+            rawGPUVram: result.rawGPUVram,
+            rawGPUFan: result.rawGPUFan,
+            ccdTemps: result.ccdTemps,
+            instDelta: result.instDelta,
+            fanRpms: result.fanRpms,
+            fanCtrls: result.fanCtrls,
+            ramUsage: result.ramUsage,
+            diskUsage: result.diskUsage,
+            diskIO: result.diskIO,
+            lightMode: result.lightMode
+        )
+    }
+
     private func sample() {
         guard !isSampling else { return }
         isSampling = true
 
-        ioQueue.async { [weak self] in
-            guard let self = self else { return }
+        // If SMC driver not loaded, init on main actor first
+        if !smcDriverLoaded {
+            initSMC()
+        }
 
-            if !self.smcDriverLoaded {
-                self.initSMC()
-            }
+        let snapshot = captureSnapshot()
 
-            let pm = ProcessorModel.shared
-            var numPhys = self.cachedNumPhysicalCores
-            if numPhys == 0 {
-                numPhys = pm.getNumOfCore()
-            }
-            let numLogi = self.sysInfo.logicalCores > 0 ? self.sysInfo.logicalCores : numPhys
-
-            // Light mode: menu bar only (no dashboard/popover) — fewer kext/GPU calls
-            let lightMode = !self.activeWindows && !self.popoverVisible
-            let logging = self.isLoggingEnabled
-            let mbc = MenuBarConfig.shared
-
-            let metric   = pm.getMetric(forced: true)
-            let loadIndex = pm.getLoadIndex()
-            
-            let skipGPU = lightMode && !logging && !mbc.showGPU && !mbc.showGPUvram && !mbc.showGPUfan
-            let skipGPUThermals = lightMode && !logging && !mbc.showGPUtemp && !mbc.showGPUpwr
-            
-            let rawGPUTemp = skipGPUThermals ? Float(self.gpuTempC) : pm.getGPUTemp()
-            let rawGPUPower = skipGPUThermals ? Float(self.gpuPowerW) : pm.getGPUPower()
-            let nowTime = Date()
-            let rawGPULoad: Float
-            let rawGPUVram: Float
-            let rawGPUFan: Float
-            if skipGPU {
-                rawGPULoad = Float(self.gpuLoadPct)
-                rawGPUVram = Float(self.gpuVramUsedBytes)
-                rawGPUFan = Float(self.gpuFanRPM)
-            } else if lightMode, nowTime.timeIntervalSince(self.lastGPUExtraSample) < 3.0 {
-                rawGPULoad = Float(self.gpuLoadPct)
-                rawGPUVram = Float(self.gpuVramUsedBytes)
-                rawGPUFan = Float(self.gpuFanRPM)
-            } else {
-                rawGPULoad = pm.getGPUUtilization()
-                rawGPUVram = pm.getGPUVramUsed()
-                rawGPUFan = pm.getGPUFanRPM()
-                self.lastGPUExtraSample = nowTime
-            }
-            let ccdTemps: [Float]
-            if lightMode && !logging {
-                ccdTemps = self.cachedCCDTemps
-            } else {
-                let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
-                if nowTime.timeIntervalSince(self.lastCCDCheck) >= ccdTTL {
-                    ccdTemps = pm.getCCDTemperatures()
-                    self.cachedCCDTemps = ccdTemps
-                    self.lastCCDCheck = nowTime
-                } else {
-                    ccdTemps = self.cachedCCDTemps
-                }
-            }
-            let instDelta = pm.getInstructionDelta()
-
-            let numFansCount = self.numFans
-            var fanRpms: [UInt64] = []
-            var fanCtrls: [UInt64] = []
-            if lightMode && !logging && !mbc.showFanRPM {
-                // skip polling fans
-            } else {
-                let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
-                if self.smcDriverLoaded && numFansCount > 0,
-                   nowTime.timeIntervalSince(self.lastFanSampleTime) >= fanTTL {
-                    fanRpms  = pm.kernelGetUInt64(count: numFansCount, selector: 93)
-                    fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
-                    self.lastFanSampleTime = nowTime
-                }
-            }
-
-            let ramUsage: Double
-            let now = Date()
-            if lightMode && !logging && !mbc.showMemory {
-                ramUsage = self.cachedRAMUsage
-            } else {
-                if now.timeIntervalSince(self.lastRAMCheck) >= 2.0 {
-                    ramUsage = self.getRAMUsagePct()
-                    self.cachedRAMUsage = ramUsage
-                    self.lastRAMCheck = now
-                } else {
-                    ramUsage = self.cachedRAMUsage
-                }
-            }
-            
-            let diskUsage: Double
-            if lightMode && !logging {
-                diskUsage = self.cachedDiskUsage
-            } else {
-                if now.timeIntervalSince(self.lastDiskUsageCheck) >= 10.0 {
-                    diskUsage = self.getDiskUsagePct()
-                    self.cachedDiskUsage = diskUsage
-                    self.lastDiskUsageCheck = now
-                } else {
-                    diskUsage = self.cachedDiskUsage
-                }
-            }
-            
-            let diskIO: (read: UInt64, write: UInt64)
-            if lightMode && !logging {
-                diskIO = self.cachedDiskIO
-            } else {
-                if now.timeIntervalSince(self.lastDiskIOCheck) >= 2.0 {
-                    diskIO = self.getDiskIOBytes()
-                    self.cachedDiskIO = diskIO
-                    self.lastDiskIOCheck = now
-                } else {
-                    diskIO = self.cachedDiskIO
-                }
-            }
-
+        ioQueue.async {
+            guard let result = self.performBackgroundSample(snapshot: snapshot) else { return }
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
-                self.isSampling = false
-                self.processSampleData(
-                    numPhys: numPhys,
-                    numLogi: numLogi,
-                    metric: metric,
-                    loadIndex: loadIndex,
-                    rawGPUTemp: rawGPUTemp,
-                    rawGPUPower: rawGPUPower,
-                    rawGPULoad: rawGPULoad,
-                    rawGPUVram: rawGPUVram,
-                    rawGPUFan: rawGPUFan,
-                    ccdTemps: ccdTemps,
-                    instDelta: instDelta,
-                    fanRpms: fanRpms,
-                    fanCtrls: fanCtrls,
-                    ramUsage: ramUsage,
-                    diskUsage: diskUsage,
-                    diskIO: diskIO,
-                    lightMode: lightMode
-                )
+                self.applySampleResult(result)
             }
         }
     }
@@ -1676,12 +1855,13 @@ final class TelemetryModel: ObservableObject {
             while ptr != nil {
                 defer { ptr = ptr?.pointee.ifa_next }
                 guard let interface = ptr?.pointee else { continue }
-                let addrFamily = interface.ifa_addr.pointee.sa_family
+                guard let addr = interface.ifa_addr else { continue }
+                let addrFamily = addr.pointee.sa_family
                 if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
                     let name = String(cString: interface.ifa_name)
                     if name.hasPrefix("en") || name.hasPrefix("bridge") || name.hasPrefix("bond") {
                         var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                        getnameinfo(addr, socklen_t(addr.pointee.sa_len),
                                     &hostname, socklen_t(hostname.count),
                                     nil, 0, NI_NUMERICHOST)
                         let ip = String(cString: hostname)
