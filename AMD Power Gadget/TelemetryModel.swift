@@ -1084,10 +1084,10 @@ final class TelemetryModel: ObservableObject {
         if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
             if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 4.0 {
                 lastProcessFetchTime = now
-                Task.detached(priority: .background) {
-                    let list = self.fetchTopProcesses()
+                Task.detached(priority: .background) { [weak self] in
+                    let list = TelemetryModel.fetchTopProcesses()
                     await MainActor.run {
-                        self.topProcesses = list
+                        self?.topProcesses = list
                     }
                 }
             }
@@ -1763,7 +1763,7 @@ final class TelemetryModel: ObservableObject {
         hasBattery = foundBattery
     }
 
-    nonisolated private func fetchTopProcesses() -> [ProcessInfoRow] {
+    nonisolated private static func fetchTopProcesses() -> [ProcessInfoRow] {
         let task = Process()
         task.launchPath = "/bin/ps"
         task.arguments = ["-A", "-r", "-o", "pid,%cpu,comm", "-c"]
