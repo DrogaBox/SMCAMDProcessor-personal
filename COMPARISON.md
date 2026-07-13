@@ -1,12 +1,12 @@
-# Architecture and Feature Comparison: Original vs. v3.13.3
+# Architecture and Feature Comparison: Original vs. v3.19.3
 
-This document outlines the structural, architectural, and feature-level differences between the original repository by spinach (`wtf.spinach.SMCAMDProcessor`) and the current release (`v3.13.3`).
+This document outlines the structural, architectural, and feature-level differences between the original repository by spinach (`wtf.spinach.SMCAMDProcessor`) and the current release (`v3.19.3`).
 
 ---
 
 ## 1. Feature Matrix
 
-| Feature | Original Base (spinach) | Current Release (v3.13.3) |
+| Feature | Original Base (spinach) | Current Release (v3.19.3) |
 | :--- | :--- | :--- |
 | **CPU Architecture Support** | Zen 1 & Zen 2 (Family 17h) | Zen 1 through Zen 5 (Family 17h, 19h, 1Ah) |
 | **CPPC Power Management** | None | Native Zen 3/5 CPPC (MSR and EPP tuning) |
@@ -16,7 +16,8 @@ This document outlines the structural, architectural, and feature-level differen
 | **VRAM Resolution** | None | Dynamic Metal API query (`recommendedMaxWorkingSetSize`) |
 | **UI Framework** | Legacy Objective-C / AppKit Cocoa | SwiftUI + AppKit bridging (macOS Tahoe compliant) |
 | **Graph Drawing Mode** | Synchronous CPU Vector path | Asynchronous GPU rendering (`drawsAsynchronously`) |
-| **Popover Management** | Transient behavior only | Dynamic Pin-Open toggle (`.applicationDefined`) |
+| **Main Window Management**| Transient `NSPopover` | Native `NSPanel` (`.nonactivatingPanel`) with custom fade/slide Core Animation |
+| **Desktop Widgets** | None | Draggable borderless `NSPanel`s with 20px magnetic grid-snapping (auto-align) |
 | **High-Density Thread Grid** | None | Adaptive columns layout for up to 128 logical threads |
 | **Memory Management** | Retain cycles in IOKit / Timers | Weak delegate tracking and explicit IODescriptors release |
 
@@ -40,11 +41,12 @@ This document outlines the structural, architectural, and feature-level differen
 *   **Current**: Bridges SMCRadeonSensors to monitor GPU core temperature and power. Queries VRAM allocation dynamically using Metal API working set size limits, rendering real-time graphics utilization directly in the status layout.
 
 ### 2.4. UI/UX and Graphics Pipeline
-*   **Original**: Legacy Objective-C layouts with synchronous graph drawing, generating 5%–10% CPU usage at idle.
+*   **Original**: Legacy Objective-C layouts with synchronous graph drawing, generating 5%–10% CPU usage at idle. Relied on standard restricted `NSPopover`.
 *   **Current**:
     *   Redesigned in SwiftUI using macOS Tahoe Liquid Glass material tokens (`.hudWindow` vibrancy) and spring physics.
+    *   Migrated from `NSPopover` to native `NSPanel` to prevent NSISEngine layout recursion crashes, restoring native fade/slide animations via `NSAnimationContext`.
     *   Enabled `drawsAsynchronously = true` in `GraphView` layers, moving high-frequency graph rendering entirely to the GPU composition pipeline (reducing CPU overhead to 0%).
-    *   Implemented an adaptive logical thread grid (supporting 4 to 12 columns depending on thread count) with hover tooltips.
+    *   Introduced Desktop Widgets powered by custom `NSWindow` subclasses that intercept frame coordinate updates to provide a 20x20 pixel magnetic "snap-to-grid" alignment.
 
 ### 2.5. Memory Safety and Sandbox Compliance
 *   **Original**: Retain cycles in timer loops and open user client connections caused memory leaks over long sessions. Used deprecated kernel interfaces prone to sandboxing blocks.
