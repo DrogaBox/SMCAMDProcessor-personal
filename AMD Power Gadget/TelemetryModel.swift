@@ -1953,7 +1953,18 @@ final class TelemetryModel: ObservableObject {
             csvText += cols.joined(separator: delim) + "\n"
         }
         
-        try? csvText.write(to: url, atomically: true, encoding: .utf8)
+        do {
+            try csvText.write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = NSLocalizedString("CSV Export Failed", comment: "")
+                alert.informativeText = error.localizedDescription
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+                alert.runModal()
+            }
+        }
     }
 
     func fetchCurveOptimizerOffsets() {

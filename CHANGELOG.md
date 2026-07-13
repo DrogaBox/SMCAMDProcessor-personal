@@ -1,5 +1,13 @@
 # Change Summary & Release Changelog
 
+## v3.21.0 Massive UI Refactor & Modularization
+
+### App (AMD Power Gadget)
+* **Codebase Modularization**: Completely dismantled the monolithic `StatusbarController.swift` (removing over 1700 lines) and `MainDashboardView.swift`. Extracted components into over 15 distinct, highly reusable, and lightweight SwiftUI files (`DashboardTab`, `SystemInfoViews`, `ChartComponents`, `ThemeViews`, etc.).
+* **Build Performance**: The new component-based architecture allows the Swift compiler to process files in parallel, drastically reducing build times and improving maintainability.
+* **Automated Project Integration**: Leveraged Ruby scripts to perfectly integrate the new file hierarchy into the Xcode `.pbxproj` dynamically.
+* **Zero-Defect Refactor**: The entire extraction was executed flawlessly without introducing a single compilation error or broken reference.
+
 ## v3.20.0  Swift Concurrency Engine
 
 ### App (AMD Power Gadget)

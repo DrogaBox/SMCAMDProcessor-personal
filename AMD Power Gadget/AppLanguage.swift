@@ -153,10 +153,21 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         task.arguments = ["-n", path]
-        try? task.run()
-        // Brief delay so `open -n` registers the new instance before we exit.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            NSApplication.shared.terminate(nil)
+        
+        do {
+            try task.run()
+            // Brief delay so `open -n` registers the new instance before we exit.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NSApplication.shared.terminate(nil)
+            }
+        } catch {
+            NSLog("Failed to relaunch app: \(error.localizedDescription)")
+            let alert = NSAlert()
+            alert.messageText = NSLocalizedString("Relaunch Failed", comment: "")
+            alert.informativeText = NSLocalizedString("Could not restart the application. Please restart manually.", comment: "")
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+            alert.runModal()
         }
     }
 }

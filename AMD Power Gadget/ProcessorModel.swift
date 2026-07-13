@@ -154,43 +154,38 @@ class ProcessorModel {
         }
     }
 
-    func kernelGetFloats(count : Int, selector : UInt32) -> [Float] {
+    // MARK: - Generic Kernel IOKit Calls
+
+    /// Internal: performs an IOKit structure read and returns raw byte buffer.
+    private func kernelGetRaw(selector: UInt32, elementSize: Int, count: Int) -> (data: Data, actualCount: Int)? {
         var scalerOut: UInt64 = 0
         var outputCount: UInt32 = 1
-
-        let maxStrLength = count //MaxCpu + 3
-        var outputStr: [Float] = [Float](repeating: 0, count: maxStrLength)
-        var outputStrCount: Int = 4/*sizeof(float)*/ * maxStrLength
+        var buffer = [UInt8](repeating: 0, count: elementSize * count)
+        var bufferSize = buffer.count
         let res = IOConnectCallMethod(connect, selector, nil, 0, nil, 0,
                                       &scalerOut, &outputCount,
-                                      &outputStr, &outputStrCount)
-
-        if res != KERN_SUCCESS {
+                                      &buffer, &bufferSize)
+        guard res == KERN_SUCCESS else {
             print(String(cString: mach_error_string(res)))
-            return []
+            return nil
         }
-
-        let validElements = min(count, outputStrCount / 4)
-        return Array(outputStr[0..<max(0, validElements)])
+        return (Data(buffer), bufferSize / elementSize)
     }
 
-    func kernelGetUInt64(count : Int, selector : UInt32) -> [UInt64] {
-        var scalerOut: UInt64 = 0
-        var outputCount: UInt32 = 1
-
-        let maxStrLength = count //MaxCpu + 3
-        var outputStr: [UInt64] = [UInt64](repeating: 0, count: maxStrLength)
-        var outputStrCount: Int = 8/*sizeof(uint64_t)*/ * maxStrLength
-        let res = IOConnectCallMethod(connect, selector, nil, 0, nil, 0,
-                                      &scalerOut, &outputCount,
-                                      &outputStr, &outputStrCount)
-
-        if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
-            return []
+    func kernelGetFloats(count: Int, selector: UInt32) -> [Float] {
+        guard let (data, actual) = kernelGetRaw(selector: selector, elementSize: 4, count: count) else { return [] }
+        let valid = min(count, actual)
+        return data.withUnsafeBytes { ptr in
+            Array(UnsafeBufferPointer<Float>(start: ptr.baseAddress?.assumingMemoryBound(to: Float.self), count: valid))
         }
+    }
 
-        return outputStr
+    func kernelGetUInt64(count: Int, selector: UInt32) -> [UInt64] {
+        guard let (data, actual) = kernelGetRaw(selector: selector, elementSize: 8, count: count) else { return [] }
+        let valid = min(count, actual)
+        return data.withUnsafeBytes { ptr in
+            Array(UnsafeBufferPointer<UInt64>(start: ptr.baseAddress?.assumingMemoryBound(to: UInt64.self), count: valid))
+        }
     }
 
     /// IOKit `kIOReturnNotPrivileged` (0xe00002c1) — write selectors require root or `-amdpnopchk`.

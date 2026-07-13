@@ -7,8 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		114D99D55F7FC46D21540932 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = D470A80D67EE97AD74A895E7 /* AppTheme.swift */; };
+		214341BC4413DA56BA20FFC4 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877300E93643ED9A5C3983FF /* SharedComponents.swift */; };
+		2C475036D97AC9CF38B46BD7 /* SystemInfoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE30D8CE6B20F3BCB58DE994 /* SystemInfoViews.swift */; };
+		463DC4A1457F1F20873F7777 /* ChartDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9475A6F3C2BBA6C48EA0D0E1 /* ChartDetailViews.swift */; };
+		5AB6D79272E07E00AC7E68B3 /* FanViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F808680DC9728B64461CD5B /* FanViews.swift */; };
 		5B72086C247C884C00BF7492 /* ISSuperIOIT86XXEFamily.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5B72086A247C884C00BF7492 /* ISSuperIOIT86XXEFamily.hpp */; };
 		5B72086D247C884C00BF7492 /* ISSuperIOIT86XXEFamily.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5B72086B247C884C00BF7492 /* ISSuperIOIT86XXEFamily.cpp */; };
+		5E7582558CD3FD87317E33A2 /* PopoverViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 412E24CA035D1FFAEC751760 /* PopoverViews.swift */; };
+		64BDDC746691C18DA9A809F2 /* StatusbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1D725C7746F381324C5057 /* StatusbarView.swift */; };
+		677066C2B9487D2C7FD9F502 /* VisualEffectComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E25F6A8F3D4D84DB413D57 /* VisualEffectComponents.swift */; };
+		80710189E057BAD67746030D /* DesktopWidgetsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C589FF26732FF993BF9FDD5B /* DesktopWidgetsViews.swift */; };
+		84DB34DCAAB3D25A02F604E6 /* DesktopWidgetExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C206E0143DF662573E98952 /* DesktopWidgetExtensions.swift */; };
+		9F51098C8322AE65EE224AEF /* ProfileViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4595D207D24DCAE63A8287FF /* ProfileViews.swift */; };
 		AABB001100001002 /* TelemetryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100001001 /* TelemetryModel.swift */; };
 		AABB001100001004 /* MainDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100001003 /* MainDashboardView.swift */; };
 		AABB001100002002 /* NetworkStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100002001 /* NetworkStats.swift */; };
@@ -51,12 +62,19 @@
 		B5DF4AB6247156F200663498 /* ISSuperIONCT668X.hpp in Headers */ = {isa = PBXBuildFile; fileRef = B5DF4AB4247156F200663498 /* ISSuperIONCT668X.hpp */; };
 		B5F3A1032B7C010300ABCDEF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B5F3A1002B7C010000ABCDEF /* Localizable.strings */; };
 		B5F46D81240E6F19009F2961 /* ProcessorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F46D80240E6F19009F2961 /* ProcessorModel.swift */; };
+		B89B9C6F1349D49F3A63D41D /* DashboardTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA910DF12CC3B64A1A39947 /* DashboardTab.swift */; };
+		B8DD2F1DFF552C5465AA8871 /* AdvancedViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B54CCA047416B7570B45057 /* AdvancedViews.swift */; };
 		C0FFEE000000000000000040 /* ColorHexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000020 /* ColorHexTests.swift */; };
 		C0FFEE000000000000000041 /* EPPMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000021 /* EPPMappingTests.swift */; };
 		C0FFEE000000000000000042 /* FormatInstTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000022 /* FormatInstTests.swift */; };
 		C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */; };
 		C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000024 /* PStateRowTests.swift */; };
 		C0FFEE000000000000000045 /* SMUResponseMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */; };
+		CD16B06875C810EDF081C77A /* ConfigViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B9706A8AE6F6C460F073D0 /* ConfigViews.swift */; };
+		D5DBA1D0D348F77D96E0415B /* MenuBarConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B507E5C752D5AA03FF0B46 /* MenuBarConfig.swift */; };
+		E06206D686F9986B0A488BA6 /* ChartComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A50BB3B9063882703B55CBF /* ChartComponents.swift */; };
+		E25DB8CDD046130D89E6B212 /* ThemeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A7461EA797F309A12AE96 /* ThemeViews.swift */; };
+		E32E28C693D98B149646A32B /* AnalysisViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDA65DF83D678288EEC73FD /* AnalysisViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,8 +102,21 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		21B9706A8AE6F6C460F073D0 /* ConfigViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigViews.swift; sourceTree = "<group>"; };
+		412E24CA035D1FFAEC751760 /* PopoverViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PopoverViews.swift; sourceTree = "<group>"; };
+		4595D207D24DCAE63A8287FF /* ProfileViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileViews.swift; sourceTree = "<group>"; };
+		47B507E5C752D5AA03FF0B46 /* MenuBarConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarConfig.swift; sourceTree = "<group>"; };
 		5B72086A247C884C00BF7492 /* ISSuperIOIT86XXEFamily.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ISSuperIOIT86XXEFamily.hpp; sourceTree = "<group>"; };
 		5B72086B247C884C00BF7492 /* ISSuperIOIT86XXEFamily.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ISSuperIOIT86XXEFamily.cpp; sourceTree = "<group>"; };
+		5F808680DC9728B64461CD5B /* FanViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FanViews.swift; sourceTree = "<group>"; };
+		6B54CCA047416B7570B45057 /* AdvancedViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AdvancedViews.swift; sourceTree = "<group>"; };
+		6FDA65DF83D678288EEC73FD /* AnalysisViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnalysisViews.swift; sourceTree = "<group>"; };
+		7DA910DF12CC3B64A1A39947 /* DashboardTab.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardTab.swift; sourceTree = "<group>"; };
+		85E25F6A8F3D4D84DB413D57 /* VisualEffectComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VisualEffectComponents.swift; sourceTree = "<group>"; };
+		877300E93643ED9A5C3983FF /* SharedComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
+		8A50BB3B9063882703B55CBF /* ChartComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChartComponents.swift; sourceTree = "<group>"; };
+		9475A6F3C2BBA6C48EA0D0E1 /* ChartDetailViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChartDetailViews.swift; sourceTree = "<group>"; };
+		9C206E0143DF662573E98952 /* DesktopWidgetExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesktopWidgetExtensions.swift; sourceTree = "<group>"; };
 		AABB001100001001 /* TelemetryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryModel.swift; sourceTree = "<group>"; usesTabs = 0; };
 		AABB001100001003 /* MainDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainDashboardView.swift; sourceTree = "<group>"; };
 		AABB001100002001 /* NetworkStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkStats.swift; sourceTree = "<group>"; };
@@ -165,6 +196,7 @@
 		B5F3A2262B7C0126ABCDEF /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5F3A2272B7C0127ABCDEF /* zh */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh; path = zh.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5F46D80240E6F19009F2961 /* ProcessorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessorModel.swift; sourceTree = "<group>"; };
+		C0FF0000000000001EE7C0DE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Version.xcconfig; path = Config/Version.xcconfig; sourceTree = "<group>"; };
 		C0FFEE000000000000000002 /* AMDPowerGadgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AMDPowerGadgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0FFEE000000000000000020 /* ColorHexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHexTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000021 /* EPPMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPPMappingTests.swift; sourceTree = "<group>"; };
@@ -172,7 +204,11 @@
 		C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegeAndFanCurveTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000024 /* PStateRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PStateRowTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMUResponseMappingTests.swift; sourceTree = "<group>"; };
-		C0FF0000000000001EE7C0DE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Version.xcconfig; path = Config/Version.xcconfig; sourceTree = "<group>"; };
+		C37A7461EA797F309A12AE96 /* ThemeViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeViews.swift; sourceTree = "<group>"; };
+		C589FF26732FF993BF9FDD5B /* DesktopWidgetsViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesktopWidgetsViews.swift; sourceTree = "<group>"; };
+		D470A80D67EE97AD74A895E7 /* AppTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		DD1D725C7746F381324C5057 /* StatusbarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatusbarView.swift; sourceTree = "<group>"; };
+		EE30D8CE6B20F3BCB58DE994 /* SystemInfoViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemInfoViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -256,6 +292,24 @@
 				B56162CA2400EF780006A7D8 /* Assets.xcassets */,
 				B56162CF2400EF780006A7D8 /* Info.plist */,
 				B56162D02400EF780006A7D8 /* AMD_Power_Gadget.entitlements */,
+				D470A80D67EE97AD74A895E7 /* AppTheme.swift */,
+				85E25F6A8F3D4D84DB413D57 /* VisualEffectComponents.swift */,
+				7DA910DF12CC3B64A1A39947 /* DashboardTab.swift */,
+				877300E93643ED9A5C3983FF /* SharedComponents.swift */,
+				8A50BB3B9063882703B55CBF /* ChartComponents.swift */,
+				C37A7461EA797F309A12AE96 /* ThemeViews.swift */,
+				EE30D8CE6B20F3BCB58DE994 /* SystemInfoViews.swift */,
+				5F808680DC9728B64461CD5B /* FanViews.swift */,
+				4595D207D24DCAE63A8287FF /* ProfileViews.swift */,
+				6B54CCA047416B7570B45057 /* AdvancedViews.swift */,
+				412E24CA035D1FFAEC751760 /* PopoverViews.swift */,
+				6FDA65DF83D678288EEC73FD /* AnalysisViews.swift */,
+				C589FF26732FF993BF9FDD5B /* DesktopWidgetsViews.swift */,
+				21B9706A8AE6F6C460F073D0 /* ConfigViews.swift */,
+				9C206E0143DF662573E98952 /* DesktopWidgetExtensions.swift */,
+				47B507E5C752D5AA03FF0B46 /* MenuBarConfig.swift */,
+				DD1D725C7746F381324C5057 /* StatusbarView.swift */,
+				9475A6F3C2BBA6C48EA0D0E1 /* ChartDetailViews.swift */,
 			);
 			path = "AMD Power Gadget";
 			sourceTree = "<group>";
@@ -315,7 +369,7 @@
 			isa = PBXGroup;
 			children = (
 				C0FF0000000000001EE7C0DE /* Version.xcconfig */,
-			B57D27F623F66AE7002BC699 /* AMDRyzenCPUPowerManagement */,
+				B57D27F623F66AE7002BC699 /* AMDRyzenCPUPowerManagement */,
 				B5011E9F242E01CC009FB2A2 /* SMCAMDProcessor */,
 				B56162C52400EF770006A7D8 /* AMD Power Gadget */,
 				C0FFEE000000000000000011 /* AMDPowerGadgetTests */,
@@ -687,6 +741,24 @@
 				B5F46D81240E6F19009F2961 /* ProcessorModel.swift in Sources */,
 				B561633524010C050006A7D8 /* GraphView.swift in Sources */,
 				B59762382472A1FE0074E0B5 /* GraphViewGridLineLayer.swift in Sources */,
+				114D99D55F7FC46D21540932 /* AppTheme.swift in Sources */,
+				677066C2B9487D2C7FD9F502 /* VisualEffectComponents.swift in Sources */,
+				B89B9C6F1349D49F3A63D41D /* DashboardTab.swift in Sources */,
+				214341BC4413DA56BA20FFC4 /* SharedComponents.swift in Sources */,
+				E06206D686F9986B0A488BA6 /* ChartComponents.swift in Sources */,
+				E25DB8CDD046130D89E6B212 /* ThemeViews.swift in Sources */,
+				2C475036D97AC9CF38B46BD7 /* SystemInfoViews.swift in Sources */,
+				5AB6D79272E07E00AC7E68B3 /* FanViews.swift in Sources */,
+				9F51098C8322AE65EE224AEF /* ProfileViews.swift in Sources */,
+				B8DD2F1DFF552C5465AA8871 /* AdvancedViews.swift in Sources */,
+				5E7582558CD3FD87317E33A2 /* PopoverViews.swift in Sources */,
+				E32E28C693D98B149646A32B /* AnalysisViews.swift in Sources */,
+				80710189E057BAD67746030D /* DesktopWidgetsViews.swift in Sources */,
+				CD16B06875C810EDF081C77A /* ConfigViews.swift in Sources */,
+				84DB34DCAAB3D25A02F604E6 /* DesktopWidgetExtensions.swift in Sources */,
+				D5DBA1D0D348F77D96E0415B /* MenuBarConfig.swift in Sources */,
+				64BDDC746691C18DA9A809F2 /* StatusbarView.swift in Sources */,
+				463DC4A1457F1F20873F7777 /* ChartDetailViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -804,7 +876,7 @@
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
-				MODULE_VERSION = 2;
+				MODULE_VERSION = 3;
 				OTHER_CFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = wtf.spinach.SMCAMDProcessor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -832,7 +904,7 @@
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
-				MODULE_VERSION = 2;
+				MODULE_VERSION = 3;
 				OTHER_CFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = wtf.spinach.SMCAMDProcessor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1029,7 +1101,7 @@
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
-				MODULE_VERSION = 2;
+				MODULE_VERSION = 3;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
@@ -1077,7 +1149,7 @@
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
-				MODULE_VERSION = 2;
+				MODULE_VERSION = 3;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
@@ -1151,7 +1223,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1175,7 +1247,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
