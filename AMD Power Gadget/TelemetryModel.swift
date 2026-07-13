@@ -629,7 +629,9 @@ final class TelemetryModel: ObservableObject {
         restartTimer()
         NotificationCenter.default.addObserver(self, selector: #selector(handleActiveWindowsChanged), name: .init("AppActiveWindowsChanged"), object: nil)
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.csvConfigDirty = true
+            Task { @MainActor in
+                self?.csvConfigDirty = true
+            }
         }
 
         // Background update check on launch — 5 s delay so the UI is fully ready
@@ -833,6 +835,17 @@ final class TelemetryModel: ObservableObject {
         let newLastDiskUsageCheck: Date?
         let newCachedDiskIO: (read: UInt64, write: UInt64)?
         let newLastDiskIOCheck: Date?
+
+        let cpuFreqAvgGHz: Double
+        let cpuFreqMaxGHz: Double
+        let cpuTempC: Double
+        let cpuWatts: Double
+        let gpuLoadPct: Double
+        let gpuVramUsedBytes: Double
+        let gpuFanRPM: Double
+        let netUploadMBps: Double
+        let netDownloadMBps: Double
+        let cpuLoadAvg: Double
     }
 
     private func captureSnapshot() -> SamplingInputSnapshot {
@@ -997,6 +1010,11 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
+        let numPhysicalCores = snapshot.cachedNumPhysicalCores > 0 ? snapshot.cachedNumPhysicalCores : pm.getNumOfCore()
+        let freqsMHz: [Float] = metric.count > numPhysicalCores + 2 ? Array(metric[3..<(3 + numPhysicalCores)]) : []
+        let avgMHz = freqsMHz.reduce(0, +) / Float(freqsMHz.count)
+        let maxMHz = freqsMHz.max() ?? 0
+
         return SamplingResult(
             numPhys: numPhys,
             numLogi: numLogi,
@@ -1024,7 +1042,17 @@ final class TelemetryModel: ObservableObject {
             newCachedDiskUsage: newCachedDiskUsage,
             newLastDiskUsageCheck: newLastDiskUsageCheck,
             newCachedDiskIO: newCachedDiskIO,
-            newLastDiskIOCheck: newLastDiskIOCheck
+            newLastDiskIOCheck: newLastDiskIOCheck,
+            cpuFreqAvgGHz: Double(avgMHz) * 0.001,
+            cpuFreqMaxGHz: Double(maxMHz) * 0.001,
+            cpuTempC: Double(metric[1]),
+            cpuWatts: Double(metric[0]),
+            gpuLoadPct: Double(rawGPULoad),
+            gpuVramUsedBytes: Double(rawGPUVram),
+            gpuFanRPM: Double(rawGPUFan),
+            netUploadMBps: snapshot.menu.showNetwork ? (diskIO.read > 0 ? Double(diskIO.read) / 1_000_000.0 : 0.0) : 0.0,
+            netDownloadMBps: snapshot.menu.showNetwork ? (diskIO.write > 0 ? Double(diskIO.write) / 1_000_000.0 : 0.0) : 0.0,
+            cpuLoadAvg: Double(loadIndex.prefix(numPhysicalCores).reduce(0, +)) / Double(numPhysicalCores)
         )
     }
 
@@ -1041,6 +1069,20 @@ final class TelemetryModel: ObservableObject {
         if let val = result.newLastDiskUsageCheck { lastDiskUsageCheck = val }
         if let val = result.newCachedDiskIO { cachedDiskIO = val }
         if let val = result.newLastDiskIOCheck { lastDiskIOCheck = val }
+
+        cpuFreqAvgGHz = result.cpuFreqAvgGHz
+        cpuFreqMaxGHz = result.cpuFreqMaxGHz
+        cpuTempC = result.cpuTempC
+        cpuWatts = result.cpuWatts
+        gpuLoadPct = result.gpuLoadPct
+        gpuVramUsedBytes = result.gpuVramUsedBytes
+        gpuFanRPM = result.gpuFanRPM
+        netUploadMBps = result.netUploadMBps
+        netDownloadMBps = result.netDownloadMBps
+        cpuLoadAvg = result.cpuLoadAvg
+
+        gpuTempC = Double(result.rawGPUTemp)
+        gpuPowerW = Double(result.rawGPUPower)
 
         processSampleData(
             numPhys: result.numPhys,
@@ -1265,8 +1307,9 @@ final class TelemetryModel: ObservableObject {
                 lastProcessFetchTime = now
                 Task.detached(priority: .background) { [weak self] in
                     let list = TelemetryModel.fetchTopProcesses()
+                    let captured = self
                     await MainActor.run {
-                        self?.topProcesses = list
+                        captured?.topProcesses = list
                     }
                 }
             }
@@ -1697,11 +1740,19 @@ final class TelemetryModel: ObservableObject {
             var sourceSensor = UInt32(curve.sourceSensor)
             var hysteresis = UInt32(round(curve.hysteresis))
             var rampRate = UInt32(round(curve.rampRate))
-            
-            data.append(UnsafeBufferPointer(start: &curveIndex, count: 1))
-            data.append(UnsafeBufferPointer(start: &sourceSensor, count: 1))
-            data.append(UnsafeBufferPointer(start: &hysteresis, count: 1))
-            data.append(UnsafeBufferPointer(start: &rampRate, count: 1))
+
+            withUnsafePointer(to: &curveIndex) { ptr in
+                data.append(UnsafeBufferPointer(start: ptr, count: 1))
+            }
+            withUnsafePointer(to: &sourceSensor) { ptr in
+                data.append(UnsafeBufferPointer(start: ptr, count: 1))
+            }
+            withUnsafePointer(to: &hysteresis) { ptr in
+                data.append(UnsafeBufferPointer(start: ptr, count: 1))
+            }
+            withUnsafePointer(to: &rampRate) { ptr in
+                data.append(UnsafeBufferPointer(start: ptr, count: 1))
+            }
             
             let lut = curve.generateLUT()
             data.append(lut, count: 256)

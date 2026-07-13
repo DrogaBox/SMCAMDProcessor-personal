@@ -266,7 +266,7 @@ class DesktopWidgetManager: NSObject, ObservableObject, NSWindowDelegate {
         newY = max(screenRect.minY + margin, min(newY, screenRect.maxY - frame.height - margin))
         
         // 3. Magnetic alignment to other active widgets
-        for (otherType, otherWin) in widgetWindows {
+        for (_, otherWin) in widgetWindows {
             if otherWin == window { continue }
             let otherFrame = otherWin.frame
             

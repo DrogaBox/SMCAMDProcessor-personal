@@ -156,7 +156,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         TelemetryModel.shared.commitPendingChanges()
-        NetworkStats.shared.stop()
+        Task {
+            await NetworkStats.shared.stop()
+        }
         ProcessorModel.shared.closeDriver()
     }
 
