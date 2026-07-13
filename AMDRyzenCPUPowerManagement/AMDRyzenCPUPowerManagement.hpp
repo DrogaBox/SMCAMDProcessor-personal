@@ -298,6 +298,7 @@ public:
     };
 #pragma pack(pop)
 
+    // CPU capability profile per family/model
     struct ZenCpuFeatureMap {
         uint32_t family;
         uint32_t modelStart;
@@ -306,12 +307,29 @@ public:
         bool supportsCPPC;
         bool supportsCPPCv2;
         bool supportsMwait;
+        bool legacyPstateAllowed;  // Legacy P-state manipulation (dangerous on Zen 3)
+        bool pmDispatchAllowed;     // Custom PM dispatch takeover
     };
 
+    // Vermeer/Zen 3 baseline: telemetry-only by default, no legacy P-state/PM dispatch
+    static constexpr ZenCpuFeatureMap VERMEER_ZEN3_PROFILE = {
+        0x19, 0x21, 0x2F, "Zen 3 Vermeer",  // Family 19h, Model 21h-2Fh
+        true, false, false,                  // CPPC: yes, CPPCv2: no, MWAIT: no
+        false, false                         // legacyPstate: no, pmDispatch: no
+    };
+
+    // Feature matrix - controlled per-profile
+    bool telemetryAllowed {true};
+    bool cppcReadAllowed {false};      // CPPC MSRs readable
+    bool cppcWriteAllowed {false};     // CPPC requests allowed
+    bool legacyPstateAllowed {false};  // Legacy P-state writes
+    bool pmDispatchAllowed {false};    // Custom PM dispatch takeover
+
+    // Derived state
     uint32_t zenGeneration = 3;
-    bool supportsCPPC = true;
+    bool supportsCPPC = false;
     bool supportsCPPCv2 = false;
-    bool supportsMwait = true;
+    bool supportsMwait = false;
 
     bool disablePrivilegeCheck = false;
     uint16_t savedSMCChipIntel = 0;

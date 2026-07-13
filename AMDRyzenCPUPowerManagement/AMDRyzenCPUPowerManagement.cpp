@@ -176,25 +176,17 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                     provider->dumpPstate();
 
                 // Query CPPC core ranking per logical core if supported
+                // For Vermeer baseline: only read CPPC CAP1 if telemetryAllowed, do NOT write CPPC_ENABLE
                 if (provider->cppcSupported && cpu_num < CPUInfo::MaxCpus) {
-                    provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
                     uint64_t cppcCap = 0;
                     bool msrSuccess = provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap);
-                    IOLog("AMDRyzenCPUPowerManagement::startWorkLoop Core %d CPPC MSR read: %d, value: 0x%llX\n", cpu_num, msrSuccess, cppcCap);
+                    IOLog("AMDRyzenCPUPowerManagement::startWorkLoop Core %d CPPC CAP1 read: %d, value: 0x%llX\n", cpu_num, msrSuccess, cppcCap);
                     if (msrSuccess) {
-                        // AMD PPR states bits 7:0 are HighestPerformance. The original code incorrectly read 31:24 (LowestPerformance)
+                        // AMD PPR states bits 7:0 are HighestPerformance
                         provider->cppcHighestPerf_perCore[cpu_num] = cppcCap & 0xFF;
                         
-                        if (provider->cppcActiveMode) {
-                            uint8_t highestPerf = cppcCap & 0xFF;
-                            uint8_t lowestPerf = (cppcCap >> 24) & 0xFF;
-                            uint64_t reqVal = 0;
-                            reqVal |= (uint64_t)lowestPerf;
-                            reqVal |= ((uint64_t)highestPerf) << 8;
-                            reqVal |= 0ULL << 16; // Desired = 0 (autonomous)
-                            reqVal |= ((uint64_t)provider->cppcEPPValue) << 24;
-                            provider->write_msr(kMSR_AMD_CPPC_REQ, reqVal);
-                        }
+                        // For Vermeer baseline: do NOT enable CPPC by default
+                        // Keep cppcActiveMode=false to avoid writing CPPC_ENABLE/REQ
                     }
                 }
 
@@ -361,7 +353,10 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     CPUInfo::getCpuid(1, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpuFamily = ((cpuid_eax >> 20) & 0xff) + ((cpuid_eax >> 8) & 0xf);
-    cpuModel = ((cpuid_eax >> 16) & 0xf) + ((cpuid_eax >> 4) & 0xf);
+    // Correct CPUID model decode: extended model must be shifted left by 4
+    uint8_t baseModel = (cpuid_eax >> 4) & 0xF;
+    uint8_t extModel = (cpuid_eax >> 16) & 0xF;
+    cpuModel = baseModel | (extModel << 4);
     
     // Support for Zen (17h), Zen 2/3/4 (19h), and Zen 5 (1Ah)
     cpuSupportedByCurrentVersion = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A)? 1 : 0;
@@ -412,16 +407,45 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     IOLog("AMDRyzenCPUPowerManagement::start CCD temperature offset: 0x%X\n", ccdOffset);
     
-    if (cpuFamily == 0x1A) {
+    // Apply capability profile for detected CPU
+    if (cpuFamily == VERMEER_ZEN3_PROFILE.family &&
+        cpuModel >= VERMEER_ZEN3_PROFILE.modelStart &&
+        cpuModel <= VERMEER_ZEN3_PROFILE.modelEnd) {
+        // Vermeer/Zen 3 profile
+        telemetryAllowed = VERMEER_ZEN3_PROFILE.supportsCPPC;
+        cppcReadAllowed = false;      // Will be enabled after safe probe
+        cppcWriteAllowed = false;     // Conservative: write disabled initially
+        legacyPstateAllowed = VERMEER_ZEN3_PROFILE.legacyPstateAllowed;
+        pmDispatchAllowed = VERMEER_ZEN3_PROFILE.pmDispatchAllowed;
+        zenGeneration = 3;
+        supportsCPPC = VERMEER_ZEN3_PROFILE.supportsCPPC;
+        supportsCPPCv2 = VERMEER_ZEN3_PROFILE.supportsCPPCv2;
+        supportsMwait = VERMEER_ZEN3_PROFILE.supportsMwait;
+        strlcpy(cpuArchName, "Zen 3 Vermeer", sizeof(cpuArchName));
+        IOLog("AMDRyzenCPUPowerManagement::start Profile: Vermeer/Zen 3 (telemetry-only baseline)\n");
+    } else if (cpuFamily == 0x1A) {
         zenGeneration = 5;
+        strlcpy(cpuArchName, "Zen 5", sizeof(cpuArchName));
     } else if (cpuFamily == 0x19 && cpuModel >= 0x60) {
         zenGeneration = 4;
+        strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
+    } else if (cpuFamily == 0x19 && cpuModel >= 0x10 && cpuModel <= 0x1F) {
+        zenGeneration = 4;
+        strlcpy(cpuArchName, "Zen 4 HEDT", sizeof(cpuArchName));
     } else if (cpuFamily == 0x19) {
         zenGeneration = 3;
+        strlcpy(cpuArchName, "Zen 3+", sizeof(cpuArchName));
     } else if (cpuFamily == 0x17 && cpuModel >= 0x30) {
         zenGeneration = 2;
-    } else {
+        strlcpy(cpuArchName, "Zen 2", sizeof(cpuArchName));
+    } else if (cpuFamily == 0x17 && cpuModel >= 0x10) {
         zenGeneration = 1;
+        strlcpy(cpuArchName, "Zen+", sizeof(cpuArchName));
+    } else if (cpuFamily == 0x17) {
+        zenGeneration = 1;
+        strlcpy(cpuArchName, "Zen", sizeof(cpuArchName));
+    } else {
+        strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
     }
     IOLog("AMDRyzenCPUPowerManagement::start Detected Zen Generation: %u\n", zenGeneration);
     
@@ -853,10 +877,16 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
 }
 
 void AMDRyzenCPUPowerManagement::applyPowerControl(){
-    if (cppcActiveMode) {
-        IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored since CPPC Active Mode is active\n");
+    // Legacy P-state manipulation disabled for Vermeer baseline
+    if (!legacyPstateAllowed) {
+        if (cppcActiveMode) {
+            IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored - CPPC Active Mode active\n");
+        } else {
+            IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored - legacy P-state disabled for baseline mode\n");
+        }
         return;
     }
+    
     IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
         auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
@@ -1204,28 +1234,33 @@ void AMDRyzenCPUPowerManagement::reinitHwState() {
     CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
-    // CPPC support (does NOT change Active Mode boot-arg behavior below).
-    // - CAP1 MSR readable → supported (value may be 0 before ENABLE is written).
-    // - Zen family 17h/19h/1Ah always has CPPC MSRs (5900XT, etc.).
-    // Old fallback CPUID 8000_0008 EBX[27] is NOT a CPPC flag and falsely
-    // reported "no CPPC" on many Zen systems → orange UI warning.
+    // CPPC support probe - read CAP1 first, only write ENABLE if cppcWriteAllowed
+    // - CAP1 MSR readable → supported
+    // - Zen family 17h/19h/1Ah always has CPPC MSRs
     uint64_t cppcVal = 0;
     bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
     const bool zenFamily = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A);
 
+    // CPPC read is supported if MSR reads successfully or CPU is Zen family
     if (msrSuccess || zenFamily) {
         cppcSupported = true;
+        cppcReadAllowed = true;
+        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC CAP1 readable (CAP1=0x%llx)\n", cppcVal);
     } else {
         cppcSupported = false;
+        cppcReadAllowed = false;
     }
 
-    if (cppcSupported) {
+    // For Vermeer baseline: do NOT enable CPPC writes by default
+    // Keep cppcWriteAllowed=false until validated
+    if (cppcWriteAllowed && cppcSupported) {
         write_msr(kMSR_AMD_CPPC_ENABLE, 1);
         if (!msrSuccess || cppcVal == 0) {
             (void)read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
         }
-        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC supported (CAP1=0x%llx zen=%d)\n",
-              cppcVal, zenFamily ? 1 : 0);
+        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC enabled (CAP1=0x%llx)\n", cppcVal);
+    } else if (cppcSupported) {
+        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC CAP1 readable but writes disabled (baseline mode)\n");
     }
 
     // Unchanged: -amdcppcactive still forces Active Mode at boot when present.
