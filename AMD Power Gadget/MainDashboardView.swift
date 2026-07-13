@@ -1039,6 +1039,7 @@ struct HorizontalChartsContainer: View {
                             line2Label: "Max",
                             height: height
                         )
+                        .frame(maxWidth: .infinity)
                     }
                     .layoutPriority(1)
                 }
@@ -1055,6 +1056,7 @@ struct HorizontalChartsContainer: View {
                             line2Label: nil,
                             height: height
                         )
+                        .frame(maxWidth: .infinity)
                     }
                     .layoutPriority(1)
                 }
@@ -1071,6 +1073,7 @@ struct HorizontalChartsContainer: View {
                             line2Label: nil,
                             height: height
                         )
+                        .frame(maxWidth: .infinity)
                     }
                     .layoutPriority(1)
                 }
