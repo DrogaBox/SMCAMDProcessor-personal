@@ -1040,7 +1040,7 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .layoutPriority(1)
                 }
                 if chartId == "temp" && showTemperature {
                     ResizableChart(chartId: "dash_temp", small: 70, medium: 100, large: 150) { height in
@@ -1056,7 +1056,7 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .layoutPriority(1)
                 }
                 if chartId == "pwr" && showPower {
                     ResizableChart(chartId: "dash_pwr", small: 70, medium: 100, large: 150) { height in
@@ -1072,7 +1072,7 @@ struct HorizontalChartsContainer: View {
                             height: height
                         )
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .layoutPriority(1)
                 }
             }
         }
