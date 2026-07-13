@@ -173,6 +173,15 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             statusItem = nil
         }
     }
+    
+    deinit {
+        // Safety net: clean up event monitor if dismiss() wasn't called
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        telemetrySubscription?.cancel()
+    }
 
     @objc func update() {
         let tm = TelemetryModel.shared
