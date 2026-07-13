@@ -1,5 +1,14 @@
 # Change Summary & Release Changelog
 
+## v3.22.0 Advanced UI Performance Engine & Memory Safety
+
+### App (AMD Power Gadget)
+* **Performance Optimization Framework**: Introduced a suite of high-performance SwiftUI utilities including `@ThresholdPublished` to aggressively throttle unnecessary UI redraws.
+* **Smart Chart Rendering**: Implemented `trackVisibility()` modifier and `CalculationCache` with TTL, ensuring graphs are only computed and rendered when visible on-screen.
+* **Diagnostics & Profiling**: Added `PerformanceMonitor` to track average sample times and peak memory usage, alongside `DiagnosticsHelper` for reliable system state capture via `NSLog`.
+* **Memory Safety Mechanisms**: Enforced strict resource cleanup with explicit `deinit` blocks in `StatusbarController` to safely remove global `NSEvent` monitors and prevent severe memory leaks.
+* **Actor Isolation Refinements**: Perfected the weak capture pattern in asynchronous `@MainActor` task execution for `fetchTopProcesses`, completely sealing the remaining retain cycles.
+
 ## v3.21.0 Massive UI Refactor & Modularization
 
 ### App (AMD Power Gadget)

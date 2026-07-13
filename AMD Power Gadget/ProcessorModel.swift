@@ -831,7 +831,7 @@ class ProcessorModel {
         if res == KERN_SUCCESS {
             return Array(output.prefix(Int(outputSize)))
         } else {
-            print("getCurveOptimizerOffsets failed: \(String(cString: mach_error_string(res)))")
+            NSLog("getCurveOptimizerOffsets failed: %@", String(cString: mach_error_string(res)))
             return []
         }
     }
