@@ -804,7 +804,7 @@
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
-				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
+				MODULE_VERSION = 2;
 				OTHER_CFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = wtf.spinach.SMCAMDProcessor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -832,7 +832,7 @@
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/universal";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MODULE_NAME = wtf.spinach.SMCAMDProcessor;
-				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
+				MODULE_VERSION = 2;
 				OTHER_CFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = wtf.spinach.SMCAMDProcessor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1029,7 +1029,7 @@
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
-				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
+				MODULE_VERSION = 2;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
@@ -1077,7 +1077,7 @@
 				MODULE_NAME = wtf.spinach.AMDRyzenCPUPowerManagement;
 				MODULE_START = amdryzencpupm_kern_start;
 				MODULE_STOP = amdryzencpupm_kern_stop;
-				MODULE_VERSION = "$(CURRENT_PROJECT_VERSION)";
+				MODULE_VERSION = 2;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
@@ -1151,7 +1151,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1175,7 +1175,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
