@@ -862,7 +862,7 @@ struct DesktopWidgetView: View {
                             if type == .united {
                                 let chartItems = unitedChartMetric == "all" ? activeUnitedItems : activeUnitedItems.filter { $0.id == unitedChartMetric }
                                 ForEach(chartItems) { item in
-                                    ForEach(indexedData, id: \.offset) { index, point in
+                                    ForEach(indexedData, id: \.element.id) { index, point in
                                         let val = item.historyValue(point)
                                         if unitedChartStyle == 2 {
                                             BarMark(
@@ -905,7 +905,7 @@ struct DesktopWidgetView: View {
                                     }
                                 }
                             } else {
-                                ForEach(indexedData, id: \.offset) { index, point in
+                                ForEach(indexedData, id: \.element.id) { index, point in
                                     let val: Double = {
                                         switch type {
                                         case .cpu: return point.cpuLoad

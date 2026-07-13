@@ -95,7 +95,7 @@ struct OriginalLineChartCard: View {
                 let indexedData = Array(data.enumerated())
                 let maxIndex = Double(indexedData.count - 1)
 
-                Chart(indexedData, id: \.offset) { index, pt in
+                Chart(indexedData, id: \.element.id) { index, pt in
                     if selectedChartStyle == .bar {
                         BarMark(
                             x: .value("Index", Double(index)),
@@ -204,7 +204,7 @@ struct SimpleLineChart: View {
                 let indexedData = Array(data.enumerated())
                 let maxIndex = Double(indexedData.count - 1)
 
-                Chart(indexedData, id: \.offset) { index, pt in
+                Chart(indexedData, id: \.element.id) { index, pt in
                     AreaMark(x: .value("Index", Double(index)), y: .value(title, value(pt)))
                         .foregroundStyle(LinearGradient(colors: [color.opacity(0.28), color.opacity(0.0)], startPoint: .top, endPoint: .bottom))
                         .interpolationMethod(.catmullRom)
@@ -417,7 +417,7 @@ struct NetworkLineChartCard: View {
                     if chartStyle == 0 {
                         // Style 0: Bidirectional Bars (Quantitative X-axis)
                         Chart {
-                            ForEach(indexedData, id: \.offset) { index, pt in
+                            ForEach(indexedData, id: \.element.id) { index, pt in
                                 BarMark(
                                     x: .value("Index", Double(index)),
                                     y: .value("Upload", pt.netUploadMBps)
@@ -425,7 +425,7 @@ struct NetworkLineChartCard: View {
                                 .foregroundStyle(Color.tahoeAccentPurple)
                             }
 
-                            ForEach(indexedData, id: \.offset) { index, pt in
+                            ForEach(indexedData, id: \.element.id) { index, pt in
                                 BarMark(
                                     x: .value("Index", Double(index)),
                                     y: .value("Download", -pt.netDownloadMBps)
@@ -457,7 +457,7 @@ struct NetworkLineChartCard: View {
                         let yAxisVals = [0.0, maxVal / 2.0, maxVal]
 
                         Chart {
-                            ForEach(indexedData, id: \.offset) { index, pt in
+                            ForEach(indexedData, id: \.element.id) { index, pt in
                                 AreaMark(
                                     x: .value("Index", Double(index)),
                                     y: .value("Speed", pt.netDownloadMBps)
@@ -520,7 +520,7 @@ struct NetworkLineChartCard: View {
                         let averageTotal = model.history.map { $0.netUploadMBps + $0.netDownloadMBps }.reduce(0, +) / Double(max(1, model.history.count))
 
                         Chart {
-                            ForEach(indexedData, id: \.offset) { index, pt in
+                            ForEach(indexedData, id: \.element.id) { index, pt in
                                 AreaMark(
                                     x: .value("Index", Double(index)),
                                     y: .value("Speed", pt.netDownloadMBps)
