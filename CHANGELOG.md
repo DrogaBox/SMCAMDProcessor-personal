@@ -1,5 +1,12 @@
 # Change Summary & Release Changelog
 
+## v3.23.0 Zen 3 Kernel Safety Update
+
+### Kext (AMDRyzenCPUPowerManagement)
+* **Safe Idle Loop**: Enforced `PMRYZEN_IDLE_SIMPLE` (`sti; hlt`) on AMD Zen 3 to prevent `#UD` (Illegal Instruction) kernel panics caused by incompatible `MONITOR/MWAIT` usage.
+* **MSR Bounds Checking**: Implemented strict hardware verification for Ryzen 5000 (`Family 19h`). Unsafe read/write operations to Intel-exclusive MSRs (like `MSR_PLATFORM_INFO` or `MSR_IA32_MISC_ENABLE`) are now actively blocked to prevent `#GP` (General Protection) faults.
+* **Kext Version Sync**: Unified versioning and automated dual-distribution for both App and Kext binaries in the release pipeline.
+
 ## v3.22.0 Advanced UI Performance Engine & Memory Safety
 
 ### App (AMD Power Gadget)
