@@ -109,21 +109,22 @@ enum AppTheme: String, CaseIterable, Identifiable {
     }
 
     var card: Color {
+        let opacity = UserDefaults.standard.object(forKey: "tahoe_card_opacity") as? Double ?? 0.45
         switch self {
-        // Increased from 0.15 to 0.45 opacity for better contrast and less eye strain on data areas
-        case .tahoe: return Color(red: 0.13, green: 0.13, blue: 0.16).opacity(0.45)
-        case .classic: return Color(red: 0.12, green: 0.14, blue: 0.19).opacity(0.45)
-        case .midnight: return Color(red: 0.08, green: 0.11, blue: 0.22).opacity(0.45)
-        case .ember: return Color(red: 0.18, green: 0.11, blue: 0.09).opacity(0.45)
-        case .matrix: return Color(red: 0.05, green: 0.10, blue: 0.07).opacity(0.45)
-        case .rose: return Color(red: 0.16, green: 0.10, blue: 0.18).opacity(0.45)
-        case .cyberpunk: return Color(red: 0.12, green: 0.08, blue: 0.22).opacity(0.45)
-        case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(0.45)
-        case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(0.45)
-        case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(0.45)
+        // Opacity controlled by user preferences (default 0.45 for contrast)
+        case .tahoe: return Color(red: 0.13, green: 0.13, blue: 0.16).opacity(opacity)
+        case .classic: return Color(red: 0.12, green: 0.14, blue: 0.19).opacity(opacity)
+        case .midnight: return Color(red: 0.08, green: 0.11, blue: 0.22).opacity(opacity)
+        case .ember: return Color(red: 0.18, green: 0.11, blue: 0.09).opacity(opacity)
+        case .matrix: return Color(red: 0.05, green: 0.10, blue: 0.07).opacity(opacity)
+        case .rose: return Color(red: 0.16, green: 0.10, blue: 0.18).opacity(opacity)
+        case .cyberpunk: return Color(red: 0.12, green: 0.08, blue: 0.22).opacity(opacity)
+        case .solarized: return Color(red: 0.15, green: 0.18, blue: 0.20).opacity(opacity)
+        case .monochrome: return Color(red: 0.12, green: 0.12, blue: 0.12).opacity(opacity)
+        case .nordic: return Color(red: 0.18, green: 0.22, blue: 0.28).opacity(opacity)
         case .custom:
             let hex = UserDefaults.standard.string(forKey: "custom_hex_card") ?? "#16213E"
-            return (Color(hexString: hex) ?? Color(red: 0.13, green: 0.13, blue: 0.16)).opacity(0.45)
+            return (Color(hexString: hex) ?? Color(red: 0.13, green: 0.13, blue: 0.16)).opacity(opacity)
         }
     }
 
@@ -686,6 +687,7 @@ private struct TahoeCard<Content: View>: View {
     // Keep cards in sync when custom theme opacity/hex is edited live
     @AppStorage("app_theme_preset") private var themePreset: String = AppTheme.tahoe.rawValue
     @AppStorage("custom_hex_card") private var cardHex: String = "#16213E"
+    @AppStorage("tahoe_card_opacity") private var cardOpacity: Double = 0.45
 
     init(accent: Color = .tahoeCardBorder, @ViewBuilder content: () -> Content) {
         self.accent = accent; self.content = content()
@@ -704,6 +706,7 @@ private struct TahoeCard<Content: View>: View {
         // Touch storage so SwiftUI invalidates this view when theme tokens change
         _ = themePreset
         _ = cardHex
+        _ = cardOpacity
         return Color.tahoeCard
     }
 
@@ -4300,8 +4303,45 @@ struct ThemesContentView: View {
 
                 SectionTitle("Chart Rendering Style")
                 ChartStyleSelectorGrid()
+                
+                SectionTitle("Card Background Opacity")
+                CardOpacityEditorCard()
             }
             .padding(20)
+        }
+    }
+}
+
+// MARK: - Card Opacity Editor
+struct CardOpacityEditorCard: View {
+    @AppStorage("tahoe_card_opacity") private var cardOpacity: Double = 0.45
+
+    var body: some View {
+        TahoeCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("Adjust the opacity of the data cards background to increase readability or enhance the glassmorphism effect.", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(.tahoeSubtext)
+                
+                HStack {
+                    Text("0%")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeSubtext)
+                    Slider(value: Binding(
+                        get: { cardOpacity },
+                        set: { newValue in 
+                            cardOpacity = newValue
+                            AppTheme.postThemeChanged()
+                        }
+                    ), in: 0...1, step: 0.05)
+                    .accentColor(.tahoeAccentCyan)
+                    
+                    Text("\(Int(cardOpacity * 100))%")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(.tahoeText)
+                        .frame(width: 40, alignment: .trailing)
+                }
+            }
         }
     }
 }
