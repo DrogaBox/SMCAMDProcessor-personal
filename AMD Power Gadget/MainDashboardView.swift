@@ -585,7 +585,7 @@ private struct SidebarView: View {
                             HStack(spacing: 3) {
                                 Image(systemName: "heart.fill")
                                     .font(.system(size: 8))
-                                Text("Donar")
+                                Text("Donate (PayPal)")
                             }
                         }
                         .buttonStyle(SidebarMiniButtonStyle(accent: .tahoeAccentOrange))
@@ -594,7 +594,7 @@ private struct SidebarView: View {
                     if model.isCheckingForUpdates {
                         HStack(spacing: 4) {
                             ProgressView().scaleEffect(0.5).frame(width: 10, height: 10)
-                            Text("Buscando...").font(.system(size: 8.5)).foregroundColor(.tahoeSubtext)
+                            Text("Checking for updates...").font(.system(size: 8.5)).foregroundColor(.tahoeSubtext)
                         }
                         .padding(.horizontal, 6)
                     } else {
@@ -608,7 +608,7 @@ private struct SidebarView: View {
                             HStack(spacing: 3) {
                                 Image(systemName: model.updateAvailable ? "arrow.down.circle" : "arrow.triangle.2.circlepath")
                                     .font(.system(size: 8))
-                                Text(model.updateAvailable ? "Download Update" : "Buscar Updates")
+                                Text(model.updateAvailable ? LocalizedStringKey("Download Update") : LocalizedStringKey("Check for Updates"))
                             }
                         }
                         .buttonStyle(SidebarMiniButtonStyle(accent: model.updateAvailable ? .tahoeAccentGreen : .tahoeAccentCyan))
