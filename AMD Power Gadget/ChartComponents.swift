@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - Resizable Chart Wrapper with Right-Click Menu
-struct ResizableChart<Content: View>: View, Equatable {
+struct ResizableChart<Content: View>: View {
     let chartId: String
     let small: CGFloat
     let medium: CGFloat
@@ -17,13 +17,6 @@ struct ResizableChart<Content: View>: View, Equatable {
 
     @State private var currentHeight: CGFloat
     @State private var showMenu = false
-
-    static func == (lhs: ResizableChart<Content>, rhs: ResizableChart<Content>) -> Bool {
-        lhs.chartId == rhs.chartId &&
-        lhs.small == rhs.small &&
-        lhs.medium == rhs.medium &&
-        lhs.large == rhs.large
-    }
 
     init(chartId: String, small: CGFloat = 60, medium: CGFloat = 100, large: CGFloat = 160, @ViewBuilder content: @escaping (CGFloat) -> Content) {
         self.chartId = chartId
