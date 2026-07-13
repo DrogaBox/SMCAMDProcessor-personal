@@ -871,7 +871,7 @@ struct DashboardContentView: View {
                             )
                         }
                     } else if itemId == "cores" && showCores {
-                        ResizableChart(chartId: "dash_cores_size", small: 200, medium: 280, large: 380) { height in
+                        ResizableChart(chartId: "dash_cores_size", small: 300, medium: 400, large: 500) { height in
                             ScrollView {
                                 CoreGridCard(model: model)
                             }
@@ -941,7 +941,7 @@ struct ChartContextMenu: View {
         case "memory":
             actualHeight = (heightType == "small") ? 130 : (heightType == "medium") ? 160 : 220
         case "cores":
-            actualHeight = (heightType == "small") ? 200 : (heightType == "medium") ? 280 : 380
+            actualHeight = (heightType == "small") ? 300 : (heightType == "medium") ? 400 : 500
         default:
             actualHeight = (heightType == "small") ? 70 : (heightType == "medium") ? 100 : 150
         }
