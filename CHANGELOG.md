@@ -1,5 +1,17 @@
 # Change Summary & Release Changelog
 
+## v3.19.3  Desktop Widgets Grid-Snapping & UI Polish
+
+### App (AMD Power Gadget)
+* **Magnetic Grid-Snapping (Desktop Widgets)**: Completely redesigned the `NSWindow` foundation for Desktop Widgets. Dragging widgets across the screen now automatically intercepts window coordinates and snaps them to a 20x20 pixel magnetic grid, perfectly replicating native macOS desktop icon alignment behavior.
+* **Architecture Documentation**: Updated `COMPARISON.md` detailing the transition from `NSPopover` to native `NSPanel` structures and the new Core Animation pipelines.
+
+## v3.19.2  Liquid Glass NSPanel Migration
+
+### App (AMD Power Gadget)
+* **NSPanel Migration**: Removed all legacy `NSPopover` implementations to permanently resolve `NSISEngine` recursive layout crashes in SwiftUI. The dashboard now runs on a custom borderless `.nonactivatingPanel` that perfectly inherits Tahoe's Liquid Glass materials.
+* **Native Core Animations**: Restored the missing fade and slide animations from the `NSPopover` days by manually wrapping the `NSPanel` frame adjustments and opacity changes in `NSAnimationContext.runAnimationGroup` with `easeOut` / `easeIn` interpolations.
+
 ## v3.19.1  UI Refinements, Telemetry Optimizations & UX Fixes
 
 ### App (AMD Power Gadget)
