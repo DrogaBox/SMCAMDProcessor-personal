@@ -1,5 +1,18 @@
 # Change Summary & Release Changelog
 
+## v3.20.0  Swift Concurrency Engine
+
+### App (AMD Power Gadget)
+* **Swift Concurrency Migration**: Migrated the entire underlying polling and rendering engine from legacy GCD (`DispatchQueue`) to native Swift 6 Concurrency (`Task`, `actor`, and `@MainActor`).
+* **NetworkStats Actor**: Rewrote the network interface monitor as an `actor`, eliminating race conditions and manual queues.
+* **Asynchronous Telemetry**: The main telemetry loop now polls asynchronously, completely decoupling heavy kernel IO tasks from the UI frame rendering.
+* **Memory Safety & Leaks**: Fixed a critical memory retain cycle in `fetchTopProcesses` background polling by ensuring static invocation, preventing the task from holding onto the `TelemetryModel` view model indefinitely.
+* **UI Alignments**: Corrected sidebar label truncation and layout distortions introduced by overly long localized strings.
+
+## v3.19.4  UI Hotfixes for Dashboard (Minor)
+* Fixed button scaling and alignment on the dashboard.
+
+
 ## v3.19.3  Desktop Widgets Grid-Snapping & UI Polish
 
 ### App (AMD Power Gadget)
