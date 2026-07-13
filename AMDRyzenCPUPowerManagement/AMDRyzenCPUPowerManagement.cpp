@@ -702,11 +702,17 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
 }
 
 bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
-    
+    if (cpuFamily == 0x19) {
+        // Zen 3 MSR Bounds Checking
+        if (addr == 0xCE || (addr >= 0x198 && addr <= 0x19C) || addr == 0x1A0) {
+            IOLog("AMDRyzenCPUPowerManagement::read_msr BLOCKED unsafe Intel MSR 0x%X for Zen 3\n", addr);
+            *value = 0;
+            return false;
+        }
+    }
+
     uint32_t lo, hi;
-    //    IOLog("AMDCPUSupport lalala \n");
     int err = rdmsr_carefully(addr, &lo, &hi);
-    //    IOLog("AMDCPUSupport rdmsr_carefully %d\n", err);
     
     if(!err) *value = lo | ((uint64_t)hi << 32);
     
@@ -714,6 +720,14 @@ bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
 }
 
 bool AMDRyzenCPUPowerManagement::write_msr(uint32_t addr, uint64_t value){
+    if (cpuFamily == 0x19) {
+        // Zen 3 MSR Bounds Checking
+        if (addr == 0xCE || (addr >= 0x198 && addr <= 0x19C) || addr == 0x1A0) {
+            IOLog("AMDRyzenCPUPowerManagement::write_msr BLOCKED unsafe Intel MSR 0x%X for Zen 3\n", addr);
+            return false;
+        }
+    }
+
     if(wrmsr_carefully){
         uint32_t lo = value & 0xffffffff;
         uint32_t hi = value >> 32;

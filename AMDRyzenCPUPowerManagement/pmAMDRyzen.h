@@ -23,6 +23,9 @@
 #define MOD_NAME pmARyzen
 #define XNU_MAX_CPU 64
 
+#undef PMRYZEN_IDLE_MWAIT
+#define PMRYZEN_IDLE_SIMPLE 1
+
 #define MSR_PSTATE_CTL 0xC0010062
 #define MSR_PSTATE_0 0xC0010064
 
