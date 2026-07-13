@@ -754,7 +754,6 @@ struct MenuBarPopoverView: View {
                                 )
                             }
                             if cfg.popoverShowCPUSparkline {
-                                let cpuTempStr = cfg.popoverRingShowTemp ? String(format: " • %.0f°C", model.cpuTempC) : ""
                                 MiniSparkline(
                                     label: "CPU Temp",
                                     currentVal: String(format: "%.0f°C", model.cpuTempC),

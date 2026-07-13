@@ -347,7 +347,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         }
         
         if wasPinned && !customPanel.isVisible {
-            if let button = statusItem.button {
+            if statusItem.button != nil {
                 itemClicked() // Re-trigger open to reposition if needed
             }
         }

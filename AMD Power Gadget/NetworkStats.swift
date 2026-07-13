@@ -60,7 +60,7 @@ actor NetworkStats {
             var bytesIn: UInt64 = 0
             var bytesOut: UInt64 = 0
             
-            var mib: [Int32] = [CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0]
+            let mib: [Int32] = [CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0]
             var len: size_t = 0
             var mibCopy = mib
             
