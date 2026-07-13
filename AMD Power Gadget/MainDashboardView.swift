@@ -573,7 +573,7 @@ private struct SidebarView: View {
                         .buttonStyle(SidebarMiniButtonStyle(accent: .tahoeAccentCyan))
 
                         Button(action: {
-                            DispatchQueue.global(qos: .userInitiated).async {
+                            Task.detached(priority: .userInitiated) {
                                 if let url = Bundle.main.url(forResource: "bravo", withExtension: "mp3") {
                                     if let sound = NSSound(contentsOf: url, byReference: true) {
                                         sound.play()
@@ -587,7 +587,7 @@ private struct SidebarView: View {
                             HStack(spacing: 3) {
                                 Image(systemName: "heart.fill")
                                     .font(.system(size: 8))
-                                Text("Donate (PayPal)")
+                                Text("Donate")
                             }
                         }
                         .buttonStyle(SidebarMiniButtonStyle(accent: .tahoeAccentOrange))
@@ -4134,7 +4134,7 @@ struct ColorTokenEditorSlot: View {
         if normalized.uppercased() != hex.uppercased() {
             hex = normalized
         }
-        DispatchQueue.main.async { suppressPush = false }
+        Task { @MainActor in suppressPush = false }
     }
 
     /// - Parameter userEdit: when true, notifies parent (switches preset to Custom).
@@ -4149,7 +4149,7 @@ struct ColorTokenEditorSlot: View {
         if userEdit {
             onEdited()
         }
-        DispatchQueue.main.async { suppressPush = false }
+        Task { @MainActor in suppressPush = false }
     }
 }
 
@@ -6337,7 +6337,7 @@ class HistoryManager: ObservableObject {
     }
     
     func sampleCurrentTelemetry() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             let model = TelemetryModel.shared
             let point = HistoryDataPoint(
                 timestamp: Date(),

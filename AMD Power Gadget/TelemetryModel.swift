@@ -1093,24 +1093,21 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        var netUp: Double = 0
-        var netDown: Double = 0
         let isNetActive = (selectedTab == .dashboard || selectedTab == .telemetry || popoverVisible)
-        
-        // Skip network polling entirely if in menubar mode and networking is hidden
         let skipNetwork = lightMode && !isLoggingEnabled && !MenuBarConfig.shared.showNetwork
         
         if !skipNetwork {
-            if let netSnap = NetworkStats.shared.update(lowFrequency: !isNetActive) {
-                netUp = netSnap.uploadMBps
-                netDown = netSnap.downloadMBps
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                if let netSnap = await NetworkStats.shared.update(lowFrequency: !isNetActive) {
+                    self.netUploadMBps = netSnap.uploadMBps
+                    self.netDownloadMBps = netSnap.downloadMBps
+                }
             }
-        } else {
-            netUp = self.netUploadMBps
-            netDown = self.netDownloadMBps
         }
-        self.netUploadMBps = netUp
-        self.netDownloadMBps = netDown
+        
+        let netUp = self.netUploadMBps
+        let netDown = self.netDownloadMBps
 
         let relTime = Date.timeIntervalSinceReferenceDate - startTime
         
