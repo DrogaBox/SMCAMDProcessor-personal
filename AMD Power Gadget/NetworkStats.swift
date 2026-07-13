@@ -16,14 +16,13 @@ struct NetworkSnapshot {
     let downloadMBps: Double
 }
 
-class NetworkStats {
+actor NetworkStats {
     static let shared = NetworkStats()
 
     private var lastBytesIn: UInt64 = 0
     private var lastBytesOut: UInt64 = 0
     private var lastCheck: Date = Date.distantPast
     
-    private let queue = DispatchQueue(label: "com.amdpowergadget.network", qos: .utility)
     private var currentSnapshot: NetworkSnapshot?
     private var physicalInterfaceCache: [UInt32: Bool] = [:]
     private var cacheLastCleared: Date = Date()
@@ -45,7 +44,6 @@ class NetworkStats {
     }
     
     func update(lowFrequency: Bool = false) -> NetworkSnapshot? {
-        return queue.sync {
             if Date().timeIntervalSince(cacheLastCleared) > 30 {
                 physicalInterfaceCache.removeAll()
                 cacheLastCleared = Date()
@@ -160,6 +158,5 @@ class NetworkStats {
             lastCheck = now
             
             return currentSnapshot
-        }
     }
 }
