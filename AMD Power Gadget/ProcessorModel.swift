@@ -12,6 +12,8 @@ import Darwin
 class ProcessorModel {
     static let shared = ProcessorModel()
 
+    private let accessQueue = DispatchQueue(label: "com.amdpowergadget.processor")
+
     private var connect: io_connect_t = 0
 
     private var cachedMetric : [Float] = []
@@ -154,38 +156,48 @@ class ProcessorModel {
         }
     }
 
-    // MARK: - Generic Kernel IOKit Calls
+    // MARK: - Kernel IOKit Calls
 
-    /// Internal: performs an IOKit structure read and returns raw byte buffer.
-    private func kernelGetRaw(selector: UInt32, elementSize: Int, count: Int) -> (data: Data, actualCount: Int)? {
-        var scalerOut: UInt64 = 0
-        var outputCount: UInt32 = 1
-        var buffer = [UInt8](repeating: 0, count: elementSize * count)
-        var bufferSize = buffer.count
-        let res = IOConnectCallMethod(connect, selector, nil, 0, nil, 0,
-                                      &scalerOut, &outputCount,
-                                      &buffer, &bufferSize)
-        guard res == KERN_SUCCESS else {
-            print(String(cString: mach_error_string(res)))
-            return nil
+    private func logKernelError(_ status: kern_return_t) {
+        if status != KERN_SUCCESS {
+            NSLog("ProcessorModel: selector failed with %@", String(cString: mach_error_string(status)))
         }
-        return (Data(buffer), bufferSize / elementSize)
     }
 
     func kernelGetFloats(count: Int, selector: UInt32) -> [Float] {
-        guard let (data, actual) = kernelGetRaw(selector: selector, elementSize: 4, count: count) else { return [] }
-        let valid = min(count, actual)
-        return data.withUnsafeBytes { ptr in
-            Array(UnsafeBufferPointer<Float>(start: ptr.baseAddress?.assumingMemoryBound(to: Float.self), count: valid))
+        var scalarOut: UInt64 = 0
+        var scalarOutCount: UInt32 = 1
+        var output = [Float](repeating: 0, count: count)
+        var outputSize = MemoryLayout<Float>.size * count
+
+        let status = IOConnectCallMethod(connect, selector, nil, 0, nil, 0,
+                                         &scalarOut, &scalarOutCount,
+                                         &output, &outputSize)
+        guard status == KERN_SUCCESS else {
+            logKernelError(status)
+            return []
         }
+
+        let valid = min(count, outputSize / MemoryLayout<Float>.size)
+        return Array(output.prefix(valid))
     }
 
     func kernelGetUInt64(count: Int, selector: UInt32) -> [UInt64] {
-        guard let (data, actual) = kernelGetRaw(selector: selector, elementSize: 8, count: count) else { return [] }
-        let valid = min(count, actual)
-        return data.withUnsafeBytes { ptr in
-            Array(UnsafeBufferPointer<UInt64>(start: ptr.baseAddress?.assumingMemoryBound(to: UInt64.self), count: valid))
+        var scalarOut: UInt64 = 0
+        var scalarOutCount: UInt32 = 1
+        var output = [UInt64](repeating: 0, count: count)
+        var outputSize = MemoryLayout<UInt64>.size * count
+
+        let status = IOConnectCallMethod(connect, selector, nil, 0, nil, 0,
+                                         &scalarOut, &scalarOutCount,
+                                         &output, &outputSize)
+        guard status == KERN_SUCCESS else {
+            logKernelError(status)
+            return []
         }
+
+        let valid = min(count, outputSize / MemoryLayout<UInt64>.size)
+        return Array(output.prefix(valid))
     }
 
     /// IOKit `kIOReturnNotPrivileged` (0xe00002c1) — write selectors require root or `-amdpnopchk`.
@@ -220,7 +232,7 @@ class ProcessorModel {
                                       &outputStr, &outbuffersize)
         }
         if res != KERN_SUCCESS || outbuffersize <= 0 {
-            if res != KERN_SUCCESS { print(String(cString: mach_error_string(res))) }
+            if res != KERN_SUCCESS { logKernelError(res) }
             return ""
         }
 
@@ -269,7 +281,7 @@ class ProcessorModel {
                                       &outputStr, &outputStrCount)
 
         if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
+            logKernelError(res)
             return
         }
 
@@ -448,7 +460,9 @@ class ProcessorModel {
     }
 
     func refreshPStateDef() {
-        loadPStateDefClock()
+        accessQueue.sync {
+            loadPStateDefClock()
+        }
     }
 
     func getHPCpus() -> Int{
@@ -484,7 +498,7 @@ class ProcessorModel {
             if status == KERN_SUCCESS {
                 emulatedPState = state
             } else {
-                print(String(cString: mach_error_string(status)))
+                logKernelError(status)
             }
             return status
         }
@@ -495,7 +509,7 @@ class ProcessorModel {
                                       nil, nil)
 
         if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
+            logKernelError(res)
         }
         return res
     }
@@ -523,7 +537,7 @@ class ProcessorModel {
         var outputCount: UInt32 = 2
         let res = IOConnectCallMethod(connect, 23, nil, 0, nil, 0, &output, &outputCount, nil, nil)
         if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
+            logKernelError(res)
             return (false, 0x3F)
         }
         return (output[0] == 1, UInt8(output[1]))
@@ -552,19 +566,23 @@ class ProcessorModel {
     }
 
     func getMetric(forced : Bool) -> [Float] {
-        if forced || (NSDate().timeIntervalSince1970 - lastMLoad >= 1.0) {
-            loadMetric()
+        accessQueue.sync {
+            if forced || (NSDate().timeIntervalSince1970 - lastMLoad >= 1.0) {
+                loadMetric()
+            }
+            return cachedMetric
         }
-        return cachedMetric
     }
 
     func getNumOfCore() -> Int {
-        return numberOfCores
+        accessQueue.sync { numberOfCores }
     }
 
     func getLoadIndex() -> [Float] {
-        loadLoadIndex()
-        return loadIndex
+        accessQueue.sync {
+            loadLoadIndex()
+            return loadIndex
+        }
     }
 
     func getCPB() -> [Bool] {
@@ -617,7 +635,7 @@ class ProcessorModel {
 
 
         if res != KERN_SUCCESS {
-            print(String(cString: mach_error_string(res)))
+            logKernelError(res)
             return Int(res)
         }
 
