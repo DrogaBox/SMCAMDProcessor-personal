@@ -126,9 +126,10 @@ ISSuperIOIT86XXEFamily* ISSuperIOIT86XXEFamily::getDevice(uint16_t* chipIntel)
     }
 
     // close port
-    if (regport != 0x4E)
-    {
-        outb(regport, 0x02);
+    if (regport == 0x4E) {
+        outb(regport, 0xAA);   // ITE 0x4E close sequence
+    } else {
+        outb(regport, 0x02);   // ITE 0x2E close sequence
     }
 
     return new ISSuperIOIT86XXEFamily(portSel, devAddr, *chipIntel, gpioAddress);

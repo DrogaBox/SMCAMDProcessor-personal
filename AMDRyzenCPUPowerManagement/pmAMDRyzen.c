@@ -7,6 +7,8 @@
 
 #include "pmAMDRyzen.h"
 
+#include <pexpert/pexpert.h>
+
 
 
 x86_lcpu_t *pmRyzen_cpunum_to_lcpu[XNU_MAX_CPU];
@@ -74,6 +76,14 @@ pmDispatch_t pmRyzen_cpuFuncs = {
 };
 
 void pmRyzen_init_PState(void){
+    // P1 = 80% of P0 by default. Override via boot-arg `amdpp1ratio=0.75` etc.
+    static float p1_ratio = 0.0f;
+    if (p1_ratio == 0.0f) {
+        uint32_t bootRatio = 0;
+        PE_parse_boot_argn("amdpp1ratio", &bootRatio, sizeof(bootRatio));
+        p1_ratio = (bootRatio > 0 && bootRatio <= 100) ? (float)bootRatio / 100.0f : 0.80f;
+    }
+
     uint64_t p0 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0);
     if (!(p0 & (1ULL << 63))) return;
     
@@ -83,7 +93,7 @@ void pmRyzen_init_PState(void){
     float p0spd = ((float)(p0 & 0xff) / (float)p0dfsid) * 200.0f;
     
     uint64_t p1 = pmRyzen_rdmsr_safe(pmRyzen_io_service_handle, MSR_PSTATE_0 + 1);
-    uint32_t fid_raw = (uint32_t)((p0spd * 0.80f) / 200.0f * (float)((p1 >> 8) & 0x3f));
+    uint32_t fid_raw = (uint32_t)((p0spd * p1_ratio) / 200.0f * (float)((p1 >> 8) & 0x3f));
     if (fid_raw > 0xFF) fid_raw = 0xFF;
     uint64_t p1fid = (uint64_t)fid_raw;
     
@@ -102,9 +112,9 @@ inline void set_PState(pmProcessor_t *cpu, uint8_t state){
     cpu->PState = state;
     
     if(!state){
-        __asm__ volatile("lock incq (%0)"::"r"(&pmRyzen_hpcpus):"memory");
+        __asm__ volatile("lock incl (%0)"::"r"(&pmRyzen_hpcpus):"memory");
     } else if(from_hpstate) {
-        __asm__ volatile("lock decq (%0)"::"r"(&pmRyzen_hpcpus):"memory");
+        __asm__ volatile("lock decl (%0)"::"r"(&pmRyzen_hpcpus):"memory");
     }
 }
 
@@ -296,9 +306,11 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
                      "movl $0x1, %%ecx;"
                      "mwait;"
                      :
-                     : "r"(addr), "r"(ps_hint)
-                     : "%ecx", "%edx", "%rax"
-                     );
+                      : "r"(addr), "r"(ps_hint)
+                      : "%ecx", "%edx", "%rax"
+                      );
+    // MONITOR/MWAIT do not touch RFLAGS.IF — re-enable interrupts before post-idle work.
+    __asm__ volatile("sti;");
     
 #elif defined(PMRYZEN_IDLE_SIMPLE)
     
@@ -393,10 +405,14 @@ boolean_t pmRyzen_exit_idle(x86_lcpu_t *lcpu){
 }
 
 int pmRyzen_choose_cpu(int startCPU, int endCPU, int preferredCPU){
-    if (preferredCPU >= 0 && preferredCPU < XNU_MAX_CPU && pmRyzen_cpus[preferredCPU].cpu_awake)
+    if (preferredCPU >= 0 && preferredCPU < XNU_MAX_CPU
+        && pmRyzen_cpunum_to_lcpu[preferredCPU]
+        && pmRyzen_cpus[preferredCPU].cpu_awake)
         return preferredCPU;
 
-    if (pmRyzen_last_woken_cpu < XNU_MAX_CPU && pmRyzen_cpus[pmRyzen_last_woken_cpu].cpu_awake)
+    if (pmRyzen_last_woken_cpu < XNU_MAX_CPU
+        && pmRyzen_cpunum_to_lcpu[pmRyzen_last_woken_cpu]
+        && pmRyzen_cpus[pmRyzen_last_woken_cpu].cpu_awake)
         return pmRyzen_last_woken_cpu;
         
     return preferredCPU;

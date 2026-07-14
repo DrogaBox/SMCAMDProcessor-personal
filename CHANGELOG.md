@@ -8,7 +8,7 @@
 ## v3.23.1 Expanded Zen 3+ Kernel Safety
 
 ### Kext (AMDRyzenCPUPowerManagement)
-* **Future-Proof MSR Filtering**: Expanded the strict Intel MSR bounds checking from Zen 3 (`Family 19h`) to Zen 4 (`Family 1Ah`) and future Zen 5 (`Family 1Bh`) architectures (`cpuFamily >= 0x19`). This proactively protects all newer AMD CPUs from `#GP` kernel panics when accessing unsupported MSRs.
+* **Future-Proof MSR Filtering**: Expanded the strict Intel MSR bounds checking from Zen 3 (`Family 19h`) to Zen 4 (`Family 19h Model 60h`) and Zen 5 (`Family 1Ah`) architectures (`cpuFamily >= 0x19`). This proactively protects all newer AMD CPUs from `#GP` kernel panics when accessing unsupported MSRs.
 
 ## v3.23.0 Zen 3 Kernel Safety Update
 

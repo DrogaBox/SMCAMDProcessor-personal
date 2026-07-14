@@ -117,6 +117,8 @@ public:
     static constexpr uint32_t kF17H_TEMP_OFFSET_FLAG = 0x80000;
     static constexpr uint32_t kF18H_TEMP_OFFSET_FLAG = 0x60000;
     static constexpr uint8_t kFAMILY_17H_PCI_CONTROL_REGISTER = 0x60;
+    static constexpr uint8_t kFAMILY_1AH_PCI_CONTROL_REGISTER = 0x60;   // Zen 5 — confirm against PPR
+    static constexpr uint16_t kAMD_HOST_BRIDGE_VENDOR = 0x1022;
     
     /**
      *  CCD (Core Complex Die) temperature register offsets.
@@ -285,7 +287,7 @@ public:
     uint64_t lastUpdateTime;
     uint64_t lastUpdateEnergyValue;
     
-    double uniPackageEnergy;
+    double uniPackagePowerW;   // Average package power in watts (energy delta / time delta)
     
 #pragma pack(push, 1)
     struct CPUSensorPacket {
@@ -398,6 +400,15 @@ private:
     uint32_t smnRead32(uint32_t addr);
     void smnWrite32(uint32_t addr, uint32_t val);
     int smuSendCmd(uint32_t cmd, uint32_t arg);
+
+    struct SMUMailbox {
+        uint32_t msgReg;
+        uint32_t argReg;
+        uint32_t rspReg;
+        uint32_t curveOptimizerCmd;   // 0x3D on Zen 3, 0x55 on Zen 4 (per AGESA), 0x0 (unsupported) otherwise
+        bool     supported;
+    };
+    SMUMailbox smuMailbox{};
     
     void initWorkLoop();
     void stopWorkLoop();
