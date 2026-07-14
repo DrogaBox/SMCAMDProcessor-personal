@@ -1,5 +1,8 @@
 # Change Summary & Release Changelog
 
+## v3.23.2 Vermeer PM Dispatch Decouple
+* **Kernel**: Disabled PM Dispatch takeover (`pmDispatchAllowed = false`) for Vermeer/Cezanne CPUs, reverting to safe baseline telemetry.
+
 ## v3.23.1 Expanded Zen 3+ Kernel Safety
 
 ### Kext (AMDRyzenCPUPowerManagement)
