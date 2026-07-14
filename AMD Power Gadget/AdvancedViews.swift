@@ -22,7 +22,7 @@ struct AdvancedContentView: View {
                 SectionTitle("CPU Power Controls")
                 UnsupportedFeatureOverlay(
                     isSupported: model.cpbSupported,
-                    reasonText: "CPB: Desactivado por arquitectura de CPU"
+                    reasonText: LocalizedStringKey("CPB: Disabled by CPU architecture")
                 ) {
                     TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
                         HStack {
@@ -196,7 +196,7 @@ struct AdvancedContentView: View {
                 Divider().background(Color.tahoeCardBorder)
                 UnsupportedFeatureOverlay(
                     isSupported: ProcessorModel.shared.isLegacyPStateSupported,
-                    reasonText: "P-States: Desactivado por ser CPU moderno"
+                    reasonText: LocalizedStringKey("P-States: Disabled for modern CPU")
                 ) {
                     VStack(alignment: .leading, spacing: 4) {
                         SectionTitle("P-State Editor")
