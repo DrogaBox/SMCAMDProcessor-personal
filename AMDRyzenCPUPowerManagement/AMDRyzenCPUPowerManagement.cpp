@@ -64,7 +64,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
         IOSleep(10);
     }
     if (!resolved) {
-        kextloadAlerts++;
+        OSIncrementAtomic((SInt32*)&kextloadAlerts);
         IOLog("AMDRyzenCPUPowerManagement::init symbol resolution for _wrmsr_carefully failed after 50 retries\n");
         return false;
     }
@@ -540,13 +540,32 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 
     pmRyzen_init(this, pmDispatchAllowed ? 1 : 0);
 
+    // Populate per-family SMU mailbox descriptor.
+    // Sources: Linux drivers/platform/x86/amd-pmf/, AGESA SMU headers, amdgpu nv.c.
+    if (cpuFamily == 0x19 && cpuModel >= 0x21 && cpuModel <= 0x2F) {
+        // Zen 3 Vermeer
+        smuMailbox = { 0x3B10524, 0x3B10528, 0x3B1052C, 0x3D, true };
+    } else if (cpuFamily == 0x19 && cpuModel >= 0x60 && cpuModel <= 0x7F) {
+        // Zen 4 Raphael — SMU mailbox moved; Curve Optimizer command is 0x55.
+        // NOTE: offsets below are placeholders — verify against AGESA Family 19h Model 60h PPR.
+        smuMailbox = { 0x3B10590, 0x3B10594, 0x3B10598, 0x55, true };
+        IOLog("AMDRyzenCPUPowerManagement: Zen 4 SMU mailbox offsets are UNVERIFIED — Curve Optimizer writes blocked.\n");
+        smuMailbox.supported = false;   // Block until verified
+    } else if (cpuFamily == 0x1A) {
+        // Zen 5 Granite Ridge — SMU firmware restructured; Curve Optimizer path unknown.
+        smuMailbox = { 0, 0, 0, 0, false };
+        IOLog("AMDRyzenCPUPowerManagement: Zen 5 SMU mailbox unsupported — Curve Optimizer blocked.\n");
+    } else {
+        smuMailbox = { 0x3B10524, 0x3B10528, 0x3B1052C, 0x3D, false };
+    }
+
     totalNumberOfLogicalCores = pmRyzen_num_logi;
     totalNumberOfPhysicalCores = pmRyzen_num_phys;
 
     IOLog("AMDRyzenCPUPowerManagement::start, Physical Count: %u, Logical Count %u.\n",
               totalNumberOfPhysicalCores, totalNumberOfLogicalCores);
 
-    for (int i = 0; i < 16; i++) {
+    for (size_t i = 0; i < kMAX_FANS; i++) {
         fanToCurveMap[i] = -1;
         lastAppliedPWM[i] = 0;
         lastPWMUpdateTime[i] = 0;
@@ -721,8 +740,15 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
 
 bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
     if (cpuFamily >= 0x19) {
-        // Zen 3+ MSR Bounds Checking (Zen 3, Zen 4, Zen 5)
-        if (addr == 0xCE || (addr >= 0x198 && addr <= 0x19C) || addr == 0x1A0) {
+        // Zen 3+ MSR Bounds Checking — block Intel-exclusive MSRs that #GP on AMD.
+        // Whitelist: 0xE7 (MPERF), 0xE8 (APERF) — used by this kext for effective freq.
+        if (addr == 0xCE                          // IA32_ARCH_CAPABILITIES
+            || addr == 0xE2                        // IA32_POWER_CTL (Intel layout)
+            || (addr >= 0x198 && addr <= 0x19C)    // IA32_PERF_STATUS / PERF_CTL / UCODE
+            || addr == 0x1A0                       // IA32_MISC_ENABLE
+            || addr == 0x1AD                       // IA32_ENERGY_PERF_BIAS (Intel EPB)
+            || addr == 0x345                       // IA32_PERF_LIMIT_REASONS
+            || (addr >= 0x610 && addr <= 0x617)) { // Intel RAPL PL1/PL2/PL3 + status
             IOLog("AMDRyzenCPUPowerManagement::read_msr BLOCKED unsafe Intel MSR 0x%X for Zen 3+\n", addr);
             *value = 0;
             return false;
@@ -739,8 +765,14 @@ bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
 
 bool AMDRyzenCPUPowerManagement::write_msr(uint32_t addr, uint64_t value){
     if (cpuFamily >= 0x19) {
-        // Zen 3+ MSR Bounds Checking (Zen 3, Zen 4, Zen 5)
-        if (addr == 0xCE || (addr >= 0x198 && addr <= 0x19C) || addr == 0x1A0) {
+        // Zen 3+ MSR Bounds Checking — block Intel-exclusive MSRs that #GP on AMD.
+        if (addr == 0xCE                          // IA32_ARCH_CAPABILITIES
+            || addr == 0xE2                        // IA32_POWER_CTL (Intel layout)
+            || (addr >= 0x198 && addr <= 0x19C)    // IA32_PERF_STATUS / PERF_CTL / UCODE
+            || addr == 0x1A0                       // IA32_MISC_ENABLE
+            || addr == 0x1AD                       // IA32_ENERGY_PERF_BIAS (Intel EPB)
+            || addr == 0x345                       // IA32_PERF_LIMIT_REASONS
+            || (addr >= 0x610 && addr <= 0x617)) { // Intel RAPL PL1/PL2/PL3 + status
             IOLog("AMDRyzenCPUPowerManagement::write_msr BLOCKED unsafe Intel MSR 0x%X for Zen 3+\n", addr);
             return false;
         }
@@ -962,14 +994,26 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
     IOPCIAddressSpace space;
     space.bits = 0x00;
     
+    uint8_t smnCtrlReg = (cpuFamily == 0x1A) ? kFAMILY_1AH_PCI_CONTROL_REGISTER
+                                             : kFAMILY_17H_PCI_CONTROL_REGISTER;
     IOSimpleLockLock(pciConfigLock);
-    fIOPCIDevice->configWrite32(space, (UInt8)kFAMILY_17H_PCI_CONTROL_REGISTER, (UInt32)kF17H_M01H_THM_TCON_CUR_TMP);
-    uint32_t temperature = fIOPCIDevice->configRead32(space, kFAMILY_17H_PCI_CONTROL_REGISTER + 4);
+    fIOPCIDevice->configWrite32(space, smnCtrlReg, (UInt32)kF17H_M01H_THM_TCON_CUR_TMP);
+    uint32_t temperature = fIOPCIDevice->configRead32(space, smnCtrlReg + 4);
     IOSimpleLockUnlock(pciConfigLock);
     
-    // Note: kF17H_TEMP_OFFSET_FLAG (bit 19, 0x80000) is correct for Family 17h/19h (Zen 2/3).
-    // Family 1Ah (Zen 5) may require different offset logic — verify against k10temp.c if adding support.
-    bool tempOffsetFlag = (temperature & kF17H_TEMP_OFFSET_FLAG) != 0;
+    // kF17H_TEMP_OFFSET_FLAG (bit 19, 0x80000) is confirmed correct for Family 17h
+    // (Zen/Zen+/Zen 2) and Family 19h (Zen 3/3+/Zen 4) per Linux k10temp.c.
+    // Family 1Ah (Zen 5) uses the same bit but the 49 °C compensation is unverified —
+    // until confirmed against a Granite Ridge PPR or k10temp update, skip the offset
+    // on Zen 5 and log once so the user sees the discrepancy.
+    static bool loggedZen5TempOffset = false;
+    bool tempOffsetFlag = false;
+    if (cpuFamily != 0x1A) {
+        tempOffsetFlag = (temperature & kF17H_TEMP_OFFSET_FLAG) != 0;
+    } else if (!loggedZen5TempOffset) {
+        loggedZen5TempOffset = true;
+        IOLog("AMDRyzenCPUPowerManagement: Zen 5 temperature offset flag unverified — skipping 49°C compensation. Verify against k10temp.c.\n");
+    }
     temperature = (temperature >> 21) * 125;
     
     float t = temperature * 0.001f;
@@ -1037,9 +1081,10 @@ void AMDRyzenCPUPowerManagement::smnWrite32(uint32_t addr, uint32_t val) {
 }
 
 int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
-    uint32_t msgReg = 0x3B10524;
-    uint32_t argReg = 0x3B10528;
-    uint32_t rspReg = 0x3B1052C;
+    if (!smuMailbox.supported) return SMU_RSP_INVALID_CMD;
+    uint32_t msgReg = smuMailbox.msgReg;
+    uint32_t argReg = smuMailbox.argReg;
+    uint32_t rspReg = smuMailbox.rspReg;
     
     // Serialize the full SMU mailbox sequence (clear → arg → msg → poll).
     // Individual smnRead/Write use pciConfigLock, but that alone does not protect
@@ -1057,18 +1102,25 @@ int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
     // Send command
     smnWrite32(msgReg, cmd);
     
-    // Wait for response (timeout 2ms)
+    // Wait for response. Curve Optimizer (0x3D) triggers PLL reconfiguration and can
+    // take 5-15 ms on Zen 3; use 50 ms ceiling. Other commands typically complete <1 ms.
+    const uint32_t timeoutUs = (cmd == smuMailbox.curveOptimizerCmd) ? 50000 : 2000;
+    const uint32_t pollIters = timeoutUs;
     uint32_t rsp = 0;
-    for (int i = 0; i < 2000; i++) {
+    for (uint32_t i = 0; i < pollIters; i++) {
         rsp = smnRead32(rspReg);
-        if (rsp != 0) {
-            break;
-        }
+        if (rsp != 0) break;
         IODelay(1);
     }
     
     if (smuCmdLock) {
         IOLockUnlock(smuCmdLock);
+    }
+
+    if (rsp == 0) {
+        // Mailbox stuck — flush before returning so the next caller doesn't inherit stale state.
+        smnWrite32(msgReg, 0x01);  // SMU_MSG_ResetMsgBus
+        IODelay(100);
     }
     
     return (int)rsp;
@@ -1103,10 +1155,15 @@ int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
     }
     
     // Format argument: Bits [7:0] = Core Index, Bits [15:8] = Offset (signed 8-bit)
+    // NOTE: This payload format is Zen 3 (Vermeer) specific.
+    // Zen 4 Raphael uses a per-CCD layout; Zen 5 Granite Ridge uses a different
+    // signed-magnitude encoding. smuMailbox.curveOptimizerCmd must be 0x3D AND the
+    // detected family must be Vermeer before this path is reachable.
+    if (cpuFamily != 0x19 || cpuModel < 0x21 || cpuModel > 0x2F) return -1;
     uint32_t arg = ((uint32_t)core & 0xFF) | (((uint32_t)offset & 0xFF) << 8);
     
     // Send command 0x3D (SetCurveOptimizer) to SMU
-    int response = smuSendCmd(0x3D, arg);
+    int response = smuSendCmd(smuMailbox.curveOptimizerCmd, arg);
     
     if (response == SMU_RSP_OK) {
         curveOptimizerOffsets[core] = offset;
@@ -1162,7 +1219,7 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
     double seconds = (ctsc - pwrLastTSC) / (double)(xnuTSCFreq);
     if (seconds <= 0.0) { pwrLastTSC = ctsc; return; }
     double e = (pwrEnergyUnit * (double)energyDelta) / seconds;
-    uniPackageEnergy = e;
+    uniPackagePowerW = e;
 
 
     lastUpdateEnergyValue = energyValue;
@@ -1417,8 +1474,8 @@ void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
         float smoothed = (alpha * rawSourceTemp) + ((1.0f - alpha) * prevSmoothed);
         curveSmoothedTemp[curveIdx] = smoothed;
         
-        // 4. Map temperature index (0 - 255)
-        int tempIdx = (int)smoothed;
+        // 4. Map temperature index (0 - 255) with proper rounding
+        int tempIdx = (int)(smoothed + 0.5f);
         if (tempIdx < 0) tempIdx = 0;
         if (tempIdx > 255) tempIdx = 255;
         

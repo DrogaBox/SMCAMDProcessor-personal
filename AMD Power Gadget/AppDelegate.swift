@@ -201,7 +201,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } else {
             // Fallback for legacy macOS versions below 13.0
-            SMLoginItemSetEnabled("wtf.spinach.APGLaunchHelper" as CFString, enabled)
+            let helperID = Bundle.main.object(forInfoDictionaryKey: "APGLaunchHelperBundleID") as? String
+                ?? "wtf.spinach.APGLaunchHelper"
+            SMLoginItemSetEnabled(helperID as CFString, enabled)
         }
     }
 }

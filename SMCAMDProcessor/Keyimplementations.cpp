@@ -33,9 +33,9 @@ SMC_RESULT TempCore::readAccess() {
 SMC_RESULT EnergyPackage::readAccess(){
     if (!provider) return SmcError;
     if (type == SmcKeyTypeFloat)
-        *reinterpret_cast<uint32_t *>(data) = VirtualSMCAPI::encodeFlt(provider->uniPackageEnergy);
+        *reinterpret_cast<uint32_t *>(data) = VirtualSMCAPI::encodeFlt(provider->uniPackagePowerW);
     else
-        *reinterpret_cast<uint16_t *>(data) = VirtualSMCAPI::encodeSp(type, provider->uniPackageEnergy);
+        *reinterpret_cast<uint16_t *>(data) = VirtualSMCAPI::encodeSp(type, provider->uniPackagePowerW);
     
     return SmcSuccess;
 }
