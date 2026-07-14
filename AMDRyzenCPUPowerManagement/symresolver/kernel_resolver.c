@@ -14,6 +14,8 @@
 
 #include "kernel_resolver.h"
 
+#include <libkern/version.h>
+
 
 #define KERNEL_BASE 0xffffff8000200000
 
@@ -27,9 +29,10 @@ void find_mach_header_addr(uint8_t kc){
     uint64_t slide = 0;
     vm_offset_t slide_address = 0;
     
-    // vm_kernel_unslide_or_perm_external retorna void en el SDK XNU actual.
-    // No hay código de retorno que validar; en su lugar validamos el slide_address resultante.
-    vm_kernel_unslide_or_perm_external((unsigned long long)(void *)printf, &slide_address);
+    // Use _version (stable since XNU 10.4) as the known kernel symbol for slide
+    // computation. printf is a libc shim and may be removed from the kernel export
+    // set in future XNU releases.
+    vm_kernel_unslide_or_perm_external((unsigned long long)(void *)&version, &slide_address);
     
     if (slide_address == 0) {
         IOLog("kernel_resolver: vm_kernel_unslide_or_perm_external failed\n");
@@ -46,7 +49,7 @@ void find_mach_header_addr(uint8_t kc){
         return;
     }
     
-    slide = (uint64_t)(void *)printf - slide_address;
+    slide = (uint64_t)(void *)&version - slide_address;
     uint64_t base_address = (uint64_t)slide + KERNEL_BASE;
     
     if(!kc){

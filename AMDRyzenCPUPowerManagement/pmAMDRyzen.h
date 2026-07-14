@@ -24,7 +24,18 @@
 #define XNU_MAX_CPU 64
 
 #undef PMRYZEN_IDLE_MWAIT
+// PMRYZEN_IDLE_SIMPLE is the default idle strategy
+// Note: PMRYZEN_IDLE_IO_CSTATE may be defined via Xcode build settings
+#if !defined(PMRYZEN_IDLE_MWAIT) && !defined(PMRYZEN_IDLE_IO_CSTATE)
 #define PMRYZEN_IDLE_SIMPLE 1
+#endif
+
+// Sanity check: ensure only one idle strategy is active
+#if defined(PMRYZEN_IDLE_MWAIT) && (defined(PMRYZEN_IDLE_SIMPLE) || defined(PMRYZEN_IDLE_IO_CSTATE))
+#error "PMRYZEN_IDLE_MWAIT conflicts with another idle strategy definition"
+#elif defined(PMRYZEN_IDLE_SIMPLE) && defined(PMRYZEN_IDLE_IO_CSTATE)
+#error "PMRYZEN_IDLE_SIMPLE conflicts with PMRYZEN_IDLE_IO_CSTATE"
+#endif
 
 #define MSR_PSTATE_CTL 0xC0010062
 #define MSR_PSTATE_0 0xC0010064

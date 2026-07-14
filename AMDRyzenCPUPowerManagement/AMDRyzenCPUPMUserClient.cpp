@@ -210,7 +210,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             float *dataOut = (float*) arguments->structureOutput;
             
             if (maxLen >= sizeof(float)) {
-                dataOut[0] = (float)provider->uniPackageEnergy;
+                dataOut[0] = (float)provider->uniPackagePowerW;
             }
             if (maxLen >= 2 * sizeof(float)) {
                 dataOut[1] = provider->PACKAGE_TEMPERATURE_perPackage[0];
@@ -390,7 +390,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             }
             
             AMDRyzenCPUPowerManagement::CPUSensorPacket *packet = (AMDRyzenCPUPowerManagement::CPUSensorPacket*) arguments->structureOutput;
-            packet->packagePowerW = (float)provider->uniPackageEnergy;
+            packet->packagePowerW = (float)provider->uniPackagePowerW;
             packet->packageTempC = provider->PACKAGE_TEMPERATURE_perPackage[0];
             packet->numLogicalCores = provider->totalNumberOfLogicalCores;
             packet->ccdCount = provider->ccdCount;
@@ -1008,10 +1008,6 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(!hasPrivilege())
                 return kIOReturnNotPrivileged;
                 
-            if (!arguments->structureInput || arguments->structureInputSize < 272) {
-                return kIOReturnBadArgument;
-            }
-            
             #pragma pack(push, 1)
             struct FanCurveInput {
                 uint32_t curveIndex;
@@ -1021,6 +1017,10 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 uint8_t lut[256];
             };
             #pragma pack(pop)
+            
+            if (!arguments->structureInput || arguments->structureInputSize != sizeof(FanCurveInput)) {
+                return kIOReturnBadArgument;
+            }
             
             const FanCurveInput *input = (const FanCurveInput*) arguments->structureInput;
             uint32_t idx = input->curveIndex;
