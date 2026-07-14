@@ -982,7 +982,7 @@ struct MenuBarConfigView: View {
                     .cornerRadius(8)
                     
                     HStack {
-                        Text("Límite de Temp de Alerta").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                        Text(LocalizedStringKey("Temperature Alert Limit")).font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
                         Spacer()
                         TempThresholdField(value: .init(
                             get: { cfg.tempThreshold },
@@ -995,7 +995,7 @@ struct MenuBarConfigView: View {
                     .cornerRadius(8)
 
                     HStack {
-                        Text("Opciones en Menú Bar").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                        Text(LocalizedStringKey("Menu Bar Temperature Presets")).font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
                         Spacer()
                         TextField("Ej: 30, 40, 50...", text: .init(
                             get: { cfg.tempPresetList },
