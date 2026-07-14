@@ -657,6 +657,8 @@ IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdin
 
 void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
     if (boardInfoValid) return;
+    strlcpy(boardVendor, "Unknown Vendor", BASEBOARD_STRING_MAX);
+    strlcpy(boardName, "Unknown Platform", BASEBOARD_STRING_MAX);
     
     auto efiRT = EfiRuntimeServices::get();
     uint32_t att = 0;
@@ -693,8 +695,6 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
                     boardVendor[copyLen] = '\0';
                     foundVendor = true;
                 }
-            } else {
-                strncpy(boardVendor, "Unknown Vendor", BASEBOARD_STRING_MAX - 1);
             }
             
             if (modelObj) {
@@ -709,8 +709,6 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
                     boardName[copyLen] = '\0';
                     foundModel = true;
                 }
-            } else {
-                strncpy(boardName, "Unknown Platform", BASEBOARD_STRING_MAX - 1);
             }
             boardInfoValid = foundVendor && foundModel;
         } else {
@@ -1486,4 +1484,3 @@ EXPORT extern "C" kern_return_t amdryzencpupm_kern_stop(kmod_info_t *, void *) {
     // It is not safe to unload VirtualSMC plugins!
     return KERN_FAILURE;
 }
-
