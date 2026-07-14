@@ -1,7 +1,9 @@
 # Change Summary & Release Changelog
 
 ## v3.23.2 Vermeer PM Dispatch Decouple
-* **Kernel**: Disabled PM Dispatch takeover (`pmDispatchAllowed = false`) for Vermeer/Cezanne CPUs, reverting to safe baseline telemetry. This prevents race conditions and `#GP` kernel panics caused by the Kext and macOS's native XCPM competing for manual MSR frequency overrides.
+* **Kernel**: Disabled PM Dispatch takeover (`pmDispatchAllowed = false`) for Vermeer/Cezanne CPUs, reverting to safe baseline telemetry. 
+  * **Architectural Context**: In legacy architectures (Zen 1 / Zen 2), the Kext was required to manually inject P-States because macOS lacked native AMD power management. However, modern processors like Vermeer (Zen 3) are now fully capable of native CPPC power management via modern macOS AMD Vanilla patches. 
+  * By decoupling the Kext's legacy manual overrides for Zen 3, we prevent severe race conditions and `#GP` kernel panics caused by the Kext and macOS's native XCPM competing for MSR frequency control. The Kext now safely acts purely as a telemetry observer on modern CPUs, allowing macOS to natively drive stability and idle power scaling.
 
 ## v3.23.1 Expanded Zen 3+ Kernel Safety
 
