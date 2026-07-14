@@ -7,101 +7,241 @@
 
 import SwiftUI
 
-// MARK: - Theme Selector Grid
-struct ThemeSelectorGrid: View {
+// MARK: - Optimized Theme Selector Grid
+struct OptimizedThemeSelectorGrid: View {
     @AppStorage("app_theme_preset") private var selectedThemeRaw: String = AppTheme.tahoe.rawValue
     @AppStorage("custom_hex_card") private var customCardHex: String = "#16213E"
     @AppStorage("custom_hex_cyan") private var customCyanHex: String = "#4CC9F0"
     @AppStorage("custom_hex_orange") private var customOrangeHex: String = "#FF8C00"
     @AppStorage("custom_hex_green") private var customGreenHex: String = "#00FF7F"
     @AppStorage("custom_hex_purple") private var customPurpleHex: String = "#A020F0"
-    private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+    
+    // Use 3 columns to fit more themes on screen
+    private let columns = [
+        GridItem(.flexible(), spacing: 12), 
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
 
     var body: some View {
         let _ = (customCardHex, customCyanHex, customOrangeHex, customGreenHex, customPurpleHex)
-        LazyVGrid(columns: columns, spacing: 14) {
+        LazyVGrid(columns: columns, spacing: 12) {
             ForEach(AppTheme.allCases) { theme in
-                let isSelected = selectedThemeRaw == theme.rawValue
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                CompactThemeButton(
+                    theme: theme, 
+                    isSelected: selectedThemeRaw == theme.rawValue
+                ) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         selectedThemeRaw = theme.rawValue
                         AppTheme.postThemeChanged()
                     }
-                }) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text(theme.localizedName)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(isSelected ? .white : .tahoeText)
-                            Spacer()
-                            if isSelected {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(theme.accentCyan)
-                            }
-                        }
-                        
-                        HStack(spacing: 6) {
-                            RoundedRectangle(cornerRadius: 4).fill(theme.accentCyan).frame(height: 12)
-                            RoundedRectangle(cornerRadius: 4).fill(theme.accentOrange).frame(height: 12)
-                            RoundedRectangle(cornerRadius: 4).fill(theme.accentGreen).frame(height: 12)
-                            RoundedRectangle(cornerRadius: 4).fill(theme.accentPurple).frame(height: 12)
-                        }
-                        .padding(6)
-                        .background(theme.card)
-                        .cornerRadius(6)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.1), lineWidth: 1))
-                    }
-                    .padding(14)
-                    .background(theme.card.opacity(isSelected ? 1.0 : 0.6))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? theme.accentCyan : Color.white.opacity(0.08), lineWidth: isSelected ? 2 : 1)
-                    )
-                    .shadow(color: isSelected ? theme.accentCyan.opacity(0.3) : Color.clear, radius: 8)
                 }
-                .buttonStyle(PlainButtonStyle())
             }
+        }
+    }
+}
+
+// MARK: - Compact Theme Button
+private struct CompactThemeButton: View {
+    let theme: AppTheme
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                // Color preview
+                HStack(spacing: 4) {
+                    Circle().fill(theme.accentCyan).frame(width: 8, height: 8)
+                    Circle().fill(theme.accentOrange).frame(width: 8, height: 8)
+                    Circle().fill(theme.accentGreen).frame(width: 8, height: 8)
+                    Circle().fill(theme.accentPurple).frame(width: 8, height: 8)
+                }
+                .padding(6)
+                .background(theme.card)
+                .cornerRadius(8)
+                
+                // Theme name
+                Text(theme.localizedName)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(isSelected ? theme.accentCyan : .tahoeSubtext)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                // Selection indicator
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(theme.accentCyan)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background(theme.card.opacity(isSelected ? 0.8 : 0.3))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? theme.accentCyan : Color.clear, lineWidth: 2)
+            )
+            .shadow(color: isSelected ? theme.accentCyan.opacity(0.3) : Color.clear, radius: 6)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+    }
+}
+
+// MARK: - Compact Card Opacity Editor
+struct CompactCardOpacityEditor: View {
+    @AppStorage("tahoe_card_opacity") private var cardOpacity: Double = 0.45
+
+    var body: some View {
+        TahoeCard {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Background Opacity")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.tahoeText)
+                    Text("Adjust transparency")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeSubtext)
+                }
+                
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    Text("0%")
+                        .font(.system(size: 9))
+                        .foregroundColor(.tahoeSubtext)
+                    
+                    Slider(value: Binding(
+                        get: { cardOpacity },
+                        set: { newValue in 
+                            cardOpacity = newValue
+                            AppTheme.postThemeChanged()
+                        }
+                    ), in: 0...1, step: 0.05)
+                    .accentColor(.tahoeAccentCyan)
+                    .frame(width: 120)
+                    
+                    Text("\(Int(cardOpacity * 100))%")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.tahoeAccentCyan)
+                        .frame(width: 35, alignment: .trailing)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Chart Styles Content View
+struct ChartStylesContentView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Chart Rendering Styles")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(.tahoeText)
+                    
+                    Text("Choose how charts are rendered in the dashboard. Optimized styles use less CPU and battery.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.tahoeSubtext)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                ChartStyleSelectorGrid()
+            }
+            .padding(18)
         }
     }
 }
 
 // MARK: - Chart Style Selector
 struct ChartStyleSelectorGrid: View {
-    @AppStorage(AppChartStyle.storageKey) private var selectedStyleRaw: String = AppChartStyle.line.rawValue
-    private let columns = [GridItem(.adaptive(minimum: 140), spacing: 12)]
+    @AppStorage(AppChartStyle.storageKey) private var selectedStyleRaw: String = AppChartStyle.lightweightArea.rawValue
+    private let columns = [GridItem(.flexible(), spacing: 12)]
 
     private var selectedStyle: AppChartStyle {
         AppChartStyle.normalized(selectedStyleRaw)
     }
+    
+    // Separate optimized and classic styles
+    private var optimizedStyles: [AppChartStyle] {
+        AppChartStyle.allCases.filter { $0.isOptimized }
+    }
+    
+    private var classicStyles: [AppChartStyle] {
+        AppChartStyle.allCases.filter { !$0.isOptimized }
+    }
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(AppChartStyle.allCases) { style in
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedStyleRaw = style.rawValue
-                    }
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: style.icon)
-                            .foregroundColor(selectedStyle == style ? Color.tahoeAccentCyan : .tahoeSubtext)
-                        Text(style.localizedName)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(selectedStyle == style ? .white : .tahoeSubtext)
-                    }
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(selectedStyle == style ? Color.white.opacity(0.1) : Color.white.opacity(0.03))
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(selectedStyle == style ? Color.tahoeAccentCyan : Color.clear, lineWidth: 1)
-                    )
+        VStack(alignment: .leading, spacing: 16) {
+            // Optimized styles section (recommended)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.tahoeAccentGreen)
+                    Text("Optimized Styles")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.tahoeText)
+                    Text("(Recommended for low power)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeAccentGreen)
                 }
-                .buttonStyle(PlainButtonStyle())
+                
+                LazyVGrid(columns: columns, spacing: 10) {
+                    ForEach(optimizedStyles) { style in
+                        ChartStyleButton(
+                            style: style,
+                            isSelected: selectedStyle == style,
+                            isOptimized: true
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedStyleRaw = style.rawValue
+                            }
+                        }
+                    }
+                }
             }
+            .padding(12)
+            .background(Color.tahoeAccentGreen.opacity(0.08))
+            .cornerRadius(12)
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.tahoeAccentGreen.opacity(0.3), lineWidth: 1))
+            
+            // Classic styles section
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.xyaxis.line")
+                        .font(.system(size: 11))
+                        .foregroundColor(.tahoeSubtext)
+                    Text("Classic Styles")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.tahoeText)
+                    Text("(Higher CPU usage)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.tahoeSubtext)
+                }
+                
+                LazyVGrid(columns: columns, spacing: 10) {
+                    ForEach(classicStyles) { style in
+                        ChartStyleButton(
+                            style: style,
+                            isSelected: selectedStyle == style,
+                            isOptimized: false
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedStyleRaw = style.rawValue
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(12)
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(12)
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.tahoeCardBorder, lineWidth: 1))
         }
         .padding(12)
         .background(
@@ -120,12 +260,76 @@ struct ChartStyleSelectorGrid: View {
     }
 }
 
+// MARK: - Chart Style Button Component
+private struct ChartStyleButton: View {
+    let style: AppChartStyle
+    let isSelected: Bool
+    let isOptimized: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: style.icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(isSelected ? (isOptimized ? .tahoeAccentGreen : .tahoeAccentCyan) : .tahoeSubtext)
+                    
+                    Text(style.localizedName)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(isSelected ? .white : .tahoeSubtext)
+                    
+                    Spacer()
+                    
+                    if isOptimized {
+                        Image(systemName: "leaf.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(.tahoeAccentGreen)
+                    }
+                    
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(isOptimized ? .tahoeAccentGreen : .tahoeAccentCyan)
+                    }
+                }
+                
+                Text(style.description)
+                    .font(.system(size: 9))
+                    .foregroundColor(.tahoeSubtext)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? Color.white.opacity(0.12) : Color.white.opacity(0.03))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(
+                        isSelected 
+                            ? (isOptimized ? Color.tahoeAccentGreen : Color.tahoeAccentCyan)
+                            : Color.clear, 
+                        lineWidth: isSelected ? 2 : 0
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 // MARK: - AppChartStyle Enum
 enum AppChartStyle: String, CaseIterable, Identifiable {
     case line = "Smooth Curves"
     case filledArea = "Filled Area"
     case bar = "Column Bars"
     case steppedLine = "Line Only"
+    
+    // New lightweight optimized styles (2026-07-14)
+    case lightweightArea = "Lightweight Area"
+    case minimalistLine = "Minimalist Sparkline"
+    case gradientBar = "Gradient Bar"
+    case compactCard = "Compact Card"
 
     static let storageKey = "app_chart_style"
 
@@ -136,6 +340,32 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
         case .filledArea: return "chart.area.fill"
         case .bar: return "chart.bar.fill"
         case .steppedLine: return "chart.line.uptrend.xyaxis"
+        case .lightweightArea: return "chart.xyaxis.line"
+        case .minimalistLine: return "waveform"
+        case .gradientBar: return "slider.horizontal.3"
+        case .compactCard: return "rectangle.compress.vertical"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .line: return "Classic smooth curves with interpolation"
+        case .filledArea: return "Area chart with gradient fill"
+        case .bar: return "Vertical bar chart columns"
+        case .steppedLine: return "Simple line without smoothing"
+        case .lightweightArea: return "Optimized area chart - 50% less CPU usage"
+        case .minimalistLine: return "Ultra-light sparkline - minimal rendering"
+        case .gradientBar: return "Horizontal gradient progress bars"
+        case .compactCard: return "Compact cards with integrated charts"
+        }
+    }
+    
+    var isOptimized: Bool {
+        switch self {
+        case .lightweightArea, .minimalistLine, .gradientBar, .compactCard:
+            return true
+        default:
+            return false
         }
     }
 
@@ -151,6 +381,14 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
             return .bar
         case steppedLine.rawValue, "Línea Escalonada (Step)", "Linea Escalonada (Step)":
             return .steppedLine
+        case lightweightArea.rawValue:
+            return .lightweightArea
+        case minimalistLine.rawValue:
+            return .minimalistLine
+        case gradientBar.rawValue:
+            return .gradientBar
+        case compactCard.rawValue:
+            return .compactCard
         default:
             return AppChartStyle(rawValue: stored) ?? .line
         }
@@ -158,8 +396,16 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
 
     @discardableResult
     static func migrateStoredPreference(defaults: UserDefaults = .standard) -> AppChartStyle {
-        let stored = defaults.string(forKey: storageKey) ?? line.rawValue
+        let stored = defaults.string(forKey: storageKey) ?? lightweightArea.rawValue
         let style = normalized(stored)
+        
+        // If this is the first time (no stored value), set optimized default
+        if defaults.object(forKey: storageKey) == nil {
+            defaults.set(lightweightArea.rawValue, forKey: storageKey)
+            return .lightweightArea
+        }
+        
+        // Migrate old values to new format
         if stored != style.rawValue {
             defaults.set(style.rawValue, forKey: storageKey)
         }
@@ -531,23 +777,63 @@ struct CustomThemeStudio: View {
 struct ThemesContentView: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                SectionTitle("Language")
-                LanguagePickerCard()
-
-                SectionTitle("Select Visual Theme (Instant Application)")
-                ThemeSelectorGrid()
-
-                SectionTitle("Custom Theme Creator & Exchange (JSON)")
-                CustomThemeStudio()
-
-                SectionTitle("Chart Rendering Style")
-                ChartStyleSelectorGrid()
+            VStack(alignment: .leading, spacing: 20) {
+                // Header
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Themes & Appearance")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(.tahoeText)
+                    Text("Customize the visual appearance and chart styles")
+                        .font(.system(size: 13))
+                        .foregroundColor(.tahoeSubtext)
+                }
                 
-                SectionTitle("Card Background Opacity")
-                CardOpacityEditorCard()
+                // Main content in optimized layout
+                VStack(alignment: .leading, spacing: 18) {
+                    // Language Selection
+                    SectionWithIcon(title: "Language", icon: "globe") {
+                        LanguagePickerCard()
+                    }
+                    
+                    // Theme Selection - Make this the main focus
+                    SectionWithIcon(title: "Visual Theme", icon: "paintpalette.fill") {
+                        OptimizedThemeSelectorGrid()
+                    }
+                    
+                    // Custom Theme
+                    SectionWithIcon(title: "Custom Theme", icon: "wand.and.stars") {
+                        CustomThemeStudio()
+                    }
+                    
+                    // Card Opacity - Compact version
+                    SectionWithIcon(title: "Card Opacity", icon: "rectangle.dock") {
+                        CompactCardOpacityEditor()
+                    }
+                }
             }
-            .padding(20)
+            .padding(18)
+        }
+    }
+}
+
+// MARK: - Section with Icon Helper
+struct SectionWithIcon<Content: View>: View {
+    let title: String
+    let icon: String
+    @ViewBuilder let content: () -> Content
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.tahoeAccentCyan)
+                Text(title)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.tahoeText)
+                Spacer()
+            }
+            content()
         }
     }
 }
@@ -660,3 +946,6 @@ struct LanguagePickerCard: View {
         return lang.displayName
     }
 }
+
+// MARK: - Legacy Theme Selector (for backward compatibility)
+typealias ThemeSelectorGrid = OptimizedThemeSelectorGrid

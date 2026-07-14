@@ -30,6 +30,10 @@ class ProcessorModel {
     private var emulatedPState : Int = 0
     private var isEmulatingPStates : Bool = false
     private var emulatedPStateDefClock : [Float] = []
+    
+    // Performance optimization: cache for expensive kernel calls
+    private var cachedGPUStats: (temp: Float, power: Float, util: Float, vram: Float, fan: Float, lastUpdate: Date) = (0, 0, 0, 0, 0, .distantPast)
+    private let gpuStatsCacheInterval: TimeInterval = 0.5 // Update GPU stats every 500ms
 
     private var cpuListedAsSupported : Bool = false
 
@@ -37,6 +41,16 @@ class ProcessorModel {
 
     var AMDRyzenCPUPowerManagementVersion : String = ""
     var cpuidBasic : [UInt64] = []
+    
+    var cpuFamily: Int {
+        return cpuidBasic.count > 0 ? Int(cpuidBasic[0]) : 0
+    }
+    
+    var isLegacyPStateSupported: Bool {
+        // Zen 1 / Zen 2 (Family 17h / 23) or earlier rely on legacy P-States
+        return cpuFamily > 0 && cpuFamily <= 0x17
+    }
+
     var boardValid = false
     var boardName : String = "Unknown"
     var boardVendor : String = "Unknown"
@@ -666,7 +680,6 @@ class ProcessorModel {
         systemConfig["os"] = ProcessorModel.sysctlString(key: "kern.osproductversion")
         systemConfig["mem"] = "\(Int(ProcessorModel.sysctlInt64(key: "hw.memsize") / 1024 / 1024))"
 
-
         let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
         if let path = paths.last, let dictionary = try? FileManager.default.attributesOfFileSystem(forPath: path) {
             if let size = dictionary[FileAttributeKey.systemSize] as? NSNumber {
@@ -678,42 +691,34 @@ class ProcessorModel {
             systemConfig["mb"] = "\(boardName) \(boardVendor)"
         }
 
+        // GPU info detection optimized
         var iter : io_iterator_t = 0
         let err = IOServiceGetMatchingServices(kIOMainPortDefault,
                                                IOServiceMatching("IOPCIDevice"), &iter)
         if err != kIOReturnSuccess { return }
         defer { IOObjectRelease(iter) }
+        
         while true {
             let reg = IOIteratorNext(iter)
             if reg == 0 { break }
             defer { IOObjectRelease(reg) }
+            
             var serviceDictionary : Unmanaged<CFMutableDictionary>?
             let e = IORegistryEntryCreateCFProperties(reg, &serviceDictionary, kCFAllocatorDefault, .zero)
-
-            if e != kIOReturnSuccess { continue }
-            if let dic : NSDictionary = serviceDictionary?.takeRetainedValue() {
-                if let type = dic.object(forKey: "IOName") as? String {
-                    if type != "display" { continue }
-
-                    if let model = dic.object(forKey: "model") as? Data {
-                        let rawStr = String(data: model, encoding: .ascii) ?? String(data: model, encoding: .utf8) ?? "Unknown GPU"
-                        systemConfig["gpu"] = rawStr
-                            .trimmingCharacters(in: .controlCharacters)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                    } else {
-                        systemConfig["gpu"] = "Unknown"
-                    }
+            guard e == kIOReturnSuccess, let dic = serviceDictionary?.takeRetainedValue() as? NSDictionary else { continue }
+            
+            if let type = dic.object(forKey: "IOName") as? String, type == "display" {
+                if let model = dic.object(forKey: "model") as? Data {
+                    let rawStr = String(data: model, encoding: .ascii) ?? String(data: model, encoding: .utf8) ?? "Unknown GPU"
+                    systemConfig["gpu"] = rawStr
+                        .trimmingCharacters(in: .controlCharacters)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                } else {
+                    systemConfig["gpu"] = "Unknown"
                 }
+                break // Found GPU, exit early
             }
         }
-    }
-
-    func fetchSupportedProcessor() {
-        // Desactivado para optimización de red, privacidad y duración de batería en 2026.
-    }
-
-    func fetchSMCChipSupport(chipIntel : Int, working : Bool) {
-        // Desactivado para evitar telemetría a servidores obsoletos en 2026.
     }
 
     // MARK: - GPU Statistics (from IOAccelerator PerformanceStatistics)
@@ -740,28 +745,45 @@ class ProcessorModel {
         return 0
     }
 
+    /// Optimized GPU stats with caching to reduce IOAccelerator queries
+    private func updateGPUStatsCache() {
+        let now = Date()
+        if now.timeIntervalSince(cachedGPUStats.lastUpdate) < gpuStatsCacheInterval {
+            return
+        }
+        
+        let temp = getIOAcceleratorStat(key: "Temperature(C)")
+        let power = getIOAcceleratorStat(key: "Total Power(W)")
+        let util = getIOAcceleratorStat(key: "Device Utilization %")
+        let vram = getIOAcceleratorStat(key: "inUseVidMemoryBytes")
+        let fan = (temp > 0 && temp < 50.0) ? 0 : getIOAcceleratorStat(key: "Fan Speed(RPM)")
+        
+        cachedGPUStats = (temp, power, util, vram, fan, now)
+    }
+    
     func getGPUTemp() -> Float {
-        return getIOAcceleratorStat(key: "Temperature(C)")
+        updateGPUStatsCache()
+        return cachedGPUStats.temp
     }
 
     func getGPUPower() -> Float {
-        return getIOAcceleratorStat(key: "Total Power(W)")
+        updateGPUStatsCache()
+        return cachedGPUStats.power
     }
 
     func getGPUUtilization() -> Float {
-        return getIOAcceleratorStat(key: "Device Utilization %")
+        updateGPUStatsCache()
+        return cachedGPUStats.util
     }
 
     func getGPUVramUsed() -> Float {
-        return getIOAcceleratorStat(key: "inUseVidMemoryBytes")
+        updateGPUStatsCache()
+        return cachedGPUStats.vram
     }
 
     func getGPUFanRPM() -> Float {
-        let temp = getGPUTemp()
-        if temp > 0 && temp < 50.0 {
-            return 0
-        }
-        return getIOAcceleratorStat(key: "Fan Speed(RPM)")
+        updateGPUStatsCache()
+        return cachedGPUStats.fan
     }
 
     func getCCDTemperatures() -> [Float] {

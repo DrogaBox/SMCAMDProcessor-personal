@@ -91,12 +91,55 @@ struct OriginalLineChartCard: View {
             }
 
             if data.count > 1 {
-                // Use indexed data so the chart always fills the width
-                let indexedData = Array(data.enumerated())
-                let maxIndex = Double(indexedData.count - 1)
+                // Use optimized lightweight components when selected
+                if selectedChartStyle == .lightweightArea {
+                    LightweightAreaChart(
+                        data: data.map(line1),
+                        color: accent,
+                        minValue: yMin,
+                        maxValue: yMax
+                    )
+                    .frame(height: height)
+                } else if selectedChartStyle == .minimalistLine {
+                    MinimalistSparkline(
+                        values: data.map(line1),
+                        color: accent,
+                        lineWidth: 2.0
+                    )
+                    .frame(height: height)
+                } else if selectedChartStyle == .gradientBar {
+                    VStack(spacing: 8) {
+                        CompactGradientBar(
+                            value: averageVal,
+                            maxValue: yMax,
+                            colors: [accent.opacity(0.6), accent],
+                            showPercentage: false
+                        )
+                        .frame(height: 20)
+                        
+                        HStack {
+                            Text(String(format: "%.1f %@", averageVal, unit))
+                                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                .foregroundColor(accent)
+                            Spacer()
+                        }
+                    }
+                    .frame(height: height)
+                } else if selectedChartStyle == .compactCard {
+                    CompactLineChartCard(
+                        title: String(describing: title),
+                        data: data.map(line1),
+                        color: accent,
+                        unit: unit,
+                        height: height - 40
+                    )
+                } else {
+                    // Classic chart styles using Swift Charts
+                    let indexedData = Array(data.enumerated())
+                    let maxIndex = Double(indexedData.count - 1)
 
-                Chart(indexedData, id: \.element.id) { index, pt in
-                    if selectedChartStyle == .bar {
+                    Chart(indexedData, id: \.element.id) { index, pt in
+                        if selectedChartStyle == .bar {
                         BarMark(
                             x: .value("Index", Double(index)),
                             y: .value(line1Label, line1(pt))
@@ -159,6 +202,7 @@ struct OriginalLineChartCard: View {
                 }
                 .chartXAxis(.hidden)
                 .frame(height: height)
+                }
             } else {
                 RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.03))
                     .frame(height: height)
