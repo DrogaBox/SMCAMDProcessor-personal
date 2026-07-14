@@ -621,3 +621,7 @@
 "AMDRyzenCPUPowerManagement kext not connected." = "Kext AMDRyzenCPUPowerManagement no conectado.";
 "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot." = "Si el interruptor vuelve a Off: habilita escrituras con -amdpnopchk (o root). Con -amdcppcactive el kext activa Active Mode al arrancar tras reiniciar.";
 "Checking for updates..." = "Buscando actualizaciones...";
+
+/* UnsupportedFeatureOverlay strings */
+"Click to reveal blocked interface" = "Haz clic para revelar la interfaz bloqueada";
+"Click to hide" = "Haz clic para ocultar";
