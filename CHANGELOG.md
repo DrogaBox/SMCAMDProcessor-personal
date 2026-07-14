@@ -1,7 +1,7 @@
 # Change Summary & Release Changelog
 
 ## v3.23.2 Vermeer PM Dispatch Decouple
-* **Kernel**: Disabled PM Dispatch takeover (`pmDispatchAllowed = false`) for Vermeer/Cezanne CPUs, reverting to safe baseline telemetry.
+* **Kernel**: Disabled PM Dispatch takeover (`pmDispatchAllowed = false`) for Vermeer/Cezanne CPUs, reverting to safe baseline telemetry. This prevents race conditions and `#GP` kernel panics caused by the Kext and macOS's native XCPM competing for manual MSR frequency overrides.
 
 ## v3.23.1 Expanded Zen 3+ Kernel Safety
 
