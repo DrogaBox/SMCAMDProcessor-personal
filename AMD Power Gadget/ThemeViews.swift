@@ -373,13 +373,13 @@ enum AppChartStyle: String, CaseIterable, Identifiable {
 
     static func normalized(_ stored: String) -> AppChartStyle {
         switch stored {
-        case line.rawValue, "Línea Suave (Spline)", "Linea Suave (Spline)":
-            return .line
-        case filledArea.rawValue, "Área Rellena (Gradient)", "Area Rellena (Gradient)":
-            return .filledArea
-        case bar.rawValue, "Histograma de Barras":
-            return .bar
-        case steppedLine.rawValue, "Línea Escalonada (Step)", "Linea Escalonada (Step)":
+         case line.rawValue, "Smooth Line (Spline)", "Smooth Line (Spline)":
+             return .line
+         case filledArea.rawValue, "Filled Area (Gradient)", "Filled Area (Gradient)":
+             return .filledArea
+         case bar.rawValue, "Bar Histogram":
+             return .bar
+         case steppedLine.rawValue, "Stepped Line (Step)", "Stepped Line (Step)":
             return .steppedLine
         case lightweightArea.rawValue:
             return .lightweightArea
