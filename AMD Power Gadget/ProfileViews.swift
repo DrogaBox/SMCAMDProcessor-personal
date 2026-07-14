@@ -92,6 +92,29 @@ struct ProfilesContentView: View {
                             }
                             if model.autoEPPEnabled {
                                 Divider().background(Color.white.opacity(0.1))
+                                
+                                // Privilege warning banner
+                                if let err = model.privilegeErrorMessage {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "exclamationmark.shield.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.tahoeAccentRed)
+                                        Text(err)
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundColor(.tahoeAccentOrange)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                        Spacer()
+                                    }
+                                    .padding(10)
+                                    .background(Color.tahoeAccentRed.opacity(0.08))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.tahoeAccentRed.opacity(0.25), lineWidth: 0.8)
+                                    )
+                                    Divider().background(Color.white.opacity(0.1))
+                                }
+                                
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text("Idle Threshold (Power Save)").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
@@ -141,7 +164,7 @@ struct ProfilesContentView: View {
                 } else {
                     // 3. Legacy Speed Step Profiles
                     UnsupportedFeatureOverlay(
-                        isSupported: ProcessorModel.shared.isLegacyPStateSupported,
+                        isSupported: model.legacyPStateSupported,
                         reasonText: LocalizedStringKey("P-States: Disabled for modern CPU")
                     ) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -151,7 +174,7 @@ struct ProfilesContentView: View {
                                 .padding(.bottom, 6)
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                                 ForEach(Array(stepLabels.enumerated()), id: \.offset) { i, label in
-                                    SpeedStepCard(label: label, isActive: model.selectedSpeedStep == i) { model.setSpeedStep(i) }
+                                    SpeedStepCard(label: label, isActive: model.selectedSpeedStep == i) { Task { await model.setSpeedStep(i) } }
                                 }
                             }
                         }

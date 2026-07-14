@@ -46,8 +46,7 @@
 		B584F5CB242E2CBE007DEA77 /* pmAMDRyzen.h in Headers */ = {isa = PBXBuildFile; fileRef = B584F5C9242E2CBE007DEA77 /* pmAMDRyzen.h */; };
 		B584F5CC242E2CBE007DEA77 /* pmAMDRyzen.c in Sources */ = {isa = PBXBuildFile; fileRef = B584F5CA242E2CBE007DEA77 /* pmAMDRyzen.c */; };
 		B5920B9424FFBB9B006C6DFF /* pmRyzenSymbolTable.h in Sources */ = {isa = PBXBuildFile; fileRef = B5920B9324FFBB9B006C6DFF /* pmRyzenSymbolTable.h */; };
-		B595D3E42416701D00B704F7 /* SF-Pro-Rounded-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = B595D3E32416700800B704F7 /* SF-Pro-Rounded-Medium.otf */; };
-		B595D3E52416702000B704F7 /* SF-Pro-Rounded-Semibold.otf in Resources */ = {isa = PBXBuildFile; fileRef = B595D3E22416700700B704F7 /* SF-Pro-Rounded-Semibold.otf */; };
+
 		B595D3E62416702100B704F7 /* bravo.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B595D3E62416700900B704F7 /* bravo.mp3 */; };
 		B59762382472A1FE0074E0B5 /* GraphViewGridLineLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59762372472A1FE0074E0B5 /* GraphViewGridLineLayer.swift */; };
 		B5CA7D662AC2DE73005FEE73 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B5CA7D652AC2DE73005FEE73 /* libkmod.a */; };
@@ -70,6 +69,7 @@
 		C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */; };
 		C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000024 /* PStateRowTests.swift */; };
 		C0FFEE000000000000000045 /* SMUResponseMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */; };
+		C0FFEE000000000000000046 /* SecurityAuditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000026 /* SecurityAuditTests.swift */; };
 		CD16B06875C810EDF081C77A /* ConfigViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B9706A8AE6F6C460F073D0 /* ConfigViews.swift */; };
 		D5DBA1D0D348F77D96E0415B /* MenuBarConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B507E5C752D5AA03FF0B46 /* MenuBarConfig.swift */; };
 		E06206D686F9986B0A488BA6 /* ChartComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A50BB3B9063882703B55CBF /* ChartComponents.swift */; };
@@ -152,8 +152,7 @@
 		B584F5C9242E2CBE007DEA77 /* pmAMDRyzen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pmAMDRyzen.h; sourceTree = "<group>"; };
 		B584F5CA242E2CBE007DEA77 /* pmAMDRyzen.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = pmAMDRyzen.c; sourceTree = "<group>"; };
 		B5920B9324FFBB9B006C6DFF /* pmRyzenSymbolTable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pmRyzenSymbolTable.h; sourceTree = "<group>"; };
-		B595D3E22416700700B704F7 /* SF-Pro-Rounded-Semibold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SF-Pro-Rounded-Semibold.otf"; sourceTree = "<group>"; };
-		B595D3E32416700800B704F7 /* SF-Pro-Rounded-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SF-Pro-Rounded-Medium.otf"; sourceTree = "<group>"; };
+
 		B595D3E62416700900B704F7 /* bravo.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bravo.mp3; sourceTree = "<group>"; };
 		B59762372472A1FE0074E0B5 /* GraphViewGridLineLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphViewGridLineLayer.swift; sourceTree = "<group>"; };
 		B5CA7D652AC2DE73005FEE73 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/universal/libkmod.a; sourceTree = "<group>"; };
@@ -204,6 +203,7 @@
 		C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegeAndFanCurveTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000024 /* PStateRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PStateRowTests.swift; sourceTree = "<group>"; };
 		C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMUResponseMappingTests.swift; sourceTree = "<group>"; };
+		C0FFEE000000000000000026 /* SecurityAuditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityAuditTests.swift; sourceTree = "<group>"; };
 		C37A7461EA797F309A12AE96 /* ThemeViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeViews.swift; sourceTree = "<group>"; };
 		C589FF26732FF993BF9FDD5B /* DesktopWidgetsViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesktopWidgetsViews.swift; sourceTree = "<group>"; };
 		D470A80D67EE97AD74A895E7 /* AppTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
@@ -426,8 +426,7 @@
 		B595D3E124166F6000B704F7 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B595D3E32416700800B704F7 /* SF-Pro-Rounded-Medium.otf */,
-				B595D3E22416700700B704F7 /* SF-Pro-Rounded-Semibold.otf */,
+
 				B595D3E62416700900B704F7 /* bravo.mp3 */,
 			);
 			path = Resources;
@@ -470,6 +469,7 @@
 				C0FFEE000000000000000023 /* PrivilegeAndFanCurveTests.swift */,
 				C0FFEE000000000000000024 /* PStateRowTests.swift */,
 				C0FFEE000000000000000025 /* SMUResponseMappingTests.swift */,
+				C0FFEE000000000000000026 /* SecurityAuditTests.swift */,
 			);
 			path = AMDPowerGadgetTests;
 			sourceTree = "<group>";
@@ -685,8 +685,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B5F3A1032B7C010300ABCDEF /* Localizable.strings in Resources */,
-				B595D3E52416702000B704F7 /* SF-Pro-Rounded-Semibold.otf in Resources */,
-				B595D3E42416701D00B704F7 /* SF-Pro-Rounded-Medium.otf in Resources */,
+
 				B595D3E62416702100B704F7 /* bravo.mp3 in Resources */,
 				B56162CB2400EF780006A7D8 /* Assets.xcassets in Resources */,
 				B56162CE2400EF780006A7D8 /* Main.storyboard in Resources */,
@@ -796,6 +795,7 @@
 				C0FFEE000000000000000043 /* PrivilegeAndFanCurveTests.swift in Sources */,
 				C0FFEE000000000000000044 /* PStateRowTests.swift in Sources */,
 				C0FFEE000000000000000045 /* SMUResponseMappingTests.swift in Sources */,
+				C0FFEE000000000000000046 /* SecurityAuditTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

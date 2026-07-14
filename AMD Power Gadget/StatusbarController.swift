@@ -71,14 +71,19 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
     private var lastReportedFanRPM: UInt64 = 0
     private var lastReportedNetUp: Double = -1
     private var lastReportedNetDown: Double = -1
+    private var lastReportedPrivilegeError: String? = nil
+    private var lastReportedAutoEPP: Bool = false
 
     override init() {
         super.init()
 
-        let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
-        smcReady = initRes.count > 0 && initRes[0] == 1
-        if smcReady {
-            numFans = Int(ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91).first ?? 0)
+        // Defer ProcessorModel actor calls to async context since init is synchronous
+        Task { @MainActor in
+            let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
+            smcReady = initRes.count > 0 && initRes[0] == 1
+            if smcReady {
+                numFans = Int(ProcessorModel.shared.kernelGetUInt64(count: 1, selector: 91).first ?? 0)
+            }
         }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -231,7 +236,9 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         let fanDiff = (currentFan >= lastReportedFanRPM ? currentFan - lastReportedFanRPM : lastReportedFanRPM - currentFan) >= 20
         let netDiff = abs(tm.netUploadMBps - lastReportedNetUp) >= 0.05 || abs(tm.netDownloadMBps - lastReportedNetDown) >= 0.05
 
-        guard tempDiff || pwrDiff || meanFreqDiff || maxFreqDiff || gpuTempDiff || fanDiff || netDiff || lastReportedTemp < 0 else {
+        let privDiff = (tm.privilegeErrorMessage != lastReportedPrivilegeError) || (tm.autoEPPEnabled != lastReportedAutoEPP)
+
+        guard tempDiff || pwrDiff || meanFreqDiff || maxFreqDiff || gpuTempDiff || fanDiff || netDiff || privDiff || lastReportedTemp < 0 else {
             return
         }
 
@@ -244,6 +251,8 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         lastReportedFanRPM = currentFan
         lastReportedNetUp = tm.netUploadMBps
         lastReportedNetDown = tm.netDownloadMBps
+        lastReportedPrivilegeError = tm.privilegeErrorMessage
+        lastReportedAutoEPP = tm.autoEPPEnabled
 
         view?.meanFreq = meanFre
         view?.maxFreq = maxFre
@@ -255,13 +264,17 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         view?.gpuFanRPM = Float(tm.gpuFanRPM)
         view?.fanRPM = currentFan
 
-        view?.memoryUsed = Float((tm.ramUsagePct / 100.0) * Double(tm.sysInfo.ramGB))
-        view?.totalMemory = "\(tm.sysInfo.ramGB)G"
+        let totalRAM = Double(ProcessInfo.processInfo.physicalMemory) / (1024.0 * 1024.0 * 1024.0)
+        view?.memoryUsed = Float((tm.ramUsagePct / 100.0) * totalRAM)
+        view?.totalMemory = String(format: "%.0fG", totalRAM)
 
         if MenuBarConfig.shared.showNetwork {
             view?.netUpload = tm.netUploadMBps
             view?.netDownload = tm.netDownloadMBps
         }
+
+        view?.privilegeError = tm.privilegeErrorMessage
+        view?.autoEPPEnabled = tm.autoEPPEnabled
 
         view.setNeedsDisplay(view.bounds)
     }

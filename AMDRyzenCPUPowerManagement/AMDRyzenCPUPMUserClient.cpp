@@ -67,11 +67,16 @@ void AMDRyzenCPUPMUserClient::stop(IOService *provider){
     IOService::stop(provider);
 }
 
-bool AMDRyzenCPUPMUserClient::hasPrivilege(){
+bool AMDRyzenCPUPMUserClient::hasPrivilege(uint32_t selector){
+    // clientAuthorizedByUser is set at connection time in initWithTask:
+    //   - root (proc_suser == 0 || uid == 0) sets it true
+    //   - boot-arg -amdpnopchk also sets it true via the kext's disablePrivilegeCheck
+    // This cached check avoids re-evaluating proc_suser on every write selector.
     if (clientAuthorizedByUser) return true;
-    if (fProvider && fProvider->disablePrivilegeCheck) return true; // -amdpnopchk
-    proc_t proc = (proc_t)get_bsdtask_info(current_task());
-    if (proc && (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0)) return true;
+    // Boot-arg bypass: allow writes without root when -amdpnopchk is present
+    if (fProvider && fProvider->disablePrivilegeCheck) return true;
+    IOLog("AMDRyzenCPUPMUserClient: DENIED select %u pid=%d binary='%s' (need root or -amdpnopchk)\n",
+          selector, proc_selfpid(), taskProcessBinaryName);
     return false;
 }
 
@@ -366,7 +371,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //Set PState
         case 10: {
-            if(!hasPrivilege()) return kIOReturnNotPrivileged;
+            if(!hasPrivilege(10)) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
             
@@ -430,7 +435,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //Set CPB
         case 12: {
-            if(!hasPrivilege()) return kIOReturnNotPrivileged;
+            if(!hasPrivilege(12)) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
             
@@ -467,7 +472,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
         //Set PPM
         case 14: {
-            if(!hasPrivilege()) return kIOReturnNotPrivileged;
+            if(!hasPrivilege(14)) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
                 
@@ -483,7 +488,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
         //Set PStateDef
         case 15: {
-            if(!hasPrivilege())
+            if(!hasPrivilege(15))
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 8)
@@ -569,7 +574,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             
         //Set LPM
         case 19: {
-            if(!hasPrivilege()) return kIOReturnNotPrivileged;
+            if(!hasPrivilege(19)) return kIOReturnNotPrivileged;
             arguments->scalarOutputCount = 0;
             arguments->structureOutputSize = 0;
                 
@@ -650,7 +655,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         // Set CPPC Active Mode status
         case 24: {
-            if (!hasPrivilege())
+            if (!hasPrivilege(24))
                 return kIOReturnNotPrivileged;
                 
             if (arguments->scalarInputCount != 1)
@@ -666,7 +671,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         // Set CPPC EPP Value
         case 25: {
-            if (!hasPrivilege())
+            if (!hasPrivilege(25))
                 return kIOReturnNotPrivileged;
                 
             if (arguments->scalarInputCount != 1)
@@ -862,7 +867,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC fan override control
         case 95: {
-            if(!hasPrivilege())
+            if(!hasPrivilege(95))
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 2)
@@ -891,7 +896,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC fan default control
         case 96: {
-            if(!hasPrivilege())
+            if(!hasPrivilege(96))
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 1)
@@ -919,7 +924,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         
         //SMC Secret Undocumented feature (⁎⁍̴̛ᴗ⁍̴̛⁎) - Capped at 80% PWM (0xC8) for hardware safety
         case 97: {
-            if(!hasPrivilege())
+            if(!hasPrivilege(97))
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 1)
@@ -978,7 +983,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if (!provider || !provider->superIOLock)
                 return kIOReturnNoDevice;
             
-            if(!hasPrivilege())
+            if(!hasPrivilege(99))
                 return kIOReturnNotPrivileged;
             
             if(arguments->scalarInputCount != 2)
@@ -1005,7 +1010,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(!provider->superIOLock)
                 return kIOReturnNoDevice;
             
-            if(!hasPrivilege())
+            if(!hasPrivilege(101))
                 return kIOReturnNotPrivileged;
                 
             #pragma pack(push, 1)
@@ -1043,7 +1048,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(!provider)
                 return kIOReturnNoDevice;
             
-            if(!hasPrivilege())
+            if(!hasPrivilege(102))
                 return kIOReturnNotPrivileged;
                 
             if (arguments->scalarInputCount != 2) {
@@ -1075,15 +1080,20 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
-        // Set GPU temperature (used by the app for fan-curve source; unprivileged by design
-        // so the menu-bar process can feed GPU temp without root). Clamp to a sane range
-        // to prevent a malicious client from starving thermal fan curves via absurd values.
+        // Set GPU temperature (used by the app for fan-curve source).
+        // Privilege required: root or boot-arg -amdpnopchk.
+        // Process-name authorization was removed (audit A-01).
+        // The menu-bar process should run with -amdpnopchk or as root.
+        // Temperature is clamped to a safe [0, 120] °C range to prevent abuse.
         case 103: {
             if(!provider)
                 return kIOReturnNoDevice;
             
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
+            
+            if (!hasPrivilege(103))
+                return kIOReturnNotPrivileged;
             
             float t = (float)arguments->scalarInput[0];
             if (t < 0.0f) t = 0.0f;
@@ -1115,7 +1125,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(!provider)
                 return kIOReturnNoDevice;
             
-            if(!hasPrivilege())
+            if(!hasPrivilege(111))
                 return kIOReturnNotPrivileged;
                 
             if(arguments->scalarInputCount != 2)

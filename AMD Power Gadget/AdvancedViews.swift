@@ -195,7 +195,7 @@ struct AdvancedContentView: View {
 
                 Divider().background(Color.tahoeCardBorder)
                 UnsupportedFeatureOverlay(
-                    isSupported: ProcessorModel.shared.isLegacyPStateSupported,
+                    isSupported: model.legacyPStateSupported,
                     reasonText: LocalizedStringKey("P-States: Disabled for modern CPU")
                 ) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -361,12 +361,12 @@ struct PStateEditorView: View {
             HStack(spacing: 8) {
                 TahoeButton(label: "Apply", icon: "checkmark.circle", accent: .tahoeAccentCyan) { showApplyConfirm = true }
                     .disabled(!isUnlocked)
-                TahoeButton(label: "Revert", icon: "arrow.counterclockwise", accent: .tahoeAccentOrange) { model.loadPStateRows() }
+                TahoeButton(label: "Revert", icon: "arrow.counterclockwise", accent: .tahoeAccentOrange) { Task { await model.loadPStateRows() } }
                     .disabled(!isUnlocked)
                 TahoeButton(label: "Import", icon: "square.and.arrow.down", accent: .tahoeAccentGreen) {
                     let op = NSOpenPanel()
                     op.allowedContentTypes = [.init(filenameExtension: "pstate") ?? .data]
-                    if op.runModal() == .OK, let url = op.url { model.importPStates(from: url) }
+                    if op.runModal() == .OK, let url = op.url { Task { await model.importPStates(from: url) } }
                 }
                 .disabled(!isUnlocked)
                 TahoeButton(label: "Export", icon: "square.and.arrow.up", accent: .tahoeAccentPurple) {
@@ -388,7 +388,7 @@ struct PStateEditorView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(model.pStateEditorDirty ? Color.tahoeAccentOrange.opacity(0.5) : Color.tahoeCardBorder))
         .cornerRadius(14)
         .confirmationDialog("Apply P-States?", isPresented: $showApplyConfirm, titleVisibility: .visible) {
-            Button("Apply", role: .destructive) { applyOK = model.applyPStates() }
+            Button("Apply", role: .destructive) { Task { applyOK = await model.applyPStates() } }
             Button("Cancel", role: .cancel) {}
         } message: { Text("This will write the raw P-State definitions directly to the CPU. Proceed?") }
     }

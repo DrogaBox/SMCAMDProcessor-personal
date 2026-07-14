@@ -9,12 +9,10 @@ import Cocoa
 import Darwin
 
 
-class ProcessorModel {
+actor ProcessorModel {
     static let shared = ProcessorModel()
 
-    private let accessQueue = DispatchQueue(label: "com.amdpowergadget.processor")
-
-    private var connect: io_connect_t = 0
+    private let connect: io_connect_t
 
     private var cachedMetric : [Float] = []
     private var numberOfCores : Int = 0
@@ -38,10 +36,15 @@ class ProcessorModel {
     private var cpuListedAsSupported : Bool = false
 
     var systemConfig : [String : String] = [:]
-
     var AMDRyzenCPUPowerManagementVersion : String = ""
     var cpuidBasic : [UInt64] = []
-    
+    var boardValid = false
+    var boardName : String = "Unknown"
+    var boardVendor : String = "Unknown"
+    var fetchRetry : Int = 10
+    var fetchRetry2 : Int = 10
+    var retryTimer : Timer?
+
     var cpuFamily: Int {
         return cpuidBasic.count > 0 ? Int(cpuidBasic[0]) : 0
     }
@@ -51,16 +54,26 @@ class ProcessorModel {
         return cpuFamily > 0 && cpuFamily <= 0x17
     }
 
-    var boardValid = false
-    var boardName : String = "Unknown"
-    var boardVendor : String = "Unknown"
-
-    var fetchRetry : Int = 10
-    var fetchRetry2 : Int = 10
-    var retryTimer : Timer?
-
     init() {
-        if !initDriver() {
+        let serviceObject = IOServiceGetMatchingService(kIOMainPortDefault,
+                                                        IOServiceMatching("AMDRyzenCPUPowerManagement"))
+        let conn: io_connect_t
+        if serviceObject == 0 {
+            conn = 0
+        } else {
+            var c: io_connect_t = 0
+            let status = IOServiceOpen(serviceObject, mach_task_self_, 0, &c)
+            IOObjectRelease(serviceObject)
+            if status != KERN_SUCCESS {
+                conn = 0
+                NSLog("ProcessorModel: IOServiceOpen failed status=0x%08x (service was present)", status)
+            } else {
+                conn = c
+            }
+        }
+        self.connect = conn
+        
+        if connect == 0 {
             alertAndQuit(message: NSLocalizedString("Please download AMDRyzenCPUPowerManagement from the release page.", comment: ""))
         }
 
@@ -112,25 +125,7 @@ class ProcessorModel {
 //        fetchSupportedProcessor()
     }
 
-    func initDriver() -> Bool {
-        let serviceObject = IOServiceGetMatchingService(kIOMainPortDefault,
-                                                        IOServiceMatching("AMDRyzenCPUPowerManagement"))
-        if serviceObject == 0 {
-            return false
-        }
-
-        let status = IOServiceOpen(serviceObject, mach_task_self_, 0, &connect)
-        IOObjectRelease(serviceObject) // Must be released whether open succeeds or fails
-
-        if status != KERN_SUCCESS {
-            // Distinguish "kext missing" from "connection refused" for diagnostics.
-            NSLog("ProcessorModel: IOServiceOpen failed status=0x%08x (service was present)", status)
-            return false
-        }
-        return true
-    }
-
-    func closeDriver() {
+    nonisolated func closeDriver() {
         IOServiceClose(connect)
     }
 
@@ -172,13 +167,13 @@ class ProcessorModel {
 
     // MARK: - Kernel IOKit Calls
 
-    private func logKernelError(_ status: kern_return_t) {
+    nonisolated private func logKernelError(_ status: kern_return_t) {
         if status != KERN_SUCCESS {
             NSLog("ProcessorModel: selector failed with %@", String(cString: mach_error_string(status)))
         }
     }
 
-    func kernelGetFloats(count: Int, selector: UInt32) -> [Float] {
+    nonisolated func kernelGetFloats(count: Int, selector: UInt32) -> [Float] {
         var scalarOut: UInt64 = 0
         var scalarOutCount: UInt32 = 1
         var output = [Float](repeating: 0, count: count)
@@ -196,7 +191,7 @@ class ProcessorModel {
         return Array(output.prefix(valid))
     }
 
-    func kernelGetUInt64(count: Int, selector: UInt32) -> [UInt64] {
+    nonisolated func kernelGetUInt64(count: Int, selector: UInt32) -> [UInt64] {
         var scalarOut: UInt64 = 0
         var scalarOutCount: UInt32 = 1
         var output = [UInt64](repeating: 0, count: count)
@@ -217,7 +212,7 @@ class ProcessorModel {
     /// IOKit `kIOReturnNotPrivileged` (0xe00002c1) — write selectors require root or `-amdpnopchk`.
     static let kIOReturnNotPrivilegedCode: kern_return_t = kern_return_t(bitPattern: 0xe00002c1)
 
-    func kernelSetStruct(selector: UInt32, data: Data) -> kern_return_t {
+    nonisolated func kernelSetStruct(selector: UInt32, data: Data) -> kern_return_t {
         return data.withUnsafeBytes { rawBuffer -> kern_return_t in
             guard let baseAddress = rawBuffer.baseAddress else { return kIOReturnBadArgument }
             return IOConnectCallMethod(connect, selector, nil, 0, baseAddress, data.count, nil, nil, nil, nil)
@@ -225,11 +220,11 @@ class ProcessorModel {
     }
 
     @discardableResult
-    func kernelSetStructSuccess(selector: UInt32, data: Data) -> Bool {
+    nonisolated func kernelSetStructSuccess(selector: UInt32, data: Data) -> Bool {
         kernelSetStruct(selector: selector, data: data) == KERN_SUCCESS
     }
 
-    func kernelGetString(selector : UInt32, args : [UInt64]) -> String {
+    nonisolated func kernelGetString(selector : UInt32, args : [UInt64]) -> String {
 
         var argcpy = args
         var outbuffersize = 16
@@ -259,21 +254,21 @@ class ProcessorModel {
 
     /// Returns the raw IOKit status (KERN_SUCCESS / kIOReturnNotPrivileged / …).
     @discardableResult
-    func kernelSetUInt64Status(selector: UInt32, args: [UInt64]) -> kern_return_t {
+    nonisolated func kernelSetUInt64Status(selector: UInt32, args: [UInt64]) -> kern_return_t {
         var argcpy = args
         return IOConnectCallMethod(connect, selector, &argcpy, UInt32(args.count), nil, 0,
                                    nil, nil, nil, nil)
     }
 
-    func kernelSetUInt64(selector: UInt32, args: [UInt64]) -> Bool {
+    nonisolated func kernelSetUInt64(selector: UInt32, args: [UInt64]) -> Bool {
         kernelSetUInt64Status(selector: selector, args: args) == KERN_SUCCESS
     }
 
     /// Human-readable message for failed kernel write calls (localized).
-    static func privilegeHint(for status: kern_return_t) -> String? {
+    nonisolated static func privilegeHint(for status: kern_return_t) -> String? {
         if status == kIOReturnNotPrivilegedCode {
             return NSLocalizedString(
-                "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging.",
+                "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging. Note: GPU temperature injection for fan curves also requires privilege.",
                 comment: "Shown when a privileged kext write is denied"
             )
         }
@@ -474,12 +469,10 @@ class ProcessorModel {
     }
 
     func refreshPStateDef() {
-        accessQueue.sync {
-            loadPStateDefClock()
-        }
+        loadPStateDefClock()
     }
 
-    func getHPCpus() -> Int{
+    nonisolated func getHPCpus() -> Int{
         let o = kernelGetUInt64(count: 1, selector: 17)
         return o.count > 0 ? Int(o[0]) : 0
     }
@@ -546,7 +539,7 @@ class ProcessorModel {
         return PStateCur
     }
 
-    func getCPPCActiveMode() -> (active: Bool, epp: UInt8) {
+    nonisolated func getCPPCActiveMode() -> (active: Bool, epp: UInt8) {
         var output: [UInt64] = [0, 0]
         var outputCount: UInt32 = 2
         let res = IOConnectCallMethod(connect, 23, nil, 0, nil, 0, &output, &outputCount, nil, nil)
@@ -557,12 +550,12 @@ class ProcessorModel {
         return (output[0] == 1, UInt8(output[1]))
     }
 
-    func setCPPCActiveMode(active: Bool) -> kern_return_t {
+    nonisolated func setCPPCActiveMode(active: Bool) -> kern_return_t {
         var input: [UInt64] = [active ? 1 : 0]
         return IOConnectCallMethod(connect, 24, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
-    func setCPPCEPPValue(epp: UInt8) -> kern_return_t {
+    nonisolated func setCPPCEPPValue(epp: UInt8) -> kern_return_t {
         var input: [UInt64] = [UInt64(epp)]
         return IOConnectCallMethod(connect, 25, &input, 1, nil, 0, nil, nil, nil, nil)
     }
@@ -580,59 +573,55 @@ class ProcessorModel {
     }
 
     func getMetric(forced : Bool) -> [Float] {
-        accessQueue.sync {
-            if forced || (NSDate().timeIntervalSince1970 - lastMLoad >= 1.0) {
-                loadMetric()
-            }
-            return cachedMetric
+        if forced || (NSDate().timeIntervalSince1970 - lastMLoad >= 1.0) {
+            loadMetric()
         }
+        return cachedMetric
     }
 
     func getNumOfCore() -> Int {
-        accessQueue.sync { numberOfCores }
+        numberOfCores
     }
 
     func getLoadIndex() -> [Float] {
-        accessQueue.sync {
-            loadLoadIndex()
-            return loadIndex
-        }
+        loadLoadIndex()
+        return loadIndex
     }
 
-    func getCPB() -> [Bool] {
+    nonisolated func getCPB() -> [Bool] {
         let o = kernelGetUInt64(count: 2, selector: 11)
         return o.map{ $0 == 0 ? false : true }
     }
 
     @discardableResult
-    func setCPB(enabled: Bool) -> kern_return_t {
+    nonisolated func setCPB(enabled: Bool) -> kern_return_t {
         var input: [UInt64] = [UInt64(enabled ? 1 : 0)]
         return IOConnectCallMethod(connect, 12, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
-    func getPPM() -> Bool {
+    nonisolated func getPPM() -> Bool {
         let o = kernelGetUInt64(count: 2, selector: 13)
         return o.count > 0 && o[0] != 0
     }
 
     @discardableResult
-    func setPPM(enabled: Bool) -> kern_return_t {
+    nonisolated func setPPM(enabled: Bool) -> kern_return_t {
         var input: [UInt64] = [UInt64(enabled ? 1 : 0)]
         return IOConnectCallMethod(connect, 14, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
-    func getLPM() -> Bool {
+    nonisolated func getLPM() -> Bool {
         let o = kernelGetUInt64(count: 1, selector: 18)
         return o.count > 0 && o[0] != 0
     }
 
     @discardableResult
-    func setLPM(enabled: Bool) -> kern_return_t {
+    nonisolated func setLPM(enabled: Bool) -> kern_return_t {
         var input: [UInt64] = [UInt64(enabled ? 1 : 0)]
         return IOConnectCallMethod(connect, 19, &input, 1, nil, 0, nil, nil, nil, nil)
     }
 
-    func getInstructionDelta() -> [UInt64]{
+    nonisolated func getInstructionDelta() -> [UInt64]{
         let o = kernelGetUInt64(count: 1, selector: 5)
         return o.count > 0 ? [o[0]] : [0]
     }
@@ -786,7 +775,7 @@ class ProcessorModel {
         return cachedGPUStats.fan
     }
 
-    func getCCDTemperatures() -> [Float] {
+    nonisolated func getCCDTemperatures() -> [Float] {
         var scalerOut: UInt64 = 0
         var outputCount: UInt32 = 1
         let maxCCDs = 16
@@ -809,7 +798,7 @@ class ProcessorModel {
         return Array(outputStr[0..<min(actualCCDCount, maxCCDs)])
     }
 
-    func getCPPCScore() -> (supported: Bool, scores: [UInt8]) {
+    nonisolated func getCPPCScore() -> (supported: Bool, scores: [UInt8]) {
         var scalerOut: UInt64 = 0
         var outputCount: UInt32 = 1
         let maxLogicalCores = 64
@@ -828,7 +817,7 @@ class ProcessorModel {
         return (supported, Array(outputStr[0..<maxLogicalCores]))
     }
 
-    func getCStateAddress() -> UInt64 {
+    nonisolated func getCStateAddress() -> UInt64 {
         var scalerOut: UInt64 = 0
         var outputCount: UInt32 = 1
         
@@ -842,7 +831,7 @@ class ProcessorModel {
         return scalerOut
     }
 
-    func getCurveOptimizerOffsets() -> [Int8] {
+    nonisolated func getCurveOptimizerOffsets() -> [Int8] {
         var output = [Int8](repeating: 0, count: 64) // MaxCpus is typically 64
         var outputSize = output.count
         
@@ -859,7 +848,7 @@ class ProcessorModel {
     }
     
     @discardableResult
-    func setCurveOptimizerOffset(core: UInt8, offset: Int8) -> kern_return_t {
+    nonisolated func setCurveOptimizerOffset(core: UInt8, offset: Int8) -> kern_return_t {
         // cast offset to raw bit representation for transfer over 64-bit parameter
         let rawOffset = UInt64(bitPattern: Int64(offset))
         var input: [UInt64] = [UInt64(core), rawOffset]
