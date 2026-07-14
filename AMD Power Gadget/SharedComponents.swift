@@ -148,7 +148,7 @@ struct UnsupportedFeatureOverlay<Content: View>: View {
                         Text(reasonText)
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.tahoeAccentOrange)
-                        Text("Haz clic para revelar la interfaz bloqueada")
+                        Text(NSLocalizedString("Click to reveal blocked interface", comment: ""))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.tahoeSubtext)
                     }
@@ -174,7 +174,7 @@ struct UnsupportedFeatureOverlay<Content: View>: View {
                         Image(systemName: "eye.slash.fill")
                             .font(.system(size: 20))
                             .foregroundColor(.white.opacity(0.8))
-                        Text("Haz clic para ocultar")
+                        Text(NSLocalizedString("Click to hide", comment: ""))
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white.opacity(0.9))
                     }
