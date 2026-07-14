@@ -631,9 +631,12 @@ final class TelemetryModel: ObservableObject {
     private var lastPowerAlertTime: Date?
     private var powerViolationStartTime: Date?
     private var stabilizedEstimatedScores: [Int: UInt8] = [:]
+    private var privilegeErrorDismissWork: DispatchWorkItem?
 
     @Published var smcDriverLoaded: Bool = false
     @Published var sysInfo: SystemInfo = SystemInfo()
+    @Published var isSystemInfoLoaded: Bool = false
+    @Published var legacyPStateSupported: Bool = true
 
     private var timer: AnyCancellable?
     private let startTime: Double = Date.timeIntervalSinceReferenceDate
@@ -687,10 +690,7 @@ final class TelemetryModel: ObservableObject {
         let decimal = Locale.current.decimalSeparator ?? "."
         cachedCsvDelimiter = decimal == "," ? ";" : ","
         
-        buildSystemInfo()
-        updateRankedPhysicalCores() // Initialize ranking early (fallback mode)
-        speedStepClocks = ProcessorModel.shared.getValidPStateClocks()
-        selectedSpeedStep = ProcessorModel.shared.getPState()
+        // buildSystemInfo and updateRankedPhysicalCores deferred to async Task below
 
         // Load settings from UserDefaults
         self.isLoggingEnabled = false // Keep logging off on startup for safety/disk space
@@ -767,8 +767,7 @@ final class TelemetryModel: ObservableObject {
 
         initSMC()
         applySavedCPUControls()
-        loadPStateRows()
-        loadCPUControls()
+        loadCPUControls()  // All ProcessorModel calls here are nonisolated now
         
         let initialDisk = getDiskIOBytes()
         lastDiskReadBytes = initialDisk.read
@@ -777,10 +776,21 @@ final class TelemetryModel: ObservableObject {
         
         sample()
 
+        // Async init: populate ProcessorModel actor state that needs await
+        // speedStepClocks, selectedSpeedStep, pStateRows, and sysInfo are deferred
+        // because init() is synchronous but the actor methods require await.
+        Task { @MainActor in
+            await buildSystemInfo()
+            updateRankedPhysicalCores()
+            speedStepClocks = await ProcessorModel.shared.getValidPStateClocks()
+            selectedSpeedStep = await ProcessorModel.shared.getPState()
+            await loadPStateRows()
+        }
+
         restartTimer()
         NotificationCenter.default.addObserver(self, selector: #selector(handleActiveWindowsChanged), name: .init("AppActiveWindowsChanged"), object: nil)
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.csvConfigDirty = true
             }
         }
@@ -792,14 +802,14 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
-    private func buildSystemInfo() {
+    private func buildSystemInfo() async {
         let pm = ProcessorModel.shared
-        let id = pm.cpuidBasic
+        let id = await pm.cpuidBasic
 
         var info = SystemInfo()
-        info.cpuBrand   = pm.systemConfig["cpu"] ?? ProcessorModel.sysctlString(key: "machdep.cpu.brand_string")
-        info.macOSVersion = pm.systemConfig["os"] ?? ""
-        info.kextVersion  = pm.AMDRyzenCPUPowerManagementVersion
+        info.cpuBrand   = (await pm.systemConfig["cpu"]) ?? ProcessorModel.sysctlString(key: "machdep.cpu.brand_string")
+        info.macOSVersion = await pm.systemConfig["os"] ?? ""
+        info.kextVersion  = await pm.AMDRyzenCPUPowerManagementVersion
         info.kextSupported = id.count > 7 && id[7] == 1
 
         if id.count >= 7 {
@@ -812,16 +822,17 @@ final class TelemetryModel: ObservableObject {
             info.l3MB          = Int(id[6]) / 1024
         }
 
-        if pm.boardValid {
-            info.boardName   = pm.boardName
-            info.boardVendor = pm.boardVendor
+        if await pm.boardValid {
+            info.boardName   = await pm.boardName
+            info.boardVendor = await pm.boardVendor
         }
-        info.gpuModel = pm.systemConfig["gpu"] ?? ""
+        info.gpuModel = (await pm.systemConfig["gpu"]) ?? ""
+        legacyPStateSupported = await pm.isLegacyPStateSupported
 
-        if let memStr = pm.systemConfig["mem"], let memMB = Int(memStr) {
+        if let memStr = await pm.systemConfig["mem"], let memMB = Int(memStr) {
             info.ramGB = memMB / 1024
         }
-        if let rsStr = pm.systemConfig["rs"], let rsGB = Int(rsStr) {
+        if let rsStr = await pm.systemConfig["rs"], let rsGB = Int(rsStr) {
             info.storageGB = rsGB / 1024
         }
 
@@ -856,6 +867,7 @@ final class TelemetryModel: ObservableObject {
         }
 
         sysInfo = info
+        isSystemInfoLoaded = true
     }
 
     private func initSMC() {
@@ -936,16 +948,29 @@ final class TelemetryModel: ObservableObject {
         let selectedTab: DashboardTab
         let numFans: Int
 
-        let gpuTempC: Double
-        let gpuPowerW: Double
-        let gpuLoadPct: Double
-        let gpuVramUsedBytes: Double
-        let gpuFanRPM: Double
-        let lastGPUExtraSample: Date
+        // Data from ProcessorModel (captured async in captureSnapshot)
+        let numPhys: Int
+        let metric: [Float]
+        let loadIndex: [Float]
+        let rawGPUTemp: Float
+        let rawGPUPower: Float
+        let rawGPULoad: Float
+        let rawGPUVram: Float
+        let rawGPUFan: Float
+        let ccdTemps: [Float]
+        let instDelta: [UInt64]
+        let fanRpms: [UInt64]
+        let fanCtrls: [UInt64]
 
+        // Cache TTL tracking from TelemetryModel (passed through for RAM/disk helpers)
+        let lastGPUExtraSample: Date
         let cachedCCDTemps: [Float]
         let lastCCDCheck: Date
         let lastFanSampleTime: Date
+        let newLastGPUExtraSample: Date?
+        let newCachedCCDTemps: [Float]?
+        let newLastCCDCheck: Date?
+        let newLastFanSampleTime: Date?
 
         let cachedRAMUsage: Double
         let lastRAMCheck: Date
@@ -997,7 +1022,7 @@ final class TelemetryModel: ObservableObject {
         let cpuLoadAvg: Double
     }
 
-    private func captureSnapshot() -> SamplingInputSnapshot {
+    private func captureSnapshot() async -> SamplingInputSnapshot {
         let cfg = MenuBarConfig.shared
         let menu = MenuSamplingConfig(
             showGPU: cfg.showGPU,
@@ -1010,6 +1035,84 @@ final class TelemetryModel: ObservableObject {
             showNetwork: cfg.showNetwork,
             popoverShowProcesses: cfg.popoverShowProcesses
         )
+
+        let pm = ProcessorModel.shared
+        let nowTime = Date()
+        let lightMode = !activeWindows && !popoverVisible
+        let logging = isLoggingEnabled
+
+        // Always query metric and load index from processor actor
+        let metric = await pm.getMetric(forced: true)
+        let loadIndex = await pm.getLoadIndex()
+
+        // Core count: use cached if available, otherwise query
+        let numPhys: Int
+        if cachedNumPhysicalCores > 0 {
+            numPhys = cachedNumPhysicalCores
+        } else {
+            numPhys = await pm.getNumOfCore()
+        }
+
+        // GPU stats with TTL caching (same logic as before, now in captureSnapshot)
+        let mbc = menu
+        let skipGPU = lightMode && !logging && !mbc.showGPU && !mbc.showGPUvram && !mbc.showGPUfan
+        let skipGPUThermals = lightMode && !logging && !mbc.showGPUtemp && !mbc.showGPUpwr
+
+        let rawGPUTemp = skipGPUThermals ? Float(gpuTempC) : await pm.getGPUTemp()
+        let rawGPUPower = skipGPUThermals ? Float(gpuPowerW) : await pm.getGPUPower()
+        var newLastGPUExtraSample: Date? = nil
+        let rawGPULoad: Float
+        let rawGPUVram: Float
+        let rawGPUFan: Float
+        if skipGPU {
+            rawGPULoad = Float(gpuLoadPct)
+            rawGPUVram = Float(gpuVramUsedBytes)
+            rawGPUFan = Float(gpuFanRPM)
+        } else if lightMode, nowTime.timeIntervalSince(lastGPUExtraSample) < 3.0 {
+            rawGPULoad = Float(gpuLoadPct)
+            rawGPUVram = Float(gpuVramUsedBytes)
+            rawGPUFan = Float(gpuFanRPM)
+        } else {
+            rawGPULoad = await pm.getGPUUtilization()
+            rawGPUVram = await pm.getGPUVramUsed()
+            rawGPUFan = await pm.getGPUFanRPM()
+            newLastGPUExtraSample = nowTime
+        }
+
+        // CCD temps with TTL caching
+        var newCachedCCDTemps: [Float]? = nil
+        var newLastCCDCheck: Date? = nil
+        let ccdTemps: [Float]
+        if lightMode && !logging {
+            ccdTemps = cachedCCDTemps
+        } else {
+            let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
+            if nowTime.timeIntervalSince(lastCCDCheck) >= ccdTTL {
+                ccdTemps = pm.getCCDTemperatures()
+                newCachedCCDTemps = ccdTemps
+                newLastCCDCheck = nowTime
+            } else {
+                ccdTemps = cachedCCDTemps
+            }
+        }
+
+        // Instruction delta
+        let instDelta = pm.getInstructionDelta()
+
+        // Fan RPMs and controls with TTL caching
+        var fanRpms: [UInt64] = []
+        var fanCtrls: [UInt64] = []
+        var newLastFanSampleTime: Date? = nil
+        if !(lightMode && !logging && !mbc.showFanRPM) {
+            let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
+            if smcDriverLoaded && numFans > 0,
+               nowTime.timeIntervalSince(lastFanSampleTime) >= fanTTL {
+                fanRpms = pm.kernelGetUInt64(count: numFans, selector: 93)
+                fanCtrls = pm.kernelGetUInt64(count: numFans, selector: 94)
+                newLastFanSampleTime = nowTime
+            }
+        }
+
         return SamplingInputSnapshot(
             smcDriverLoaded: smcDriverLoaded,
             cachedNumPhysicalCores: cachedNumPhysicalCores,
@@ -1019,15 +1122,26 @@ final class TelemetryModel: ObservableObject {
             isLoggingEnabled: isLoggingEnabled,
             selectedTab: selectedTab,
             numFans: numFans,
-            gpuTempC: gpuTempC,
-            gpuPowerW: gpuPowerW,
-            gpuLoadPct: gpuLoadPct,
-            gpuVramUsedBytes: gpuVramUsedBytes,
-            gpuFanRPM: gpuFanRPM,
+            numPhys: numPhys,
+            metric: metric,
+            loadIndex: loadIndex,
+            rawGPUTemp: rawGPUTemp,
+            rawGPUPower: rawGPUPower,
+            rawGPULoad: rawGPULoad,
+            rawGPUVram: rawGPUVram,
+            rawGPUFan: rawGPUFan,
+            ccdTemps: ccdTemps,
+            instDelta: instDelta,
+            fanRpms: fanRpms,
+            fanCtrls: fanCtrls,
             lastGPUExtraSample: lastGPUExtraSample,
             cachedCCDTemps: cachedCCDTemps,
             lastCCDCheck: lastCCDCheck,
             lastFanSampleTime: lastFanSampleTime,
+            newLastGPUExtraSample: newLastGPUExtraSample,
+            newCachedCCDTemps: newCachedCCDTemps,
+            newLastCCDCheck: newLastCCDCheck,
+            newLastFanSampleTime: newLastFanSampleTime,
             cachedRAMUsage: cachedRAMUsage,
             lastRAMCheck: lastRAMCheck,
             cachedDiskUsage: cachedDiskUsage,
@@ -1039,77 +1153,26 @@ final class TelemetryModel: ObservableObject {
     }
 
     nonisolated private func performBackgroundSample(snapshot: SamplingInputSnapshot) -> SamplingResult? {
-        let pm = ProcessorModel.shared
-
-        var numPhys = snapshot.cachedNumPhysicalCores
-        if numPhys == 0 {
-            numPhys = pm.getNumOfCore()
-        }
-        let numLogi = snapshot.logicalCores > 0 ? snapshot.logicalCores : numPhys
-
         let lightMode = !snapshot.activeWindows && !snapshot.popoverVisible
         let logging = snapshot.isLoggingEnabled
         let mbc = snapshot.menu
 
-        let metric = pm.getMetric(forced: true)
-        let loadIndex = pm.getLoadIndex()
+        let numPhys = snapshot.numPhys
+        let numLogi = snapshot.logicalCores > 0 ? snapshot.logicalCores : numPhys
+        let metric = snapshot.metric
+        let loadIndex = snapshot.loadIndex
+        let rawGPUTemp = snapshot.rawGPUTemp
+        let rawGPUPower = snapshot.rawGPUPower
+        let rawGPULoad = snapshot.rawGPULoad
+        let rawGPUVram = snapshot.rawGPUVram
+        let rawGPUFan = snapshot.rawGPUFan
+        let ccdTemps = snapshot.ccdTemps
+        let instDelta = snapshot.instDelta
+        let fanRpms = snapshot.fanRpms
+        let fanCtrls = snapshot.fanCtrls
 
-        let skipGPU = lightMode && !logging && !mbc.showGPU && !mbc.showGPUvram && !mbc.showGPUfan
-        let skipGPUThermals = lightMode && !logging && !mbc.showGPUtemp && !mbc.showGPUpwr
-
-        let rawGPUTemp = skipGPUThermals ? Float(snapshot.gpuTempC) : pm.getGPUTemp()
-        let rawGPUPower = skipGPUThermals ? Float(snapshot.gpuPowerW) : pm.getGPUPower()
+        // RAM, Disk, DiskIO still queried here (nonisolated, no ProcessorModel)
         let nowTime = Date()
-        var newLastGPUExtraSample: Date? = nil
-        let rawGPULoad: Float
-        let rawGPUVram: Float
-        let rawGPUFan: Float
-        if skipGPU {
-            rawGPULoad = Float(snapshot.gpuLoadPct)
-            rawGPUVram = Float(snapshot.gpuVramUsedBytes)
-            rawGPUFan = Float(snapshot.gpuFanRPM)
-        } else if lightMode, nowTime.timeIntervalSince(snapshot.lastGPUExtraSample) < 3.0 {
-            rawGPULoad = Float(snapshot.gpuLoadPct)
-            rawGPUVram = Float(snapshot.gpuVramUsedBytes)
-            rawGPUFan = Float(snapshot.gpuFanRPM)
-        } else {
-            rawGPULoad = pm.getGPUUtilization()
-            rawGPUVram = pm.getGPUVramUsed()
-            rawGPUFan = pm.getGPUFanRPM()
-            newLastGPUExtraSample = nowTime
-        }
-
-        var newCachedCCDTemps: [Float]? = nil
-        var newLastCCDCheck: Date? = nil
-        let ccdTemps: [Float]
-        if lightMode && !logging {
-            ccdTemps = snapshot.cachedCCDTemps
-        } else {
-            let ccdTTL: TimeInterval = lightMode ? 4.0 : 2.0
-            if nowTime.timeIntervalSince(snapshot.lastCCDCheck) >= ccdTTL {
-                ccdTemps = pm.getCCDTemperatures()
-                newCachedCCDTemps = ccdTemps
-                newLastCCDCheck = nowTime
-            } else {
-                ccdTemps = snapshot.cachedCCDTemps
-            }
-        }
-
-        let instDelta = pm.getInstructionDelta()
-
-        let numFansCount = snapshot.numFans
-        var fanRpms: [UInt64] = []
-        var fanCtrls: [UInt64] = []
-        var newLastFanSampleTime: Date? = nil
-        if !(lightMode && !logging && !mbc.showFanRPM) {
-            let fanTTL: TimeInterval = lightMode ? 2.0 : 0.8
-            if snapshot.smcDriverLoaded && numFansCount > 0,
-               nowTime.timeIntervalSince(snapshot.lastFanSampleTime) >= fanTTL {
-                fanRpms = pm.kernelGetUInt64(count: numFansCount, selector: 93)
-                fanCtrls = pm.kernelGetUInt64(count: numFansCount, selector: 94)
-                newLastFanSampleTime = nowTime
-            }
-        }
 
         var newCachedRAMUsage: Double? = nil
         var newLastRAMCheck: Date? = nil
@@ -1159,7 +1222,7 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        let numPhysicalCores = snapshot.cachedNumPhysicalCores > 0 ? snapshot.cachedNumPhysicalCores : pm.getNumOfCore()
+        let numPhysicalCores = numPhys
         guard numPhysicalCores > 0,
               numLogi > 0,
               metric.count > numPhysicalCores + 2 else {
@@ -1188,10 +1251,10 @@ final class TelemetryModel: ObservableObject {
             diskUsage: diskUsage,
             diskIO: diskIO,
             lightMode: lightMode,
-            newLastGPUExtraSample: newLastGPUExtraSample,
-            newCachedCCDTemps: newCachedCCDTemps,
-            newLastCCDCheck: newLastCCDCheck,
-            newLastFanSampleTime: newLastFanSampleTime,
+            newLastGPUExtraSample: snapshot.newLastGPUExtraSample,
+            newCachedCCDTemps: snapshot.newCachedCCDTemps,
+            newLastCCDCheck: snapshot.newLastCCDCheck,
+            newLastFanSampleTime: snapshot.newLastFanSampleTime,
             newCachedRAMUsage: newCachedRAMUsage,
             newLastRAMCheck: newLastRAMCheck,
             newCachedDiskUsage: newCachedDiskUsage,
@@ -1265,18 +1328,22 @@ final class TelemetryModel: ObservableObject {
             initSMC()
         }
 
-        let snapshot = captureSnapshot()
+        Task { @MainActor in
+            let snapshot = await captureSnapshot()
 
-        ioQueue.async {
-            guard let result = self.performBackgroundSample(snapshot: snapshot) else {
-                Task { @MainActor [weak self] in
-                    self?.isSampling = false
-                }
-                return
-            }
-            Task { @MainActor [weak self] in
+            // A-12: Use structured concurrency instead of ioQueue.async
+            // to reduce context switches from 3 (main → ioQueue → Task @MainActor)
+            // to 2 (main → Task.detached → MainActor.run).
+            Task.detached(priority: .utility) { [weak self] in
                 guard let self = self else { return }
-                self.applySampleResult(result)
+                guard let result = self.performBackgroundSample(snapshot: snapshot) else {
+                    await MainActor.run { self.isSampling = false }
+                    return
+                }
+                await MainActor.run { [weak self] in
+                    guard let self = self else { return }
+                    self.applySampleResult(result)
+                }
             }
         }
     }
@@ -1300,7 +1367,7 @@ final class TelemetryModel: ObservableObject {
         diskIO: (read: UInt64, write: UInt64),
         lightMode: Bool = false
     ) {
-        if cachedNumPhysicalCores == 0 {
+        if cachedNumPhysicalCores == 0 || cachedNumLogicalCores != numLogi {
             cachedNumPhysicalCores = numPhys
             cachedNumLogicalCores = numLogi
             self.numPhysicalCores = numPhys
@@ -1461,9 +1528,9 @@ final class TelemetryModel: ObservableObject {
         if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
             if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 4.0 {
                 lastProcessFetchTime = now
-                Task.detached(priority: .background) {
+                ioQueue.async { [weak self] in
                     let list = TelemetryModel.fetchTopProcesses()
-                    await MainActor.run { [weak self] in
+                    Task { @MainActor [weak self] in
                         self?.topProcesses = list
                     }
                 }
@@ -1594,8 +1661,11 @@ final class TelemetryModel: ObservableObject {
 
         if now.timeIntervalSince(lastCPUControlsCheck) >= 5.0 {
             loadCPUControls()
-            speedStepClocks  = ProcessorModel.shared.getValidPStateClocks()
-            selectedSpeedStep = ProcessorModel.shared.getPState()
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.speedStepClocks  = await ProcessorModel.shared.getValidPStateClocks()
+                self.selectedSpeedStep = await ProcessorModel.shared.getPState()
+            }
             lastCPUControlsCheck = now
         }
         
@@ -1680,21 +1750,40 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
+    /// Auto-dismiss privilege banner after N seconds so it doesn't saturate the UI.
+    private let privilegeErrorDismissInterval: TimeInterval = 12
+
+    private func schedulePrivilegeErrorDismiss() {
+        privilegeErrorDismissWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.privilegeErrorMessage = nil
+        }
+        privilegeErrorDismissWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + privilegeErrorDismissInterval, execute: work)
+    }
+
     /// Report a kernel write failure to the UI (privilege banner / console).
     @discardableResult
     func noteKernelWriteStatus(_ status: kern_return_t) -> Bool {
         if status == KERN_SUCCESS {
-            if privilegeErrorMessage != nil { privilegeErrorMessage = nil }
+            if privilegeErrorMessage != nil {
+                privilegeErrorMessage = nil
+                privilegeErrorDismissWork?.cancel()
+                privilegeErrorDismissWork = nil
+            }
             return true
         }
         if let hint = ProcessorModel.privilegeHint(for: status) {
             privilegeErrorMessage = hint
+            schedulePrivilegeErrorDismiss()
         }
         return false
     }
 
     func clearPrivilegeError() {
         privilegeErrorMessage = nil
+        privilegeErrorDismissWork?.cancel()
+        privilegeErrorDismissWork = nil
     }
 
     /// Flush in-memory UI state before process exit / language relaunch (audit R-7).
@@ -1706,7 +1795,9 @@ final class TelemetryModel: ObservableObject {
             updateKextMappings()
         }
         if pStateEditorDirty {
-            _ = applyPStates()
+            Task { @MainActor in
+                _ = await applyPStates()
+            }
         }
         HistoryManager.shared.flushToDisk()
     }
@@ -1832,8 +1923,8 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
-    func setSpeedStep(_ index: Int) {
-        let status = ProcessorModel.shared.setPState(state: index)
+    func setSpeedStep(_ index: Int) async {
+        let status = await ProcessorModel.shared.setPState(state: index)
         if noteKernelWriteStatus(status) {
             selectedSpeedStep = index
         } else {
@@ -1842,20 +1933,20 @@ final class TelemetryModel: ObservableObject {
         }
     }
 
-    func loadPStateRows() {
-        let raw = ProcessorModel.shared.getPStateDef()
-        let family = ProcessorModel.shared.cpuidBasic.first ?? 0
+    func loadPStateRows() async {
+        let raw = await ProcessorModel.shared.getPStateDef()
+        let family = (await ProcessorModel.shared.cpuidBasic).first ?? 0
         pStateRows = raw.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset, cpuFamily: family) }
         pStateEditorDirty = false
     }
 
-    func applyPStates() -> Bool {
+    func applyPStates() async -> Bool {
         let arr = pStateRows.map { $0.rawValue }
-        let err = ProcessorModel.shared.setPState(def: arr)
+        let err = await ProcessorModel.shared.setPState(def: arr)
         if err == 0 {
             privilegeErrorMessage = nil
             pStateEditorDirty = false
-            loadPStateRows()
+            await loadPStateRows()
             return true
         }
         _ = noteKernelWriteStatus(kern_return_t(err))
@@ -1891,27 +1982,22 @@ final class TelemetryModel: ObservableObject {
         for (idx, curve) in customCurves.enumerated() {
             guard idx < 4 else { break }
             var data = Data()
-            var curveIndex = UInt32(idx)
-            var sourceSensor = UInt32(curve.sourceSensor)
-            var hysteresis = UInt32(round(curve.hysteresis))
-            var rampRate = UInt32(round(curve.rampRate))
 
-            withUnsafePointer(to: &curveIndex) { ptr in
-                data.append(UnsafeBufferPointer(start: ptr, count: 1))
-            }
-            withUnsafePointer(to: &sourceSensor) { ptr in
-                data.append(UnsafeBufferPointer(start: ptr, count: 1))
-            }
-            withUnsafePointer(to: &hysteresis) { ptr in
-                data.append(UnsafeBufferPointer(start: ptr, count: 1))
-            }
-            withUnsafePointer(to: &rampRate) { ptr in
-                data.append(UnsafeBufferPointer(start: ptr, count: 1))
-            }
-            
+            var curveIndex = UInt32(idx)
+            data.append(Data(bytes: &curveIndex, count: MemoryLayout<UInt32>.size))
+
+            var sourceSensor = UInt32(curve.sourceSensor)
+            data.append(Data(bytes: &sourceSensor, count: MemoryLayout<UInt32>.size))
+
+            var hysteresis = UInt32(round(curve.hysteresis))
+            data.append(Data(bytes: &hysteresis, count: MemoryLayout<UInt32>.size))
+
+            var rampRate = UInt32(round(curve.rampRate))
+            data.append(Data(bytes: &rampRate, count: MemoryLayout<UInt32>.size))
+
             let lut = curve.generateLUT()
-            data.append(lut, count: 256)
-            
+            data.append(Data(lut))
+
             _ = noteKernelWriteStatus(ProcessorModel.shared.kernelSetStruct(selector: 101, data: data))
         }
     }
@@ -1956,9 +2042,9 @@ final class TelemetryModel: ObservableObject {
         (arr as NSArray).write(to: url, atomically: true)
     }
 
-    func importPStates(from url: URL) {
+    func importPStates(from url: URL) async {
         guard let arr = NSArray(contentsOf: url) as? [UInt64] else { return }
-        let family = ProcessorModel.shared.cpuidBasic.first ?? 0
+        let family = (await ProcessorModel.shared.cpuidBasic).first ?? 0
         pStateRows = arr.enumerated().map { PStateRow.from(raw: $0.element, index: $0.offset, cpuFamily: family) }
         pStateEditorDirty = true
     }
@@ -2356,8 +2442,8 @@ final class TelemetryModel: ObservableObject {
     func fetchCurveOptimizerOffsets() {
         let pm = ProcessorModel.shared
         let offsets = pm.getCurveOptimizerOffsets()
-        Task { @MainActor in
-            self.curveOptimizerOffsets = offsets
+        Task { @MainActor [weak self] in
+            self?.curveOptimizerOffsets = offsets
         }
     }
     
@@ -2372,8 +2458,8 @@ final class TelemetryModel: ObservableObject {
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            Task { @MainActor in
-                self.notificationsEnabled = granted
+            Task { @MainActor [weak self] in
+                self?.notificationsEnabled = granted
                 if !granted {
                     UserDefaults.standard.set(false, forKey: "notificationsEnabled")
                 }
@@ -2672,7 +2758,7 @@ final class CaffeinateManager: ObservableObject {
         isAwake = true
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: hours * 3600, repeats: false) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.isAwake = false
             }
         }

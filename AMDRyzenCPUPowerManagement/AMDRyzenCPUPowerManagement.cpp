@@ -157,6 +157,12 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
             mp_rendezvous_no_intrs([](void *obj) {
                 auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
                 
+                // NOTE: Writing kMSR_CSTATE_ADDR (0xC0010073) with 0xF0 disables
+                // deep C-states (C6+). This prevents macOS from parking cores in
+                // low-power idle, which reduces wake latency for telemetry but
+                // increases idle power consumption. This is intentional for the
+                // monitoring use-case — if power efficiency is critical, consider
+                // making this configurable via a boot-arg.
                 provider->write_msr(kMSR_CSTATE_ADDR, 0xf0);
                 
                 uint64_t hwConfig;

@@ -132,19 +132,19 @@ struct PopoverProfilesView: View {
                     .disabled(model.autoEPPEnabled)
                 
                 HStack {
-                    Text("Ahorro")
+                    Text(LocalizedStringKey("Power Save"))
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 0 ? theme.text : theme.subtext)
                     Spacer()
-                    Text("Eq. Ahorro")
+                    Text(LocalizedStringKey("Balanced Power"))
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 1 ? theme.text : theme.subtext)
                     Spacer()
-                    Text("Eq. Rend.")
+                    Text(LocalizedStringKey("Balanced Perf"))
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 2 ? theme.text : theme.subtext)
                     Spacer()
-                    Text("Rendimiento")
+                    Text(LocalizedStringKey("Performance"))
                         .font(.system(size: 9))
                         .foregroundColor(sliderValue.wrappedValue == 3 ? theme.text : theme.subtext)
                 }
@@ -155,7 +155,7 @@ struct PopoverProfilesView: View {
             
             // Advanced Toggles
             VStack(alignment: .leading, spacing: 12) {
-                Text("Controles Avanzados")
+                Text(LocalizedStringKey("Advanced Controls"))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(theme.subtext)
                 
@@ -167,6 +167,13 @@ struct PopoverProfilesView: View {
                         Text("Auto EPP (Zen 3)")
                             .font(.system(size: 11))
                             .foregroundColor(theme.text)
+                        
+                        if model.autoEPPEnabled, let err = model.privilegeErrorMessage {
+                            Image(systemName: "exclamationmark.shield.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(theme.accentRed)
+                                .help(err)
+                        }
                     }
                 }
                 .toggleStyle(SwitchToggleStyle(tint: theme.accentCyan))
@@ -222,10 +229,11 @@ struct PopoverSettingsView: View {
             
             // Section 1: Active Monitors
             VStack(alignment: .leading, spacing: 8) {
-                Text("ACTIVE MONITORS")
+                Text(LocalizedStringKey("Active Monitors"))
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(theme.subtext)
                     .tracking(1.0)
+                    .textCase(.uppercase)
                 
                 VStack(spacing: 6) {
                     PopoverToggleRow(title: "CPU Tracker", icon: "cpu", isOn: $showCPU, activeColor: theme.accentCyan, theme: theme)
@@ -240,10 +248,11 @@ struct PopoverSettingsView: View {
             
             // Section 2: Shortcut Application
             VStack(alignment: .leading, spacing: 8) {
-                Text("SHORTCUT APPLICATION")
+                Text(LocalizedStringKey("Shortcut Application"))
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(theme.subtext)
                     .tracking(1.0)
+                    .textCase(.uppercase)
                 
                 Text("Launches when double-clicking resource metrics.")
                     .font(.system(size: 10))

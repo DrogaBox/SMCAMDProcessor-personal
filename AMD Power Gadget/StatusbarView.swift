@@ -23,6 +23,8 @@ class StatusbarView: NSView {
     var totalMemory: String = "0G"
     var netUpload: Double = 0
     var netDownload: Double = 0
+    var privilegeError: String? = nil
+    var autoEPPEnabled: Bool = false
 
     var compactLabel: [NSAttributedString.Key : NSObject]?
     var compactValue: [NSAttributedString.Key : NSObject]?
@@ -136,6 +138,18 @@ class StatusbarView: NSView {
                 drawCompactDoubleColored(label: "M\nE\nM", up: used, upColor: memColor, down: totalMemory, downColor: .labelColor, x: x)
             }
             x += 54
+        }
+
+        // PRIVILEGE WARNING: small shield icon when auto-EPP is active but failing
+        if autoEPPEnabled && privilegeError != nil {
+            let warnColor: NSColor = .systemRed
+            let attrs: [NSAttributedString.Key: NSObject] = [
+                .font: NSFont.systemFont(ofSize: 11, weight: .bold),
+                .foregroundColor: warnColor
+            ]
+            let warnStr = NSAttributedString(string: "⚠", attributes: attrs)
+            warnStr.draw(at: NSPoint(x: x + 2, y: 5))
+            x += 16
         }
 
         // NETWORK column

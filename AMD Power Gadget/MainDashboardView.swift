@@ -393,9 +393,10 @@ struct DashboardContentView: View {
     @State private var isCoresVisible = false
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
-                StatCardsHeaderRow(model: model, colorScheme: colorScheme)
+        ZStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    StatCardsHeaderRow(model: model, colorScheme: colorScheme)
 
                 let verticalItems = verticalOrder.split(separator: ",").map(String.init)
                 ForEach(verticalItems, id: \.self) { itemId in
@@ -431,8 +432,21 @@ struct DashboardContentView: View {
                 }
             }
             .padding(18)
+            
+            if !model.isSystemInfoLoaded {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading system info...")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.tahoeBackground.opacity(0.7))
+            }
         }
     }
+}
 }
 
 // MARK: - Dashboard Sub-views & Helper Extensions
@@ -873,6 +887,7 @@ struct HistoryDataPoint: Codable, Identifiable {
     var safeCpuFreqAvg: Double { cpuFreqAvg ?? 0.0 }
 }
 
+@MainActor
 class HistoryManager: ObservableObject {
     static let shared = HistoryManager()
     

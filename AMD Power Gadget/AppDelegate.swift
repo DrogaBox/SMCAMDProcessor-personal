@@ -159,8 +159,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HistoryManager.shared.flushToDisk()
         Task {
             await NetworkStats.shared.stop()
+            ProcessorModel.shared.closeDriver()
         }
-        ProcessorModel.shared.closeDriver()
     }
 
     func applyAppearanceSwitch(translucency : Bool) {
