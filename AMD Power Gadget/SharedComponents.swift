@@ -115,11 +115,83 @@ struct SidebarMiniButtonStyle: ButtonStyle {
     }
 }
 
-// MARK: - Section Title
+// MARK: - SectionTitle
 struct SectionTitle: View {
-    let text: LocalizedStringKey
-    init(_ text: LocalizedStringKey) { self.text = text }
+    let title: LocalizedStringKey
+    init(_ title: LocalizedStringKey) { self.title = title }
     var body: some View {
-        Text(text).font(.system(size: 13, weight: .semibold)).foregroundColor(.tahoeText).padding(.bottom, 2)
+        Text(title)
+            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .foregroundColor(.tahoeText)
+            .textCase(.uppercase)
+    }
+}
+
+// MARK: - UnsupportedFeatureOverlay
+struct UnsupportedFeatureOverlay<Content: View>: View {
+    let isSupported: Bool
+    let reasonText: LocalizedStringKey
+    @ViewBuilder let content: Content
+    
+    @State private var overrideDisabledBlock = false
+    
+    var body: some View {
+        if !isSupported && !overrideDisabledBlock {
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) { overrideDisabledBlock = true }
+            }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.tahoeAccentOrange)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(reasonText)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.tahoeAccentOrange)
+                        Text("Haz clic para revelar la interfaz bloqueada")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.tahoeSubtext)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 14)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity)
+                .background(Color.tahoeCard)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.tahoeAccentOrange.opacity(0.6), lineWidth: 1.5))
+                .cornerRadius(12)
+            }
+            .buttonStyle(.plain)
+        } else {
+            if !isSupported {
+                ZStack {
+                    content
+                        .disabled(true)
+                        .opacity(0.35)
+                        .blur(radius: 2.0)
+                    
+                    VStack {
+                        Image(systemName: "eye.slash.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text("Haz clic para ocultar")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.5))
+                    .cornerRadius(8)
+                    
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.3)) { overrideDisabledBlock = false }
+                        }
+                }
+            } else {
+                content
+            }
+        }
     }
 }

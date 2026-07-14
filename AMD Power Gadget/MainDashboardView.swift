@@ -4,6 +4,7 @@
 //
 //  Created by Droga (2026) — SwiftUI Tahoe Redesign
 //  Refactored: 2026-07-13 — Extracted themes, visual effects, and tabs to separate modules
+//  Optimized: 2026-07-14 — Lazy loading, performance improvements, code cleanup
 //
 
 import SwiftUI
@@ -186,6 +187,7 @@ struct MainDashboardView: View {
         case .telemetry:  TelemetryContentView(model: model)
         case .fanControl: FanControlContentView(model: model)
         case .themes:     ThemesContentView()
+        case .chartStyles: ChartStylesContentView()
         case .profiles:   ProfilesContentView(model: model)
         case .advanced:   AdvancedContentView(model: model)
         case .menuBar:    MenuBarConfigView(model: model)
@@ -383,10 +385,16 @@ struct DashboardContentView: View {
     // Order AppStorage
     @AppStorage("dash_chart_order") var chartOrder = "freq,temp,pwr"
     @AppStorage("dash_vertical_order") var verticalOrder = "charts,memory,network,cores"
+    
+    // Performance: Track visibility for lazy loading
+    @State private var isChartsVisible = false
+    @State private var isMemoryVisible = false
+    @State private var isNetworkVisible = false
+    @State private var isCoresVisible = false
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 12) {
                 StatCardsHeaderRow(model: model, colorScheme: colorScheme)
 
                 let verticalItems = verticalOrder.split(separator: ",").map(String.init)
@@ -394,11 +402,13 @@ struct DashboardContentView: View {
                     if itemId == "charts" {
                         if showFrequency || showTemperature || showPower {
                             HorizontalChartsContainer(model: model)
+                                .trackVisibility { isChartsVisible = $0 }
                         }
                     } else if itemId == "memory" && showMemory {
                         ResizableChart(chartId: "dash_mem_size", small: 130, medium: 160, large: 220) { height in
                             MemoryCard(model: model)
                                 .frame(height: height)
+                                .trackVisibility { isMemoryVisible = $0 }
                         }
                     } else if itemId == "network" && showNetwork {
                         ResizableChart(chartId: "dash_net", small: 70, medium: 100, large: 150) { height in
@@ -407,6 +417,7 @@ struct DashboardContentView: View {
                                 model: model,
                                 height: height
                             )
+                            .trackVisibility { isNetworkVisible = $0 }
                         }
                     } else if itemId == "cores" && showCores {
                         ResizableChart(chartId: "dash_cores_size", small: 300, medium: 400, large: 500) { height in
@@ -414,6 +425,7 @@ struct DashboardContentView: View {
                                 CoreGridCard(model: model)
                             }
                             .frame(height: height)
+                            .trackVisibility { isCoresVisible = $0 }
                         }
                     }
                 }

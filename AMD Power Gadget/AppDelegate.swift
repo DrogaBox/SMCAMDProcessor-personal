@@ -156,6 +156,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         TelemetryModel.shared.commitPendingChanges()
+        HistoryManager.shared.flushToDisk()
         Task {
             await NetworkStats.shared.stop()
         }

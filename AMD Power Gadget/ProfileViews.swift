@@ -30,44 +30,49 @@ struct ProfilesContentView: View {
                 SectionTitle("Power Management Mode")
                 
                 // 1. CPPC Mode Switch
-                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(NSLocalizedString("Native CPPC Active Mode (EPP)", comment: ""))
-                                    .font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                                Text(NSLocalizedString("Enables autonomous hardware frequency scaling (recommended)", comment: ""))
-                                    .font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                UnsupportedFeatureOverlay(
+                    isSupported: model.cppcSupported,
+                    reasonText: "CPPC: Desactivado por arquitectura de CPU"
+                ) {
+                    TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(NSLocalizedString("Native CPPC Active Mode (EPP)", comment: ""))
+                                        .font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                    Text(NSLocalizedString("Enables autonomous hardware frequency scaling (recommended)", comment: ""))
+                                        .font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                                }
+                                Spacer()
+                                Toggle("", isOn: Binding(
+                                    get: { model.cppcActiveMode },
+                                    set: { model.setCPPCActiveMode(active: $0) }
+                                ))
+                                .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
+                                .labelsHidden()
+                                .disabled(!model.smcDriverLoaded)
                             }
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { model.cppcActiveMode },
-                                set: { model.setCPPCActiveMode(active: $0) }
-                            ))
-                            .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan))
-                            .labelsHidden()
-                            .disabled(!model.smcDriverLoaded)
-                        }
-                        if !model.smcDriverLoaded {
-                            Text(NSLocalizedString("AMDRyzenCPUPowerManagement kext not connected.", comment: ""))
-                                .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
-                        } else if !model.cppcSupported && !model.cppcActiveMode {
-                            Text(NSLocalizedString("This CPU did not report CPPC support to the kext.", comment: ""))
-                                .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
-                        } else if !model.cppcActiveMode {
-                            Text(NSLocalizedString(
-                                "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot.",
-                                comment: "CPPC Active Mode help"
-                            ))
-                            .font(.system(size: 10))
-                            .foregroundColor(.tahoeSubtext)
-                            .fixedSize(horizontal: false, vertical: true)
-                        }
-                        if let err = model.privilegeErrorMessage {
-                            Text(err)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.tahoeAccentOrange)
+                            if !model.smcDriverLoaded {
+                                Text(NSLocalizedString("AMDRyzenCPUPowerManagement kext not connected.", comment: ""))
+                                    .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
+                            } else if !model.cppcSupported && !model.cppcActiveMode {
+                                Text(NSLocalizedString("This CPU did not report CPPC support to the kext.", comment: ""))
+                                    .font(.system(size: 10)).foregroundColor(.tahoeAccentOrange)
+                            } else if !model.cppcActiveMode {
+                                Text(NSLocalizedString(
+                                    "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot.",
+                                    comment: "CPPC Active Mode help"
+                                ))
+                                .font(.system(size: 10))
+                                .foregroundColor(.tahoeSubtext)
                                 .fixedSize(horizontal: false, vertical: true)
+                            }
+                            if let err = model.privilegeErrorMessage {
+                                Text(err)
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.tahoeAccentOrange)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                     }
                 }
@@ -135,12 +140,20 @@ struct ProfilesContentView: View {
                     }
                 } else {
                     // 3. Legacy Speed Step Profiles
-                    SectionTitle("CPU Speed Profiles (Legacy)")
-                    Text("Select a manual P-State override profile. Frequencies will be restricted to the selected step.")
-                        .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        ForEach(Array(stepLabels.enumerated()), id: \.offset) { i, label in
-                            SpeedStepCard(label: label, isActive: model.selectedSpeedStep == i) { model.setSpeedStep(i) }
+                    UnsupportedFeatureOverlay(
+                        isSupported: ProcessorModel.shared.isLegacyPStateSupported,
+                        reasonText: "P-States: Desactivado por ser CPU moderno"
+                    ) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            SectionTitle("CPU Speed Profiles (Legacy)")
+                            Text("Select a manual P-State override profile. Frequencies will be restricted to the selected step.")
+                                .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                                .padding(.bottom, 6)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                                ForEach(Array(stepLabels.enumerated()), id: \.offset) { i, label in
+                                    SpeedStepCard(label: label, isActive: model.selectedSpeedStep == i) { model.setSpeedStep(i) }
+                                }
+                            }
                         }
                     }
                 }

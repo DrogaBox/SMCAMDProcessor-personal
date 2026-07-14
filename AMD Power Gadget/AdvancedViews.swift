@@ -20,18 +20,19 @@ struct AdvancedContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SectionTitle("CPU Power Controls")
-                TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Core Performance Boost (CPB)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
-                            Text(model.cpbSupported ? "Supported by your CPU" : "Not supported by your CPU").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
-                        }
-                        Spacer()
-                        if model.cpbSupported {
+                UnsupportedFeatureOverlay(
+                    isSupported: model.cpbSupported,
+                    reasonText: "CPB: Desactivado por arquitectura de CPU"
+                ) {
+                    TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Core Performance Boost (CPB)").font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
+                                Text("Allows dynamic clock frequency scaling").font(.system(size: 10)).foregroundColor(.tahoeSubtext)
+                            }
+                            Spacer()
                             Toggle("", isOn: Binding(get: { model.cpbEnabled }, set: { model.setCPB(enabled: $0) }))
                                 .toggleStyle(SwitchToggleStyle(tint: .tahoeAccentCyan)).labelsHidden()
-                        } else {
-                            Text("N/A").font(.system(size: 11)).foregroundColor(.tahoeSubtext)
                         }
                     }
                 }
@@ -193,10 +194,18 @@ struct AdvancedContentView: View {
                 }
 
                 Divider().background(Color.tahoeCardBorder)
-                SectionTitle("P-State Editor")
-                Text("Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.")
-                    .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
-                PStateEditorView(model: model)
+                UnsupportedFeatureOverlay(
+                    isSupported: ProcessorModel.shared.isLegacyPStateSupported,
+                    reasonText: "P-States: Desactivado por ser CPU moderno"
+                ) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        SectionTitle("P-State Editor")
+                        Text("Directly edit raw P-State registers. Requires kext privilege check disabled via boot-arg or root.")
+                            .font(.system(size: 11)).foregroundColor(.tahoeSubtext)
+                            .padding(.bottom, 8)
+                        PStateEditorView(model: model)
+                    }
+                }
                 if model.smcDriverLoaded {
                     Divider().background(Color.tahoeCardBorder)
                     SectionTitle("Quick Fan Access")
