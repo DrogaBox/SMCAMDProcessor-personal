@@ -121,7 +121,7 @@ void pmRyzen_PState_reset(void){
     mp_rendezvous_no_intrs(&pmRyzen_doPState_reset, NULL);
 }
 
-void pmRyzen_init(void *handle){
+void pmRyzen_init(void *handle, int allowDispatch){
     
     pmRyzen_io_service_handle = handle;
     IOLog("AMDRyzenCPUPowerManagement::pmRyzen_init sizeof(pmProcessor_t) = %lu bytes (cacheline aligned)\n", (unsigned long)sizeof(pmProcessor_t));
@@ -146,9 +146,12 @@ void pmRyzen_init(void *handle){
     
     
     pmCallBacks_t cb;
-    if(*kernelDisp)(*pmRyzen_pmUnRegister)(*kernelDisp);
-    pmKextRegister(PM_DISPATCH_VERSION, &pmRyzen_cpuFuncs, &cb);
-//    pmKextRegister(PM_DISPATCH_VERSION, NULL, &cb);
+    if (allowDispatch) {
+        if(*kernelDisp)(*pmRyzen_pmUnRegister)(*kernelDisp);
+        pmKextRegister(PM_DISPATCH_VERSION, &pmRyzen_cpuFuncs, &cb);
+    } else {
+        pmKextRegister(PM_DISPATCH_VERSION, NULL, &cb);
+    }
     
     x86_pkg_t * pkg = cb.GetPkgRoot();
     int pkgCount = 0;

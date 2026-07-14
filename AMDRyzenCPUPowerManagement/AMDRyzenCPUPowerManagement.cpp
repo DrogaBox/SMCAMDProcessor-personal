@@ -376,7 +376,9 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         else if (cpuModel >= 0x40 && cpuModel <= 0x5F)
             strlcpy(cpuArchName, "Zen 3+", sizeof(cpuArchName));
         else if (cpuModel >= 0x10 && cpuModel <= 0x1F)
-            strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
+            strlcpy(cpuArchName, "Zen 3 Cezanne", sizeof(cpuArchName));
+        else if (cpuModel >= 0x21 && cpuModel <= 0x2F)
+            strlcpy(cpuArchName, "Zen 3 Vermeer", sizeof(cpuArchName));
         else
             strlcpy(cpuArchName, "Zen 3", sizeof(cpuArchName));
     } else if (cpuFamily == 0x1A) {
@@ -398,11 +400,8 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     } else if (cpuFamily == 0x19 && cpuModel >= 0x60 && cpuModel <= 0x7F) {
         // Family 19h models 60-7Fh: Zen 4 desktop (Raphael)
         ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
-    } else if (cpuFamily == 0x19 && cpuModel >= 0x10 && cpuModel <= 0x1F) {
-        // Family 19h models 10-1Fh: Zen 4 HEDT / Threadripper PRO 7000 WX series
-        ccdOffset = kZEN_CCD_OFFSET_ZEN4_5;
     } else {
-        // Family 17h all models (Zen 1/1+/2) and Family 19h models 00-0Fh/40-5Fh (Zen 3/3+)
+        // Family 17h all models and Family 19h Zen 3/3+ models use the legacy offset.
         ccdOffset = kZEN_CCD_OFFSET_LEGACY;
     }
     IOLog("AMDRyzenCPUPowerManagement::start CCD temperature offset: 0x%X\n", ccdOffset);
@@ -429,9 +428,6 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     } else if (cpuFamily == 0x19 && cpuModel >= 0x60) {
         zenGeneration = 4;
         strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x19 && cpuModel >= 0x10 && cpuModel <= 0x1F) {
-        zenGeneration = 4;
-        strlcpy(cpuArchName, "Zen 4 HEDT", sizeof(cpuArchName));
     } else if (cpuFamily == 0x19) {
         zenGeneration = 3;
         strlcpy(cpuArchName, "Zen 3+", sizeof(cpuArchName));
@@ -542,7 +538,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         xnuTSCFreq = 1000000000u; // Fallback default 1GHz calibration
     }
 
-    pmRyzen_init(this);
+    pmRyzen_init(this, pmDispatchAllowed ? 1 : 0);
 
     totalNumberOfLogicalCores = pmRyzen_num_logi;
     totalNumberOfPhysicalCores = pmRyzen_num_phys;
@@ -896,7 +892,10 @@ void AMDRyzenCPUPowerManagement::applyPowerControl(){
 }
 
 void AMDRyzenCPUPowerManagement::applyEPPControl() {
-    if (!cppcSupported) return;
+    if (!cppcSupported || !cppcWriteAllowed) {
+        IOLog("AMDRyzenCPUPowerManagement::applyEPPControl ignored - CPPC writes disabled in baseline mode\n");
+        return;
+    }
 
     IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
@@ -1078,9 +1077,11 @@ int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
 }
 
 int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
-    // Verify CPU support (Zen 3 Vermeer Family 19h)
-    if (cpuFamily != 0x19) {
-        IOLog("AMDRyzenCPUPowerManagement: Curve Optimizer is only supported on Zen 3 (Family 19h) processors.\n");
+    // Curve Optimizer writes remain disabled during the telemetry-first baseline.
+    // The SMU command and payload must be validated against the exact AGESA/SMU
+    // firmware before enabling this control path for Vermeer or another profile.
+    if (!legacyPstateAllowed) {
+        IOLog("AMDRyzenCPUPowerManagement: Curve Optimizer is disabled in baseline mode.\n");
         return -1;
     }
     
@@ -1263,8 +1264,8 @@ void AMDRyzenCPUPowerManagement::reinitHwState() {
         IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC CAP1 readable but writes disabled (baseline mode)\n");
     }
 
-    // Unchanged: -amdcppcactive still forces Active Mode at boot when present.
-    cppcActiveMode = checkKernelArgument("-amdcppcactive");
+    // Baseline Vermeer mode keeps CPPC writes disabled even if the boot arg is present.
+    cppcActiveMode = cppcWriteAllowed && checkKernelArgument("-amdcppcactive");
     
     uint64_t rapl = 0;
     if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
@@ -1485,6 +1486,4 @@ EXPORT extern "C" kern_return_t amdryzencpupm_kern_stop(kmod_info_t *, void *) {
     // It is not safe to unload VirtualSMC plugins!
     return KERN_FAILURE;
 }
-
-
 
