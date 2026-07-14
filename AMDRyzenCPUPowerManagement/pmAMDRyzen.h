@@ -81,7 +81,7 @@ typedef struct __attribute__((aligned(64))) pmProcessor {
     uint8_t _reserved[23]; // Align total structure size to exactly 128 bytes (2 cache lines)
 } pmProcessor_t;
 
-void pmRyzen_init(void*);
+void pmRyzen_init(void*, int allowDispatch);
 void pmRyzen_stop(void);
 void pmRyzen_PState_reset(void);
 float pmRyzen_avgload_pcpu(uint32_t);
