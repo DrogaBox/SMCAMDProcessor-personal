@@ -37,28 +37,6 @@
 "Choose which items appear in the menu bar. Changes apply immediately." = "Elige qué elementos aparecen en la barra de menús. Los cambios se aplican al instante.";
 "Customize the visual appearance of the menu bar items." = "Personaliza la apariencia visual de los elementos de la barra de menús.";
 "Límite de Temp de Alerta" = "Límite de temperatura de alerta";
-"Loading telemetry trends..." = "Cargando tendencias de telemetría...";
-"Not enough data collected yet." = "No hay suficientes datos recolectados aún.";
-"AMD Power Gadget collects data automatically every minute." = "AMD Power Gadget recolecta datos automáticamente cada minuto.";
-"All charts are hidden." = "Todas las gráficas están ocultas.";
-"Select a chart in the panel above to view its history." = "Selecciona una gráfica en el panel superior para ver su histórico.";
-"Max:" = "Máx:";
-"Min:" = "Mín:";
-"Energy Profile (Auto-EPP Active)" = "Perfil de Energía (Auto-EPP Activo)";
-"Energy Profile" = "Perfil de Energía";
-"Performance" = "Rendimiento";
-"Balanced Perf." = "Equilibrado Rend.";
-"Balanced Power" = "Equilibrado Ahorro";
-"Power Saving" = "Ahorro de Energía";
-"Unknown" = "Desconocido";
-"Smooth Curves" = "Curvas Suaves";
-"Filled Area" = "Área Rellena";
-"Column Bars" = "Barras de Columnas";
-"Line Only" = "Solo Línea";
-"Lightweight Area" = "Área Ligera";
-"Minimalist Sparkline" = "Sparkline Minimalista";
-"Gradient Bar" = "Barra Gradiente";
-"Compact Card" = "Tarjeta Compacta";
 "Color de Alerta de Temp" = "Color de alerta de temperatura";
 "Color de Flechas" = "Color de las flechas";
 "Additional telemetry for the menu bar." = "Telemetría adicional para la barra de menús.";
@@ -643,16 +621,3 @@
 "AMDRyzenCPUPowerManagement kext not connected." = "Kext AMDRyzenCPUPowerManagement no conectado.";
 "If the switch snaps back to Off: enable writes with boot-arg -amdpnopchk (or run as root). With -amdcppcactive the kext enables Active Mode at boot after reboot." = "Si el interruptor vuelve a Off: habilita escrituras con -amdpnopchk (o root). Con -amdcppcactive el kext activa Active Mode al arrancar tras reiniciar.";
 "Checking for updates..." = "Buscando actualizaciones...";
-
-/* UnsupportedFeatureOverlay strings */
-"Click to reveal blocked interface" = "Haz clic para revelar la interfaz bloqueada";
-"Click to hide" = "Haz clic para ocultar";
-
-/* Unsupported feature reasons */
-"CPB: Disabled by CPU architecture" = "CPB: Desactivado por arquitectura de CPU";
-"P-States: Disabled for modern CPU" = "P-States: Desactivado por ser CPU moderno";
-"CPPC: Disabled by CPU architecture" = "CPPC: Desactivado por arquitectura de CPU";
-
-/* Menu Bar Config strings */
-"Temperature Alert Limit" = "Límite de temperatura de alerta";
-"Menu Bar Temperature Presets" = "Opciones de temperatura en barra de menús";
