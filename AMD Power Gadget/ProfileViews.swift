@@ -32,7 +32,7 @@ struct ProfilesContentView: View {
                 // 1. CPPC Mode Switch
                 UnsupportedFeatureOverlay(
                     isSupported: model.cppcSupported,
-                    reasonText: "CPPC: Desactivado por arquitectura de CPU"
+                    reasonText: LocalizedStringKey("CPPC: Disabled by CPU architecture")
                 ) {
                     TahoeCard(accent: Color.tahoeAccentCyan.opacity(0.15)) {
                         VStack(alignment: .leading, spacing: 8) {
@@ -142,7 +142,7 @@ struct ProfilesContentView: View {
                     // 3. Legacy Speed Step Profiles
                     UnsupportedFeatureOverlay(
                         isSupported: ProcessorModel.shared.isLegacyPStateSupported,
-                        reasonText: "P-States: Desactivado por ser CPU moderno"
+                        reasonText: LocalizedStringKey("P-States: Disabled for modern CPU")
                     ) {
                         VStack(alignment: .leading, spacing: 4) {
                             SectionTitle("CPU Speed Profiles (Legacy)")
