@@ -625,3 +625,8 @@
 /* UnsupportedFeatureOverlay strings */
 "Click to reveal blocked interface" = "Haz clic para revelar la interfaz bloqueada";
 "Click to hide" = "Haz clic para ocultar";
+
+/* Unsupported feature reasons */
+"CPB: Disabled by CPU architecture" = "CPB: Desactivado por arquitectura de CPU";
+"P-States: Disabled for modern CPU" = "P-States: Desactivado por ser CPU moderno";
+"CPPC: Disabled by CPU architecture" = "CPPC: Desactivado por arquitectura de CPU";
