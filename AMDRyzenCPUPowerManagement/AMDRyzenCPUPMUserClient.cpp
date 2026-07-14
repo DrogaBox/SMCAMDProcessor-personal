@@ -1002,6 +1002,8 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
         case 101: {
             if(!provider)
                 return kIOReturnNoDevice;
+            if(!provider->superIOLock)
+                return kIOReturnNoDevice;
             
             if(!hasPrivilege())
                 return kIOReturnNotPrivileged;
@@ -1054,8 +1056,15 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if (fanIdx < 0 || fanIdx >= 16 || curveIdx < -1 || curveIdx >= MAX_FAN_CURVES) {
                 return kIOReturnBadArgument;
             }
+            if (!provider->superIOLock) {
+                return kIOReturnNoDevice;
+            }
             
             IOLockLock(provider->superIOLock);
+            if (provider->superIO && fanIdx >= provider->superIO->getNumberOfFans()) {
+                IOLockUnlock(provider->superIOLock);
+                return kIOReturnBadArgument;
+            }
             provider->fanToCurveMap[fanIdx] = (int8_t)curveIdx;
             // If mapping to Auto, restore default fan control
             if (curveIdx == -1 && provider->superIO) {

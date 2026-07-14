@@ -408,7 +408,7 @@ struct HeatMapCell: View {
 
 /// Compact line chart card with minimal decorations
 struct CompactLineChartCard: View {
-    let title: String
+    let title: LocalizedStringKey
     let data: [Double]
     let color: Color
     let unit: String
