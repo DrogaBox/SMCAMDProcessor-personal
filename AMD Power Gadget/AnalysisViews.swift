@@ -168,7 +168,7 @@ struct AnalysisContentView: View {
                             Spacer(minLength: 80)
                             ProgressView()
                                 .scaleEffect(0.9)
-                            Text("Cargando tendencias de telemetría...")
+                            Text(LocalizedStringKey("Loading telemetry trends..."))
                                 .font(.system(size: 11))
                                 .foregroundColor(Color.tahoeSubtext)
                                 .padding(.top, 6)
@@ -177,9 +177,9 @@ struct AnalysisContentView: View {
                     } else if data.isEmpty {
                         VStack {
                             Spacer(minLength: 100)
-                            Text("No hay suficientes datos recolectados aún.")
+                            Text(LocalizedStringKey("Not enough data collected yet."))
                                .foregroundColor(Color.tahoeSubtext)
-                            Text("AMD Power Gadget recolecta datos automáticamente cada minuto.")
+                            Text(LocalizedStringKey("AMD Power Gadget collects data automatically every minute."))
                                 .font(.system(size: 11))
                                 .foregroundColor(Color.tahoeSubtext.opacity(0.7))
                             Spacer()
@@ -187,9 +187,9 @@ struct AnalysisContentView: View {
                     } else if !showCpuLoad && !showThermals && !showRam && !showGpuLoad && !showCpuWatts && !showCpuFreq {
                         VStack {
                             Spacer(minLength: 80)
-                            Text("Todas las gráficas están ocultas.")
+                            Text(LocalizedStringKey("All charts are hidden."))
                                 .foregroundColor(Color.tahoeSubtext)
-                            Text("Seleccioná una gráfica en el panel superior para visualizar su histórico.")
+                            Text(LocalizedStringKey("Select a chart in the panel above to view its history."))
                                 .font(.system(size: 11))
                                 .foregroundColor(Color.tahoeSubtext.opacity(0.7))
                             Spacer()
@@ -445,7 +445,7 @@ struct HistoryCard<Content: View>: View {
                     HStack(spacing: 8) {
                         VStack(alignment: .trailing, spacing: 2) {
                             HStack(spacing: 4) {
-                                Text("Máx:")
+                                Text(LocalizedStringKey("Max:"))
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(Color.tahoeSubtext)
                                 Text(peak)
@@ -453,7 +453,7 @@ struct HistoryCard<Content: View>: View {
                                     .foregroundColor(accent)
                             }
                             HStack(spacing: 4) {
-                                Text("Mín:")
+                                Text(LocalizedStringKey("Min:"))
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(Color.tahoeSubtext)
                                 Text(lowest)

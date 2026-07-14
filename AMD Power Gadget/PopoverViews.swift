@@ -51,7 +51,7 @@ struct PopoverProfilesView: View {
                 case 0x00...0x1F: return 3.0 // Rendimiento
                 case 0x20...0x5F: return 2.0 // Equilibrado Rend.
                 case 0x60...0x9F: return 1.0 // Equilibrado Ahorro
-                case 0xA0...0xFF: return 0.0 // Ahorro de Energía
+                case 0xA0...0xFF: return 0.0 // Power Saving
                 default: return 2.0
                 }
             },
@@ -72,11 +72,11 @@ struct PopoverProfilesView: View {
     
     private var currentProfileName: String {
         switch model.cppcEPPValue {
-        case 0x00...0x1F: return "Rendimiento"
-        case 0x20...0x5F: return "Equilibrado Rend."
-        case 0x60...0x9F: return "Equilibrado Ahorro"
-        case 0xA0...0xFF: return "Ahorro de Energía"
-        default: return "Desconocido"
+         case 0x00...0x1F: return "Performance"
+         case 0x20...0x5F: return "Balanced Perf."
+         case 0x60...0x9F: return "Balanced Power"
+         case 0xA0...0xFF: return "Power Saving"
+         default: return "Unknown"
         }
     }
     
@@ -114,7 +114,7 @@ struct PopoverProfilesView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.autoEPPEnabled ? "Perfil de Energía (Auto-EPP Activo)" : "Perfil de Energía")
+                    Text(model.autoEPPEnabled ? LocalizedStringKey("Energy Profile (Auto-EPP Active)") : LocalizedStringKey("Energy Profile"))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(model.autoEPPEnabled ? theme.accentCyan : theme.subtext)
                     Text(currentProfileName)
