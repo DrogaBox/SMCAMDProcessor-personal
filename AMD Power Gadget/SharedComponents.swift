@@ -75,7 +75,7 @@ struct ToggleRow: View {
                 Text(label).font(.system(size: 12, weight: .semibold)).foregroundColor(.tahoeText)
                 Text(detail).font(.system(size: 10)).foregroundColor(.tahoeSubtext)
             }
-            .padding(.leading, indented ? 20 : 0)
+            .padding(.leading, indented ? 14 : 0)
             Spacer()
             Toggle("", isOn: $isOn)
                 .toggleStyle(SwitchToggleStyle(tint: accent))
@@ -83,7 +83,7 @@ struct ToggleRow: View {
                 .onChange(of: isOn) { onChange($0) }
         }
         .padding(.vertical, 8)
-        .padding(.leading, indented ? 28 : 14)
+        .padding(.leading, 14)
         .padding(.trailing, 14)
         .background(Color.tahoeCard)
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.tahoeCardBorder))

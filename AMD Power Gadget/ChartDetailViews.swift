@@ -127,7 +127,7 @@ struct OriginalLineChartCard: View {
                     .frame(height: height)
                 } else if selectedChartStyle == .compactCard {
                     CompactLineChartCard(
-                        title: String(describing: title),
+                        title: title,
                         data: data.map(line1),
                         color: accent,
                         unit: unit,

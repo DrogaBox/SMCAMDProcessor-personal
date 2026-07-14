@@ -213,29 +213,31 @@ struct FanCurve: Codable, Identifiable, Hashable {
         var lut = [UInt8](repeating: 0, count: 256)
         let sortedPoints = points.sorted { $0.temp < $1.temp }
         guard let firstPt = sortedPoints.first, let lastPt = sortedPoints.last else { return lut }
+
+        func pwmByte(_ rawPWM: Double) -> UInt8 {
+            let safePWM = rawPWM.isFinite ? min(max(rawPWM, 0.0), 100.0) : 0.0
+            let byteVal = UInt8(round((safePWM / 100.0) * 255.0))
+            return byteVal == 0 ? 1 : byteVal
+        }
         
         for temp in 0...255 {
             let tempD = Double(temp)
             if tempD <= firstPt.temp {
-                let rawPWM = firstPt.pwm
-                let byteVal = UInt8(round((rawPWM / 100.0) * 255.0))
-                lut[temp] = byteVal == 0 ? 1 : byteVal
+                lut[temp] = pwmByte(firstPt.pwm)
                 continue
             }
             if tempD >= lastPt.temp {
-                let rawPWM = lastPt.pwm
-                let byteVal = UInt8(round((rawPWM / 100.0) * 255.0))
-                lut[temp] = byteVal == 0 ? 1 : byteVal
+                lut[temp] = pwmByte(lastPt.pwm)
                 continue
             }
             for i in 0..<(sortedPoints.count - 1) {
                 let p1 = sortedPoints[i]
                 let p2 = sortedPoints[i + 1]
                 if tempD >= p1.temp && tempD <= p2.temp {
-                    let pct = (tempD - p1.temp) / (p2.temp - p1.temp)
+                    let span = p2.temp - p1.temp
+                    let pct = span > 0 ? (tempD - p1.temp) / span : 0.0
                     let interpPWM = p1.pwm + pct * (p2.pwm - p1.pwm)
-                    let byteVal = UInt8(round((interpPWM / 100.0) * 255.0))
-                    lut[temp] = byteVal == 0 ? 1 : byteVal
+                    lut[temp] = pwmByte(interpPWM)
                     break
                 }
             }
@@ -1158,9 +1160,15 @@ final class TelemetryModel: ObservableObject {
         }
 
         let numPhysicalCores = snapshot.cachedNumPhysicalCores > 0 ? snapshot.cachedNumPhysicalCores : pm.getNumOfCore()
+        guard numPhysicalCores > 0,
+              numLogi > 0,
+              metric.count > numPhysicalCores + 2 else {
+            return nil
+        }
         let freqsMHz: [Float] = metric.count > numPhysicalCores + 2 ? Array(metric[3..<(3 + numPhysicalCores)]) : []
-        let avgMHz = freqsMHz.reduce(0, +) / Float(freqsMHz.count)
+        let avgMHz = freqsMHz.isEmpty ? 0 : freqsMHz.reduce(0, +) / Float(freqsMHz.count)
         let maxMHz = freqsMHz.max() ?? 0
+        let cpuLoadAvg = loadIndex.isEmpty ? 0.0 : Double(loadIndex.prefix(numPhysicalCores).reduce(0, +)) / Double(numPhysicalCores)
 
         return SamplingResult(
             numPhys: numPhys,
@@ -1197,7 +1205,7 @@ final class TelemetryModel: ObservableObject {
             gpuLoadPct: Double(rawGPULoad),
             gpuVramUsedBytes: Double(rawGPUVram),
             gpuFanRPM: Double(rawGPUFan),
-            cpuLoadAvg: Double(loadIndex.prefix(numPhysicalCores).reduce(0, +)) / Double(numPhysicalCores)
+            cpuLoadAvg: cpuLoadAvg
         )
     }
 
@@ -1260,7 +1268,12 @@ final class TelemetryModel: ObservableObject {
         let snapshot = captureSnapshot()
 
         ioQueue.async {
-            guard let result = self.performBackgroundSample(snapshot: snapshot) else { return }
+            guard let result = self.performBackgroundSample(snapshot: snapshot) else {
+                Task { @MainActor [weak self] in
+                    self?.isSampling = false
+                }
+                return
+            }
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 self.applySampleResult(result)
