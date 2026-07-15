@@ -1,5 +1,60 @@
 # Change Summary & Release Changelog
 
+## v3.24.0 Security Audit Hardening & Per-Family CPU Support
+
+### Kext (AMDRyzenCPUPowerManagement) - Critical Security Fixes
+* **C1 - Atomic Instruction Fix**: Fixed `lock incq/decq` operating on `uint32_t pmRyzen_hpcpus` (64-bit op on 32-bit variable) by switching to `lock incl/decl`. This prevented latent memory corruption in the hot idle path that could corrupt adjacent variables (`pmRyzen_pstatelimit`).
+* **C2/C3 - Per-Family SMU Mailbox Descriptor**: Implemented family-aware SMU mailbox register addresses and command IDs:
+  - **Zen 3 (Family 19h, Models 21h-2Fh)**: SMU mailbox at `0x3B10524/28/2C`, Curve Optimizer command `0x3D` (supported, enabled)
+  - **Zen 4 (Family 19h, Models 60h-7Fh)**: SMU mailbox addresses unverified; Curve Optimizer blocked with logging until AGESA validation
+  - **Zen 5 (Family 1Ah)**: SMU mailbox completely unsupported; Curve Optimizer disabled to prevent SMU firmware corruption
+* **H2 - SMU Timeout Tuning**: Increased SMU command poll timeout from 2ms to 50ms specifically for Curve Optimizer (`0x3D`), which triggers PLL reconfiguration taking 5–15ms on Zen 3. Added mailbox reset sequence on timeout to prevent stale state inheritance.
+* **H3 - Zen 5 Temperature Offset Safety**: Disabled the 49°C temperature offset on Zen 5 (Family 1Ah) until verified against Granite Ridge PPR. Added one-time logging to surface the discrepancy to users; offset remains enabled for Zen 1–4 where validated.
+* **H1 - MWAIT Idle Path Fix**: Added missing `sti` instruction after MWAIT exit to re-enable interrupts. MWAIT paths are currently disabled via `#undef PMRYZEN_IDLE_MWAIT`, but this fix prevents latent scheduler hangs if MWAIT is re-enabled on future Zen 1/2 profiles.
+* **M4 - Expanded Intel MSR Blocklist**: Expanded MSR bounds checking to block additional Intel-exclusive MSRs that cause `#GP` on AMD:
+  - `0xE2` (IA32_POWER_CTL — Intel layout mismatch)
+  - `0x1AD` (IA32_ENERGY_PERF_BIAS — Intel EPB, AMD uses `0xC00102B3`)
+  - `0x345` (IA32_PERF_LIMIT_REASONS — Intel-only)
+  - `0x610–0x617` (Intel RAPL PL1/PL2/PL3 + status registers)
+* **M5 - KASLR Slide Symbol Stabilization**: Replaced fragile `printf` symbol reference (libc shim, may be removed from kernel export set) with stable `&version` symbol for kernel base address calculation. `printf` was a probe-time liability; `_version` has been in the kernel export set since XNU 10.4.
+* **M8 - P1 Frequency Ratio Configuration**: Made P1 P-state frequency ratio configurable via boot-arg `amdpp1ratio=XX` (default 80). Allows tuning base-clock frequency without recompilation:
+  - `-amdpp1ratio=75` → P1 = 75% of P0
+  - `-amdpp1ratio=85` → P1 = 85% of P0
+  - Defaults to 80% if unspecified or out-of-range (> 100%)
+* **M9 - Atomic Increment**: Changed `kextloadAlerts++` to `OSIncrementAtomic()` to eliminate non-atomic read-modify-write race condition (unlikely to occur in practice given single-instantiation, but now correct by design).
+* **H7 - SMN PCI Control Register Per-Family**: Added family-aware selection for SMN aperture control register:
+  - Zen 1–4: PCI config offset `0x60` (legacy)
+  - Zen 5: PCI config offset `0x60` (unverified — placeholder pending PPR validation)
+  - Improved future extensibility when SMN aperture moves on next-gen architectures.
+* **L7 - Constant Usage**: Replaced hardcoded loop bound `16` with `kMAX_FANS` constant to prevent accidental misalignment if `kMAX_FANS` definition changes.
+
+### Kernel Resolution & Symbol Handling
+* **kernel_resolver.c**: Migrated KASLR slide computation from `printf` to `&version` for stability and future-proofing.
+
+### SuperIO Driver Improvements
+* **M3 - ITE Port Closure**: Fixed incomplete port closure in `ISSuperIOIT86XXEFamily.cpp`; now correctly closes both ITE 0x2E (`0x02` sequence) and 0x4E (`0xAA` sequence) ports to prevent LPC bus interference with other drivers (e.g., `appleSMC.kext`, `VirtualSMC.kext`).
+
+### App (AMD Power Gadget) - UX & Reliability
+* **H5 - Launch Helper Robustness**: Replaced fragile 4-level directory-walk path traversal with `NSWorkspace.shared.urlForApplication(withBundleIdentifier:)` lookup. APGLaunchHelper now dynamically resolves the main app's path by bundle ID instead of assuming fixed install layout. Removed debug `print("hello world")` leftover.
+* **M11 - Helper Bundle ID Configuration**: Made APGLaunchHelper bundle ID dynamic by reading from Info.plist key `APGLaunchHelperBundleID` instead of hardcoding. Decouples main app from helper's bundle ID, allowing easier rebranding or restructuring.
+* **L2 - Package Power Naming**: Renamed `uniPackageEnergy` → `uniPackagePowerW` to clarify that the variable holds average **power** (watts, energy delta / time delta), not cumulative energy. Fixes semantic mismatch between variable naming and computed value across 6 references.
+
+### Build System & Versioning
+* **H4 - Dynamic Bundle Versioning**: Updated both kext and app Info.plist files to use `$(CURRENT_PROJECT_VERSION)` and `$(MARKETING_VERSION)` build variables instead of hardcoded `7` and `3.23.3`. Fixes macOS update versioning and Spotlight indexing; now respects `Config/Version.xcconfig` as single source of truth.
+* **H6 - Kext Dependency Versioning**: Updated `OSBundleCompatibleVersion` from `0.6` to `3.16.0` to prevent incompatible kext pairs from loading. Kernel now enforces that `SMCAMDProcessor.kext` requires `AMDRyzenCPUPowerManagement.kext >= 3.16.0`, avoiding crashes from struct layout mismatches.
+* **L1 - CHANGELOG Documentation**: Corrected CPU family naming from "Family 1Bh" (future arch) to "Family 1Ah" (Zen 5 Granite Ridge).
+
+### Validation & Testing
+* **Compile-time Assertion**: Added `#error` guard in `pmAMDRyzen.h` to ensure exactly one idle strategy (`PMRYZEN_IDLE_MWAIT` / `PMRYZEN_IDLE_SIMPLE` / `PMRYZEN_IDLE_IO_CSTATE`) is active per build. Prevents accidental dual-definition bugs.
+* **Fan Curve Input Validation**: Tightened fan curve UserClient input validation from `< 272` to `== sizeof(FanCurveInput)` to reject oversized payloads early.
+
+### Compatibility & Future-Proofing
+* **M6 - Fan Curve Struct Validation**: Moved `FanCurveInput` struct definition before size check to enable compile-time `sizeof` validation instead of magic number `272`.
+* Full backward compatibility maintained with Zen 1–5; telemetry operational on all supported architectures.
+* Zen 4/5 Curve Optimizer writes remain disabled until SMU/SMN addresses are validated against official AGESA PPRs.
+
+---
+
 ## v3.23.2 Vermeer PM Dispatch Decouple
 * **Kernel**: Disabled PM Dispatch takeover (`pmDispatchAllowed = false`) for Vermeer/Cezanne CPUs, reverting to safe baseline telemetry. 
   * **Architectural Context**: In legacy architectures (Zen 1 / Zen 2), the Kext was required to manually inject P-States because macOS lacked native AMD power management. However, modern processors like Vermeer (Zen 3) are now fully capable of native CPPC power management via modern macOS AMD Vanilla patches. 
