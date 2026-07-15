@@ -350,22 +350,6 @@ struct NetworkLineChartCard: View {
 
     @AppStorage("net_chart_style") private var chartStyle: Int = 0 // 0: Bars, 1: Overlapping Areas, 2: Total & Average
 
-    private func formatSpeed(_ mbps: Double) -> String {
-        let absMbps = abs(mbps)
-        let bytesPerSec = absMbps * 1024.0 * 1024.0
-        if bytesPerSec >= 1024.0 * 1024.0 {
-            let val = bytesPerSec / (1024.0 * 1024.0)
-            return String(format: "%.2f MB/s", locale: Locale.current, val)
-        } else if bytesPerSec >= 1024.0 {
-            let val = bytesPerSec / 1024.0
-            return String(format: "%.2f KB/s", locale: Locale.current, val)
-        } else if bytesPerSec >= 1.0 {
-            let val = bytesPerSec / 1024.0
-            return String(format: "%.3f KB/s", locale: Locale.current, val)
-        } else {
-            return "0 KB/s"
-        }
-    }
 
     private var maxUpload: Double {
         model.history.map { $0.netUploadMBps }.max() ?? 0.05

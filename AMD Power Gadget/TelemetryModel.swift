@@ -1380,18 +1380,7 @@ final class TelemetryModel: ObservableObject {
             ccdTemperatures = ccdTemps
         }
 
-        let instSum = instDelta.reduce(0, +)
-        instAccumulated += instSum
-        let realElapsed = now.timeIntervalSince(lastSampleProcessTime)
-        instElapsedTime += realElapsed
-        lastSampleProcessTime = now
-
-        // Update display every ~1 second regardless of polling interval
-        if instElapsedTime >= 1.0 {
-            instRetiredFormatted = formatInstRetired(instAccumulated)
-            instAccumulated = 0
-            instElapsedTime = 0.0
-        }
+        let instSum = updateInstRetired(instDelta: instDelta, now: now)
 
         buildCoreSnapshots(
             numPhysicalCores: numPhysicalCores,
@@ -1411,17 +1400,7 @@ final class TelemetryModel: ObservableObject {
         
         updateDiskThroughput(ramUsage: ramUsage, diskUsage: diskUsage, diskIO: diskIO, now: now)
         
-        if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
-            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 4.0 {
-                lastProcessFetchTime = now
-                ioQueue.async { [weak self] in
-                    let list = TelemetryModel.fetchTopProcesses()
-                    Task { @MainActor [weak self] in
-                        self?.topProcesses = list
-                    }
-                }
-            }
-        }
+        updateTopProcesses(now: now)
 
         updateNetworkStats(lightMode: lightMode)
         
@@ -1542,15 +1521,7 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        if now.timeIntervalSince(lastCPUControlsCheck) >= 5.0 {
-            loadCPUControls()
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.speedStepClocks  = await ProcessorModel.shared.getValidPStateClocks()
-                self.selectedSpeedStep = await ProcessorModel.shared.getPState()
-            }
-            lastCPUControlsCheck = now
-        }
+        updateCPUControls(now: now)
         
         updateSwapPolling(now: now)
         updateIPPolling(now: now)
@@ -1630,6 +1601,54 @@ final class TelemetryModel: ObservableObject {
 
         let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
         cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
+    }
+
+    /// Helper: accumulate retired instructions and update display every ~1s.
+    /// Returns per-sample instSum for TelemetryPoint.
+    /// Extracted from processSampleData() for readability.
+    private func updateInstRetired(instDelta: [UInt64], now: Date) -> UInt64 {
+        let instSum = instDelta.reduce(0, +)
+        instAccumulated += instSum
+        let realElapsed = now.timeIntervalSince(lastSampleProcessTime)
+        instElapsedTime += realElapsed
+        lastSampleProcessTime = now
+
+        if instElapsedTime >= 1.0 {
+            instRetiredFormatted = formatInstRetired(instAccumulated)
+            instAccumulated = 0
+            instElapsedTime = 0.0
+        }
+        return instSum
+    }
+
+    /// Helper: refresh CPU controls (P-states, EPP) every 5s.
+    /// Extracted from processSampleData() for readability.
+    private func updateCPUControls(now: Date) {
+        if now.timeIntervalSince(lastCPUControlsCheck) >= 5.0 {
+            loadCPUControls()
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.speedStepClocks  = await ProcessorModel.shared.getValidPStateClocks()
+                self.selectedSpeedStep = await ProcessorModel.shared.getPState()
+            }
+            lastCPUControlsCheck = now
+        }
+    }
+
+    /// Helper: fetch top processes list every 4s when popover is visible.
+    /// Extracted from processSampleData() for readability.
+    private func updateTopProcesses(now: Date) {
+        if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
+            if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 4.0 {
+                lastProcessFetchTime = now
+                ioQueue.async { [weak self] in
+                    let list = TelemetryModel.fetchTopProcesses()
+                    Task { @MainActor [weak self] in
+                        self?.topProcesses = list
+                    }
+                }
+            }
+        }
     }
 
     /// Helper: poll network stats in background when active.

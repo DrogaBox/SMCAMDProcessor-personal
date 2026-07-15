@@ -20,6 +20,7 @@
 		80710189E057BAD67746030D /* DesktopWidgetsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C589FF26732FF993BF9FDD5B /* DesktopWidgetsViews.swift */; };
 		84DB34DCAAB3D25A02F604E6 /* DesktopWidgetExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C206E0143DF662573E98952 /* DesktopWidgetExtensions.swift */; };
 		9F51098C8322AE65EE224AEF /* ProfileViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4595D207D24DCAE63A8287FF /* ProfileViews.swift */; };
+		B5CH000100000002 /* ChartHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CH000100000001 /* ChartHelpers.swift */; };
 		AABB001100004002 /* FanCurveModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100004001 /* FanCurveModels.swift */; };
 		AABB001100001002 /* TelemetryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100001001 /* TelemetryModel.swift */; };
 		AABB001100001004 /* MainDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB001100001003 /* MainDashboardView.swift */; };
@@ -117,6 +118,7 @@
 		877300E93643ED9A5C3983FF /* SharedComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
 		8A50BB3B9063882703B55CBF /* ChartComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChartComponents.swift; sourceTree = "<group>"; };
 		9475A6F3C2BBA6C48EA0D0E1 /* ChartDetailViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChartDetailViews.swift; sourceTree = "<group>"; };
+		B5CH000100000001 /* ChartHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartHelpers.swift; sourceTree = "<group>"; };
 		AABB001100004001 /* FanCurveModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FanCurveModels.swift; sourceTree = "<group>"; };
 		9C206E0143DF662573E98952 /* DesktopWidgetExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesktopWidgetExtensions.swift; sourceTree = "<group>"; };
 		AABB001100001001 /* TelemetryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryModel.swift; sourceTree = "<group>"; usesTabs = 0; };
@@ -313,6 +315,7 @@
 				DD1D725C7746F381324C5057 /* StatusbarView.swift */,
 				9475A6F3C2BBA6C48EA0D0E1 /* ChartDetailViews.swift */,
 				AABB001100004001 /* FanCurveModels.swift */,
+				B5CH000100000001 /* ChartHelpers.swift */,
 			);
 			path = "AMD Power Gadget";
 			sourceTree = "<group>";
@@ -761,6 +764,7 @@
 				D5DBA1D0D348F77D96E0415B /* MenuBarConfig.swift in Sources */,
 				64BDDC746691C18DA9A809F2 /* StatusbarView.swift in Sources */,
 				463DC4A1457F1F20873F7777 /* ChartDetailViews.swift in Sources */,
+				B5CH000100000002 /* ChartHelpers.swift in Sources */,
 				AABB001100004002 /* FanCurveModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

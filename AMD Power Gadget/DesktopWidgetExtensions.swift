@@ -1148,29 +1148,6 @@ struct DesktopWidgetView: View {
             String(format: "%.1f%%", model.ramUsagePct)
         )
     }
-    
-    private func formatSpeed(_ mbps: Double) -> String {
-        let bytesPerSec = mbps * 1024.0 * 1024.0
-        if bytesPerSec >= 1024.0 * 1024.0 {
-            return String(format: "%.1f MB/s", bytesPerSec / (1024.0 * 1024.0))
-        } else if bytesPerSec >= 1.0 {
-            return String(format: "%.1f KB/s", bytesPerSec / 1024.0)
-        } else {
-            return "0 KB/s"
-        }
-    }
-    
-    private func formatBytes(_ bytes: Double) -> String {
-        if bytes >= 1024.0 * 1024.0 * 1024.0 {
-            return String(format: "%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-        } else if bytes >= 1024.0 * 1024.0 {
-            return String(format: "%.1f MB", bytes / (1024.0 * 1024.0))
-        } else if bytes >= 1024.0 {
-            return String(format: "%.1f KB", bytes / 1024.0)
-        } else {
-            return String(format: "%.0f B", bytes)
-        }
-    }
 }
 
 struct StatListRow: View {
