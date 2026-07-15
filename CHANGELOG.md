@@ -1,5 +1,48 @@
 # Change Summary & Release Changelog
 
+## v3.29.0 Code Quality & Formatting Refactor
+
+### App (AMD Power Gadget)
+* **Format Function Extraction**: Extracted `formatBytes()` to `ChartHelpers.swift`, removing 4 duplicated `formatSpeed()` implementations across the codebase. Centralized formatting logic for maintainability.
+* **Bug Fixes**: Resolved popover graph misalignment by removing ZStack wrapper in popover views.
+
+---
+
+## v3.28.0 Fan Model Refactor & Sensor Enum
+
+### App (AMD Power Gadget)
+* **Fan Model Extraction**: Extracted fan models into dedicated files, added `FanSensor` enum for type-safe sensor handling.
+* **processSampleData() Refactor**: Refactored the main sampling pipeline helpers for better separation of concerns.
+
+---
+
+## v3.27.0 Popover Graph Alignment Fix
+
+### App (AMD Power Gadget)
+* **Graph Alignment Fix**: Fixed popover graph misalignment by removing the ZStack wrapper that was causing layout offset.
+* **Loading Overlay Removal**: Removed popover loading overlay that was interfering with proper graph rendering.
+
+---
+
+## v3.26.0 Popover Loading Indicator
+
+### App (AMD Power Gadget)
+* **Loading State UX**: Added loading indicator to popover views for better user feedback during data sampling.
+* **Version Bump**: Incremented version to track popover UI improvements.
+
+---
+
+## v3.25.0 ProcessorModel Actor Conversion & Privilege Logging
+
+### Kext (AMDRyzenCPUPowerManagement)
+* **Kext Privilege Logging**: Enhanced privilege check logging for better debugging of UserClient authorization flow.
+
+### App (AMD Power Gadget)
+* **ProcessorModel Actor Conversion**: Converted `ProcessorModel` to Swift actor for improved thread safety and concurrency handling.
+* **UI Improvements**: General UI refinements across dashboard and settings views.
+
+---
+
 ## v3.24.0 Security Audit Hardening & Per-Family CPU Support
 
 ### Kext (AMDRyzenCPUPowerManagement) - Critical Security Fixes
