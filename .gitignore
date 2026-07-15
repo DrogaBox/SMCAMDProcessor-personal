@@ -11,6 +11,7 @@ Binaries_Release/
 Binaries_*/
 *.dSYM
 Tools/
+!Tools/cpu_compat_report.sh
 dSYM/
 .opencode/
 AGENTS.md
