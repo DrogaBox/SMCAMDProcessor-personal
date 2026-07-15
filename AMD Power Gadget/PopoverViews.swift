@@ -974,18 +974,6 @@ struct MenuBarPopoverView: View {
                 } else if currentTab == .settings {
                     PopoverSettingsView()
                 }
-                
-                if !model.isSystemInfoLoaded {
-                    VStack(spacing: 8) {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                        Text("Loading system info...")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(theme.subtext)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.background.opacity(0.85))
-                }
             }
 
             Divider().background(theme.cardBorder)
