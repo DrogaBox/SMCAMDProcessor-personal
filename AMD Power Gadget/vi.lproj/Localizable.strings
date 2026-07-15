@@ -584,6 +584,16 @@
 "Apply & Restart" = "Áp dụng và khởi động lại";
 "The app needs to restart to load the selected language." = "Ứng dụng cần khởi động lại để tải ngôn ngữ đã chọn.";
 
+/* Popover EPP slider labels */
+"Power Save" = "Power Save";
+"Balanced Power" = "Balanced Power";
+"Balanced Perf" = "Balanced Perf";
+"Advanced Controls" = "Advanced Controls";
+
+/* Popover settings sections */
+"Active Monitors" = "Active Monitors";
+"Shortcut Application" = "Shortcut Application";
+
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Thao tác này cần quyền quản trị. Chạy AMD Power Gadget với root, hoặc thêm boot-arg -amdpnopchk.";
 
