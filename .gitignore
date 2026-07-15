@@ -23,6 +23,7 @@ build_release/
 scratch/dump_sio
 scratch/write_sio
 scratch/*.o
+scratch/*.c
 
 # Local Crowdin API credentials (never commit)
 .crowdin-credentials
