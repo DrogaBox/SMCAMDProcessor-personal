@@ -584,6 +584,16 @@
 "Apply & Restart" = "Εφαρμογή & Επανεκκίνηση";
 "The app needs to restart to load the selected language." = "Η εφαρμογή πρέπει να κάνει επανεκκίνηση για να φορτώσει την επιλεγμένη γλώσσα.";
 
+/* Popover EPP slider labels */
+"Power Save" = "Power Save";
+"Balanced Power" = "Balanced Power";
+"Balanced Perf" = "Balanced Perf";
+"Advanced Controls" = "Advanced Controls";
+
+/* Popover settings sections */
+"Active Monitors" = "Active Monitors";
+"Shortcut Application" = "Shortcut Application";
+
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "Αυτή η ενέργεια απαιτεί δικαιώματα διαχειριστή. Εκτελέστε AMD Power Gadget ως root, ή προσθέστε το όρισμα εκκίνησης -amdpnopchk για αποσφαλμάτωση.";
 
