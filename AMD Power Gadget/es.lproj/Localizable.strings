@@ -147,9 +147,9 @@
 "Energy Preference (EPP)" = "Preferencia de energía (EPP)";
 "Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Selecciona un perfil autónomo de hardware. La CPU escalará la frecuencia de forma dinámica.";
 "Performance" = "Rendimiento";
-"Balanced Perf" = "Eq. Rend.";
-"Balanced Power" = "Eq. Ahorro";
-"Power Save" = "Ahorro";
+"Balanced Perf" = "Balanced Perf";
+"Balanced Power" = "Balanced Power";
+"Power Save" = "Power Save";
 "Active Profile Status" = "Estado del perfil activo";
 "CPU Speed Profiles (Legacy)" = "Perfiles de velocidad CPU (legacy)";
 "Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Selecciona un perfil manual de anulación de P-State. Las frecuencias se limitarán al paso seleccionado.";
