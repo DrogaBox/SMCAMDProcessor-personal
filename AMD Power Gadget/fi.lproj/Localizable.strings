@@ -147,9 +147,9 @@
 "Energy Preference (EPP)" = "Energia-Asema (EPP)";
 "Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Valitse laitteiston itsenäinen profiili. Suoritin skaalautuu dynaamisesti.";
 "Performance" = "Suorituskyky";
-"Balanced Perf" = "Tasapainoinen Perf";
-"Balanced Power" = "Tasapainoinen Teho";
-"Power Save" = "Virran Tallennus";
+"Balanced Perf" = "Balanced Perf";
+"Balanced Power" = "Balanced Power";
+"Power Save" = "Power Save";
 "Active Profile Status" = "Aktiivisen Profiilin Tila";
 "CPU Speed Profiles (Legacy)" = "Suorittimen Nopeusprofiilit (Legacy)";
 "Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Valitse manuaalinen P-State ohita profiili. Taajuudet rajoitetaan valittuun vaiheeseen.";
