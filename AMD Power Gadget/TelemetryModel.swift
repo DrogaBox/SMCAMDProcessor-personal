@@ -187,64 +187,6 @@ struct RankedPhysicalCore: Identifiable {
     var scoreText: String { (isEstimated ? "~" : "") + String(score) }
 }
 
-struct FanSnapshot: Identifiable {
-    let id: Int
-    var name: String
-    var rpm: UInt64
-    var throttle: UInt8
-    var isOverrided: Bool
-}
-
-struct FanCurvePoint: Codable, Identifiable, Hashable {
-    var id = UUID()
-    var temp: Double
-    var pwm: Double
-}
-
-struct FanCurve: Codable, Identifiable, Hashable {
-    var id = UUID()
-    var name: String
-    var points: [FanCurvePoint]
-    var sourceSensor: Int // 0 = CPU, 1 = GPU
-    var hysteresis: Double // In °C
-    var rampRate: Double   // In % PWM / sec
-    
-    func generateLUT() -> [UInt8] {
-        var lut = [UInt8](repeating: 0, count: 256)
-        let sortedPoints = points.sorted { $0.temp < $1.temp }
-        guard let firstPt = sortedPoints.first, let lastPt = sortedPoints.last else { return lut }
-
-        func pwmByte(_ rawPWM: Double) -> UInt8 {
-            let safePWM = rawPWM.isFinite ? min(max(rawPWM, 0.0), 100.0) : 0.0
-            let byteVal = UInt8(round((safePWM / 100.0) * 255.0))
-            return byteVal == 0 ? 1 : byteVal
-        }
-        
-        for temp in 0...255 {
-            let tempD = Double(temp)
-            if tempD <= firstPt.temp {
-                lut[temp] = pwmByte(firstPt.pwm)
-                continue
-            }
-            if tempD >= lastPt.temp {
-                lut[temp] = pwmByte(lastPt.pwm)
-                continue
-            }
-            for i in 0..<(sortedPoints.count - 1) {
-                let p1 = sortedPoints[i]
-                let p2 = sortedPoints[i + 1]
-                if tempD >= p1.temp && tempD <= p2.temp {
-                    let span = p2.temp - p1.temp
-                    let pct = span > 0 ? (tempD - p1.temp) / span : 0.0
-                    let interpPWM = p1.pwm + pct * (p2.pwm - p1.pwm)
-                    lut[temp] = pwmByte(interpPWM)
-                    break
-                }
-            }
-        }
-        return lut
-    }
-}
 
 struct PStateRow: Identifiable {
     let id: Int
@@ -685,6 +627,7 @@ final class TelemetryModel: ObservableObject {
     // Inst Retired accumulation (like original Power Tool) — resets display every ~1 second
     private var instAccumulated: UInt64 = 0
     private var instElapsedTime: Double = 0.0
+    private var lastSampleProcessTime: Date = Date()
 
     init() {
         let decimal = Locale.current.decimalSeparator ?? "."
@@ -725,25 +668,25 @@ final class TelemetryModel: ObservableObject {
                     FanCurvePoint(temp: 55.0, pwm: 35.0),
                     FanCurvePoint(temp: 75.0, pwm: 65.0),
                     FanCurvePoint(temp: 85.0, pwm: 80.0)
-                ], sourceSensor: 0, hysteresis: 2.0, rampRate: 5.0),
+                ], sourceSensor: .cpu, hysteresis: 2.0, rampRate: 5.0),
                 FanCurve(name: "CPU Standard", points: [
                     FanCurvePoint(temp: 35.0, pwm: 25.0),
                     FanCurvePoint(temp: 55.0, pwm: 45.0),
                     FanCurvePoint(temp: 75.0, pwm: 75.0),
                     FanCurvePoint(temp: 85.0, pwm: 90.0)
-                ], sourceSensor: 0, hysteresis: 2.0, rampRate: 5.0),
+                ], sourceSensor: .cpu, hysteresis: 2.0, rampRate: 5.0),
                 FanCurve(name: "CPU Performance", points: [
                     FanCurvePoint(temp: 30.0, pwm: 35.0),
                     FanCurvePoint(temp: 50.0, pwm: 60.0),
                     FanCurvePoint(temp: 70.0, pwm: 85.0),
                     FanCurvePoint(temp: 80.0, pwm: 100.0)
-                ], sourceSensor: 0, hysteresis: 2.0, rampRate: 8.0),
+                ], sourceSensor: .cpu, hysteresis: 2.0, rampRate: 8.0),
                 FanCurve(name: "GPU Sync", points: [
                     FanCurvePoint(temp: 40.0, pwm: 20.0),
                     FanCurvePoint(temp: 60.0, pwm: 45.0),
                     FanCurvePoint(temp: 75.0, pwm: 75.0),
                     FanCurvePoint(temp: 85.0, pwm: 95.0)
-                ], sourceSensor: 1, hysteresis: 3.0, rampRate: 5.0)
+                ], sourceSensor: .gpu, hysteresis: 3.0, rampRate: 5.0)
             ]
         }
         
@@ -1022,6 +965,29 @@ final class TelemetryModel: ObservableObject {
         let cpuLoadAvg: Double
     }
 
+    // MARK: - Alert Evaluation Types
+
+    private struct AlertEvaluationSnapshot {
+        let cpuTempC: Double
+        let cpuWatts: Double
+        let tempAlertThreshold: Int
+        let powerAlertThreshold: Int
+        let powerAlertDuration: Int
+        let powerViolationStartTime: Date?
+        let lastTempAlertTime: Date?
+        let lastPowerAlertTime: Date?
+    }
+
+    private struct AlertEvaluationResult {
+        let powerViolationStartTime: Date?
+        let lastTempAlertTime: Date?
+        let lastPowerAlertTime: Date?
+        let tempAlertTitle: String?
+        let tempAlertBody: String?
+        let powerAlertTitle: String?
+        let powerAlertBody: String?
+    }
+
     private func captureSnapshot() async -> SamplingInputSnapshot {
         let cfg = MenuBarConfig.shared
         let menu = MenuSamplingConfig(
@@ -1298,6 +1264,7 @@ final class TelemetryModel: ObservableObject {
         gpuTempC = Double(result.rawGPUTemp)
         gpuPowerW = Double(result.rawGPUPower)
 
+        let now = Date()
         processSampleData(
             numPhys: result.numPhys,
             numLogi: result.numLogi,
@@ -1315,7 +1282,8 @@ final class TelemetryModel: ObservableObject {
             ramUsage: result.ramUsage,
             diskUsage: result.diskUsage,
             diskIO: result.diskIO,
-            lightMode: result.lightMode
+            lightMode: result.lightMode,
+            now: now
         )
     }
 
@@ -1365,7 +1333,8 @@ final class TelemetryModel: ObservableObject {
         ramUsage: Double,
         diskUsage: Double,
         diskIO: (read: UInt64, write: UInt64),
-        lightMode: Bool = false
+        lightMode: Bool = false,
+        now: Date
     ) {
         if cachedNumPhysicalCores == 0 || cachedNumLogicalCores != numLogi {
             cachedNumPhysicalCores = numPhys
@@ -1376,8 +1345,6 @@ final class TelemetryModel: ObservableObject {
         let numLogicalCores = cachedNumLogicalCores
 
         guard numPhysicalCores > 0 && numLogicalCores > 0 && metric.count > numPhysicalCores + 2 else { return }
-        let now = Date()
-
         let watts  = Double(metric[0])
         let tempC  = Double(metric[1])
         var freqsMHz: [Float] = []
@@ -1415,7 +1382,9 @@ final class TelemetryModel: ObservableObject {
 
         let instSum = instDelta.reduce(0, +)
         instAccumulated += instSum
-        instElapsedTime += RefreshRateConfig.shared.interval
+        let realElapsed = now.timeIntervalSince(lastSampleProcessTime)
+        instElapsedTime += realElapsed
+        lastSampleProcessTime = now
 
         // Update display every ~1 second regardless of polling interval
         if instElapsedTime >= 1.0 {
@@ -1424,77 +1393,12 @@ final class TelemetryModel: ObservableObject {
             instElapsedTime = 0.0
         }
 
-        // CPPC Fallback: update maximum observed frequencies
-        var freqUpdated = false
-        for logicalIdx in 0..<numLogicalCores {
-            let physicalIdx = logicalIdx % numPhysicalCores
-            let freq = freqsMHz[physicalIdx]
-            let currentMax = maxObservedFreq_perCore[logicalIdx] ?? 0.0
-            if freq > currentMax {
-                maxObservedFreq_perCore[logicalIdx] = freq
-                freqUpdated = true
-            }
-        }
-
-        // Always update ranked cores if frequencies changed and we're relying on them
-        let cppcHasReal = cppcSupported && !cppcScoresEstimated && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
-        if freqUpdated && !cppcHasReal {
-            self.updateRankedPhysicalCores()
-        }
-
-        var newCores: [CoreSnapshot] = []
-        for logicalIdx in 0..<numLogicalCores {
-            let physicalIdx = logicalIdx % numPhysicalCores
-            let freq = freqsMHz[physicalIdx]
-            let load = (loadIndex.count > logicalIdx) ? loadIndex[logicalIdx] * 100.0 : 0.0
-            let isLogical = logicalIdx >= numPhysicalCores
-            
-            var cppcVal: UInt8? = nil
-            var rRank: Int? = nil
-            if let r = rankedCoreLookupMap[physicalIdx + 1] {
-                rRank = r.rank
-                if cppcSupported && cppcScoresEstimated {
-                    cppcVal = r.score
-                }
-            }
-            if cppcSupported && !cppcScoresEstimated && cppcScores.count > logicalIdx {
-                cppcVal = cppcScores[logicalIdx]
-            }
-            
-            newCores.append(CoreSnapshot(
-                id: logicalIdx,
-                freqMHz: freq,
-                loadPct: Float(load),
-                isLogical: isLogical,
-                cppcScore: cppcVal,
-                cppcScoreEstimated: cppcScoresEstimated,
-                coreRank: rRank
-            ))
-        }
-        var shouldUpdateCores = false
-        if newCores.count != cores.count {
-            shouldUpdateCores = true
-        } else {
-            for idx in 0..<newCores.count {
-                let old = cores[idx]
-                let new = newCores[idx]
-                if abs(new.freqMHz - old.freqMHz) > 1.0 ||
-                    abs(new.loadPct - old.loadPct) > 1.0 ||
-                    new.isLogical != old.isLogical ||
-                    new.cppcScore != old.cppcScore ||
-                    new.coreRank != old.coreRank {
-                    shouldUpdateCores = true
-                    break
-                }
-            }
-        }
-        if shouldUpdateCores {
-            cores = newCores
-        }
-        
-        let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
-        cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
-        
+        buildCoreSnapshots(
+            numPhysicalCores: numPhysicalCores,
+            numLogicalCores: numLogicalCores,
+            freqsMHz: freqsMHz,
+            loadIndex: loadIndex
+        )
         if autoPowerSourceSwitchingEnabled && cppcActiveMode {
             evaluatePowerSourceSwitching()
         } else if autoEPPEnabled && cppcActiveMode {
@@ -1505,25 +1409,7 @@ final class TelemetryModel: ObservableObject {
         }
         
         
-        ramUsagePct = ramUsage
-        diskUsagePct = diskUsage
-        
-        if lastDiskCheck != Date.distantPast {
-            let elapsed = now.timeIntervalSince(lastDiskCheck)
-            if elapsed > 0.1 {
-                let rDelta = diskIO.read >= lastDiskReadBytes ? diskIO.read - lastDiskReadBytes : 0
-                let wDelta = diskIO.write >= lastDiskWriteBytes ? diskIO.write - lastDiskWriteBytes : 0
-                
-                let rSpeed = Double(rDelta) / elapsed / (1024.0 * 1024.0)
-                let wSpeed = Double(wDelta) / elapsed / (1024.0 * 1024.0)
-                
-                diskReadMBps = rSpeed < 0.00001 ? 0 : rSpeed
-                diskWriteMBps = wSpeed < 0.00001 ? 0 : wSpeed
-            }
-        }
-        lastDiskReadBytes = diskIO.read
-        lastDiskWriteBytes = diskIO.write
-        lastDiskCheck = now
+        updateDiskThroughput(ramUsage: ramUsage, diskUsage: diskUsage, diskIO: diskIO, now: now)
         
         if popoverVisible && MenuBarConfig.shared.popoverShowProcesses {
             if lastProcessFetchTime == Date.distantPast || now.timeIntervalSince(lastProcessFetchTime) >= 4.0 {
@@ -1537,18 +1423,7 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        let isNetActive = (selectedTab == .dashboard || selectedTab == .telemetry || popoverVisible)
-        let skipNetwork = lightMode && !isLoggingEnabled && !MenuBarConfig.shared.showNetwork
-        
-        if !skipNetwork {
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                if let netSnap = await NetworkStats.shared.update(lowFrequency: !isNetActive) {
-                    self.netUploadMBps = netSnap.uploadMBps
-                    self.netDownloadMBps = netSnap.downloadMBps
-                }
-            }
-        }
+        updateNetworkStats(lightMode: lightMode)
         
         let netUp = self.netUploadMBps
         let netDown = self.netDownloadMBps
@@ -1600,62 +1475,70 @@ final class TelemetryModel: ObservableObject {
 
         // Publishing full history array every tick is expensive for SwiftUI charts.
         // Light mode (menu bar only): refresh history less often.
-        let historyTTL: TimeInterval = lightMode ? 2.0 : 0.0
+        // Active mode: publish every 2nd point (fewer chart elements to render).
+        let historyTTL: TimeInterval = lightMode ? 2.0 : 0.5
         if historyTTL <= 0 || now.timeIntervalSince(lastHistoryPublishTime) >= historyTTL {
-            history = historyBuffer.elements
+            let raw = historyBuffer.elements
+            if lightMode || raw.count < 60 {
+                history = raw
+            } else {
+                // Decimate: keep every 2nd point to reduce SwiftUI chart rendering load
+                history = raw.enumerated().compactMap { $0.offset.isMultiple(of: 2) ? $0.element : nil }
+            }
             lastHistoryPublishTime = now
         }
 
         if smcDriverLoaded && numFans > 0 && !fanRpms.isEmpty {
             var updatedFans = fans
+            var changed = false
             for i in 0..<numFans where i < updatedFans.count {
-                updatedFans[i].rpm        = fanRpms.count  > i ? fanRpms[i]                 : 0
-                updatedFans[i].throttle   = fanCtrls.count > i ? UInt8(fanCtrls[i] >> 8)    : 0
-                updatedFans[i].isOverrided = fanCtrls.count > i ? (fanCtrls[i] & 0xff) == 0 : false
+                let newRpm      = fanRpms.count  > i ? fanRpms[i]                 : 0
+                let newThrottle = fanCtrls.count > i ? UInt8(fanCtrls[i] >> 8)    : 0
+                let newOverride = fanCtrls.count > i ? (fanCtrls[i] & 0xff) == 0 : false
+                if updatedFans[i].rpm != newRpm { updatedFans[i].rpm = newRpm; changed = true }
+                if updatedFans[i].throttle != newThrottle { updatedFans[i].throttle = newThrottle; changed = true }
+                if updatedFans[i].isOverrided != newOverride { updatedFans[i].isOverrided = newOverride; changed = true }
             }
-            self.fans = updatedFans
+            if changed {
+                self.fans = updatedFans
+            }
         }
 
-        // Background CSV logging
-        writeTelemetryToLogFile(point: point)
-        
-        // System alerts notifications check
-        if notificationsEnabled {
-            let now = Date()
-            
-            // 1. Temperature Alerts
-            if cpuTempC >= Double(tempAlertThreshold) {
-                let shouldAlert = lastTempAlertTime.map { now.timeIntervalSince($0) >= 60.0 } ?? true
-                if shouldAlert {
-                    lastTempAlertTime = now
-                    sendNotification(
-                        title: NSLocalizedString("CPU Temperature Alert", comment: ""),
-                        body: String(format: NSLocalizedString("CPU temperature has reached %.1f°C!", comment: ""), cpuTempC),
-                        identifier: "tempAlert"
-                    )
-                }
+        // Background CSV logging (offloaded to ioQueue)
+        if isLoggingEnabled {
+            let logPoint = point
+            ioQueue.async { [weak self] in
+                self?.writeTelemetryToLogFile(point: logPoint)
             }
-            
-            // 2. Power PPT Alerts
-            if cpuWatts >= Double(powerAlertThreshold) {
-                if let startTime = powerViolationStartTime {
-                    let elapsed = now.timeIntervalSince(startTime)
-                    if elapsed >= Double(powerAlertDuration) {
-                        let shouldAlert = lastPowerAlertTime.map { now.timeIntervalSince($0) >= 60.0 } ?? true
-                        if shouldAlert {
-                            lastPowerAlertTime = now
-                            sendNotification(
-                                title: NSLocalizedString("CPU Power Alert", comment: ""),
-                                body: String(format: NSLocalizedString("CPU power has been at %.1fW (above limit of %dW) for over %d seconds!", comment: ""), cpuWatts, powerAlertThreshold, powerAlertDuration),
-                                identifier: "powerAlert"
-                            )
-                        }
+        }
+        
+        // System alerts notifications check (background task)
+        if notificationsEnabled {
+            let alertSnapshot = AlertEvaluationSnapshot(
+                cpuTempC: cpuTempC,
+                cpuWatts: cpuWatts,
+                tempAlertThreshold: tempAlertThreshold,
+                powerAlertThreshold: powerAlertThreshold,
+                powerAlertDuration: powerAlertDuration,
+                powerViolationStartTime: powerViolationStartTime,
+                lastTempAlertTime: lastTempAlertTime,
+                lastPowerAlertTime: lastPowerAlertTime
+            )
+            Task.detached(priority: .background) { [weak self] in
+                guard let self = self else { return }
+                let result = self.evaluateAlerts(snapshot: alertSnapshot)
+                await MainActor.run { [weak self] in
+                    guard let self = self else { return }
+                    self.powerViolationStartTime = result.powerViolationStartTime
+                    self.lastTempAlertTime = result.lastTempAlertTime
+                    self.lastPowerAlertTime = result.lastPowerAlertTime
+                    if let title = result.tempAlertTitle, let body = result.tempAlertBody {
+                        self.sendNotification(title: title, body: body, identifier: "tempAlert")
                     }
-                } else {
-                    powerViolationStartTime = now
+                    if let title = result.powerAlertTitle, let body = result.powerAlertBody {
+                        self.sendNotification(title: title, body: body, identifier: "powerAlert")
+                    }
                 }
-            } else {
-                powerViolationStartTime = nil
             }
         }
 
@@ -1669,6 +1552,129 @@ final class TelemetryModel: ObservableObject {
             lastCPUControlsCheck = now
         }
         
+        updateSwapPolling(now: now)
+        updateIPPolling(now: now)
+        updateUptimePolling(now: now)
+    }
+
+    /// Helper: build CoreSnapshot array with CPPC fallback, diff check, and load average.
+    /// Extracted from processSampleData() for readability.
+    private func buildCoreSnapshots(numPhysicalCores: Int, numLogicalCores: Int, freqsMHz: [Float], loadIndex: [Float]) {
+        // CPPC Fallback: update maximum observed frequencies
+        var freqUpdated = false
+        for logicalIdx in 0..<numLogicalCores {
+            let physicalIdx = logicalIdx % numPhysicalCores
+            let freq = freqsMHz[physicalIdx]
+            let currentMax = maxObservedFreq_perCore[logicalIdx] ?? 0.0
+            if freq > currentMax {
+                maxObservedFreq_perCore[logicalIdx] = freq
+                freqUpdated = true
+            }
+        }
+
+        // Always update ranked cores if frequencies changed and we're relying on them
+        let cppcHasReal = cppcSupported && !cppcScoresEstimated && !cppcScores.isEmpty && !cppcScores.allSatisfy { $0 == 0 }
+        if freqUpdated && !cppcHasReal {
+            self.updateRankedPhysicalCores()
+        }
+
+        var newCores: [CoreSnapshot] = []
+        for logicalIdx in 0..<numLogicalCores {
+            let physicalIdx = logicalIdx % numPhysicalCores
+            let freq = freqsMHz[physicalIdx]
+            let load = (loadIndex.count > logicalIdx) ? loadIndex[logicalIdx] * 100.0 : 0.0
+            let isLogical = logicalIdx >= numPhysicalCores
+
+            var cppcVal: UInt8? = nil
+            var rRank: Int? = nil
+            if let r = rankedCoreLookupMap[physicalIdx + 1] {
+                rRank = r.rank
+                if cppcSupported && cppcScoresEstimated {
+                    cppcVal = r.score
+                }
+            }
+            if cppcSupported && !cppcScoresEstimated && cppcScores.count > logicalIdx {
+                cppcVal = cppcScores[logicalIdx]
+            }
+
+            newCores.append(CoreSnapshot(
+                id: logicalIdx,
+                freqMHz: freq,
+                loadPct: Float(load),
+                isLogical: isLogical,
+                cppcScore: cppcVal,
+                cppcScoreEstimated: cppcScoresEstimated,
+                coreRank: rRank
+            ))
+        }
+        var shouldUpdateCores = false
+        if newCores.count != cores.count {
+            shouldUpdateCores = true
+        } else {
+            for idx in 0..<newCores.count {
+                let old = cores[idx]
+                let newC = newCores[idx]
+                if abs(newC.freqMHz - old.freqMHz) > 1.0 ||
+                    abs(newC.loadPct - old.loadPct) > 1.0 ||
+                    newC.isLogical != old.isLogical ||
+                    newC.cppcScore != old.cppcScore ||
+                    newC.coreRank != old.coreRank {
+                    shouldUpdateCores = true
+                    break
+                }
+            }
+        }
+        if shouldUpdateCores {
+            cores = newCores
+        }
+
+        let totalLoad = newCores.reduce(0.0) { $0 + Double($1.loadPct) }
+        cpuLoadAvg = newCores.isEmpty ? 0.0 : (totalLoad / Double(newCores.count))
+    }
+
+    /// Helper: poll network stats in background when active.
+    /// Extracted from processSampleData() for readability.
+    private func updateNetworkStats(lightMode: Bool) {
+        let isNetActive = (selectedTab == .dashboard || selectedTab == .telemetry || popoverVisible)
+        let skipNetwork = lightMode && !isLoggingEnabled && !MenuBarConfig.shared.showNetwork
+
+        if !skipNetwork {
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                if let netSnap = await NetworkStats.shared.update(lowFrequency: !isNetActive) {
+                    self.netUploadMBps = netSnap.uploadMBps
+                    self.netDownloadMBps = netSnap.downloadMBps
+                }
+            }
+        }
+    }
+
+    /// Helper: compute RAM/disk throughput from diskIO delta and elapsed time.
+    /// Extracted from processSampleData() for readability.
+    private func updateDiskThroughput(ramUsage: Double, diskUsage: Double, diskIO: (read: UInt64, write: UInt64), now: Date) {
+        ramUsagePct = ramUsage
+        diskUsagePct = diskUsage
+
+        if lastDiskCheck != Date.distantPast {
+            let elapsed = now.timeIntervalSince(lastDiskCheck)
+            if elapsed > 0.1 {
+                let rDelta = diskIO.read >= lastDiskReadBytes ? diskIO.read - lastDiskReadBytes : 0
+                let wDelta = diskIO.write >= lastDiskWriteBytes ? diskIO.write - lastDiskWriteBytes : 0
+
+                let rSpeed = Double(rDelta) / elapsed / (1024.0 * 1024.0)
+                let wSpeed = Double(wDelta) / elapsed / (1024.0 * 1024.0)
+
+                diskReadMBps = rSpeed < 0.00001 ? 0 : rSpeed
+                diskWriteMBps = wSpeed < 0.00001 ? 0 : wSpeed
+            }
+        }
+        lastDiskReadBytes = diskIO.read
+        lastDiskWriteBytes = diskIO.write
+        lastDiskCheck = now
+    }
+
+    /// Helper: poll swap usage every 5s. Extracted from processSampleData().
+    private func updateSwapPolling(now: Date) {
         if now.timeIntervalSince(lastSwapCheck) >= 5.0 {
             let swap = getSwapMemoryUsage()
             cachedSwap = (total: swap.total, used: swap.used)
@@ -1676,7 +1682,10 @@ final class TelemetryModel: ObservableObject {
         }
         ramSwapTotalBytes = cachedSwap.total
         ramSwapUsedBytes = cachedSwap.used
-        
+    }
+
+    /// Helper: poll local IP/interface every 10s. Extracted from processSampleData().
+    private func updateIPPolling(now: Date) {
         if now.timeIntervalSince(lastIPCheck) >= 10.0 {
             let ipInfo = getLocalIPAddressAndInterface()
             cachedIPInfo = ipInfo
@@ -1684,12 +1693,14 @@ final class TelemetryModel: ObservableObject {
         }
         netLocalIP = cachedIPInfo.ip
         netActiveInterface = cachedIPInfo.interface
-        
+    }
+
+    /// Helper: poll system uptime every 1s. Extracted from processSampleData().
+    private func updateUptimePolling(now: Date) {
         if now.timeIntervalSince(lastUptimeCheck) >= 1.0 {
             systemUptimeFormatted = getSystemUptime()
             lastUptimeCheck = now
         }
-        
     }
 
     // Format instruction count with suffix like original: K, M, G, T, P, E
@@ -1986,7 +1997,7 @@ final class TelemetryModel: ObservableObject {
             var curveIndex = UInt32(idx)
             data.append(Data(bytes: &curveIndex, count: MemoryLayout<UInt32>.size))
 
-            var sourceSensor = UInt32(curve.sourceSensor)
+            var sourceSensor = UInt32(curve.sourceSensor.rawValue)
             data.append(Data(bytes: &sourceSensor, count: MemoryLayout<UInt32>.size))
 
             var hysteresis = UInt32(round(curve.hysteresis))
@@ -2465,6 +2476,56 @@ final class TelemetryModel: ObservableObject {
                 }
             }
         }
+    }
+
+    nonisolated private func evaluateAlerts(snapshot: AlertEvaluationSnapshot) -> AlertEvaluationResult {
+        let now = Date()
+        var powerViolationStartTime = snapshot.powerViolationStartTime
+        var lastTempAlertTime = snapshot.lastTempAlertTime
+        var lastPowerAlertTime = snapshot.lastPowerAlertTime
+        var tempAlertTitle: String? = nil
+        var tempAlertBody: String? = nil
+        var powerAlertTitle: String? = nil
+        var powerAlertBody: String? = nil
+
+        // 1. Temperature Alerts
+        if snapshot.cpuTempC >= Double(snapshot.tempAlertThreshold) {
+            let shouldAlert = lastTempAlertTime.map { now.timeIntervalSince($0) >= 60.0 } ?? true
+            if shouldAlert {
+                lastTempAlertTime = now
+                tempAlertTitle = NSLocalizedString("CPU Temperature Alert", comment: "")
+                tempAlertBody = String(format: NSLocalizedString("CPU temperature has reached %.1f°C!", comment: ""), snapshot.cpuTempC)
+            }
+        }
+
+        // 2. Power PPT Alerts
+        if snapshot.cpuWatts >= Double(snapshot.powerAlertThreshold) {
+            if let startTime = powerViolationStartTime {
+                let elapsed = now.timeIntervalSince(startTime)
+                if elapsed >= Double(snapshot.powerAlertDuration) {
+                    let shouldAlert = lastPowerAlertTime.map { now.timeIntervalSince($0) >= 60.0 } ?? true
+                    if shouldAlert {
+                        lastPowerAlertTime = now
+                        powerAlertTitle = NSLocalizedString("CPU Power Alert", comment: "")
+                        powerAlertBody = String(format: NSLocalizedString("CPU power has been at %.1fW (above limit of %dW) for over %d seconds!", comment: ""), snapshot.cpuWatts, snapshot.powerAlertThreshold, snapshot.powerAlertDuration)
+                    }
+                }
+            } else {
+                powerViolationStartTime = now
+            }
+        } else {
+            powerViolationStartTime = nil
+        }
+
+        return AlertEvaluationResult(
+            powerViolationStartTime: powerViolationStartTime,
+            lastTempAlertTime: lastTempAlertTime,
+            lastPowerAlertTime: lastPowerAlertTime,
+            tempAlertTitle: tempAlertTitle,
+            tempAlertBody: tempAlertBody,
+            powerAlertTitle: powerAlertTitle,
+            powerAlertBody: powerAlertBody
+        )
     }
 
     private func sendNotification(title: String, body: String, identifier: String) {

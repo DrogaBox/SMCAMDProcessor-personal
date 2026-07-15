@@ -19,7 +19,7 @@ final class PrivilegeAndFanCurveTests: XCTestCase {
     }
 
     func testFanCurveEmptyPointsReturnsZeroLUT() {
-        let curve = FanCurve(name: "empty", points: [], sourceSensor: 0, hysteresis: 2, rampRate: 10)
+        let curve = FanCurve(name: "empty", points: [], sourceSensor: .cpu, hysteresis: 2, rampRate: 10)
         let lut = curve.generateLUT()
         XCTAssertEqual(lut.count, 256)
         XCTAssertTrue(lut.allSatisfy { $0 == 0 })
@@ -29,7 +29,7 @@ final class PrivilegeAndFanCurveTests: XCTestCase {
         let curve = FanCurve(
             name: "flat",
             points: [FanCurvePoint(temp: 40, pwm: 50)],
-            sourceSensor: 0,
+            sourceSensor: .cpu,
             hysteresis: 2,
             rampRate: 10
         )

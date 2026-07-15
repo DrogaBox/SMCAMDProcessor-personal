@@ -98,7 +98,7 @@ final class SecurityAuditTests: XCTestCase {
         let originalCurves = model.customCurves
         model.customCurves = [
             FanCurve(name: "Test", points: [FanCurvePoint(temp: 40, pwm: 50)],
-                     sourceSensor: 0, hysteresis: 2, rampRate: 5)
+                     sourceSensor: .cpu, hysteresis: 2, rampRate: 5)
         ]
         XCTAssertNoThrow(model.updateKextCurves(),
                          "updateKextCurves should not crash when SMC not loaded")
