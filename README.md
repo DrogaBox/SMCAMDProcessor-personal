@@ -145,45 +145,45 @@ Special recognition to the AMD-OSX community for research, development, and test
 
 ## Why This Matters
 
-### Para usuarios de CPU AMD en macOS
+### For AMD CPU users on macOS
 
-AMD nunca tuvo soporte nativo de Apple. Mientras que los usuarios de Intel y Apple Silicon tienen power management, sensores de temperatura, y control de ventiladores integrados en el sistema operativo, los usuarios de AMD dependen completamente de kexts como este para que su sistema funcione correctamente. Sin este driver:
+AMD never had native Apple support. While Intel and Apple Silicon users have power management, temperature sensors, and fan control built into the operating system, AMD users rely entirely on kexts like this one for their system to function properly. Without this driver:
 
-- **No hay telemetría de CPU**: No sabés temperatura, frecuencia, voltaje ni consumo de tu procesador.
-- **No hay control de ventiladores**: Los fans quedan al 100% todo el tiempo o no responden a la temperatura real.
-- **No hay power management eficiente**: El CPU se queda en frecuencias altas constantemente, aumentando el consumo y la temperatura.
-- **No hay sensor VirtualSMC**: Apps como iStat Menus, TG Pro o HWMonitor no pueden leer ningún sensor de la placa.
+- **No CPU telemetry**: You cannot read temperature, frequency, voltage, or power draw from your processor.
+- **No fan control**: Fans either run at 100% constantly or fail to respond to actual temperature.
+- **No efficient power management**: The CPU stays at high frequencies at all times, increasing power draw and heat.
+- **No VirtualSMC sensors**: Apps like iStat Menus, TG Pro, or HWMonitor cannot read any motherboard sensors.
 
-Este software **reemplaza toda la capa de monitoreo y control** que Apple debería haber provisto para AMD. Sin él, un Ryzentosh es un sistema ciego, ruidoso e ineficiente.
+This software **replaces the entire monitoring and control layer** that Apple should have provided for AMD. Without it, a Ryzentosh is a blind, loud, and inefficient system.
 
-### Por qué fue crítica la actualización de seguridad (v3.24.0)
+### Why the security update was critical (v3.24.0)
 
-El audit de seguridad reveló problemas reales que podían causar desde corrupción de memoria silenciosa hasta inestabilidad del sistema:
+The security audit revealed real issues that could cause anything from silent memory corruption to system instability:
 
-1. **Corrupción de memoria en el hot path** (C1): Una instrucción `lock incq` de 64 bits escribiendo sobre una variable de 32 bits podía corromper variable contigua. En condiciones de alta carga, esto causaba crashes impredecibles.
+1. **Memory corruption on the hot path** (C1): A 64-bit `lock incq` instruction writing to a 32-bit variable could corrupt adjacent memory. Under heavy load, this caused unpredictable crashes.
 
-2. **SMU mailbox específico por familia** (C2/C3): Los registros del SMU (System Management Unit) cambian entre generaciones Zen. El código original usaba direcciones hardcodeadas para Zen 3. Si alguien ejecutaba Curve Optimizer en un Zen 4 o Zen 5, podía escribir en registros incorrectos y —en el peor caso— requerir un CMOS clear para recuperar el sistema.
+2. **SMU mailbox per-family** (C2/C3): SMU (System Management Unit) register addresses change between Zen generations. The original code used hardcoded Zen 3 addresses. Running Curve Optimizer on Zen 4 or Zen 5 would write to wrong registers — worst case, requiring a CMOS clear to recover.
 
-3. **MSR blocklist incompleto** (M4): Faltaban MSRs Intel que causan `#GP` (General Protection Fault) en AMD. Una app maliciosa o incluso una llamada accidental podía generar un kernel panic instantáneo.
+3. **Incomplete MSR blocklist** (M4): Intel-specific MSRs were missing from the blocklist, causing `#GP` (General Protection Fault) on AMD CPUs. A malicious or accidental write could trigger an instant kernel panic.
 
-4. **Timeout de SMU insuficiente** (H2): El timeout de 2ms para comandos Curve Optimizer es demasiado corto. El SMU necesita 5-15ms para reconfigurar el PLL. Esto causaba que el driver reportara timeout aunque el comando se estuviera ejecutando correctamente, dejando el SMU en estado inconsistente.
+4. **Insufficient SMU timeout** (H2): The 2ms timeout for Curve Optimizer commands was too short. The SMU needs 5–15ms to reconfigure PLLs, causing the driver to report timeouts while the command was still executing — leaving the SMU in an inconsistent state.
 
-5. **Referencia de KASLR frágil** (M5): Usar `printf` como símbolo de referencia para calcular el KASLR slide es peligroso porque Apple puede eliminar ese símbolo del kernel en cualquier actualización. Cambiarlo a `_version` garantiza que el kext siga funcionando en futuras versiones de macOS.
+5. **Fragile KASLR reference** (M5): Using `printf` as the reference symbol for KASLR slide computation is dangerous because Apple could remove that symbol from the kernel export set in any update. Switching to `_version` ensures the kext continues working on future macOS releases.
 
-6. **Temperatura de Zen 5 sin verificar** (H3): El flag de offset de temperatura (49°C) no estaba verificado para Zen 5. Aplicarlo ciegamente podía mostrar temperaturas completamente erróneas, causando que el thermal throttle o el control de ventiladores actuaran incorrectamente.
+6. **Unverified Zen 5 temperature offset** (H3): The 49°C temperature offset flag was unverified for Zen 5. Applying it blindly could report completely wrong temperatures, causing thermal throttle or fan control to trigger at incorrect thresholds.
 
-7. **Atomicidad** (M1, M9): Operaciones no atómicas en contadores compartidos (`hpcpus`, `kextloadAlerts`) son una bomba de tiempo en sistemas multi-thread. Funcionaban por casualidad, no por diseño.
+7. **Atomicity** (M1, M9): Non-atomic operations on shared counters (`hpcpus`, `kextloadAlerts`) were a time bomb in multi-threaded environments. They worked by chance, not by design.
 
-### El compromiso con la calidad
+### Commitment to quality
 
-Este fork personal no es solo un "update más". Cada línea de código kernel corre en el espacio más privilegiado del sistema operativo — **ring 0 del CPU**. Un bug acá no crashea una app, crashea todo el sistema. Por eso:
+This personal fork is not just "another update". Every line of kernel code runs in the most privileged space of the operating system — **CPU ring 0**. A bug here does not crash an app, it crashes the entire system. That is why:
 
-- Se auditaron **159 archivos** línea por línea.
-- Se identificaron **34 hallazgos** de severidad Critical a Low.
-- Se corrigieron **4 hallazgos Critical** y **7 High** antes del release.
-- Se documentó cada fix con su justificación técnica.
+- **159 files** were audited line by line.
+- **34 findings** were identified across Critical to Low severity.
+- **4 Critical** and **7 High** findings were fixed before release.
+- Every fix was documented with its technical rationale.
 
-Usar software de gestión de CPU sin estas correcciones es como manejar un auto sin frenos: funciona hasta que deja de funcionar.
+Running CPU management software without these fixes is like driving a car without brakes: it works until it does not.
 
 ---
 
