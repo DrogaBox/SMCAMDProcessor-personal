@@ -147,9 +147,9 @@
 "Energy Preference (EPP)" = "Energetická předvolba (EPP)";
 "Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Vyberte autonomní hardwarový profil. CPU bude měřit frekvenci dynamicky.";
 "Performance" = "Výkon";
-"Balanced Perf" = "Vyvážená perf";
-"Balanced Power" = "Vyvážená síla";
-"Power Save" = "Úspora energie";
+"Balanced Perf" = "Balanced Perf";
+"Balanced Power" = "Balanced Power";
+"Power Save" = "Power Save";
 "Active Profile Status" = "Stav aktivního profilu";
 "CPU Speed Profiles (Legacy)" = "Profily rychlosti CPU (Legacy)";
 "Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Vyberte manuální profil přepsání P-stavu. Frekvence budou omezeny na vybraný krok.";
