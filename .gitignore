@@ -32,3 +32,4 @@ crowdin-credentials.env
 # Local xcodebuild derived data
 build_unit_test/
 build-test/
+.freebuff/
