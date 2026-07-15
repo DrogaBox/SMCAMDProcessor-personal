@@ -98,6 +98,55 @@ Full compatibility with all AMD Zen architectures supported by the AMD Vanilla k
 
 ---
 
+## Helping with New CPU Compatibility
+
+New AMD CPU generations (or steppings within existing families) may require updates to register addresses, temperature offsets, and power management configuration. This data **cannot be guessed** — it must be collected from real hardware.
+
+If you have a CPU that is not yet supported, or if you want to confirm compatibility on a newly released model, please **open a GitHub issue** with diagnostic data.
+
+### How to collect diagnostic data
+
+**Prerequisites**: Python 3, Git, and administrative (sudo) access.
+
+```bash
+# 1. Clone the repository (or download the script directly)
+git clone https://github.com/DrogaBox/SMCAMDProcessor-personal.git
+cd SMCAMDProcessor-personal
+
+# 2. Make the script executable and run it as root
+chmod +x Tools/cpu_compat_report.sh
+sudo ./Tools/cpu_compat_report.sh
+```
+
+The script generates a report file at `/tmp/cpu_compat_report_<date>.txt`.  
+Open a new issue at the link below and **attach the report file**:
+
+👉 **[Open New CPU Compatibility Issue](https://github.com/DrogaBox/SMCAMDProcessor-personal/issues/new?assignees=DrogaBox&labels=cpu-compatibility%2Cdata-needed&template=new-cpu-compatibility.md&title=%5BCPU%5D+AMD+%3CYour+CPU+Model%3E)**
+
+### What information is needed and why
+
+| Data | Why it matters |
+|------|---------------|
+| **CPUID (Family/Model/Stepping)** | Identifies the exact CPU generation; the kext uses this to select register maps and capabilities |
+| **AMD PCI Host Bridge Device ID** | Each Zen generation exposes the SMN (System Management Network) aperture at a different PCI device. Without the correct Device ID, the kext cannot read sensor registers |
+| **Package Temperature** | Confirms that the temperature register offset is correct. A wrong offset causes readings that are off by 49 °C |
+| **MSR dumps** | Verify CPPC capability bits, P-state register layout, and energy reporting unit encoding |
+| **Linux k10temp comparison** | The Linux `k10temp` driver documents the exact temperature register addresses per family. Cross-referencing with macOS confirms the SMN mapping |
+| **Kext logs** | Shows whether the kext loaded, which registers it found, and any errors during initialization |
+| **Motherboard / SuperIO chip** | Required for fan control support |
+
+### What happens next
+
+1. The CPUID values are added to the [capability matrix](https://github.com/DrogaBox/SMCAMDProcessor-personal/blob/master/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp)
+2. SMU mailbox and SMN registers are mapped (or blocked with logging if unverified)
+3. Temperature offset flags are validated
+4. A test build is provided for verification
+5. Once confirmed working, the CPU is added to the supported list
+
+**Important**: Writing to wrong SMU or SMN addresses can corrupt SMU firmware state and may require a CMOS clear to recover. Until your CPU is explicitly supported, Curve Optimizer and manual P-state writes remain **disabled by design**.
+
+---
+
 ## Installation & OpenCore Setup
 
 ### Kext Loading Order
