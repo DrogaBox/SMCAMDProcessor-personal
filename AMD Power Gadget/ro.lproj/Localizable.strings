@@ -147,9 +147,9 @@
 "Energy Preference (EPP)" = "Preferințe energetice (PPE)";
 "Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Selectaţi un profil autonom de hardware. Procesorul va scala frecvenţa în mod dinamic.";
 "Performance" = "Performanță";
-"Balanced Perf" = "Perf echilibrat";
-"Balanced Power" = "Putere echilibrată";
-"Power Save" = "Salvare baterie";
+"Balanced Perf" = "Balanced Perf";
+"Balanced Power" = "Balanced Power";
+"Power Save" = "Power Save";
 "Active Profile Status" = "Stare profil activ";
 "CPU Speed Profiles (Legacy)" = "Profiluri de viteză CPU (Legacy)";
 "Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Selectați un profil manual de suprascriere P-Stat. Frecvențele vor fi restricționate la pasul selectat.";

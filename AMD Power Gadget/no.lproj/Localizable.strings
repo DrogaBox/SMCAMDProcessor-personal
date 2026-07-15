@@ -147,9 +147,9 @@
 "Energy Preference (EPP)" = "Energiinnstilling (EPP)";
 "Select a hardware autonomous profile. The CPU will scale frequency dynamically." = "Velg en maskinvare autonom profil. CPU vil skalere frekvensen dynamisk.";
 "Performance" = "Ytelse";
-"Balanced Perf" = "Balansert Perf";
-"Balanced Power" = "Balansert makt";
-"Power Save" = "Strømsparing";
+"Balanced Perf" = "Balanced Perf";
+"Balanced Power" = "Balanced Power";
+"Power Save" = "Power Save";
 "Active Profile Status" = "Aktiv profil status";
 "CPU Speed Profiles (Legacy)" = "CPU Speed Profiler (Legacy)";
 "Select a manual P-State override profile. Frequencies will be restricted to the selected step." = "Velg en manuell P-tilstand overstyrer profilen. Frekvenser vil bli begrenset til det valgte trinnet.";
