@@ -643,23 +643,7 @@ struct MenuBarPreview: View {
     let cfg: MenuBarConfig
     @ObservedObject var model: TelemetryModel = TelemetryModel.shared
     
-    private func formatSpeed(_ mbps: Double) -> String {
-        let absMbps = abs(mbps)
-        let bytesPerSec = absMbps * 1024.0 * 1024.0
-        if bytesPerSec >= 1024.0 * 1024.0 {
-            let val = bytesPerSec / (1024.0 * 1024.0)
-            return String(format: "%.1f MB/s", locale: Locale.current, val)
-        } else if bytesPerSec >= 1024.0 {
-            let val = bytesPerSec / 1024.0
-            return String(format: "%.1f KB/s", locale: Locale.current, val)
-        } else if bytesPerSec >= 1.0 {
-            let val = bytesPerSec / 1024.0
-            return String(format: "%.2f KB/s", locale: Locale.current, val)
-        } else {
-            return "0 KB/s"
-        }
-    }
-    
+
     var body: some View {
         HStack(spacing: 0) {
             HStack(spacing: 8) {
