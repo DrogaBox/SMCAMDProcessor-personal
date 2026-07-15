@@ -1150,8 +1150,8 @@ struct InteractiveFanCurveEditor: View {
                                 model.customCurves = updated
                             }
                         )) {
-                            Text("CPU Temp").tag(0)
-                            Text("GPU Temp").tag(1)
+                            Text("CPU Temp").tag(FanSensor.cpu)
+                            Text("GPU Temp").tag(FanSensor.gpu)
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 150)
