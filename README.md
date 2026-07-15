@@ -106,16 +106,13 @@ If you have a CPU that is not yet supported, or if you want to confirm compatibi
 
 ### How to collect diagnostic data
 
-**Prerequisites**: Python 3, Git, and administrative (sudo) access.
+**Prerequisites**: Python 3 and administrative (sudo) access.
 
 ```bash
-# 1. Clone the repository (or download the script directly)
-git clone https://github.com/DrogaBox/SMCAMDProcessor-personal.git
-cd SMCAMDProcessor-personal
-
-# 2. Make the script executable and run it as root
-chmod +x Tools/cpu_compat_report.sh
-sudo ./Tools/cpu_compat_report.sh
+# Download the script directly (no need to clone the whole repo)
+curl -O https://raw.githubusercontent.com/DrogaBox/SMCAMDProcessor-personal/master/Tools/cpu_compat_report.sh
+chmod +x cpu_compat_report.sh
+sudo ./cpu_compat_report.sh
 ```
 
 The script generates a report file at `/tmp/cpu_compat_report_<date>.txt`.  
