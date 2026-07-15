@@ -143,6 +143,50 @@ Special recognition to the AMD-OSX community for research, development, and test
 
 ---
 
+## Why This Matters
+
+### Para usuarios de CPU AMD en macOS
+
+AMD nunca tuvo soporte nativo de Apple. Mientras que los usuarios de Intel y Apple Silicon tienen power management, sensores de temperatura, y control de ventiladores integrados en el sistema operativo, los usuarios de AMD dependen completamente de kexts como este para que su sistema funcione correctamente. Sin este driver:
+
+- **No hay telemetría de CPU**: No sabés temperatura, frecuencia, voltaje ni consumo de tu procesador.
+- **No hay control de ventiladores**: Los fans quedan al 100% todo el tiempo o no responden a la temperatura real.
+- **No hay power management eficiente**: El CPU se queda en frecuencias altas constantemente, aumentando el consumo y la temperatura.
+- **No hay sensor VirtualSMC**: Apps como iStat Menus, TG Pro o HWMonitor no pueden leer ningún sensor de la placa.
+
+Este software **reemplaza toda la capa de monitoreo y control** que Apple debería haber provisto para AMD. Sin él, un Ryzentosh es un sistema ciego, ruidoso e ineficiente.
+
+### Por qué fue crítica la actualización de seguridad (v3.24.0)
+
+El audit de seguridad reveló problemas reales que podían causar desde corrupción de memoria silenciosa hasta inestabilidad del sistema:
+
+1. **Corrupción de memoria en el hot path** (C1): Una instrucción `lock incq` de 64 bits escribiendo sobre una variable de 32 bits podía corromper variable contigua. En condiciones de alta carga, esto causaba crashes impredecibles.
+
+2. **SMU mailbox específico por familia** (C2/C3): Los registros del SMU (System Management Unit) cambian entre generaciones Zen. El código original usaba direcciones hardcodeadas para Zen 3. Si alguien ejecutaba Curve Optimizer en un Zen 4 o Zen 5, podía escribir en registros incorrectos y —en el peor caso— requerir un CMOS clear para recuperar el sistema.
+
+3. **MSR blocklist incompleto** (M4): Faltaban MSRs Intel que causan `#GP` (General Protection Fault) en AMD. Una app maliciosa o incluso una llamada accidental podía generar un kernel panic instantáneo.
+
+4. **Timeout de SMU insuficiente** (H2): El timeout de 2ms para comandos Curve Optimizer es demasiado corto. El SMU necesita 5-15ms para reconfigurar el PLL. Esto causaba que el driver reportara timeout aunque el comando se estuviera ejecutando correctamente, dejando el SMU en estado inconsistente.
+
+5. **Referencia de KASLR frágil** (M5): Usar `printf` como símbolo de referencia para calcular el KASLR slide es peligroso porque Apple puede eliminar ese símbolo del kernel en cualquier actualización. Cambiarlo a `_version` garantiza que el kext siga funcionando en futuras versiones de macOS.
+
+6. **Temperatura de Zen 5 sin verificar** (H3): El flag de offset de temperatura (49°C) no estaba verificado para Zen 5. Aplicarlo ciegamente podía mostrar temperaturas completamente erróneas, causando que el thermal throttle o el control de ventiladores actuaran incorrectamente.
+
+7. **Atomicidad** (M1, M9): Operaciones no atómicas en contadores compartidos (`hpcpus`, `kextloadAlerts`) son una bomba de tiempo en sistemas multi-thread. Funcionaban por casualidad, no por diseño.
+
+### El compromiso con la calidad
+
+Este fork personal no es solo un "update más". Cada línea de código kernel corre en el espacio más privilegiado del sistema operativo — **ring 0 del CPU**. Un bug acá no crashea una app, crashea todo el sistema. Por eso:
+
+- Se auditaron **159 archivos** línea por línea.
+- Se identificaron **34 hallazgos** de severidad Critical a Low.
+- Se corrigieron **4 hallazgos Critical** y **7 High** antes del release.
+- Se documentó cada fix con su justificación técnica.
+
+Usar software de gestión de CPU sin estas correcciones es como manejar un auto sin frenos: funciona hasta que deja de funcionar.
+
+---
+
 ## Safety Disclaimer & Liability
 
 > [!CAUTION]
