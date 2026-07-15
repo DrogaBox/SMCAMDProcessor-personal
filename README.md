@@ -108,8 +108,14 @@ If you have a CPU that is not yet supported, or if you want to confirm compatibi
 
 **Prerequisites**: Python 3 and administrative (sudo) access.
 
+**Important**: For the most useful data, please have `AMDRyzenCPUPowerManagement.kext` loaded and `AMD Power Gadget.app` running for at least 30 seconds before collecting the report. This ensures the kext has initialized, detected your CPU, and populated the sensor data.
+
+If you cannot load the kext (e.g. the CPU is not yet supported), run the script anyway — the data will still help us identify your hardware and add support.
+
 ```bash
-# Download the script directly (no need to clone the whole repo)
+# 1. Install the kexts and app (or load them via OpenCore)
+# 2. Launch AMD Power Gadget and wait ~30 seconds
+# 3. Download and run the diagnostic script
 curl -O https://raw.githubusercontent.com/DrogaBox/SMCAMDProcessor-personal/master/Tools/cpu_compat_report.sh
 chmod +x cpu_compat_report.sh
 sudo ./cpu_compat_report.sh
