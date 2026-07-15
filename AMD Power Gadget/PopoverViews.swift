@@ -425,101 +425,9 @@ struct MenuBarPopoverView: View {
         }
     }
 
-    var body: some View {
-        // Touch custom hex so body re-evaluates when editor changes tokens
-        let _ = (themePreset, customCardHex, customCyanHex, customOrangeHex, customGreenHex, customPurpleHex)
-        VStack(spacing: 12) {
-            // Header Section — RTL-style glass chrome
-            VStack(spacing: 4) {
-                HStack {
-                    HStack(spacing: 6) {
-                        Image(systemName: "cpu.fill")
-                            .foregroundColor(theme.accentCyan)
-                            .font(.system(size: 13, weight: .bold))
-                        HStack(spacing: 0) {
-                            Text("AMD Power ")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(theme.text)
-                            Text("Gadget")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundColor(theme.accentCyan)
-                        }
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                        .minimumScaleFactor(0.8)
-                    }
-                    Spacer()
-                    
-                    // Compact Uptime
-                    HStack(spacing: 3) {
-                        Image(systemName: "clock")
-                        Text(model.systemUptimeFormatted)
-                    }
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(theme.subtext)
-                    .padding(.trailing, 4)
-                    
-                    // Compact Battery / AC
-                    if model.hasBattery {
-                        HStack(spacing: 2) {
-                            Image(systemName: model.batteryIsCharging ? "battery.100.bolt" : "battery.100")
-                            Text("\(model.batteryPercentage)%")
-                        }
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundColor(theme.subtext)
-                        .padding(.trailing, 6)
-                    } else {
-                        HStack(spacing: 3) {
-                            Image(systemName: "powerplug")
-                            Text("AC")
-                        }
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundColor(theme.subtext)
-                        .padding(.trailing, 6)
-                    }
 
-                    Button(action: {
-                        MenuBarConfig.shared.popoverPinOpen.toggle()
-                        NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
-                    }) {
-                        Image(systemName: MenuBarConfig.shared.popoverPinOpen ? "pin.fill" : "pin")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(MenuBarConfig.shared.popoverPinOpen ? theme.accentGreen : theme.subtext)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Pin Popover Open")
-                }
-                
-                HStack {
-                    let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.17.0"
-                    let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
-                    
-                    Text("App: v\(appVer) · \(theme.localizedName)")
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(theme.subtext)
-                    Spacer()
-                    Text("Kext: v\(kextVer)")
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundColor(theme.subtext)
-                }
-                .padding(.top, 2)
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 12)
-
-            // Custom Segmented Picker
-            HStack(spacing: 0) {
-                PopoverTabButton(title: "Telemetry", icon: "chart.xyaxis.line", tab: .telemetry, currentTab: $currentTab, theme: theme)
-                PopoverTabButton(title: "Perfiles", icon: "bolt.fill", tab: .profiles, currentTab: $currentTab, theme: theme)
-                PopoverTabButton(title: "Settings", icon: "gearshape.fill", tab: .settings, currentTab: $currentTab, theme: theme)
-            }
-            .padding(4)
-            .background(theme.cardBorder.opacity(0.4))
-            .cornerRadius(8)
-            .padding(.horizontal, 12)
-
-            ZStack {
-                if currentTab == .telemetry {
+    @ViewBuilder
+    private func telemetryTabContent() -> some View {
                 // Dynamic Ordered Resource Widgets
                 let rings = cfg.popoverRingOrder.split(separator: ",").map(String.init)
                 
@@ -969,11 +877,107 @@ struct MenuBarPopoverView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
                 }
-                } else if currentTab == .profiles {
-                    PopoverProfilesView()
-                } else if currentTab == .settings {
-                    PopoverSettingsView()
+    }
+
+    var body: some View {
+        // Touch custom hex so body re-evaluates when editor changes tokens
+        let _ = (themePreset, customCardHex, customCyanHex, customOrangeHex, customGreenHex, customPurpleHex)
+        VStack(spacing: 12) {
+            // Header Section — RTL-style glass chrome
+            VStack(spacing: 4) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "cpu.fill")
+                            .foregroundColor(theme.accentCyan)
+                            .font(.system(size: 13, weight: .bold))
+                        HStack(spacing: 0) {
+                            Text("AMD Power ")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(theme.text)
+                            Text("Gadget")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(theme.accentCyan)
+                        }
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .minimumScaleFactor(0.8)
+                    }
+                    Spacer()
+                    
+                    // Compact Uptime
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                        Text(model.systemUptimeFormatted)
+                    }
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(theme.subtext)
+                    .padding(.trailing, 4)
+                    
+                    // Compact Battery / AC
+                    if model.hasBattery {
+                        HStack(spacing: 2) {
+                            Image(systemName: model.batteryIsCharging ? "battery.100.bolt" : "battery.100")
+                            Text("\(model.batteryPercentage)%")
+                        }
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(theme.subtext)
+                        .padding(.trailing, 6)
+                    } else {
+                        HStack(spacing: 3) {
+                            Image(systemName: "powerplug")
+                            Text("AC")
+                        }
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(theme.subtext)
+                        .padding(.trailing, 6)
+                    }
+
+                    Button(action: {
+                        MenuBarConfig.shared.popoverPinOpen.toggle()
+                        NotificationCenter.default.post(name: .init("MenuBarConfigChanged"), object: nil)
+                    }) {
+                        Image(systemName: MenuBarConfig.shared.popoverPinOpen ? "pin.fill" : "pin")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(MenuBarConfig.shared.popoverPinOpen ? theme.accentGreen : theme.subtext)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Pin Popover Open")
                 }
+                
+                HStack {
+                    let appVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.17.0"
+                    let kextVer = model.sysInfo.kextVersion.isEmpty ? "N/A" : model.sysInfo.kextVersion
+                    
+                    Text("App: v\(appVer) · \(theme.localizedName)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(theme.subtext)
+                    Spacer()
+                    Text("Kext: v\(kextVer)")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(theme.subtext)
+                }
+                .padding(.top, 2)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+
+            // Custom Segmented Picker
+            HStack(spacing: 0) {
+                PopoverTabButton(title: "Telemetry", icon: "chart.xyaxis.line", tab: .telemetry, currentTab: $currentTab, theme: theme)
+                PopoverTabButton(title: "Perfiles", icon: "bolt.fill", tab: .profiles, currentTab: $currentTab, theme: theme)
+                PopoverTabButton(title: "Settings", icon: "gearshape.fill", tab: .settings, currentTab: $currentTab, theme: theme)
+            }
+            .padding(4)
+            .background(theme.cardBorder.opacity(0.4))
+            .cornerRadius(8)
+            .padding(.horizontal, 12)
+
+            if currentTab == .telemetry {
+                telemetryTabContent()
+            } else if currentTab == .profiles {
+                PopoverProfilesView()
+            } else if currentTab == .settings {
+                PopoverSettingsView()
             }
 
             Divider().background(theme.cardBorder)
