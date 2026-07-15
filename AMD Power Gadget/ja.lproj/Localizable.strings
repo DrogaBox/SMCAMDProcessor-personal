@@ -584,6 +584,16 @@
 "Apply & Restart" = "適用して再起動";
 "The app needs to restart to load the selected language." = "選択した言語を読み込むにはアプリを再起動する必要があります。";
 
+/* Popover EPP slider labels */
+"Power Save" = "Power Save";
+"Balanced Power" = "Balanced Power";
+"Balanced Perf" = "Balanced Perf";
+"Advanced Controls" = "Advanced Controls";
+
+/* Popover settings sections */
+"Active Monitors" = "Active Monitors";
+"Shortcut Application" = "Shortcut Application";
+
 /* Privilege UX */
 "This action requires administrator privileges. Run AMD Power Gadget as root, or add the boot argument -amdpnopchk for debugging." = "この操作には管理者権限が必要です。AMD Power Gadget を root で実行するか、ブート引数 -amdpnopchk を追加してください。";
 
