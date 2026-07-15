@@ -21,6 +21,14 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
 - Authentic XNU Privilege Validation: Replaced mock privilege checks with authentic kernel root verification via `proc_suser` and `kauth_cred_getuid`.
 - Boundary-Checked String Tables & Mach-O Verification: Strict bounds checking on symbol table lookups (`kernel_resolver.c`) and explicit `MH_MAGIC_64` header verification prior to function resolution.
 - IPC Lifecycle Integrity: Strict 6-step teardown sequence during driver unload (`stop()`), retaining `fIOPCIDevice` and eliminating dangling pointers or memory leaks.
+- **v3.24.0 Security Audit Hardening:**
+  - Per-Family SMU Mailbox Descriptor: Safe register addressing for Zen 3/4/5; Curve Optimizer writes blocked on Zen 4/5 until AGESA validation
+  - Expanded Intel MSR Blocklist: Added 0xE2, 0x1AD, 0x345, 0x610–0x617 to prevent #GP faults on AMD
+  - Atomic Instruction Fixes: Corrected `lock incq/decq` → `lock incl/decl` on 32-bit vars; `kextloadAlerts++` → `OSIncrementAtomic`
+  - KASLR Symbol Stabilization: Migrated from fragile `printf` reference to stable `&version` symbol
+  - SMN Per-Family Register Selection: Family-aware PCI control register offsets for future Zen generation compatibility
+  - MWAIT Idle Path Interrupt Fix: Prevented latent scheduler hangs with missing `sti` after MWAIT exit
+  - Zen 5 Temperature Offset Safety: Disabled unverified 49°C compensation on Zen 5 until PPR validation
 - Privilege model (v3.16.1+): any process may open the UserClient for **read** telemetry; **writes** require root or `-amdpnopchk`. Process name is logged for audit only and is never used for authorization.
 
 ### 2. Micro-Architecture & Memory Optimization
