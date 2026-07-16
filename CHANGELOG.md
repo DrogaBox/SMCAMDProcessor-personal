@@ -1,5 +1,44 @@
 # Change Summary & Release Changelog
 
+## v3.32.0 - TBD
+
+### Added
+- temperatureOffset49 flag to ZenCpuFeatureMap for per-profile temperature control
+- System Info view expanded with CPPC core rankings
+
+### Changed
+- Chart height values centralized in ResizableChart
+- Removed dead code from ResizableChart (cleanChartName, setHeight)
+
+---
+
+## v3.31.0 - Native NSMenu + Kext Cleanup + Zen Family Profiles
+
+### Fixed
+- Context menu Size submenu flickering on telemetry ticks -- replaced SwiftUI .contextMenu with native NSMenu
+- Size changes not applying for memory and cores charts -- UserDefaults key mismatch fixed
+
+### Changed
+- Size submenu disabled for Core Grid chart (fixed-size layout)
+- Removed dead MWAIT/IO_CSTATE code paths from kext
+- Removed cppcReadAllowed/cppcWriteAllowed vestigial variables
+- Renamed telemetryAllowed to cppcReadInInit
+- Moved zenGeneration into ZenCpuFeatureMap profile struct
+- Removed redundant cpuArchName initial block and CPUID MWait log
+
+### Added
+- CPU family profiles for all 8 Zen generations with per-profile feature flags
+- CPU profile badge on dashboard with capabilities display
+- Kernel IOLog and app NSLog for active CPU profile at boot/launch
+- Selector 26 exposing CPU profile info to userspace
+- README section: "What We Removed and Why (v3.31.0)"
+- Updated user manual (EN + ES) with v3.31.0 features
+
+### Removed
+- Stale PDF versions of user manuals (markdown is authoritative)
+
+---
+
 ## v3.30.0 Kext Idle Strategy, KASLR Anchor, SMU Barrier & Weak Self Fix
 
 ### Kext (AMDRyzenCPUPowerManagement)
