@@ -27,7 +27,7 @@ SMCAMDProcessor and AMD Power Gadget (Tahoe Edition) represent a complete archit
   - Atomic Instruction Fixes: Corrected `lock incq/decq` → `lock incl/decl` on 32-bit vars; `kextloadAlerts++` → `OSIncrementAtomic`
   - KASLR Symbol Stabilization: Migrated from fragile `printf` reference to stable `&version` symbol
   - SMN Per-Family Register Selection: Family-aware PCI control register offsets for future Zen generation compatibility
-  - MWAIT Idle Path Interrupt Fix: Prevented latent scheduler hangs with missing `sti` after MWAIT exit
+  - MWAIT Idle Path Interrupt Fix: Prevented latent scheduler hangs with missing `sti` after MWAIT exit (MWAIT code path later removed in v3.31.0 — never functional on AMD desktop CPUs)
   - Zen 5 Temperature Offset Safety: Disabled unverified 49°C compensation on Zen 5 until PPR validation
 - Privilege model (v3.16.1+): any process may open the UserClient for **read** telemetry; **writes** require root or `-amdpnopchk`. Process name is logged for audit only and is never used for authorization.
 
@@ -86,15 +86,21 @@ For a detailed comparative breakdown of features, APIs, and low-level improvemen
 
 ## Supported AMD Processors
 
-Full compatibility with all AMD Zen architectures supported by the AMD Vanilla kernel patches:
+Full compatibility with all AMD Zen architectures supported by the AMD Vanilla kernel patches.
+Each processor family has a dedicated CPU profile defining available power management features:
 
-- **Zen (Family 17h, Models 01h-0Fh)**: Ryzen 1000, Threadripper 1000 (Full Compatibility)
-- **Zen+ (Family 17h, Models 10h-2Fh)**: Ryzen 2000, Threadripper 2000 (Full Compatibility)
-- **Zen 2 (Family 17h, Models 30h+)**: Ryzen 3000, Threadripper 3000 (Full Compatibility)
-- **Zen 3 (Family 19h, Models 00h-0Fh)**: Ryzen 5000 (Full Compatibility)
-- **Zen 3+ (Family 19h, Models 40h-5Fh)**: Ryzen 6000 Mobile (Full Compatibility)
-- **Zen 4 (Family 19h, Models 10h-1Fh, 60h-7Fh)**: Ryzen 7000, Threadripper 7000 (Full Compatibility)
-- **Zen 5 (Family 1Ah, Models 40h-4Fh)**: Ryzen 9000 Granite Ridge (Full Compatibility)
+| Generation | Family | Models | CPUs | PM Dispatch | Legacy P-States | CPPC |
+|-----------|--------|--------|------|-------------|-----------------|------|
+| **Zen 1** | 17h | 01h–0Fh | Ryzen 1000, Threadripper 1000 | ✅ | ✅ | ❌ |
+| **Zen+** | 17h | 10h–2Fh | Ryzen 2000, Threadripper 2000 | ✅ | ✅ | ❌ |
+| **Zen 2** | 17h | 30h+ | Ryzen 3000, Threadripper 3000 | ✅ | ✅ | ❌ |
+| **Zen 3 (Cezanne)** | 19h | 10h–1Fh | Ryzen 5000 APU | ❌ | ❌ | ✅ |
+| **Zen 3 (Vermeer)** | 19h | 21h–2Fh | Ryzen 5000 desktop | ❌ | ❌ | ✅ |
+| **Zen 3+ (Rembrandt)** | 19h | 40h–5Fh | Ryzen 6000 Mobile | ❌ | ❌ | ✅ |
+| **Zen 4** | 19h | 60h–7Fh | Ryzen 7000, Threadripper 7000 | ❌ | ❌ | ✅ |
+| **Zen 5** | 1Ah | 40h–4Fh | Ryzen 9000 Granite Ridge | ❌ | ❌ | ✅ |
+
+*Note: Zen 1/2 use direct P-state and PM dispatch controls. Zen 3+ rely on CPPC for power management, with the kext operating in telemetry-only mode.*
 
 ---
 
@@ -140,7 +146,7 @@ Open a new issue at the link below and **attach the report file**:
 
 ### What happens next
 
-1. The CPUID values are added to the [capability matrix](https://github.com/DrogaBox/SMCAMDProcessor-personal/blob/master/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.cpp)
+1. The CPUID values are added to the [CPU profile table](https://github.com/DrogaBox/SMCAMDProcessor-personal/blob/master/AMDRyzenCPUPowerManagement/AMDRyzenCPUPowerManagement.hpp) as a new `ZenCpuFeatureMap` entry
 2. SMU mailbox and SMN registers are mapped (or blocked with logging if unverified)
 3. Temperature offset flags are validated
 4. A test build is provided for verification
