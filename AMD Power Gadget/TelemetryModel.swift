@@ -722,7 +722,8 @@ final class TelemetryModel: ObservableObject {
         // Async init: populate ProcessorModel actor state that needs await
         // speedStepClocks, selectedSpeedStep, pStateRows, and sysInfo are deferred
         // because init() is synchronous but the actor methods require await.
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
             await buildSystemInfo()
             updateRankedPhysicalCores()
             speedStepClocks = await ProcessorModel.shared.getValidPStateClocks()
@@ -1296,7 +1297,8 @@ final class TelemetryModel: ObservableObject {
             initSMC()
         }
 
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
             let snapshot = await captureSnapshot()
 
             // A-12: Use structured concurrency instead of ioQueue.async
@@ -1825,7 +1827,8 @@ final class TelemetryModel: ObservableObject {
             updateKextMappings()
         }
         if pStateEditorDirty {
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
                 _ = await applyPStates()
             }
         }
