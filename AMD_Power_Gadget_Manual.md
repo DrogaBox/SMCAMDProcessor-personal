@@ -2,7 +2,7 @@
     <span class="cover-title">AMD Power Gadget</span>
     <span class="cover-subtitle">User Manual & Comprehensive Feature Guide</span>
     <br><br>
-    <span style="color: var(--accent-cyan);">Version 3.16.x (Tahoe Edition)</span>
+    <span style="color: var(--accent-cyan);">Version 3.31.0 (Tahoe Edition)</span>
 </div>
 
 ## Introduction
@@ -74,6 +74,10 @@ Real-time CPU metrics, charts, and core grid.
 
 ### 3.2 Charts
 Frequency, temperature, power, and network charts with average / max / min metadata. Update interval is configurable in preferences.
+
+**v3.31.0+ — Right-click menu:** Each chart has a native context menu (Size, Hide, Show, Move Position) that no longer flickers on telemetry updates. The Size submenu is disabled for the Core Grid chart (fixed-size layout).
+
+**v3.31.0+ — CPU Profile Badge:** Below the stat cards, a compact badge shows the active CPU profile (e.g. "Telemetry-only — Zen 3 Vermeer") with capability chips (e.g. "CPPC", "PM Dispatch", "Legacy P-States").
 
 ---
 
@@ -176,6 +180,8 @@ Click the AMD Power Gadget icon:
 ## 10. System Info
 
 CPU brand, board/chipset where available, cache topology, driver connection status.
+
+**v3.31.0+ — CPU Profile:** Displays the active CPU profile name (e.g. "Zen 3 Vermeer"), operating mode ("Telemetry-only" vs "Full PM Dispatch"), and supported capabilities (CPPC, Legacy P-States, PM Dispatch). This data comes from the kext's per-family profile table via IOKit selector 26.
 
 ---
 
