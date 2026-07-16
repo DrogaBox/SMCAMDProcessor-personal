@@ -397,6 +397,9 @@ struct DashboardContentView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     StatCardsHeaderRow(model: model, colorScheme: colorScheme)
+                    
+                    // CPU Profile Badge
+                    CPUProfileBadgeView(model: model)
 
                 let verticalItems = verticalOrder.split(separator: ",").map(String.init)
                 ForEach(verticalItems, id: \.self) { itemId in
@@ -460,6 +463,44 @@ struct StatCardsHeaderRow: View {
             StatCard(label: "CPU Power", value: String(format: "%.1fW",    model.cpuWatts),     accent: PanelMetricColor.orange(for: colorScheme), icon: "bolt.fill", history: model.cpuPowerHistory)
             StatCard(label: "GPU Temp",  value: String(format: "%.1f°C",   model.gpuTempC),     accent: PanelMetricColor.green(for: colorScheme),  icon: "cpu.fill", history: model.gpuTempHistory)
             StatCard(label: "GPU Power", value: String(format: "%.1fW",    model.gpuPowerW),    accent: PanelMetricColor.pink(for: colorScheme),   icon: "bolt.square.fill", history: model.gpuPowerHistory)
+        }
+    }
+}
+
+struct CPUProfileBadgeView: View {
+    @ObservedObject var model: TelemetryModel
+    
+    var body: some View {
+        if model.isSystemInfoLoaded && !model.processorCPUProfile.isEmpty {
+            HStack(spacing: 6) {
+                Image(systemName: "cpu")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(.tahoeAccentCyan)
+                
+                Text(model.processorCPUProfile)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.tahoeSubtext)
+                
+                if !model.processorCPUProfileFeatures.isEmpty {
+                    Text(model.processorCPUProfileFeatures)
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.tahoeAccentCyan)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.tahoeAccentCyan.opacity(0.12))
+                        .cornerRadius(3)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.tahoeCard.opacity(0.4))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.tahoeCardBorder, lineWidth: 0.5)
+            )
         }
     }
 }

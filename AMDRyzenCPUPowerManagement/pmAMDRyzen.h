@@ -23,15 +23,12 @@
 #define MOD_NAME pmARyzen
 #define XNU_MAX_CPU 64
 
-#undef PMRYZEN_IDLE_MWAIT
-// PMRYZEN_IDLE_SIMPLE is the default idle strategy
-// Idle strategy is now selected at runtime based on CPU family.
-// See pmRyzen_idle_strategy_t and the extern variable below.
-// The old compile-time #define guards are replaced by a runtime enum.
+// Single idle strategy: sti; hlt — safe on all AMD CPUs.
+// MONITOR/MWAIT (Intel-style) was removed: AMD CPUs do not report
+// CPUID.01h:ECX[3] and the instructions are unsafe on this platform.
+// MONITORX/MWAITX (AMD-style) may be added as a future enhancement.
 typedef enum {
-    PMRYZEN_IDLE_STRATEGY_SIMPLE    = 0,  // sti; hlt — safe for all AMD CPUs
-    PMRYZEN_IDLE_STRATEGY_MWAIT     = 1,  // MONITOR/MWAIT — Zen 4/5, lower idle power
-    PMRYZEN_IDLE_STRATEGY_IO_CSTATE = 2,  // inw $0xf2 — legacy, unused
+    PMRYZEN_IDLE_STRATEGY_SIMPLE = 0,  // sti; hlt — safe for all AMD CPUs
 } pmRyzen_idle_strategy_t;
 
 // Runtime idle strategy — set by AMDRyzenCPUPowerManagement::start() based on cpuFamily.
@@ -98,8 +95,6 @@ void pmRyzen_PState_reset(void);
 float pmRyzen_avgload_pcpu(uint32_t);
 
 uint64_t pmRyzen_machine_idle(uint64_t);
-
-boolean_t pmRyzen_exit_idle(x86_lcpu_t *);
 
 int pmRyzen_choose_cpu(int,int,int);
 

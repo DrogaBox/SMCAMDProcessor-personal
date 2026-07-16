@@ -685,6 +685,48 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             break;
         }
         
+        // Get CPU profile info: architecture name + capability flags.
+        // Structure output: cpuArchName (16 bytes) packed as chars,
+        // followed by capability flags as uint64.
+        // Flags bit layout:
+        //   bit 0: pmDispatchAllowed
+        //   bit 1: legacyPstateAllowed
+        //   bit 2: supportsCPPC
+        //   bits 3-7: reserved
+        case 26: {
+            arguments->scalarOutputCount = 0;
+            
+            uint32_t nameSize = 16;
+            uint32_t flagsSize = sizeof(uint64_t);
+            uint32_t requiredSize = nameSize + flagsSize;
+            uint32_t maxLen = arguments->structureOutputSize;
+            arguments->structureOutputSize = requiredSize;
+            
+            if (!arguments->structureOutput) {
+                return kIOReturnBadArgument;
+            }
+            
+            char *dataOut = (char*) arguments->structureOutput;
+            memset(dataOut, 0, maxLen);
+            
+            // Copy architecture name (first 16 bytes)
+            uint32_t nameCopy = (maxLen < nameSize) ? maxLen : nameSize;
+            if (nameCopy > 0) {
+                strlcpy(dataOut, provider->cpuArchName, nameCopy);
+            }
+            
+            // Pack capability flags into uint64 after the name
+            if (maxLen >= nameSize + flagsSize) {
+                uint64_t flags = 0;
+                if (provider->pmDispatchAllowed)    flags |= (1ULL << 0);
+                if (provider->legacyPstateAllowed)  flags |= (1ULL << 1);
+                if (provider->supportsCPPC)         flags |= (1ULL << 2);
+                memcpy(dataOut + nameSize, &flags, flagsSize);
+            }
+            
+            break;
+        }
+        
         //Try load SMC driver
         case 90: {
             arguments->scalarOutputCount = 0;
