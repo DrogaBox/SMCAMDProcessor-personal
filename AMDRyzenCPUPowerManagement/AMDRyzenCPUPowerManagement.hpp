@@ -317,6 +317,7 @@ public:
         bool supportsCPPCv2;
         bool legacyPstateAllowed;
         bool pmDispatchAllowed;
+        bool temperatureOffset49;  // applies 49 C temperature offset to package temp
     };
 
     // === Family 17h profiles: need full PM dispatch (macOS has no native AMD PM) ===
@@ -325,19 +326,22 @@ public:
     static constexpr ZenCpuFeatureMap ZEN1_PROFILE = {
         0x17, 0x00, 0x0F, "Zen", 1,
         false, false,           // CPPC: no, CPPCv2: no
-        true, true              // legacyPstate: yes, pmDispatch: yes
+        true, true,             // legacyPstate: yes, pmDispatch: yes
+        true                    // temperatureOffset49: hardware bit verified
     };
     // Zen+ (Pinnacle Ridge)
     static constexpr ZenCpuFeatureMap ZEN_PLUS_PROFILE = {
         0x17, 0x10, 0x2F, "Zen+", 1,
         false, false,
-        true, true
+        true, true,
+        true
     };
     // Zen 2 (Matisse, Rome)
     static constexpr ZenCpuFeatureMap ZEN2_PROFILE = {
         0x17, 0x30, 0xFF, "Zen 2", 2,
         false, false,
-        true, true
+        true, true,
+        true
     };
 
     // === Family 19h+ profiles: telemetry-only (macOS AMD Vanilla handles CPPC) ===
@@ -346,37 +350,43 @@ public:
     static constexpr ZenCpuFeatureMap ZEN3_CEZANNE_PROFILE = {
         0x19, 0x10, 0x1F, "Zen 3 Cezanne", 3,
         true, false,            // CPPC: yes, CPPCv2: no
-        false, false            // legacyPstate: no, pmDispatch: no
+        false, false,           // legacyPstate: no, pmDispatch: no
+        true
     };
     // Zen 3 Vermeer (desktop)
     static constexpr ZenCpuFeatureMap ZEN3_VERMEER_PROFILE = {
         0x19, 0x21, 0x2F, "Zen 3 Vermeer", 3,
         true, false,
-        false, false
+        false, false,
+        true
     };
     // Zen 3+ (Rembrandt, Barcelo)
     static constexpr ZenCpuFeatureMap ZEN3_PLUS_PROFILE = {
         0x19, 0x40, 0x5F, "Zen 3+", 3,
         true, false,
-        false, false
+        false, false,
+        true
     };
     // Zen 4 (Raphael, Phoenix)
     static constexpr ZenCpuFeatureMap ZEN4_PROFILE = {
         0x19, 0x60, 0x7F, "Zen 4", 4,
         true, false,
-        false, false
+        false, false,
+        true                    // temperatureOffset49: verified working
     };
     // Zen 5 (Granite Ridge, Strix Point)
     static constexpr ZenCpuFeatureMap ZEN5_PROFILE = {
         0x1A, 0x00, 0xFF, "Zen 5", 5,
         true, false,
-        false, false
+        false, false,
+        false                   // temperatureOffset49: unverified, disabled pending PPR validation
     };
 
     // Feature matrix - controlled per-profile
     bool cppcReadInInit {false};       // Read CPPC CAP1 during workloop init
     bool legacyPstateAllowed {false};  // Legacy P-state writes
     bool pmDispatchAllowed {false};    // Custom PM dispatch takeover
+    bool temperatureOffset49 {false};  // Apply 49C temperature offset (per profile)
 
     // Derived state
     uint32_t zenGeneration = 0;
