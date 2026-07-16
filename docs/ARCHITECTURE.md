@@ -49,7 +49,7 @@ Compare with upstream spinach history in [COMPARISON.md](../COMPARISON.md).
 |------|----------------------|
 | Lifecycle | `start` / `stop` teardown; sleep/wake via `reinitHwState()` |
 | Per-CPU state | Cache-line aligned `pmProcessor_t`; bounds `XNU_MAX_CPU` |
-| Idle strategy | Runtime `pmRyzen_idle_strategy_t` enum (v3.30.0): MWAIT para Zen 4/5, SIMPLE para Zen 3- |
+| Idle strategy | Always `sti;hlt` (SIMPLE) — MWAIT/MONITOR removed in v3.31.0 (never functional on AMD desktop CPUs) |
 | Symbol resolve | `symresolver` + KASLR dual-anchor (v3.30.0): `_mh_execute_header` primary + `&version` fallback |
 | SMU mailbox | `smuCmdLock` + `mfence` barrier between command write and poll (v3.30.0) |
 | Privilege | `disablePrivilegeCheck` from `-amdpnopchk`; `hasPrivilege` cached en `initWithTask` |
@@ -144,7 +144,7 @@ Full matrix: [PRIVILEGE_AND_SECURITY.md](PRIVILEGE_AND_SECURITY.md).
 ## Build products layout
 
 ```text
-Binaries_Release/v3.30.0/
+Binaries_Release/v3.31.0/
   AMD Power Gadget.app
   AMDRyzenCPUPowerManagement.kext
   SMCAMDProcessor.kext
