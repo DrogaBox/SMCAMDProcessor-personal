@@ -45,19 +45,6 @@ struct ResizableChart<Content: View>: View {
             }
             .overlay(NativeContextMenuView(chartId: chartId))
     }
-
-    private var cleanChartName: String {
-        chartId
-            .replacingOccurrences(of: "dash_", with: "")
-            .replacingOccurrences(of: "_size", with: "")
-            .replacingOccurrences(of: "mem", with: "memory")
-            .replacingOccurrences(of: "net", with: "network")
-    }
-
-    private func setHeight(_ h: CGFloat) {
-        currentHeight = h
-        UserDefaults.standard.set(Double(h), forKey: "chart_h_\(chartId)")
-    }
 }
 
 // MARK: - Native NSMenu Right-Click (Replaces SwiftUI .contextMenu)
