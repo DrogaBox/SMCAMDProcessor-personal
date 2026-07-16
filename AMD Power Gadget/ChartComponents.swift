@@ -9,7 +9,13 @@
 import SwiftUI
 import Charts
 
-// MARK: - Resizable Chart Wrapper with Right-Click Menu
+// MARK: - Resizable Chart Wrapper with Native Right-Click Menu
+//
+// Uses NSMenu.popUpContextMenu() directly (AppKit) instead of SwiftUI's .contextMenu().
+// SwiftUI's context menu is attached to the view lifecycle and flickers/dismisses when
+// the chart content re-renders on every telemetry tick (~1s). The native NSMenu runs
+// in AppKit's own menu tracking loop and is completely unaffected by SwiftUI updates.
+//
 struct ResizableChart<Content: View>: View {
     let chartId: String
     let small: CGFloat
@@ -18,7 +24,6 @@ struct ResizableChart<Content: View>: View {
     @ViewBuilder let content: (CGFloat) -> Content
 
     @State private var currentHeight: CGFloat
-    @State private var showMenu = false
 
     init(chartId: String, small: CGFloat = 60, medium: CGFloat = 100, large: CGFloat = 160, @ViewBuilder content: @escaping (CGFloat) -> Content) {
         self.chartId = chartId
@@ -32,13 +37,13 @@ struct ResizableChart<Content: View>: View {
 
     var body: some View {
         content(currentHeight)
-            .contextMenu { ChartContextMenu(chart: cleanChartName) }
             .onReceive(NotificationCenter.default.publisher(for: .init("DashboardLayoutChanged"))) { _ in
                 let saved = UserDefaults.standard.double(forKey: "chart_h_\(chartId)")
                 if saved > 0 {
                     currentHeight = CGFloat(saved)
                 }
             }
+            .overlay(NativeContextMenuView(chartId: chartId))
     }
 
     private var cleanChartName: String {
@@ -55,59 +60,106 @@ struct ResizableChart<Content: View>: View {
     }
 }
 
-// MARK: - Chart Context Menu
-struct ChartContextMenu: View {
-    let chart: String
-    
-    @AppStorage("dash_showFreq") var showFrequency = true
-    @AppStorage("dash_showTemp") var showTemperature = true
-    @AppStorage("dash_showPwr") var showPower = true
-    @AppStorage("dash_showCores") var showCores = true
-    @AppStorage("mb_showNet") var showNetwork = false
-    @AppStorage("mb_showMem") var showMemory = true
-    
-    @AppStorage("dash_chart_order") var chartOrder = "freq,temp,pwr"
-    @AppStorage("dash_vertical_order") var verticalOrder = "charts,memory,network,cores"
+// MARK: - Native NSMenu Right-Click (Replaces SwiftUI .contextMenu)
+//
+// Architecture:
+//   NativeContextMenuView  (NSViewRepresentable) — sits in SwiftUI overlay
+//     └─ MenuHostView      (NSView subclass)
+//          └─ rightMouseDown → MenuCoordinator.buildMenu() → NSMenu.popUpContextMenu()
+//
+// The coordinator stores the chart name and uses @objc selectors for NSMenuItem actions.
+// All chart visibility/order/height state is read/written directly via UserDefaults,
+// avoiding any @AppStorage bindings (which would couple the menu to SwiftUI's lifecycle).
 
-    var body: some View {
-        Menu("Size") {
-            Button("Small") { setChartHeight(for: chart, heightType: "small") }
-            Button("Medium") { setChartHeight(for: chart, heightType: "medium") }
-            Button("Large") { setChartHeight(for: chart, heightType: "large") }
-        }
-        
-        Button("Hide Chart") {
-            setChartVisibility(for: chart, visible: false)
-        }
-        
-        let hasHiddenCharts = !showFrequency || !showTemperature || !showPower || !showMemory || !showNetwork || !showCores
-        if hasHiddenCharts {
-            Menu("Show Chart") {
-                if !showFrequency { Button("Frequency") { showFrequency = true } }
-                if !showTemperature { Button("Temperature") { showTemperature = true } }
-                if !showPower { Button("Power") { showPower = true } }
-                if !showMemory { Button("Memory") { showMemory = true } }
-                if !showNetwork { Button("Network") { showNetwork = true } }
-                if !showCores { Button("Core Grid") { showCores = true } }
-            }
-        }
-        
-        Menu("Move Position") {
-            if ["freq", "temp", "pwr"].contains(chart) {
-                Button("Move Left") { moveChart(chart, direction: -1) }
-                Button("Move Right") { moveChart(chart, direction: 1) }
-            } else {
-                Button("Move Up") { moveChart(chart, direction: -1) }
-                Button("Move Down") { moveChart(chart, direction: 1) }
-            }
-        }
+/// NSViewRepresentable that overlays a right-click → NSMenu handler on any SwiftUI view.
+/// The underlying NSView overrides `rightMouseDown(with:)` to show a context menu built
+/// by `MenuCoordinator.buildMenu()`. Mouse-move and left-click events pass through
+/// because the view does NOT set up an NSTrackingArea (so mouseMoved is not received)
+/// and does NOT override `hitTest`, allowing AppKit to fall through normally.
+struct NativeContextMenuView: NSViewRepresentable {
+    let chartId: String
+
+    func makeCoordinator() -> MenuCoordinator {
+        MenuCoordinator(chartId: chartId)
     }
 
-    private func setChartHeight(for chart: String, heightType: String) {
-        let mappedChart = (chart == "network") ? "net" : chart
-        let key = "chart_h_dash_" + (mappedChart == "memory" ? "mem_size" : mappedChart == "cores" ? "cores_size" : mappedChart)
+    func makeNSView(context: Context) -> NSView {
+        let view = MenuHostView()
+        view.coordinator = context.coordinator
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? MenuHostView)?.coordinator = context.coordinator
+    }
+}
+
+/// Minimal NSView that intercepts right-clicks and shows an NSMenu.
+/// Does NOT override hitTest — relies on default NSView.hitTest (returns self when point
+/// is in bounds and the layer is valid). mouseMoved events are NOT received because
+/// no NSTrackingArea is set up, so the chart's hover tracking (in its own overlay)
+/// continues to work undisturbed.
+class MenuHostView: NSView {
+    weak var coordinator: MenuCoordinator?
+
+    override func rightMouseDown(with event: NSEvent) {
+        guard let coordinator = coordinator else {
+            super.rightMouseDown(with: event)
+            return
+        }
+        let menu = coordinator.buildMenu()
+        NSMenu.popUpContextMenu(menu, with: event, for: self)
+    }
+}
+
+/// Coordinator that builds an NSMenu with Size / Hide / Show / Move items,
+/// matching the old ChartContextMenu's behavior. All UserDefaults keys match
+/// the @AppStorage keys used elsewhere in the app.
+class MenuCoordinator: NSObject {
+    let chartId: String
+
+    /// Normalized chart name (e.g. "freq", "temp", "pwr", "memory", "network", "cores")
+    private var chartName: String {
+        var name = chartId
+            .replacingOccurrences(of: "dash_", with: "")
+            .replacingOccurrences(of: "_size", with: "")
+        if name == "mem" { name = "memory" }
+        if name == "net" { name = "network" }
+        return name
+    }
+
+    init(chartId: String) {
+        self.chartId = chartId
+    }
+
+    // MARK: - Menu Actions
+
+    @objc func sizeSmall()  { setHeight("small") }
+    @objc func sizeMedium() { setHeight("medium") }
+    @objc func sizeLarge()  { setHeight("large") }
+
+    @objc func hideChart() { setVisibility(visible: false) }
+
+    @objc func showFreq()  { UserDefaults.standard.set(true, forKey: "dash_showFreq") }
+    @objc func showTemp()  { UserDefaults.standard.set(true, forKey: "dash_showTemp") }
+    @objc func showPwr()   { UserDefaults.standard.set(true, forKey: "dash_showPwr") }
+    @objc func showMem()   { UserDefaults.standard.set(true, forKey: "mb_showMem") }
+    @objc func showNet()   { UserDefaults.standard.set(true, forKey: "mb_showNet") }
+    @objc func showCores() { UserDefaults.standard.set(true, forKey: "dash_showCores") }
+
+    @objc func moveLeft()  { moveChart(direction: -1) }
+    @objc func moveRight() { moveChart(direction: 1) }
+    @objc func moveUp()    { moveChart(direction: -1) }
+    @objc func moveDown()  { moveChart(direction: 1) }
+
+    // MARK: - Height
+
+    private func setHeight(_ heightType: String) {
+        // ⚠️  The key MUST match exactly what ResizableChart.init() reads:
+        //       UserDefaults.standard.double(forKey: "chart_h_\(chartId)")
+        let key = "chart_h_" + chartId
         let actualHeight: CGFloat
-        switch chart {
+        switch chartName {
         case "memory":
             actualHeight = (heightType == "small") ? 130 : (heightType == "medium") ? 160 : 220
         case "cores":
@@ -116,31 +168,40 @@ struct ChartContextMenu: View {
             actualHeight = (heightType == "small") ? 70 : (heightType == "medium") ? 100 : 150
         }
         UserDefaults.standard.set(Double(actualHeight), forKey: key)
-        NotificationCenter.default.post(name: .init("DashboardLayoutChanged"), object: nil)
+        NotificationCenter.default.post(name: NSNotification.Name("DashboardLayoutChanged"), object: nil)
     }
 
-    private func setChartVisibility(for chart: String, visible: Bool) {
-        switch chart {
-        case "freq": showFrequency = visible
-        case "temp": showTemperature = visible
-        case "pwr": showPower = visible
-        case "memory": showMemory = visible
-        case "network": showNetwork = visible
-        case "cores": showCores = visible
-        default: break
+    // MARK: - Visibility
+
+    private func setVisibility(visible: Bool) {
+        let key: String = {
+            switch chartName {
+            case "freq":    return "dash_showFreq"
+            case "temp":    return "dash_showTemp"
+            case "pwr":     return "dash_showPwr"
+            case "memory":  return "mb_showMem"
+            case "network": return "mb_showNet"
+            case "cores":   return "dash_showCores"
+            default:         return ""
+            }
+        }()
+        if !key.isEmpty {
+            UserDefaults.standard.set(visible, forKey: key)
         }
     }
 
-    private func moveChart(_ chart: String, direction: Int) {
-        let normalizedId = chart.replacingOccurrences(of: "dash_", with: "")
-        
+    // MARK: - Reorder
+
+    private func moveChart(direction: Int) {
+        let normalizedId = chartName
         if ["freq", "temp", "pwr"].contains(normalizedId) {
-            var arr = chartOrder.split(separator: ",").map(String.init)
+            var arr = (UserDefaults.standard.string(forKey: "dash_chart_order") ?? "freq,temp,pwr")
+                .split(separator: ",").map(String.init)
             if let idx = arr.firstIndex(of: normalizedId) {
                 let newIdx = idx + direction
-                if newIdx >= 0 && newIdx < arr.count {
+                if newIdx >= 0, newIdx < arr.count {
                     arr.swapAt(idx, newIdx)
-                    chartOrder = arr.joined(separator: ",")
+                    UserDefaults.standard.set(arr.joined(separator: ","), forKey: "dash_chart_order")
                 }
             }
         } else {
@@ -150,18 +211,85 @@ struct ChartContextMenu: View {
                 if normalizedId.contains("cores") { return "cores" }
                 return nil
             }()
-            
             if let targetId = verticalId {
-                var arr = verticalOrder.split(separator: ",").map(String.init)
+                var arr = (UserDefaults.standard.string(forKey: "dash_vertical_order") ?? "charts,memory,network,cores")
+                    .split(separator: ",").map(String.init)
                 if let idx = arr.firstIndex(of: targetId) {
                     let newIdx = idx + direction
-                    if newIdx >= 0 && newIdx < arr.count {
+                    if newIdx >= 0, newIdx < arr.count {
                         arr.swapAt(idx, newIdx)
-                        verticalOrder = arr.joined(separator: ",")
+                        UserDefaults.standard.set(arr.joined(separator: ","), forKey: "dash_vertical_order")
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Build Menu
+
+    /// Builds a complete NSMenu with Size / Hide / Show / Move items.
+    /// Called lazily from rightMouseDown — reads current UserDefaults values.
+    func buildMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        // ── Size submenu (disabled for Core Grid — fixed size) ──
+        let sizeMenu = NSMenu()
+        sizeMenu.addItem(withTitle: "Small",  action: #selector(sizeSmall),  keyEquivalent: "")
+        sizeMenu.addItem(withTitle: "Medium", action: #selector(sizeMedium), keyEquivalent: "")
+        sizeMenu.addItem(withTitle: "Large",  action: #selector(sizeLarge),  keyEquivalent: "")
+        let sizeItem = NSMenuItem(title: "Size", action: nil, keyEquivalent: "")
+        sizeItem.submenu = sizeMenu
+        sizeItem.isEnabled = (chartName != "cores")
+        menu.addItem(sizeItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // ── Hide ──
+        menu.addItem(withTitle: "Hide Chart", action: #selector(hideChart), keyEquivalent: "")
+
+        // ── Show submenu (only if some charts are hidden) ──
+        let showMenu = NSMenu()
+        if !UserDefaults.standard.bool(forKey: "dash_showFreq") { showMenu.addItem(withTitle: "Frequency",  action: #selector(showFreq),  keyEquivalent: "") }
+        if !UserDefaults.standard.bool(forKey: "dash_showTemp") { showMenu.addItem(withTitle: "Temperature", action: #selector(showTemp),  keyEquivalent: "") }
+        if !UserDefaults.standard.bool(forKey: "dash_showPwr")  { showMenu.addItem(withTitle: "Power",       action: #selector(showPwr),   keyEquivalent: "") }
+        if !UserDefaults.standard.bool(forKey: "mb_showMem")    { showMenu.addItem(withTitle: "Memory",      action: #selector(showMem),   keyEquivalent: "") }
+        if !UserDefaults.standard.bool(forKey: "mb_showNet")    { showMenu.addItem(withTitle: "Network",     action: #selector(showNet),   keyEquivalent: "") }
+        if !UserDefaults.standard.bool(forKey: "dash_showCores"){ showMenu.addItem(withTitle: "Core Grid",   action: #selector(showCores), keyEquivalent: "") }
+        if showMenu.items.count > 0 {
+            let showItem = NSMenuItem(title: "Show Chart", action: nil, keyEquivalent: "")
+            showItem.submenu = showMenu
+            menu.addItem(showItem)
+        }
+
+        menu.addItem(NSMenuItem.separator())
+
+        // ── Move submenu ──
+        let moveMenu = NSMenu()
+        if ["freq", "temp", "pwr"].contains(chartName) {
+            moveMenu.addItem(withTitle: "Move Left",  action: #selector(moveLeft),  keyEquivalent: "")
+            moveMenu.addItem(withTitle: "Move Right", action: #selector(moveRight), keyEquivalent: "")
+        } else {
+            moveMenu.addItem(withTitle: "Move Up",   action: #selector(moveUp),   keyEquivalent: "")
+            moveMenu.addItem(withTitle: "Move Down", action: #selector(moveDown), keyEquivalent: "")
+        }
+        let moveItem = NSMenuItem(title: "Move Position", action: nil, keyEquivalent: "")
+        moveItem.submenu = moveMenu
+        menu.addItem(moveItem)
+
+        // Set target on all items recursively
+        func setTarget(_ m: NSMenu) {
+            for item in m.items {
+                if item.hasSubmenu {
+                    if let sub = item.submenu { setTarget(sub) }
+                } else {
+                    item.target = self
+                }
+            }
+        }
+        setTarget(menu)
+
+        return menu
     }
 }
 
