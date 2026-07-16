@@ -4,10 +4,8 @@
 
 ### Added
 - temperatureOffset49 flag to ZenCpuFeatureMap for per-profile temperature control
-- System Info view expanded with CPPC core rankings
 
 ### Changed
-- Chart height values centralized in ResizableChart
 - Removed dead code from ResizableChart (cleanChartName, setHeight)
 
 ---
