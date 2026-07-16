@@ -34,7 +34,8 @@ class SMCAMDProcessor : public IOService {
     };
     
     /**
-     *  Key name index mapping
+     *  Key name index mapping — 36 positions (0-9, A-Z).
+     *  Used to generate SMC key names like TC0C, TC1C, ..., TCCC, TCDC, etc.
      */
     static constexpr size_t MaxIndexCount = sizeof("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ") - 1;
     static constexpr const char *KeyIndexes = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -42,6 +43,27 @@ class SMCAMDProcessor : public IOService {
     
     /**
      *  Supported SMC keys
+     *
+     *  Key naming convention (VirtualSMC standard):
+     *  - TCxx = temperature
+     *  - PCxx = power
+     *  - PSxx = power state
+     *
+     *  Suffix: C=core, D=die, E=CPU(cpu), F=CPU(fast), G=GPU, H=heatsink,
+     *  J=component, P=package, T=thermal zone, p=package(alt), R=reading
+     *
+     *  Active keys (registered in setupKeysVsmc):
+     *  - TC0x: package temperature (SP78)
+     *  - PCPR/PSTR: package power (SP96)
+     *  - TCxC/TCxc: per-CCD temperature (SP78), index = CCD number
+     *
+     *  Legacy/unused keys (kept for reference, not registered):
+     *  - PC0C/PC0G/PC0R: per-core power (not available on all AMD families)
+     *  - PC3C/PCAC/PCEC: additional C-state counters
+     *  - PCAM/PCGC/PCGM: GPU power metrics (handled by SMCRadeonSensors)
+     *  - PCPC/PCPG: package C-state residency
+     *  - PCPT/PCTR: package thermal throttle counters
+     *  - TCxD/TCxG/TCxH: additional thermal zones (not exposed by SMU)
      */
     static constexpr SMC_KEY KeyPC0C = SMC_MAKE_IDENTIFIER('P','C','0','C');
     static constexpr SMC_KEY KeyPC0G = SMC_MAKE_IDENTIFIER('P','C','0','G');
