@@ -72,9 +72,19 @@ actor ProcessorModel {
             }
         }
         self.connect = conn
-        
+
+        // Deferred actor-isolated initialization: the IOKit connection is established
+        // synchronously, but all further setup (version check, CPUID, board info,
+        // metrics, P-state defs) happens asynchronously via finishInit().
+        // This avoids Swift 6 warnings about calling actor-isolated methods from
+        // a nonisolated init() context.
+        Task { await self._finishInit() }
+    }
+
+    private func _finishInit() async {
         if connect == 0 {
             alertAndQuit(message: NSLocalizedString("Please download AMDRyzenCPUPowerManagement from the release page.", comment: ""))
+            return
         }
 
         var scalerOut: UInt64 = 0
@@ -92,7 +102,6 @@ actor ProcessorModel {
 
         var isCompatible = compatVers.contains(AMDRyzenCPUPowerManagementVersion)
         if !isCompatible {
-            // Dynamically allow any version >= 3.0.0 for compatibility with 2026 standards
             if AMDRyzenCPUPowerManagementVersion.compare("3.0.0", options: .numeric) != .orderedAscending {
                 isCompatible = true
             }
@@ -101,6 +110,7 @@ actor ProcessorModel {
         if !isCompatible {
             let fmt = NSLocalizedString("Your AMDRyzenCPUPowerManagement version (%@) is outdated and no longer API compatible. Please use version 3.0.0 or newer and start this application again.", comment: "")
             alertAndQuit(message: String(format: fmt, AMDRyzenCPUPowerManagementVersion))
+            return
         }
 
         loadCPUID()
@@ -110,19 +120,18 @@ actor ProcessorModel {
         loadPStateDef()
         loadPStateDefClock()
 
-
-        if numberOfCores < 1{
-            let alert = NSAlert()
-            alert.messageText = NSLocalizedString("Error reading CPU data.", comment: "")
-            alert.informativeText = NSLocalizedString("This application can not be launched due to AMDRyzenCPUPowerManagement is reporting incorrect data.", comment: "")
-            alert.alertStyle = .critical
-            alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
-            NSApp.activate(ignoringOtherApps: true)
-            alert.runModal()
-            NSApplication.shared.terminate(self)
+        if numberOfCores < 1 {
+            await MainActor.run {
+                let alert = NSAlert()
+                alert.messageText = NSLocalizedString("Error reading CPU data.", comment: "")
+                alert.informativeText = NSLocalizedString("This application can not be launched due to AMDRyzenCPUPowerManagement is reporting incorrect data.", comment: "")
+                alert.alertStyle = .critical
+                alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+                NSApplication.shared.terminate(nil)
+            }
         }
-
-//        fetchSupportedProcessor()
     }
 
     nonisolated func closeDriver() {
@@ -130,37 +139,41 @@ actor ProcessorModel {
     }
 
     func alertAndQuit(message : String){
-        let alert = NSAlert()
-        alert.messageText = NSLocalizedString("No AMDRyzenCPUPowerManagement Found!", comment: "")
-        alert.informativeText = message
-        alert.alertStyle = .critical
-        alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
-        alert.addButton(withTitle: NSLocalizedString("Quit and Download", comment: ""))
-        NSApp.activate(ignoringOtherApps: true)
-        let res = alert.runModal()
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = NSLocalizedString("No AMDRyzenCPUPowerManagement Found!", comment: "")
+            alert.informativeText = message
+            alert.alertStyle = .critical
+            alert.addButton(withTitle: NSLocalizedString("Quit", comment: ""))
+            alert.addButton(withTitle: NSLocalizedString("Quit and Download", comment: ""))
+            NSApp.activate(ignoringOtherApps: true)
+            let res = alert.runModal()
 
-        if res == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
-                NSWorkspace.shared.open(url)
+            if res == .alertSecondButtonReturn {
+                if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+                    NSWorkspace.shared.open(url)
+                }
             }
-        }
 
-        NSApplication.shared.terminate(self)
+            NSApplication.shared.terminate(nil)
+        }
     }
 
     func alertDontQuit(message : String){
-        let alert = NSAlert()
-        alert.messageText = NSLocalizedString("Kext Update Available", comment: "")
-        alert.informativeText = message
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: NSLocalizedString("Later", comment: ""))
-        alert.addButton(withTitle: NSLocalizedString("Download", comment: ""))
-        NSApp.activate(ignoringOtherApps: true)
-        let res = alert.runModal()
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = NSLocalizedString("Kext Update Available", comment: "")
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: NSLocalizedString("Later", comment: ""))
+            alert.addButton(withTitle: NSLocalizedString("Download", comment: ""))
+            NSApp.activate(ignoringOtherApps: true)
+            let res = alert.runModal()
 
-        if res == .alertSecondButtonReturn {
-            if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
-                NSWorkspace.shared.open(url)
+            if res == .alertSecondButtonReturn {
+                if let url = URL(string: "https://github.com/DrogaBox/SMCAMDProcessor-personal") {
+                    NSWorkspace.shared.open(url)
+                }
             }
         }
     }

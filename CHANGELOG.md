@@ -1,5 +1,17 @@
 # Change Summary & Release Changelog
 
+## v3.30.0 Kext Idle Strategy, KASLR Anchor, SMU Barrier & Weak Self Fix
+
+### Kext (AMDRyzenCPUPowerManagement)
+* **Runtime Idle Strategy (A-03)**: Replaced compile-time `#ifdef` idle strategy (`PMRYZEN_IDLE_SIMPLE`/`MWAIT`) with runtime selection via `pmRyzen_idle_strategy` global + `switch`. Zen 4/5 (Family 19h ≥60h, Family 1Ah) automatically use `MONITOR/MWAIT` for lower idle power draw; Zen 3- continue with safe `sti;hlt`. No more `#error` guards or rebuilds needed when CPU family changes.
+* **KASLR Slide Dual-Anchor (A-04)**: Added `_mh_execute_header` as the primary KASLR slide anchor (stable Mach-O header symbol), with `&version` as fallback. Both validated against canonical kernel range `>= 0xFFFFFF8000000000`. The old single-anchor approach relied only on `&version` which could be removed from the kernel export set.
+* **SMU Mailbox Memory Barrier (A-05)**: Inserted `__asm__ volatile("mfence" ::: "memory")` between `smnWrite32(msgReg, cmd)` and the response poll loop in `smuSendCmd`. Prevents write-combining buffers on the SMN bus from delaying command delivery, which could cause spurious timeouts in the poll path.
+
+### App (AMD Power Gadget)
+* **Weak Self in Task Closures (A-06)**: Added `[weak self]` + `guard let self` to all 3 remaining `Task { @MainActor }` closures in `TelemetryModel.swift` (`init()`, `sample()`, `commitPendingChanges()`). Prevents the tasks from prolonging the TelemetryModel singleton lifetime when they outlive the object.
+
+---
+
 ## v3.29.0 Code Quality & Formatting Refactor
 
 ### App (AMD Power Gadget)
