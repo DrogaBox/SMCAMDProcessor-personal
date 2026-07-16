@@ -1420,7 +1420,7 @@ final class TelemetryModel: ObservableObject {
 
         let point = TelemetryPoint(
             id: historyCounter,
-            time: relTime,
+            time: Date.timeIntervalSinceReferenceDate,
             cpuFreqGHz: cpuFreqAvgGHz,
             cpuFreqMaxGHz: cpuFreqMaxGHz,
             instRetired: instSum,  // per-sample delta for chart

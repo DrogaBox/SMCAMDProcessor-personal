@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Charts
 
 // MARK: - Resizable Chart Wrapper with Right-Click Menu
 struct ResizableChart<Content: View>: View {
@@ -438,5 +439,244 @@ struct CompactLineChartCard: View {
         .background(Color.tahoeCard)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.3), lineWidth: 1))
         .cornerRadius(10)
+    }
+}
+
+// MARK: - Interactive Chart Components (v3.31.0)
+
+/// Shared interaction state for Swift Charts-based charts.
+/// Tracks hovered index for tooltip display and zoom state for range selection.
+class ChartInteractionState: ObservableObject {
+    @Published var hoveredIndex: Int? = nil
+    @Published var hoveredLocation: CGPoint? = nil
+    @Published var isPaused: Bool = false
+    @Published var pausedSnapshot: [TelemetryPoint] = []
+    @Published var zoomRange: ClosedRange<Int>? = nil
+    
+    var fullRange: ClosedRange<Int> {
+        0...(max(0, dataCount - 1))
+    }
+    var dataCount: Int = 0
+    
+    var visibleRange: ClosedRange<Int> {
+        zoomRange ?? fullRange
+    }
+    
+    func resetZoom() {
+        zoomRange = nil
+        hoveredIndex = nil
+    }
+    
+    func togglePause(currentData: [TelemetryPoint]) {
+        isPaused.toggle()
+        if isPaused {
+            pausedSnapshot = currentData
+        } else {
+            pausedSnapshot = []
+        }
+    }
+}
+
+/// Floating tooltip overlay for chart hover interaction.
+struct ChartTooltipView: View {
+    let accent: Color
+    let line1Label: LocalizedStringKey
+    let line1Value: String
+    let line2Label: LocalizedStringKey?
+    let line2Value: String?
+    let timestamp: Date
+    
+    /// Formatter with seconds so the user can see the index change when moving across data points.
+    private static let timeWithSeconds: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss"
+        return f
+    }()
+    
+    init(accent: Color,
+         line1Label: LocalizedStringKey, line1Value: String,
+         line2Label: LocalizedStringKey? = nil, line2Value: String? = nil,
+         timestamp: Date? = nil) {
+        self.accent = accent
+        self.line1Label = line1Label
+        self.line1Value = line1Value
+        self.line2Label = line2Label
+        self.line2Value = line2Value
+        self.timestamp = timestamp ?? Date()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            // Line 1
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(accent)
+                    .frame(width: 5, height: 5)
+                Text(line1Label)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(.tahoeSubtext)
+                Text(line1Value)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(accent)
+            }
+            
+            // Line 2 (optional, for dual-metric charts like Freq: avg+max)
+            if let l2 = line2Label, let v2 = line2Value {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(accent.opacity(0.5))
+                        .frame(width: 5, height: 5)
+                    Text(l2)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.tahoeSubtext)
+                    Text(v2)
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(accent.opacity(0.8))
+                }
+            }
+            
+            // Timestamp with seconds (HH:mm:ss) so hover position change is visible
+            Text("\(timestamp, formatter: Self.timeWithSeconds)")
+                .font(.system(size: 8, design: .monospaced))
+                .foregroundColor(.tahoeSubtext.opacity(0.7))
+        }
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(.ultraThinMaterial)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.tahoeCardBorder, lineWidth: 0.5))
+        )
+        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+        .transition(.opacity.animation(.easeInOut(duration: 0.12)))
+    }
+}
+
+/// NSView subclass with NSTrackingArea for fine-grained mouse tracking.
+///
+/// Behavior:
+/// - On mouse movement: hides tooltip immediately, stores location, starts 0.3s debounce
+/// - After 0.3s idle: shows tooltip at the stopped position
+/// - On mouse exit: hides tooltip immediately (no delay — avoids interfering with context menus)
+class TrackingNSView: NSView {
+    var onMove: ((CGPoint) -> Void)?
+    var onExit: (() -> Void)?
+    private let debounceSeconds: TimeInterval = 0.3
+    private var pendingLocation: CGPoint? = nil
+    
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach { removeTrackingArea($0) }
+        let options: NSTrackingArea.Options = [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect]
+        let area = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(area)
+    }
+    
+    override func mouseMoved(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        pendingLocation = location
+        // Hide tooltip immediately on movement, cancel pending debounce
+        onExit?()
+        NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(handleHover), object: nil)
+        perform(#selector(handleHover), with: nil, afterDelay: debounceSeconds)
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        // Hide tooltip immediately (no delay) — user left the chart area
+        onExit?()
+        NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(handleHover), object: nil)
+        pendingLocation = nil
+    }
+    
+    @objc private func handleHover() {
+        guard let location = pendingLocation else { return }
+        onMove?(location)
+    }
+}
+
+/// NSViewRepresentable that wraps TrackingNSView for use inside chartOverlay.
+/// Uses ChartProxy.value(atX:as:) for pixel-to-data-value conversion,
+/// which is more reliable than manual linear interpolation.
+struct ChartMouseTrackingView: NSViewRepresentable {
+    let interaction: ChartInteractionState
+    /// Closure created inside chartOverlay — captures fresh ChartProxy and chartWidth.
+    /// Converts pixel X position → data index.
+    let indexForX: (CGFloat) -> Int
+    
+    func makeNSView(context: Context) -> TrackingNSView {
+        let view = TrackingNSView()
+        view.onExit = { [weak interaction] in
+            guard let interaction = interaction else { return }
+            if interaction.hoveredIndex != nil {
+                interaction.hoveredIndex = nil
+                interaction.hoveredLocation = nil
+            }
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: TrackingNSView, context: Context) {
+        // Re-create onMove on every update so it captures the LATEST indexForX closure
+        // (which in turn captures a fresh ChartProxy from the chartOverlay).
+        // Without this, the proxy captured at makeNSView time would be stale after
+        // chart re-renders (new telemetry data arrives every second).
+        let freshIndexForX = indexForX
+        nsView.onMove = { [weak interaction] location in
+            guard let interaction = interaction else { return }
+            guard interaction.dataCount > 1 else { return }
+            let clamped = freshIndexForX(location.x)
+            // -1 means layout not ready — don't update tooltip, leave previous state
+            guard clamped >= 0 else { return }
+            interaction.hoveredIndex = clamped
+            interaction.hoveredLocation = location
+        }
+    }
+}
+
+/// Modifier that attaches an NSTrackingArea-based hover overlay to a Swift Charts chart.
+struct ChartHoverModifier: ViewModifier {
+    @ObservedObject var interaction: ChartInteractionState
+    
+    init(interaction: ChartInteractionState, dataCount: Int) {
+        self.interaction = interaction
+        // CRITICAL: set dataCount so visibleRange computes correctly.
+        // Without this, dataCount = 0 → fullRange = 0...0 → chartXScale(0...0) = vertical line.
+        interaction.dataCount = dataCount
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    ChartMouseTrackingView(
+                        interaction: interaction,
+                        indexForX: { x in
+                            // CRITICAL: guard against 0 chartWidth when layout is not ready.
+                            // Without this, max(1.0, 0) = 1.0 → ratio = x/1.0 for any x > 1,
+                            // making the fallback always clamp to the last index.
+                            // Charts not yet laid out (scrolled into view) can report 0 width.
+                            guard geo.size.width > 1 else { return -1 }
+                            if let value = proxy.value(atX: x, as: Double.self) {
+                                let idx = Int(value.rounded())
+                                return min(max(idx, 0), interaction.dataCount - 1)
+                            }
+                            // Fallback: linear interpolation if proxy fails
+                            let ratio = x / geo.size.width
+                            let idx = ratio * Double(interaction.dataCount - 1)
+                            return min(max(Int(idx.rounded()), 0), interaction.dataCount - 1)
+                        }
+                    )
+                }
+            }
+    }
+}
+
+extension View {
+    /// Attach hover/touch interaction to a Swift Charts chart.
+    /// Uses NSTrackingArea for mouse-move detection (no click required).
+    /// - Parameters:
+    ///   - interaction: The shared ChartInteractionState
+    ///   - dataCount: Total number of data points
+    func chartHover(interaction: ChartInteractionState, dataCount: Int) -> some View {
+        self.modifier(ChartHoverModifier(interaction: interaction, dataCount: dataCount))
     }
 }
