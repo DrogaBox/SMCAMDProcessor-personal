@@ -239,6 +239,44 @@ Running CPU management software without these fixes is like driving a car withou
 
 ---
 
+## What We Removed and Why (v3.31.0)
+
+Every cleanup in this release has the same punchline: **it was Intel code living in an AMD driver.** Like finding a single chopstick in your silverware drawer — it looked like it belonged, but nobody was ever going to use it.
+
+Here is what got the axe and why:
+
+### MWAIT idle strategy (`PMRYZEN_IDLE_STRATEGY_MWAIT`)
+
+**Removed because:** MWAIT/MONITOR is an Intel technology. AMD CPUs support the instruction at the CPUID level for compatibility reasons, but it does **not** actually put the core into a low-power C-state on AMD silicon — it is a no-op that wastes power. The only idle strategy that works on real AMD hardware is `sti; hlt` (SIMPLE). The MWAIT code path was cargo-culted from Intel power management drivers and never served any purpose on Zen.
+
+**The AMD experience:** Having MWAIT in an AMD driver is like installing a cupholder on a motorcycle — technically possible, but you are going to have a bad time.
+
+*(Note for the pedantic: yes, some AMD EPYC server chips support MWAIT extensions. This is a desktop/laptop driver. No, your Ryzen 9 is not an EPYC. We checked.)*
+
+### IO_CSTATE idle path (`pmRyzen_exit_idle()`)
+
+**Removed because:** This was a legacy code path that had been dead since Zen 2. It relied on an I/O port C-state exit sequence that was never correctly implemented for AMD hardware. The function existed, compiled, and did nothing — like a meeting that should have been an email.
+
+### `cppcReadAllowed` / `cppcWriteAllowed` member variables
+
+**Removed because:** Every single CPU profile (Zen 1 through Zen 5) set both to `false`. They were vestigial struct members that had not been true since before Zen 3 Vermeer was a supported CPU. Keeping them around was like carrying a spare key for a car you sold three years ago.
+
+### `telemetryAllowed` → renamed to `cppcReadInInit`
+
+**Removed because (the name):** This variable controlled whether the driver attempted to read CPPC capability registers during `reinitHwState()`. It had nothing to do with telemetry — telemetry always works. The old name was like calling your refrigerator "the warm closet" because technically it is not freezing outside.
+
+### Redundant `cpuArchName` initial block
+
+**Removed because:** The code set `cpuArchName` twice in `start()` — once in an if/else ladder by family/model, and then again from the active CPU profile. The profile always overwrote the first assignment, making the initial block dead code. It was a setup where the first vote gets counted, and then immediately thrown out.
+
+### CPUID MWait leaf logging
+
+**Removed because:** We removed MWAIT support. Logging the MWAIT CPUID leaf after that is like checking the temperature of a stove you already unplugged — technically informative, practically pointless.
+
+### Bottom line
+
+A clean codebase is a happy codebase. Every line you remove is a line that cannot have a bug, cannot confuse a future maintainer, and cannot accidentally do something stupid at 3 AM on a production machine. Also, Intel features in AMD code look weird, like a bagpipe solo at a mariachi wedding.
+
 ## Safety Disclaimer & Liability
 
 > [!CAUTION]
