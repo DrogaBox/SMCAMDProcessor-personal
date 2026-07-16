@@ -302,6 +302,11 @@ public:
 #pragma pack(pop)
 
     // CPU capability profile per family/model
+    // Each profile defines what features should be enabled for a given CPU.
+    // - pmDispatchAllowed + legacyPstateAllowed = true on Zen 1/2 where
+    //   macOS lacks native AMD power management.
+    // - pmDispatchAllowed + legacyPstateAllowed = false on Zen 3+ where
+    //   macOS AMD Vanilla handles CPPC natively — kext is telemetry-only.
     struct ZenCpuFeatureMap {
         uint32_t family;
         uint32_t modelStart;
@@ -309,16 +314,62 @@ public:
         const char *generationName;
         bool supportsCPPC;
         bool supportsCPPCv2;
-        bool supportsMwait;
-        bool legacyPstateAllowed;  // Legacy P-state manipulation (dangerous on Zen 3)
-        bool pmDispatchAllowed;     // Custom PM dispatch takeover
+        bool legacyPstateAllowed;
+        bool pmDispatchAllowed;
     };
 
-    // Vermeer/Zen 3 baseline: telemetry-only by default, no legacy P-state/PM dispatch
-    static constexpr ZenCpuFeatureMap VERMEER_ZEN3_PROFILE = {
-        0x19, 0x21, 0x2F, "Zen 3 Vermeer",  // Family 19h, Model 21h-2Fh
-        true, false, false,                  // CPPC: yes, CPPCv2: no, MWAIT: no
-        false, false                         // legacyPstate: no, pmDispatch: no
+    // === Family 17h profiles: need full PM dispatch (macOS has no native AMD PM) ===
+
+    // Zen 1 (Summit Ridge, Whitehaven)
+    static constexpr ZenCpuFeatureMap ZEN1_PROFILE = {
+        0x17, 0x00, 0x0F, "Zen",
+        false, false,           // CPPC: no, CPPCv2: no
+        true, true              // legacyPstate: yes, pmDispatch: yes
+    };
+    // Zen+ (Pinnacle Ridge)
+    static constexpr ZenCpuFeatureMap ZEN_PLUS_PROFILE = {
+        0x17, 0x10, 0x2F, "Zen+",
+        false, false,
+        true, true
+    };
+    // Zen 2 (Matisse, Rome)
+    static constexpr ZenCpuFeatureMap ZEN2_PROFILE = {
+        0x17, 0x30, 0xFF, "Zen 2",
+        false, false,
+        true, true
+    };
+
+    // === Family 19h+ profiles: telemetry-only (macOS AMD Vanilla handles CPPC) ===
+
+    // Zen 3 Cezanne (mobile)
+    static constexpr ZenCpuFeatureMap ZEN3_CEZANNE_PROFILE = {
+        0x19, 0x10, 0x1F, "Zen 3 Cezanne",
+        true, false,            // CPPC: yes, CPPCv2: no
+        false, false            // legacyPstate: no, pmDispatch: no
+    };
+    // Zen 3 Vermeer (desktop)
+    static constexpr ZenCpuFeatureMap ZEN3_VERMEER_PROFILE = {
+        0x19, 0x21, 0x2F, "Zen 3 Vermeer",
+        true, false,
+        false, false
+    };
+    // Zen 3+ (Rembrandt, Barcelo)
+    static constexpr ZenCpuFeatureMap ZEN3_PLUS_PROFILE = {
+        0x19, 0x40, 0x5F, "Zen 3+",
+        true, false,
+        false, false
+    };
+    // Zen 4 (Raphael, Phoenix)
+    static constexpr ZenCpuFeatureMap ZEN4_PROFILE = {
+        0x19, 0x60, 0x7F, "Zen 4",
+        true, false,
+        false, false
+    };
+    // Zen 5 (Granite Ridge, Strix Point)
+    static constexpr ZenCpuFeatureMap ZEN5_PROFILE = {
+        0x1A, 0x00, 0xFF, "Zen 5",
+        true, false,
+        false, false
     };
 
     // Feature matrix - controlled per-profile
@@ -332,7 +383,6 @@ public:
     uint32_t zenGeneration = 3;
     bool supportsCPPC = false;
     bool supportsCPPCv2 = false;
-    bool supportsMwait = false;
 
     bool disablePrivilegeCheck = false;
     uint16_t savedSMCChipIntel = 0;

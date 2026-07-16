@@ -74,6 +74,12 @@ struct SystemInfoContentView: View {
                     InfoRow(label: "Kext Version",    value: model.sysInfo.kextVersion)
                     Divider().background(Color.tahoeCardBorder)
                     InfoRow(label: "CPU Supported",   value: model.sysInfo.kextSupported ? "Yes" : "Not yet")
+                    Divider().background(Color.tahoeCardBorder)
+                    InfoRow(label: "CPU Profile",     value: model.processorCPUProfile)
+                    if !model.processorCPUProfileFeatures.isEmpty {
+                        Divider().background(Color.tahoeCardBorder)
+                        InfoRow(label: "Capabilities",   value: model.processorCPUProfileFeatures)
+                    }
                 }
             }
             .padding(18)

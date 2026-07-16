@@ -49,8 +49,79 @@ actor ProcessorModel {
         return cpuidBasic.count > 0 ? Int(cpuidBasic[0]) : 0
     }
     
+    // CPU profile: architecture name and capability flags from the kext.
+    // Populated by loadCPUProfile().
+    struct CPUProfile {
+        var archName: String = ""           // e.g. "Zen 3 Vermeer"
+        var pmDispatchAllowed: Bool = false // Full PM dispatch (Zen 1/2)
+        var legacyPstateAllowed: Bool = false
+        var supportsCPPC: Bool = false
+        
+        var modeDescription: String {
+            pmDispatchAllowed ? "Full PM Dispatch" : "Telemetry-only"
+        }
+        
+        var availableFeatures: [String] {
+            var features: [String] = []
+            if pmDispatchAllowed { features.append("PM Dispatch") }
+            if legacyPstateAllowed { features.append("Legacy P-States") }
+            if supportsCPPC { features.append("CPPC") }
+            if features.isEmpty { features.append("Telemetry only") }
+            return features
+        }
+    }
+    
+    private(set) var cpuProfile = CPUProfile()
+    
+    private func loadCPUProfile() {
+        guard connect != 0 else { return }
+        let nameSize = 16
+        let flagsSize = MemoryLayout<UInt64>.size
+        let totalSize = nameSize + flagsSize
+        
+        var output = [UInt8](repeating: 0, count: totalSize)
+        var outputSize = totalSize
+        
+        let res: kern_return_t = IOConnectCallMethod(connect, 26, nil, 0, nil, 0,
+                                                      nil, nil,
+                                                      &output, &outputSize)
+        guard res == KERN_SUCCESS, outputSize >= nameSize else {
+            return
+        }
+        
+        // Read architecture name (null-terminated within first 16 bytes)
+        let nameBytes = output[0..<nameSize]
+        let name = nameBytes.withUnsafeBufferPointer { buf -> String in
+            if let nullIdx = buf.firstIndex(of: 0) {
+                return String(decoding: buf[..<nullIdx], as: UTF8.self)
+            }
+            return String(decoding: buf, as: UTF8.self).trimmingCharacters(in: .whitespaces)
+        }
+        
+        // Read flags
+        var flags: UInt64 = 0
+        if outputSize >= totalSize {
+            withUnsafeMutableBytes(of: &flags) { flagsBuf in
+                let src = output[nameSize..<nameSize + MemoryLayout<UInt64>.size]
+                src.withUnsafeBytes { srcBuf in
+                    flagsBuf.copyMemory(from: srcBuf)
+                }
+            }
+        }
+        
+        cpuProfile = CPUProfile(
+            archName: name,
+            pmDispatchAllowed: (flags & (1 << 0)) != 0,
+            legacyPstateAllowed: (flags & (1 << 1)) != 0,
+            supportsCPPC: (flags & (1 << 2)) != 0
+        )
+    }
+    
     var isLegacyPStateSupported: Bool {
-        // Zen 1 / Zen 2 (Family 17h / 23) or earlier rely on legacy P-States
+        // Use kext profile when available, fallback to family heuristic
+        if !cpuProfile.archName.isEmpty {
+            return cpuProfile.legacyPstateAllowed
+        }
         return cpuFamily > 0 && cpuFamily <= 0x17
     }
 
@@ -114,6 +185,7 @@ actor ProcessorModel {
         }
 
         loadCPUID()
+        loadCPUProfile()
         loadBaseBoardInfo()
         loadMetric()
         loadSystemConfig()
