@@ -21,6 +21,8 @@ struct OriginalLineChartCard: View {
 
     @AppStorage(AppChartStyle.storageKey) private var selectedChartStyleRaw: String = AppChartStyle.line.rawValue
     private var selectedChartStyle: AppChartStyle { AppChartStyle.normalized(selectedChartStyleRaw) }
+    
+    @StateObject private var interaction = ChartInteractionState()
 
     private var averageVal: Double {
         let vals = data.map(line1)
@@ -134,9 +136,10 @@ struct OriginalLineChartCard: View {
                         height: height - 40
                     )
                 } else {
-                    // Classic chart styles using Swift Charts
+                    // Classic chart styles using Swift Charts — with interactive tooltip
                     let indexedData = Array(data.enumerated())
                     let maxIndex = Double(indexedData.count - 1)
+                    let totalCount = indexedData.count
 
                     Chart(indexedData, id: \.element.id) { index, pt in
                         if selectedChartStyle == .bar {
@@ -184,7 +187,7 @@ struct OriginalLineChartCard: View {
                     }
                 }
                 .chartYScale(domain: yMin...yMax)
-                .chartXScale(domain: 0...maxIndex)
+                .chartXScale(domain: interaction.visibleRange.isEmpty ? 0...maxIndex : Double(interaction.visibleRange.lowerBound)...Double(interaction.visibleRange.upperBound))
                 .chartYAxis {
                     let strideValue = (unit == "GHz") ? max(0.1, (yMax - yMin) / 3.0) : max(1.0, (yMax - yMin) / 3.0)
                     AxisMarks(position: .leading, values: .stride(by: strideValue)) { val in
@@ -201,7 +204,33 @@ struct OriginalLineChartCard: View {
                     }
                 }
                 .chartXAxis(.hidden)
+                .chartHover(interaction: interaction, dataCount: totalCount)
                 .frame(height: height)
+                .overlay {
+                    if let loc = interaction.hoveredLocation,
+                       let idx = interaction.hoveredIndex, idx < data.count {
+                        let pt = data[idx]
+                        let v1 = line1(pt)
+                        let fmt1 = (unit == "GHz") ? "%.2f" : "%.1f"
+                        
+                        // Cursor line following mouse (full height)
+                        Rectangle()
+                            .fill(accent.opacity(0.2))
+                            .frame(width: 1)
+                            .frame(maxHeight: .infinity)
+                            .position(x: loc.x, y: height / 2)
+                        
+                        ChartTooltipView(
+                            accent: accent,
+                            line1Label: line1Label,
+                            line1Value: "x:\(Int(loc.x)) #\(idx) " + String(format: fmt1, v1) + " " + unit,
+                            line2Label: line2Label,
+                            line2Value: line2.map { String(format: fmt1, $0(pt)) + " " + unit },
+                            timestamp: Date(timeIntervalSinceReferenceDate: pt.time)
+                        )
+                        .position(x: loc.x + 10, y: loc.y - 20)
+                    }
+                }
                 }
             } else {
                 RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.03))
@@ -219,6 +248,8 @@ struct SimpleLineChart: View {
     let data: [TelemetryPoint]
     let value: (TelemetryPoint) -> Double
     let height: CGFloat
+    
+    @StateObject private var interaction = ChartInteractionState()
 
     private var yMin: Double {
         let vals = data.map(value)
@@ -247,6 +278,7 @@ struct SimpleLineChart: View {
             if data.count > 1 {
                 let indexedData = Array(data.enumerated())
                 let maxIndex = Double(indexedData.count - 1)
+                let totalCount = indexedData.count
 
                 Chart(indexedData, id: \.element.id) { index, pt in
                     AreaMark(x: .value("Index", Double(index)), y: .value(title, value(pt)))
@@ -258,7 +290,7 @@ struct SimpleLineChart: View {
                         .interpolationMethod(.catmullRom)
                 }
                 .chartYScale(domain: yMin...yMax)
-                .chartXScale(domain: 0...maxIndex)
+                .chartXScale(domain: interaction.visibleRange.isEmpty ? 0...maxIndex : Double(interaction.visibleRange.lowerBound)...Double(interaction.visibleRange.upperBound))
                 .chartXAxis(.hidden)
                 .chartYAxis {
                     AxisMarks(position: .leading, values: .stride(by: max(1, (yMax - yMin) / 4))) { val in
@@ -270,8 +302,30 @@ struct SimpleLineChart: View {
                         }
                     }
                 }
+                .chartHover(interaction: interaction, dataCount: totalCount)
                 .frame(height: height)
                 .shadow(color: color.opacity(0.25), radius: 4)
+                .overlay {
+                    if let loc = interaction.hoveredLocation,
+                       let idx = interaction.hoveredIndex, idx < data.count {
+                        let pt = data[idx]
+                        
+                        // Cursor line following mouse (full height)
+                        Rectangle()
+                            .fill(color.opacity(0.2))
+                            .frame(width: 1)
+                            .frame(maxHeight: .infinity)
+                            .position(x: loc.x, y: height / 2)
+                        
+                        ChartTooltipView(
+                            accent: color,
+                            line1Label: LocalizedStringKey(title),
+                            line1Value: "x:\(Int(loc.x)) #\(idx) " + String(format: "%.1f", value(pt)) + " " + unit,
+                            timestamp: Date(timeIntervalSinceReferenceDate: pt.time)
+                        )
+                        .position(x: loc.x + 10, y: loc.y - 20)
+                    }
+                }
             } else {
                 RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.03)).frame(height: height)
                     .overlay(Text("Collecting data…").font(.system(size: 11)).foregroundColor(.tahoeSubtext))
