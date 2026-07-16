@@ -182,7 +182,7 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
                     provider->dumpPstate();
 
                 // Query CPPC core ranking per logical core if supported
-                // For Vermeer baseline: only read CPPC CAP1 if telemetryAllowed, do NOT write CPPC_ENABLE
+                // Only read CPPC CAP1 for core ranking; do NOT write CPPC_ENABLE in baseline.
                 if (provider->cppcSupported && cpu_num < CPUInfo::MaxCpus) {
                     uint64_t cppcCap = 0;
                     bool msrSuccess = provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap);
@@ -368,31 +368,9 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     cpuSupportedByCurrentVersion = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A)? 1 : 0;
     IOLog("AMDRyzenCPUPowerManagement::start Family %02Xh, Model %02Xh\n", cpuFamily, cpuModel);
     
-    // Determine architecture name for logging and app display
-    if (cpuFamily == 0x17) {
-        if (cpuModel <= 0x0F)
-            strlcpy(cpuArchName, "Zen", sizeof(cpuArchName));
-        else if (cpuModel >= 0x10 && cpuModel <= 0x2F)
-            strlcpy(cpuArchName, "Zen+", sizeof(cpuArchName));
-        else
-            strlcpy(cpuArchName, "Zen 2", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x19) {
-        if (cpuModel >= 0x60 && cpuModel <= 0x7F)
-            strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
-        else if (cpuModel >= 0x40 && cpuModel <= 0x5F)
-            strlcpy(cpuArchName, "Zen 3+", sizeof(cpuArchName));
-        else if (cpuModel >= 0x10 && cpuModel <= 0x1F)
-            strlcpy(cpuArchName, "Zen 3 Cezanne", sizeof(cpuArchName));
-        else if (cpuModel >= 0x21 && cpuModel <= 0x2F)
-            strlcpy(cpuArchName, "Zen 3 Vermeer", sizeof(cpuArchName));
-        else
-            strlcpy(cpuArchName, "Zen 3", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x1A) {
-        strlcpy(cpuArchName, "Zen 5", sizeof(cpuArchName));
-    } else {
-        strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
-    }
-    IOLog("AMDRyzenCPUPowerManagement::start Architecture: %s\n", cpuArchName);
+    // cpuArchName is populated below by the active profile's generationName.
+    // The profile block handles all known CPU families (Zen 1-5) and
+    // sets "Unknown" for unmatched CPUs.
     
     // Determine CCD temperature register offset based on CPU family/model.
     // Sourced from Linux kernel drivers/hwmon/k10temp.c:
@@ -432,13 +410,12 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         }
         
         if (activeProfile) {
-            telemetryAllowed = activeProfile->supportsCPPC;
-            cppcReadAllowed = false;
-            cppcWriteAllowed = false;
+            cppcReadInInit = activeProfile->supportsCPPC;
             legacyPstateAllowed = activeProfile->legacyPstateAllowed;
             pmDispatchAllowed = activeProfile->pmDispatchAllowed;
             supportsCPPC = activeProfile->supportsCPPC;
             supportsCPPCv2 = activeProfile->supportsCPPCv2;
+            zenGeneration = activeProfile->zenGeneration;
             strlcpy(cpuArchName, activeProfile->generationName, sizeof(cpuArchName));
             
             // Build capabilities string matching the app's profile log format
@@ -463,30 +440,11 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
             IOLog("AMDRyzenCPUPowerManagement::start CPU Profile: %s — %s (Capabilities: %s)\n",
                   mode, activeProfile->generationName, capsBuf);
         } else {
+            zenGeneration = 0;
             strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
             IOLog("AMDRyzenCPUPowerManagement::start WARN: no profile for Family %02Xh Model %02Xh\n",
                   cpuFamily, cpuModel);
         }
-        
-        // Derive zen generation from family.
-        if (cpuFamily == 0x1A) {
-            zenGeneration = 5;
-        } else if (cpuFamily == 0x19 && cpuModel >= 0x60) {
-            zenGeneration = 4;
-        } else if (cpuFamily == 0x19 && cpuModel >= 0x40) {
-            zenGeneration = 3;
-        } else if (cpuFamily == 0x19 && cpuModel >= 0x10) {
-            zenGeneration = 3;
-        } else if (cpuFamily == 0x17 && cpuModel >= 0x30) {
-            zenGeneration = 2;
-        } else if (cpuFamily == 0x17 && cpuModel >= 0x10) {
-            zenGeneration = 1;
-        } else if (cpuFamily == 0x17) {
-            zenGeneration = 1;
-        } else {
-            zenGeneration = 0;
-        }
-        IOLog("AMDRyzenCPUPowerManagement::start Detected Zen Generation: %u\n", zenGeneration);
     }
     
     // Single idle strategy for all CPUs: sti; hlt (SIMPLE).
@@ -507,9 +465,6 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     IOLog("AMDRyzenCPUPowerManagement::start L1: %u, L2: %u, L3: %u\n",
           cpuCacheL1_perCore, cpuCacheL2_perCore, cpuCacheL3);
     
-    
-    CPUInfo::getCpuid(0x00000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
-    IOLog("AMDRyzenCPUPowerManagement::start CPUID MWait: %X %X %X %X\n", cpuid_eax, cpuid_ebx, cpuid_ecx, cpuid_edx);
     
     char nameString[49] = {0};
     uint32_t *namePtr = (uint32_t*)nameString;
@@ -954,12 +909,13 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
 }
 
 void AMDRyzenCPUPowerManagement::applyPowerControl(){
-    // Legacy P-state manipulation disabled for Vermeer baseline
+    // Legacy P-state writes are controlled per CPU profile.
+    // Enabled on Zen 1/2 (full PM dispatch), disabled on Zen 3+ (telemetry-only).
     if (!legacyPstateAllowed) {
         if (cppcActiveMode) {
             IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored - CPPC Active Mode active\n");
         } else {
-            IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored - legacy P-state disabled for baseline mode\n");
+            IOLog("AMDRyzenCPUPowerManagement::applyPowerControl ignored - legacy P-state disabled for this profile\n");
         }
         return;
     }
@@ -973,10 +929,11 @@ void AMDRyzenCPUPowerManagement::applyPowerControl(){
 }
 
 void AMDRyzenCPUPowerManagement::applyEPPControl() {
-    if (!cppcSupported || !cppcWriteAllowed) {
-        IOLog("AMDRyzenCPUPowerManagement::applyEPPControl ignored - CPPC writes disabled in baseline mode\n");
-        return;
-    }
+    // CPPC writes (ENABLE/REQ MSRs) are disabled in the current baseline.
+    // This function is a no-op until validated CPPC write support is added
+    // via a per-profile capability flag.
+    IOLog("AMDRyzenCPUPowerManagement::applyEPPControl ignored - CPPC writes disabled in baseline\n");
+    return;
 
     IOLockLock(rendezvousLock);
     mp_rendezvous(nullptr, [](void *obj) {
@@ -1347,37 +1304,31 @@ void AMDRyzenCPUPowerManagement::reinitHwState() {
     CPUInfo::getCpuid(0x80000007, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     cpbSupported = (cpuid_edx >> 9) & 0x1;
 
-    // CPPC support probe - read CAP1 first, only write ENABLE if cppcWriteAllowed
-    // - CAP1 MSR readable → supported
-    // - Zen family 17h/19h/1Ah always has CPPC MSRs
+    // Probe CPPC support: read CAP1 MSR. All Zen families (17h/19h/1Ah) support CPPC,
+    // but CPPC writes (ENABLE/REQ MSRs) are disabled in the current baseline.
+    // CPPC writes may be enabled in a future profile update once validated.
     uint64_t cppcVal = 0;
     bool msrSuccess = read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
     const bool zenFamily = (cpuFamily == 0x17 || cpuFamily == 0x19 || cpuFamily == 0x1A);
 
-    // CPPC read is supported if MSR reads successfully or CPU is Zen family
+    // CPPC is supported if MSR reads successfully or CPU is a known Zen family.
     if (msrSuccess || zenFamily) {
-        cppcSupported = true;
-        cppcReadAllowed = true;
+        if (!cppcSupported) {
+            cppcSupported = true;
+        }
         IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC CAP1 readable (CAP1=0x%llx)\n", cppcVal);
     } else {
         cppcSupported = false;
-        cppcReadAllowed = false;
     }
 
-    // For Vermeer baseline: do NOT enable CPPC writes by default
-    // Keep cppcWriteAllowed=false until validated
-    if (cppcWriteAllowed && cppcSupported) {
-        write_msr(kMSR_AMD_CPPC_ENABLE, 1);
-        if (!msrSuccess || cppcVal == 0) {
-            (void)read_msr(kMSR_AMD_CPPC_CAP1, &cppcVal);
-        }
-        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC enabled (CAP1=0x%llx)\n", cppcVal);
-    } else if (cppcSupported) {
-        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC CAP1 readable but writes disabled (baseline mode)\n");
+    // CPPC write paths (ENABLE/REQ) are disabled in the current baseline.
+    // cppcActiveMode requires a future profile flag and boot-arg to enable.
+    cppcActiveMode = checkKernelArgument("-amdcppcactive");
+    // CPPC writes blocked until per-profile cppcWriteAllowed flag is implemented.
+    if (cppcActiveMode) {
+        cppcActiveMode = false;
+        IOLog("AMDRyzenCPUPowerManagement::reinitHwState: CPPC Active Mode blocked — writes disabled in baseline\n");
     }
-
-    // Baseline Vermeer mode keeps CPPC writes disabled even if the boot arg is present.
-    cppcActiveMode = cppcWriteAllowed && checkKernelArgument("-amdcppcactive");
     
     uint64_t rapl = 0;
     if (read_msr(kMSR_RAPL_PWR_UNIT, &rapl)) {
