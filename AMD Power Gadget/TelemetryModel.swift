@@ -579,6 +579,8 @@ final class TelemetryModel: ObservableObject {
     @Published var sysInfo: SystemInfo = SystemInfo()
     @Published var isSystemInfoLoaded: Bool = false
     @Published var legacyPStateSupported: Bool = true
+    @Published var processorCPUProfile: String = ""
+    @Published var processorCPUProfileFeatures: String = ""
 
     private var timer: AnyCancellable?
     private let startTime: Double = Date.timeIntervalSinceReferenceDate
@@ -808,6 +810,21 @@ final class TelemetryModel: ObservableObject {
             info.vdaAcceleration = "HEVC Active (H.264 Inactive)"
         } else {
             info.vdaAcceleration = "Inactive / Not Supported"
+        }
+
+        // Populate CPU profile from ProcessorModel
+        let profile = await pm.cpuProfile
+        if !profile.archName.isEmpty {
+            processorCPUProfile = profile.modeDescription + " — " + profile.archName
+            processorCPUProfileFeatures = profile.availableFeatures.joined(separator: " · ")
+            NSLog("CPU Profile: %@ — %@ (Capabilities: %@)",
+                  profile.modeDescription,
+                  profile.archName,
+                  processorCPUProfileFeatures)
+        } else {
+            processorCPUProfile = "Detecting..."
+            processorCPUProfileFeatures = ""
+            NSLog("CPU Profile: still detecting — cpuArchName empty")
         }
 
         sysInfo = info

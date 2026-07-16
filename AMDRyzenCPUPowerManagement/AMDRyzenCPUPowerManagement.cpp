@@ -412,56 +412,89 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     IOLog("AMDRyzenCPUPowerManagement::start CCD temperature offset: 0x%X\n", ccdOffset);
     
-    // Apply capability profile for detected CPU
-    if (cpuFamily == VERMEER_ZEN3_PROFILE.family &&
-        cpuModel >= VERMEER_ZEN3_PROFILE.modelStart &&
-        cpuModel <= VERMEER_ZEN3_PROFILE.modelEnd) {
-        // Vermeer/Zen 3 profile
-        telemetryAllowed = VERMEER_ZEN3_PROFILE.supportsCPPC;
-        cppcReadAllowed = false;      // Will be enabled after safe probe
-        cppcWriteAllowed = false;     // Conservative: write disabled initially
-        legacyPstateAllowed = VERMEER_ZEN3_PROFILE.legacyPstateAllowed;
-        pmDispatchAllowed = VERMEER_ZEN3_PROFILE.pmDispatchAllowed;
-        zenGeneration = 3;
-        supportsCPPC = VERMEER_ZEN3_PROFILE.supportsCPPC;
-        supportsCPPCv2 = VERMEER_ZEN3_PROFILE.supportsCPPCv2;
-        supportsMwait = VERMEER_ZEN3_PROFILE.supportsMwait;
-        strlcpy(cpuArchName, "Zen 3 Vermeer", sizeof(cpuArchName));
-        IOLog("AMDRyzenCPUPowerManagement::start Profile: Vermeer/Zen 3 (telemetry-only baseline)\n");
-    } else if (cpuFamily == 0x1A) {
-        zenGeneration = 5;
-        strlcpy(cpuArchName, "Zen 5", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x19 && cpuModel >= 0x60) {
-        zenGeneration = 4;
-        strlcpy(cpuArchName, "Zen 4", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x19) {
-        zenGeneration = 3;
-        strlcpy(cpuArchName, "Zen 3+", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x17 && cpuModel >= 0x30) {
-        zenGeneration = 2;
-        strlcpy(cpuArchName, "Zen 2", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x17 && cpuModel >= 0x10) {
-        zenGeneration = 1;
-        strlcpy(cpuArchName, "Zen+", sizeof(cpuArchName));
-    } else if (cpuFamily == 0x17) {
-        zenGeneration = 1;
-        strlcpy(cpuArchName, "Zen", sizeof(cpuArchName));
-    } else {
-        strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
+    // Resolve capability profile for detected CPU from all known profiles.
+    // Each profile defines whether the kext registers PM dispatch + legacy P-states
+    // (Zen 1/2: macOS has no native AMD PM) or stays telemetry-only (Zen 3+).
+    {
+        const ZenCpuFeatureMap *allProfiles[] = {
+            &ZEN1_PROFILE, &ZEN_PLUS_PROFILE, &ZEN2_PROFILE,
+            &ZEN3_CEZANNE_PROFILE, &ZEN3_VERMEER_PROFILE, &ZEN3_PLUS_PROFILE,
+            &ZEN4_PROFILE, &ZEN5_PROFILE,
+        };
+        const ZenCpuFeatureMap *activeProfile = nullptr;
+        for (auto *profile : allProfiles) {
+            if (cpuFamily == profile->family &&
+                cpuModel >= profile->modelStart &&
+                cpuModel <= profile->modelEnd) {
+                activeProfile = profile;
+                break;
+            }
+        }
+        
+        if (activeProfile) {
+            telemetryAllowed = activeProfile->supportsCPPC;
+            cppcReadAllowed = false;
+            cppcWriteAllowed = false;
+            legacyPstateAllowed = activeProfile->legacyPstateAllowed;
+            pmDispatchAllowed = activeProfile->pmDispatchAllowed;
+            supportsCPPC = activeProfile->supportsCPPC;
+            supportsCPPCv2 = activeProfile->supportsCPPCv2;
+            strlcpy(cpuArchName, activeProfile->generationName, sizeof(cpuArchName));
+            
+            // Build capabilities string matching the app's profile log format
+            char capsBuf[64];
+            capsBuf[0] = '\0';
+            if (activeProfile->pmDispatchAllowed) {
+                strlcpy(capsBuf, "PM Dispatch", sizeof(capsBuf));
+            }
+            if (activeProfile->legacyPstateAllowed) {
+                if (capsBuf[0]) strlcat(capsBuf, " · ", sizeof(capsBuf));
+                strlcat(capsBuf, "Legacy P-States", sizeof(capsBuf));
+            }
+            if (activeProfile->supportsCPPC) {
+                if (capsBuf[0]) strlcat(capsBuf, " · ", sizeof(capsBuf));
+                strlcat(capsBuf, "CPPC", sizeof(capsBuf));
+            }
+            if (capsBuf[0] == '\0') {
+                strlcpy(capsBuf, "Telemetry only", sizeof(capsBuf));
+            }
+            
+            const char *mode = activeProfile->pmDispatchAllowed ? "Full PM Dispatch" : "Telemetry-only";
+            IOLog("AMDRyzenCPUPowerManagement::start CPU Profile: %s — %s (Capabilities: %s)\n",
+                  mode, activeProfile->generationName, capsBuf);
+        } else {
+            strlcpy(cpuArchName, "Unknown", sizeof(cpuArchName));
+            IOLog("AMDRyzenCPUPowerManagement::start WARN: no profile for Family %02Xh Model %02Xh\n",
+                  cpuFamily, cpuModel);
+        }
+        
+        // Derive zen generation from family.
+        if (cpuFamily == 0x1A) {
+            zenGeneration = 5;
+        } else if (cpuFamily == 0x19 && cpuModel >= 0x60) {
+            zenGeneration = 4;
+        } else if (cpuFamily == 0x19 && cpuModel >= 0x40) {
+            zenGeneration = 3;
+        } else if (cpuFamily == 0x19 && cpuModel >= 0x10) {
+            zenGeneration = 3;
+        } else if (cpuFamily == 0x17 && cpuModel >= 0x30) {
+            zenGeneration = 2;
+        } else if (cpuFamily == 0x17 && cpuModel >= 0x10) {
+            zenGeneration = 1;
+        } else if (cpuFamily == 0x17) {
+            zenGeneration = 1;
+        } else {
+            zenGeneration = 0;
+        }
+        IOLog("AMDRyzenCPUPowerManagement::start Detected Zen Generation: %u\n", zenGeneration);
     }
-    IOLog("AMDRyzenCPUPowerManagement::start Detected Zen Generation: %u\n", zenGeneration);
     
-    // Set idle strategy based on CPU family.
-    // Zen 1 through Zen 3 (Families 17h, 19h models < 60h): use SIMPLE (sti;hlt)
-    // Zen 4+ (Family 19h models 60h+, Family 1Ah): use MWAIT for lower idle power
-    if (cpuFamily == 0x1A || (cpuFamily == 0x19 && cpuModel >= 0x60)) {
-        cpuIdleStrategy = PMRYZEN_IDLE_STRATEGY_MWAIT;
-        IOLog("AMDRyzenCPUPowerManagement::start Idle strategy: MWAIT (Zen 4/5)\n");
-    } else {
-        cpuIdleStrategy = PMRYZEN_IDLE_STRATEGY_SIMPLE;
-        IOLog("AMDRyzenCPUPowerManagement::start Idle strategy: SIMPLE (sti;hlt for Zen 3-)\n");
-    }
+    // Single idle strategy for all CPUs: sti; hlt (SIMPLE).
+    // Intel-style MONITOR/MWAIT was removed (unsafe on AMD — CPUs don't report CPUID.01h:ECX[3]).
+    // AMD MONITORX/MWAITX may be added as a future enhancement for Zen 3+.
+    cpuIdleStrategy = PMRYZEN_IDLE_STRATEGY_SIMPLE;
     pmRyzen_idle_strategy = cpuIdleStrategy;
+    IOLog("AMDRyzenCPUPowerManagement::start Idle strategy: SIMPLE (sti;hlt)\n");
     
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     // L1-D size in bits [31:24] of ECX, L1-I size in bits [31:24] of EDX (CPUID 0x80000005)

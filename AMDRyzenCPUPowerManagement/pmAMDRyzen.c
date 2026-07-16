@@ -23,8 +23,6 @@ uint32_t pmRyzen_num_phys;
 uint32_t pmRyzen_num_logi;
 pmRyzen_idle_strategy_t pmRyzen_idle_strategy = PMRYZEN_IDLE_STRATEGY_SIMPLE;
 
-uint64_t pmRyzen_exit_idle_c;
-uint64_t pmRyzen_exit_idle_ipi_c;
 uint64_t pmRyzen_exit_idle_false_c;
 
 uint64_t pmRyzen_p_sdtsc;
@@ -47,11 +45,7 @@ pmDispatch_t pmRyzen_cpuFuncs = {
     .GetDeadline = 0,
     .SetDeadline = 0,
     .Deadline = 0,
-#ifdef PMRYZEN_IDLE_MWAIT
-    .exitIdle = &pmRyzen_exit_idle,
-#else
     .exitIdle = 0,
-#endif
     .markCPURunning = 0,
     .pmCPUControl = 0,
     .pmCPUHalt = 0,
@@ -227,19 +221,11 @@ void pmRyzen_stop(void){
         (*pmRyzen_pmUnRegister)(&pmRyzen_cpuFuncs);
     }
     
-    //Make sure all managed cores exited idle thread.
+    // Make sure all managed cores exited idle thread.
+    // With the SIMPLE (sti;hlt) strategy, exit is immediate — just set arm_flag.
     for (int i = 0; i < pmRyzen_num_logi && i < XNU_MAX_CPU; i++) {
         if (!pmRyzen_cpunum_to_lcpu[i]) continue;
-        int retries = 0;
-        while(pmRyzen_exit_idle(pmRyzen_cpunum_to_lcpu[i])){
-            if (pmRyzen_cpu_IPI) {
-                (*pmRyzen_cpu_IPI)(i);
-            }
-            if (++retries > 1000) {
-                IOLog("pmRyzen_stop: CPU %d failed to exit idle after 1000 retries\n", i);
-                break;
-            }
-        }
+        pmRyzen_cpus[i].arm_flag = 1;
     }
 }
 
@@ -289,45 +275,10 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
     self->last_idle_tsc = tscnow;
 //    self->last_running_time = self->last_idle_tsc - self->last_start_tsc;
     
-    // Runtime idle strategy — set by AMDRyzenCPUPowerManagement::start() based on cpuFamily.
-    switch (pmRyzen_idle_strategy) {
-    case PMRYZEN_IDLE_STRATEGY_MWAIT: {
-        void* addr = &self->arm_flag;
-        uint32_t ps_hint = 0x50;
-        __asm__ volatile("wbinvd":::"memory");
-        __asm__ volatile("mfence":::"memory");
-        __asm__ volatile("clflushopt %0" : "+m" (*(volatile char *)&self->arm_flag));
-
-        __asm__ volatile("mfence;"
-                         "movq %0, %%rax;"
-                         "xor %%edx, %%edx;"
-                         "xor %%ecx, %%ecx;"
-                         "monitor;"
-                         "xorq %%rax, %%rax;"
-                         "movl %1, %%eax;"
-                         "movl $0x1, %%ecx;"
-                         "mwait;"
-                         :
-                          : "r"(addr), "r"(ps_hint)
-                          : "%ecx", "%edx", "%rax"
-                          );
-        // MONITOR/MWAIT do not touch RFLAGS.IF — re-enable interrupts before post-idle work.
-        __asm__ volatile("sti;");
-        break;
-    }
-    case PMRYZEN_IDLE_STRATEGY_SIMPLE:
-    default: {
-        __asm__ volatile("sti;hlt;");
-        break;
-    }
-    case PMRYZEN_IDLE_STRATEGY_IO_CSTATE: {
-        __asm__ volatile("sti;"
-                         "inw $0xf2, %%ax;"
-                         "cli;"
-                         :::"%eax");
-        break;
-    }
-    }
+    // Only idle strategy: sti; hlt — safe on all AMD CPUs.
+    // Intel-style MONITOR/MWAIT was removed (unsafe on AMD).
+    // AMD MONITORX/MWAITX may be added as a future enhancement.
+    __asm__ volatile("sti;hlt;");
 
     
     self->cpu_awake = 1;
@@ -381,31 +332,6 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
     
     pmRyzen_last_woken_cpu = cn;
     return 0;
-}
-
-boolean_t pmRyzen_exit_idle(x86_lcpu_t *lcpu){
-    if (!lcpu || lcpu->cpu_num >= XNU_MAX_CPU) return false;
-    pmProcessor_t *target = &pmRyzen_cpus[lcpu->cpu_num];
-
-#ifdef PMRYZEN_IDLE_MWAIT
-    uint64_t start_tsc = rdtsc64();
-    do {
-        target->arm_flag = 1;
-        __asm__ volatile("pause;");
-
-        if(rdtsc64() - start_tsc > 0x6000){
-            //If we still unable to wake up the processor, send an IPI.
-            pmRyzen_exit_idle_ipi_c++;
-            return true;
-        }
-    } while(!target->cpu_awake);
-    
-    return false;
-    
-#else
-    target->arm_flag = 1;
-    return false;
-#endif
 }
 
 int pmRyzen_choose_cpu(int startCPU, int endCPU, int preferredCPU){
