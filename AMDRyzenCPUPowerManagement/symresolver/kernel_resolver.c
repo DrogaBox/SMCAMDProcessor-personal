@@ -28,28 +28,47 @@ static uint64_t mh_base_addr = 0;
 void find_mach_header_addr(uint8_t kc){
     uint64_t slide = 0;
     vm_offset_t slide_address = 0;
+    bool resolved = false;
+    void* anchorPtr = NULL;
     
-    // Use _version (stable since XNU 10.4) as the known kernel symbol for slide
-    // computation. printf is a libc shim and may be removed from the kernel export
-    // set in future XNU releases.
-    vm_kernel_unslide_or_perm_external((unsigned long long)(void *)&version, &slide_address);
+    // Strategy 1: Use _mh_execute_header as the anchor. It is the Mach-O
+    // header of the kernel itself and is always exported at a known address
+    // relative to the kernel base. This is preferred over &version because
+    // _mh_execute_header is a fundamental part of the Mach-O format and is
+    // guaranteed to be present in any kernel binary.
+    extern int mh_execute_header;
+    vm_kernel_unslide_or_perm_external(
+        (unsigned long long)(void *)&mh_execute_header, &slide_address);
     
-    if (slide_address == 0) {
-        IOLog("kernel_resolver: vm_kernel_unslide_or_perm_external failed\n");
+    if (slide_address != 0 &&
+        slide_address >= 0xFFFFFF8000000000ULL) {
+        resolved = true;
+        anchorPtr = (void*)&mh_execute_header;
+        IOLog("kernel_resolver: using _mh_execute_header for KASLR slide\n");
+    }
+    
+    // Strategy 2: Fall back to &version if _mh_execute_header didn't work.
+    if (!resolved) {
+        vm_kernel_unslide_or_perm_external(
+            (unsigned long long)(void *)&version, &slide_address);
+        
+        if (slide_address != 0 &&
+            slide_address >= 0xFFFFFF8000000000ULL) {
+            resolved = true;
+            anchorPtr = (void*)&version;
+            IOLog("kernel_resolver: using _version for KASLR slide (fallback)\n");
+        }
+    }
+    
+    if (!resolved) {
+        IOLog("kernel_resolver: vm_kernel_unslide_or_perm_external failed for all anchors\n");
         mh_base_addr = 0;
         return;
     }
     
-    // Sanity check: el slide_address debe caer en el rango kernel canonical hi
-    // (0xFFFFFF8000000000 - 0xFFFFFFFFFFFFFFFF en x86_64). Si está fuera, abortar.
-    if (slide_address < 0xFFFFFF8000000000ULL) {
-        IOLog("kernel_resolver: slide_address 0x%llx fuera de rango kernel, aborting\n",
-              (unsigned long long)slide_address);
-        mh_base_addr = 0;
-        return;
-    }
-    
-    slide = (uint64_t)(void *)&version - slide_address;
+    // Compute slide: difference between the current (slid) address of the
+    // resolved anchor symbol and its unslid address from the kernel.
+    slide = (uint64_t)anchorPtr - slide_address;
     uint64_t base_address = (uint64_t)slide + KERNEL_BASE;
     
     if(!kc){

@@ -21,6 +21,7 @@ uint64_t pmRyzen_effective_timetsc;
 
 uint32_t pmRyzen_num_phys;
 uint32_t pmRyzen_num_logi;
+pmRyzen_idle_strategy_t pmRyzen_idle_strategy = PMRYZEN_IDLE_STRATEGY_SIMPLE;
 
 uint64_t pmRyzen_exit_idle_c;
 uint64_t pmRyzen_exit_idle_ipi_c;
@@ -288,42 +289,45 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
     self->last_idle_tsc = tscnow;
 //    self->last_running_time = self->last_idle_tsc - self->last_start_tsc;
     
-#ifdef PMRYZEN_IDLE_MWAIT
+    // Runtime idle strategy — set by AMDRyzenCPUPowerManagement::start() based on cpuFamily.
+    switch (pmRyzen_idle_strategy) {
+    case PMRYZEN_IDLE_STRATEGY_MWAIT: {
+        void* addr = &self->arm_flag;
+        uint32_t ps_hint = 0x50;
+        __asm__ volatile("wbinvd":::"memory");
+        __asm__ volatile("mfence":::"memory");
+        __asm__ volatile("clflushopt %0" : "+m" (*(volatile char *)&self->arm_flag));
 
-    void* addr = &self->arm_flag;
-    uint32_t ps_hint = 0x50;
-    __asm__ volatile("wbinvd":::"memory");
-    __asm__ volatile("mfence":::"memory");
-    __asm__ volatile("clflushopt %0" : "+m" (*(volatile char *)&self->arm_flag));
-
-    __asm__ volatile("mfence;"
-                     "movq %0, %%rax;"
-                     "xor %%edx, %%edx;"
-                     "xor %%ecx, %%ecx;"
-                     "monitor;"
-                     "xorq %%rax, %%rax;"
-                     "movl %1, %%eax;"
-                     "movl $0x1, %%ecx;"
-                     "mwait;"
-                     :
-                      : "r"(addr), "r"(ps_hint)
-                      : "%ecx", "%edx", "%rax"
-                      );
-    // MONITOR/MWAIT do not touch RFLAGS.IF — re-enable interrupts before post-idle work.
-    __asm__ volatile("sti;");
-    
-#elif defined(PMRYZEN_IDLE_SIMPLE)
-    
-    __asm__ volatile("sti;hlt;");
-    
-#elif defined(PMRYZEN_IDLE_IO_CSTATE)
-    
-    __asm__ volatile("sti;"
-                     "inw $0xf2, %%ax;"
-                     "cli;"
-                     :::"%eax");
-    
-#endif
+        __asm__ volatile("mfence;"
+                         "movq %0, %%rax;"
+                         "xor %%edx, %%edx;"
+                         "xor %%ecx, %%ecx;"
+                         "monitor;"
+                         "xorq %%rax, %%rax;"
+                         "movl %1, %%eax;"
+                         "movl $0x1, %%ecx;"
+                         "mwait;"
+                         :
+                          : "r"(addr), "r"(ps_hint)
+                          : "%ecx", "%edx", "%rax"
+                          );
+        // MONITOR/MWAIT do not touch RFLAGS.IF — re-enable interrupts before post-idle work.
+        __asm__ volatile("sti;");
+        break;
+    }
+    case PMRYZEN_IDLE_STRATEGY_SIMPLE:
+    default: {
+        __asm__ volatile("sti;hlt;");
+        break;
+    }
+    case PMRYZEN_IDLE_STRATEGY_IO_CSTATE: {
+        __asm__ volatile("sti;"
+                         "inw $0xf2, %%ax;"
+                         "cli;"
+                         :::"%eax");
+        break;
+    }
+    }
 
     
     self->cpu_awake = 1;
