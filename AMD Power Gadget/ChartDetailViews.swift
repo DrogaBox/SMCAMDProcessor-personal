@@ -212,18 +212,10 @@ struct OriginalLineChartCard: View {
                         let pt = data[idx]
                         let v1 = line1(pt)
                         let fmt1 = (unit == "GHz") ? "%.2f" : "%.1f"
-                        
-                        // Cursor line following mouse (full height)
-                        Rectangle()
-                            .fill(accent.opacity(0.2))
-                            .frame(width: 1)
-                            .frame(maxHeight: .infinity)
-                            .position(x: loc.x, y: height / 2)
-                        
                         ChartTooltipView(
                             accent: accent,
                             line1Label: line1Label,
-                            line1Value: "x:\(Int(loc.x)) #\(idx) " + String(format: fmt1, v1) + " " + unit,
+                            line1Value: String(format: fmt1, v1) + " " + unit,
                             line2Label: line2Label,
                             line2Value: line2.map { String(format: fmt1, $0(pt)) + " " + unit },
                             timestamp: Date(timeIntervalSinceReferenceDate: pt.time)
@@ -309,18 +301,10 @@ struct SimpleLineChart: View {
                     if let loc = interaction.hoveredLocation,
                        let idx = interaction.hoveredIndex, idx < data.count {
                         let pt = data[idx]
-                        
-                        // Cursor line following mouse (full height)
-                        Rectangle()
-                            .fill(color.opacity(0.2))
-                            .frame(width: 1)
-                            .frame(maxHeight: .infinity)
-                            .position(x: loc.x, y: height / 2)
-                        
                         ChartTooltipView(
                             accent: color,
                             line1Label: LocalizedStringKey(title),
-                            line1Value: "x:\(Int(loc.x)) #\(idx) " + String(format: "%.1f", value(pt)) + " " + unit,
+                            line1Value: String(format: "%.1f", value(pt)) + " " + unit,
                             timestamp: Date(timeIntervalSinceReferenceDate: pt.time)
                         )
                         .position(x: loc.x + 10, y: loc.y - 20)

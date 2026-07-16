@@ -486,13 +486,6 @@ struct ChartTooltipView: View {
     let line2Value: String?
     let timestamp: Date
     
-    /// Formatter with seconds so the user can see the index change when moving across data points.
-    private static let timeWithSeconds: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm:ss"
-        return f
-    }()
-    
     init(accent: Color,
          line1Label: LocalizedStringKey, line1Value: String,
          line2Label: LocalizedStringKey? = nil, line2Value: String? = nil,
@@ -535,8 +528,8 @@ struct ChartTooltipView: View {
                 }
             }
             
-            // Timestamp with seconds (HH:mm:ss) so hover position change is visible
-            Text("\(timestamp, formatter: Self.timeWithSeconds)")
+            // Timestamp
+            Text(timestamp, style: .time)
                 .font(.system(size: 8, design: .monospaced))
                 .foregroundColor(.tahoeSubtext.opacity(0.7))
         }
