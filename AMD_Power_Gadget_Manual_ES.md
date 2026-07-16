@@ -2,7 +2,7 @@
     <span class="cover-title">AMD Power Gadget</span>
     <span class="cover-subtitle">Manual de Usuario y Guía Completa</span>
     <br><br>
-    <span style="color: var(--accent-cyan);">Versión 3.16.x (Tahoe Edition)</span>
+    <span style="color: var(--accent-cyan);">Versión 3.31.0 (Tahoe Edition)</span>
 </div>
 
 ## Introducción
@@ -69,6 +69,10 @@ Si intenta controlar ventiladores, EPP, Curve Optimizer u otras escrituras sin r
 
 ### 3.2 Gráficas
 Frecuencia, temperatura, potencia y red, con promedio / máx / mín. Intervalo de actualización configurable.
+
+**v3.31.0+ — Menú contextual:** Cada gráfica tiene un menú contextual nativo (Size, Hide, Show, Move Position) que ya no parpadea con las actualizaciones de telemetría. El submenú Size está deshabilitado en el Core Grid (tamaño fijo).
+
+**v3.31.0+ — Badge de perfil CPU:** Debajo de las tarjetas de estadísticas, un badge compacto muestra el perfil activo (ej. "Telemetry-only — Zen 3 Vermeer") con chips de capacidades (ej. "CPPC", "PM Dispatch", "Legacy P-States").
 
 ---
 
@@ -144,6 +148,8 @@ Incluir CPU/GPU/ventiladores, picos de sesión, intervalo de sondeo.
 ## 10. System Info
 
 Marca de CPU, placa cuando esté disponible, topología de caché, estado del driver.
+
+**v3.31.0+ — Perfil CPU:** Muestra el nombre del perfil activo (ej. "Zen 3 Vermeer"), el modo de operación ("Telemetry-only" vs "Full PM Dispatch") y las capacidades soportadas (CPPC, Legacy P-States, PM Dispatch). Datos obtenidos del kext mediante el selector IOKit 26.
 
 ---
 
