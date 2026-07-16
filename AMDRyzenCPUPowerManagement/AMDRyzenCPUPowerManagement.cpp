@@ -413,6 +413,7 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
             cppcReadInInit = activeProfile->supportsCPPC;
             legacyPstateAllowed = activeProfile->legacyPstateAllowed;
             pmDispatchAllowed = activeProfile->pmDispatchAllowed;
+            temperatureOffset49 = activeProfile->temperatureOffset49;
             supportsCPPC = activeProfile->supportsCPPC;
             supportsCPPCv2 = activeProfile->supportsCPPCv2;
             zenGeneration = activeProfile->zenGeneration;
@@ -1009,19 +1010,12 @@ inline float AMDRyzenCPUPowerManagement::getPackageTemp() {
     uint32_t temperature = fIOPCIDevice->configRead32(space, smnCtrlReg + 4);
     IOSimpleLockUnlock(pciConfigLock);
     
-    // kF17H_TEMP_OFFSET_FLAG (bit 19, 0x80000) is confirmed correct for Family 17h
-    // (Zen/Zen+/Zen 2) and Family 19h (Zen 3/3+/Zen 4) per Linux k10temp.c.
-    // Family 1Ah (Zen 5) uses the same bit but the 49 °C compensation is unverified —
-    // until confirmed against a Granite Ridge PPR or k10temp update, skip the offset
-    // on Zen 5 and log once so the user sees the discrepancy.
-    static bool loggedZen5TempOffset = false;
-    bool tempOffsetFlag = false;
-    if (cpuFamily != 0x1A) {
-        tempOffsetFlag = (temperature & kF17H_TEMP_OFFSET_FLAG) != 0;
-    } else if (!loggedZen5TempOffset) {
-        loggedZen5TempOffset = true;
-        IOLog("AMDRyzenCPUPowerManagement: Zen 5 temperature offset flag unverified — skipping 49°C compensation. Verify against k10temp.c.\n");
-    }
+    // Temperature offset 49C is controlled per CPU profile via temperatureOffset49.
+    // The hardware flag bit (0x80000) is checked only when the profile allows it.
+    // Zen 4 has temperatureOffset49=true (verified). Zen 5 is false pending PPR validation.
+    bool tempOffsetFlag = temperatureOffset49
+                          ? ((temperature & kF17H_TEMP_OFFSET_FLAG) != 0)
+                          : false;
     temperature = (temperature >> 21) * 125;
     
     float t = temperature * 0.001f;
