@@ -90,15 +90,15 @@ Full compatibility with all AMD Zen architectures supported by the AMD Vanilla k
 Each processor family has a dedicated CPU profile defining available power management features:
 
 | Generation | Family | Models | CPUs | PM Dispatch | Legacy P-States | CPPC |
-|-----------|--------|--------|------|-------------|-----------------|------|
-| **Zen 1** | 17h | 01h–0Fh | Ryzen 1000, Threadripper 1000 | ✅ | ✅ | ❌ |
-| **Zen+** | 17h | 10h–2Fh | Ryzen 2000, Threadripper 2000 | ✅ | ✅ | ❌ |
-| **Zen 2** | 17h | 30h+ | Ryzen 3000, Threadripper 3000 | ✅ | ✅ | ❌ |
-| **Zen 3 (Cezanne)** | 19h | 10h–1Fh | Ryzen 5000 APU | ❌ | ❌ | ✅ |
-| **Zen 3 (Vermeer)** | 19h | 21h–2Fh | Ryzen 5000 desktop | ❌ | ❌ | ✅ |
-| **Zen 3+ (Rembrandt)** | 19h | 40h–5Fh | Ryzen 6000 Mobile | ❌ | ❌ | ✅ |
-| **Zen 4** | 19h | 60h–7Fh | Ryzen 7000, Threadripper 7000 | ❌ | ❌ | ✅ |
-| **Zen 5** | 1Ah | 40h–4Fh | Ryzen 9000 Granite Ridge | ❌ | ❌ | ✅ |
+|-----------|--------|--------|------|:-----------:|:---------------:|:----:|
+| **Zen 1** | 17h | 01h-0Fh | Ryzen 1000, Threadripper 1000 | Yes | Yes | No |
+| **Zen+** | 17h | 10h-2Fh | Ryzen 2000, Threadripper 2000 | Yes | Yes | No |
+| **Zen 2** | 17h | 30h+ | Ryzen 3000, Threadripper 3000 | Yes | Yes | No |
+| **Zen 3 (Cezanne)** | 19h | 10h-1Fh | Ryzen 5000 APU | No | No | Yes |
+| **Zen 3 (Vermeer)** | 19h | 21h-2Fh | Ryzen 5000 desktop | No | No | Yes |
+| **Zen 3+ (Rembrandt)** | 19h | 40h-5Fh | Ryzen 6000 Mobile | No | No | Yes |
+| **Zen 4** | 19h | 60h-7Fh | Ryzen 7000, Threadripper 7000 | No | No | Yes |
+| **Zen 5** | 1Ah | 40h-4Fh | Ryzen 9000 Granite Ridge | No | No | Yes |
 
 *Note: Zen 1/2 use direct P-state and PM dispatch controls. Zen 3+ rely on CPPC for power management, with the kext operating in telemetry-only mode.*
 
