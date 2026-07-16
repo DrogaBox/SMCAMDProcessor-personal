@@ -25,17 +25,17 @@
 
 #undef PMRYZEN_IDLE_MWAIT
 // PMRYZEN_IDLE_SIMPLE is the default idle strategy
-// Note: PMRYZEN_IDLE_IO_CSTATE may be defined via Xcode build settings
-#if !defined(PMRYZEN_IDLE_MWAIT) && !defined(PMRYZEN_IDLE_IO_CSTATE)
-#define PMRYZEN_IDLE_SIMPLE 1
-#endif
+// Idle strategy is now selected at runtime based on CPU family.
+// See pmRyzen_idle_strategy_t and the extern variable below.
+// The old compile-time #define guards are replaced by a runtime enum.
+typedef enum {
+    PMRYZEN_IDLE_STRATEGY_SIMPLE    = 0,  // sti; hlt — safe for all AMD CPUs
+    PMRYZEN_IDLE_STRATEGY_MWAIT     = 1,  // MONITOR/MWAIT — Zen 4/5, lower idle power
+    PMRYZEN_IDLE_STRATEGY_IO_CSTATE = 2,  // inw $0xf2 — legacy, unused
+} pmRyzen_idle_strategy_t;
 
-// Sanity check: ensure only one idle strategy is active
-#if defined(PMRYZEN_IDLE_MWAIT) && (defined(PMRYZEN_IDLE_SIMPLE) || defined(PMRYZEN_IDLE_IO_CSTATE))
-#error "PMRYZEN_IDLE_MWAIT conflicts with another idle strategy definition"
-#elif defined(PMRYZEN_IDLE_SIMPLE) && defined(PMRYZEN_IDLE_IO_CSTATE)
-#error "PMRYZEN_IDLE_SIMPLE conflicts with PMRYZEN_IDLE_IO_CSTATE"
-#endif
+// Runtime idle strategy — set by AMDRyzenCPUPowerManagement::start() based on cpuFamily.
+extern pmRyzen_idle_strategy_t pmRyzen_idle_strategy;
 
 #define MSR_PSTATE_CTL 0xC0010062
 #define MSR_PSTATE_0 0xC0010064

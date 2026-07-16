@@ -242,6 +242,7 @@ public:
     uint8_t  ccdCount = 0;
     float    ccdTemperatures[kMAX_CCD_COUNT] {};
     char     cpuArchName[16] {};
+    pmRyzen_idle_strategy_t cpuIdleStrategy{PMRYZEN_IDLE_STRATEGY_SIMPLE};
     
     // Curve Optimizer (Phase 13)
     int8_t curveOptimizerOffsets[CPUInfo::MaxCpus] {};

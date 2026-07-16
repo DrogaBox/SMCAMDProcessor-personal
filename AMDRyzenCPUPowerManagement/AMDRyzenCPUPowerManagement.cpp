@@ -451,6 +451,18 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     }
     IOLog("AMDRyzenCPUPowerManagement::start Detected Zen Generation: %u\n", zenGeneration);
     
+    // Set idle strategy based on CPU family.
+    // Zen 1 through Zen 3 (Families 17h, 19h models < 60h): use SIMPLE (sti;hlt)
+    // Zen 4+ (Family 19h models 60h+, Family 1Ah): use MWAIT for lower idle power
+    if (cpuFamily == 0x1A || (cpuFamily == 0x19 && cpuModel >= 0x60)) {
+        cpuIdleStrategy = PMRYZEN_IDLE_STRATEGY_MWAIT;
+        IOLog("AMDRyzenCPUPowerManagement::start Idle strategy: MWAIT (Zen 4/5)\n");
+    } else {
+        cpuIdleStrategy = PMRYZEN_IDLE_STRATEGY_SIMPLE;
+        IOLog("AMDRyzenCPUPowerManagement::start Idle strategy: SIMPLE (sti;hlt for Zen 3-)\n");
+    }
+    pmRyzen_idle_strategy = cpuIdleStrategy;
+    
     CPUInfo::getCpuid(0x80000005, 0, &cpuid_eax, &cpuid_ebx, &cpuid_ecx, &cpuid_edx);
     // L1-D size in bits [31:24] of ECX, L1-I size in bits [31:24] of EDX (CPUID 0x80000005)
     cpuCacheL1_perCore = (cpuid_ecx >> 24) + (cpuid_edx >> 24);
@@ -1107,6 +1119,12 @@ int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
     
     // Send command
     smnWrite32(msgReg, cmd);
+    
+    // Memory barrier: ensure the SMU sees the command write before we start
+    // polling the response register. Without this, write-combining buffers on
+    // the SMN bus can delay command delivery, causing the poll to read a stale
+    // zero and falsely trigger the timeout reset path.
+    __asm__ volatile("mfence" ::: "memory");
     
     // Wait for response. Curve Optimizer (0x3D) triggers PLL reconfiguration and can
     // take 5-15 ms on Zen 3; use 50 ms ceiling. Other commands typically complete <1 ms.
