@@ -1,12 +1,11 @@
 # Change Summary & Release Changelog
 
-## v3.32.0 - TBD
+## v3.23.1 - Audit Fixes
 
-### Added
-- temperatureOffset49 flag to ZenCpuFeatureMap for per-profile temperature control
-
-### Changed
-- Removed dead code from ResizableChart (cleanChartName, setHeight)
+### Fixed
+- **S-01**: Added defensive `fProvider` null-guard wrapping all SMC key registrations in `setupKeysVsmc()` (TC0x, PCPR, PSTR, per-CCD). Previously only per-CCD keys were guarded.
+- **P-01**: Reduced actor-hop IPC overhead in telemetry sampling — collapsed ~8 individual `await` calls into a single `snapshotTelemetry()` transaction on `ProcessorModel`, cutting context-switch overhead.
+- **K-01**: Documented fragile dynamic symbol resolution in `kernel_resolver.h` with explicit risk disclosure.
 
 ---
 

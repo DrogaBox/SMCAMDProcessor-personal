@@ -1,6 +1,27 @@
 #ifndef kernel_resolver_h
 #define kernel_resolver_h
 
+//
+// kernel_resolver — fragile dynamic symbol resolution for private kernel APIs.
+//
+// K-01: This module uses heuristic-based kernel base address discovery
+// (walking Mach-O headers, _mh_execute_header / _version anchors, KASLR
+// slide calculation) to resolve symbols that Apple does not export.
+//
+// RISK: The internal kernel ABI — struct offsets, function signatures,
+// symbol presence — changes across macOS minor versions without notice.
+// A future kernel update can silently break:
+//   - Mach-O header iteration (MH_MAGIC_64 mismatch)
+//   - Symbol table parsing (nlist_64 format change)
+//   - KASLR slide calculation (new kernel layout)
+//   - Required symbol removal or renaming
+//
+// This is an accepted architectural tradeoff: there is no public API for
+// SMU mailbox access, CPPC MSR read/write, or CCD temperature reporting.
+// Without this resolver, those features cannot exist. The resolver must be
+// validated against every new macOS release before shipping an update.
+//
+
 #include <IOKit/IOLib.h>
 #include <mach/mach_types.h>
 #include <mach-o/loader.h>
