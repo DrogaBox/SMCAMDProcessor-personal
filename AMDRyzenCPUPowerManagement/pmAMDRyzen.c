@@ -70,6 +70,8 @@ pmDispatch_t pmRyzen_cpuFuncs = {
     .pmThreadGoingOffCore = 0,
 };
 
+#pragma mark - P-State Initialization
+
 void pmRyzen_init_PState(void){
     // P1 = 80% of P0 by default. Override via boot-arg `amdpp1ratio=0.75` etc.
     static float p1_ratio = 0.0f;
@@ -125,6 +127,8 @@ void pmRyzen_PState_reset(void){
     if(pmRyzen_pstatelimit == 0) pmRyzen_pstatelimit = 1;
     mp_rendezvous_no_intrs(&pmRyzen_doPState_reset, NULL);
 }
+
+#pragma mark - Init / Stop
 
 void pmRyzen_init(void *handle, int allowDispatch){
     
@@ -231,6 +235,8 @@ void pmRyzen_stop(void){
 
 
 
+#pragma mark - Load & Idle
+
 float pmRyzen_avgload_pcpu(uint32_t cpu){
     if (cpu >= XNU_MAX_CPU || !pmRyzen_cpunum_to_lcpu[cpu]) return 0.0f;
     float loadacc = 0;
@@ -333,6 +339,8 @@ uint64_t pmRyzen_machine_idle(uint64_t maxDur){
     pmRyzen_last_woken_cpu = cn;
     return 0;
 }
+
+#pragma mark - CPU Selection
 
 int pmRyzen_choose_cpu(int startCPU, int endCPU, int preferredCPU){
     if (preferredCPU >= 0 && preferredCPU < XNU_MAX_CPU

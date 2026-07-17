@@ -57,6 +57,8 @@ extern uint64_t pmRyzen_exit_idle_c;
 extern uint64_t pmRyzen_exit_idle_ipi_c;
 extern uint64_t pmRyzen_exit_idle_false_c;
 
+
+#pragma mark - Idle Strategy
 extern uint32_t pmRyzen_hpcpus;
 
 extern volatile uint32_t pmRyzen_pstatelimit;
@@ -70,6 +72,8 @@ extern pmRyzen_symtable_t pmRyzen_symtable;
 typedef struct __attribute__((aligned(64))) pmProcessor {
     // Cache Line 1 (64 bytes): Hot Idle & TSC tracking
     x86_lcpu_t *lcpu;
+
+#pragma mark - Processor State & API
     uint64_t stat_exit_idle;
     uint64_t arm_flag;
     uint64_t cpu_awake;

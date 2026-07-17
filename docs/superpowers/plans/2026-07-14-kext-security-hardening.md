@@ -145,8 +145,6 @@ require root or boot-arg -amdpnopchk.
 
 This closes audit finding A-01 (CRITICAL): process-name trust bypass.
 
-Generated with Codebuff
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -224,8 +222,6 @@ clientAuthorizedByUser and the boot-arg -amdpnopchk flag, instead of
 re-evaluating proc_suser() on every write call. The flag is set in
 initWithTask during IOServiceOpen connection.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -294,8 +290,6 @@ the response register poll loop. Prevents write-combining buffers on the
 SMN bus from delaying SMU command delivery, which could cause spurious
 timeouts or stale-response reads.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -419,8 +413,6 @@ Try _mh_execute_header as primary anchor for KASLR slide computation,
 falling back to _version. Both are validated against the kernel canonical
 high range (>= 0xFFFFFF8000000000) before use.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -654,8 +646,6 @@ a runtime enum. Zen 4 (Family 19h model 60h+) and Zen 5 (Family 1Ah) use
 MONITOR/MWAIT for lower idle power. Zen 3- continue using the safe
 sti;hlt path to avoid #UD panics.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -788,7 +778,5 @@ Add XCTest cases covering:
 - FanCurve empty LUT edge case
 - AppLanguage model
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```

@@ -44,6 +44,7 @@ uint8_t pmRyzen_symtable_ready = 0;
 
 }
 
+#pragma mark - Lifecycle (init, free, start, stop)
 
 bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     strncpy(kMODULE_VERSION, xStringify(MODULE_VERSION), sizeof(kMODULE_VERSION) - 1);
@@ -99,6 +100,8 @@ void AMDRyzenCPUPowerManagement::free(){
 }
 
 
+#pragma mark - PCI & Board Info Helpers
+
 bool AMDRyzenCPUPowerManagement::getPCIService(){
     OSDictionary *matching_dict = serviceMatching("IOPCIDevice");
     if(!matching_dict){
@@ -142,6 +145,8 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
     return true;
 }
 
+
+#pragma mark - Work Loop Management
 void AMDRyzenCPUPowerManagement::initWorkLoop() {
     IOLog("AMDRyzenCPUPowerManagement::startWorkLoop setting up timer");
     timerEvent_main = IOTimerEventSource::timerEventSource(this, [](OSObject *object, IOTimerEventSource *sender) {
@@ -332,6 +337,8 @@ void AMDRyzenCPUPowerManagement::resumeWorkLoop() {
     if (timerEvent_tempe) timerEvent_tempe->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
 }
 
+
+#pragma mark - start() — Main Initialization
 bool AMDRyzenCPUPowerManagement::start(IOService *provider){
     
     bool success = IOService::start(provider);
@@ -598,6 +605,8 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
 }
 
 void AMDRyzenCPUPowerManagement::stop(IOService *provider){
+
+#pragma mark - stop() — Cleanup
     IOLog("AMDRyzenCPUPowerManagement stopping...\n");
 
     // 1. Cancel all timerEventSource (cancelTimeout)
@@ -665,6 +674,8 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
 
 IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdinal, IOService* provider) {
     if (0 == powerStateOrdinal) {
+
+#pragma mark - Power State Management
         // Going to sleep
         IOLog("AMDRyzenCPUPowerManagement::setPowerState preparing for sleep\n");
         wentToSleep = true;
@@ -683,6 +694,8 @@ IOReturn AMDRyzenCPUPowerManagement::setPowerState(unsigned long powerStateOrdin
 
 void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
     if (boardInfoValid) return;
+
+#pragma mark - MSR Access (read_msr, write_msr)
     strlcpy(boardVendor, "Unknown Vendor", BASEBOARD_STRING_MAX);
     strlcpy(boardName, "Unknown Platform", BASEBOARD_STRING_MAX);
     
@@ -747,6 +760,8 @@ void AMDRyzenCPUPowerManagement::fetchOEMBaseBoardInfo(){
 
 bool AMDRyzenCPUPowerManagement::read_msr(uint32_t addr, uint64_t *value){
     if (cpuFamily >= 0x19) {
+
+#pragma mark - Frequency & Clock Management
         // Zen 3+ MSR Bounds Checking — block Intel-exclusive MSRs that #GP on AMD.
         // Whitelist: 0xE7 (MPERF), 0xE8 (APERF) — used by this kext for effective freq.
         if (addr == 0xCE                          // IA32_ARCH_CAPABILITIES
@@ -804,6 +819,8 @@ void AMDRyzenCPUPowerManagement::registerRequest(){
 
 void AMDRyzenCPUPowerManagement::updateClockSpeed(uint8_t physical){
     
+
+#pragma mark - Power & EPP Control
     uint64_t msr_value_buf = 0;
     bool err = !read_msr(kMSR_HARDWARE_PSTATE_STATUS, &msr_value_buf);
     if (err) {
@@ -911,6 +928,8 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
 
 void AMDRyzenCPUPowerManagement::applyPowerControl(){
     // Legacy P-state writes are controlled per CPU profile.
+
+#pragma mark - SMU Mailbox Commands
     // Enabled on Zen 1/2 (full PM dispatch), disabled on Zen 3+ (telemetry-only).
     if (!legacyPstateAllowed) {
         if (cppcActiveMode) {
@@ -1061,6 +1080,8 @@ float AMDRyzenCPUPowerManagement::getCCDTemp(uint8_t ccd) {
 
 uint32_t AMDRyzenCPUPowerManagement::smnRead32(uint32_t addr) {
     if (!fIOPCIDevice || !pciConfigLock) return 0;
+
+#pragma mark - SMN Access (smnRead32, smnWrite32)
     IOPCIAddressSpace space;
     space.bits = 0x00;
     
@@ -1084,6 +1105,8 @@ void AMDRyzenCPUPowerManagement::smnWrite32(uint32_t addr, uint32_t val) {
 
 int AMDRyzenCPUPowerManagement::smuSendCmd(uint32_t cmd, uint32_t arg) {
     if (!smuMailbox.supported) return SMU_RSP_INVALID_CMD;
+
+#pragma mark - Thermal & Energy Monitoring
     uint32_t msgReg = smuMailbox.msgReg;
     uint32_t argReg = smuMailbox.argReg;
     uint32_t rspReg = smuMailbox.rspReg;
@@ -1189,6 +1212,8 @@ int AMDRyzenCPUPowerManagement::setCurveOptimizer(uint8_t core, int8_t offset) {
 
 void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     float sum = 0;
+
+#pragma mark - Curve Optimizer
     for (int i = 0; i < HF_TEMP_SAMPLE_LEN; i++) sum += tempSamples[i];
     float currentTemp = sum * HF_TEMP_SAMPLE_LENREP;
     PACKAGE_TEMPERATURE_perPackage[0] = currentTemp;
@@ -1236,6 +1261,8 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
 
 void AMDRyzenCPUPowerManagement::dumpPstate(){
     
+
+#pragma mark - P-State & Debug
     uint8_t len = 0;
     for (uint32_t i = 0; i < kMSR_PSTATE_LEN; i++) {
         uint64_t msr_value_buf = 0;
@@ -1415,6 +1442,8 @@ void AMDRyzenCPUPowerManagement::writePstate(const uint64_t *buf){
 
 bool AMDRyzenCPUPowerManagement::initSuperIO(uint16_t *chipIntel){
     if (!superIOLock) return false;
+
+#pragma mark - Super IO & Fan Control
     IOLockLock(superIOLock);
     if (superIO) { delete superIO; superIO = nullptr; }
     if(!superIO) superIO = ISSuperIONCT668X::getDevice(&savedSMCChipIntel);
