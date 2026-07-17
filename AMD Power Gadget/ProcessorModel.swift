@@ -916,6 +916,41 @@ actor ProcessorModel {
         return scalerOut
     }
 
+    // MARK: - Snapshot Transaction (IPC Optimization)
+
+    /// Consolidated telemetry snapshot returned by `snapshotTelemetry()`.
+    /// Reduces actor hops from ~8 individual `await` calls to 1.
+    struct TelemetrySnapshot {
+        let metric: [Float]
+        let loadIndex: [Float]
+        let numPhysicalCores: Int
+        let gpuTemp: Float
+        let gpuPower: Float
+        let gpuUtil: Float
+        let gpuVram: Float
+        let gpuFan: Float
+    }
+
+    /// Fetches all kext/mach telemetry in a single actor-isolated call,
+    /// collapsing ~8 `await` crossings into one. Internally caches GPU stats
+    /// via `updateGPUStatsCache()` (500 ms TTL).
+    func snapshotTelemetry(forceMetric: Bool) -> TelemetrySnapshot {
+        let metric = getMetric(forced: forceMetric)
+        let loadIdx = getLoadIndex()
+        let cores = numberOfCores
+        updateGPUStatsCache()
+        return TelemetrySnapshot(
+            metric: metric,
+            loadIndex: loadIdx,
+            numPhysicalCores: cores,
+            gpuTemp: cachedGPUStats.temp,
+            gpuPower: cachedGPUStats.power,
+            gpuUtil: cachedGPUStats.util,
+            gpuVram: cachedGPUStats.vram,
+            gpuFan: cachedGPUStats.fan
+        )
+    }
+
     nonisolated func getCurveOptimizerOffsets() -> [Int8] {
         var output = [Int8](repeating: 0, count: 64) // MaxCpus is typically 64
         var outputSize = output.count

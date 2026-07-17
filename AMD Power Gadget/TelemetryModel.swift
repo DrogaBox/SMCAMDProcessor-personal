@@ -1024,26 +1024,23 @@ final class TelemetryModel: ObservableObject {
         let nowTime = Date()
         let lightMode = !activeWindows && !popoverVisible
         let logging = isLoggingEnabled
-
-        // Always query metric and load index from processor actor
-        let metric = await pm.getMetric(forced: true)
-        let loadIndex = await pm.getLoadIndex()
-
-        // Core count: use cached if available, otherwise query
-        let numPhys: Int
-        if cachedNumPhysicalCores > 0 {
-            numPhys = cachedNumPhysicalCores
-        } else {
-            numPhys = await pm.getNumOfCore()
-        }
-
-        // GPU stats with TTL caching (same logic as before, now in captureSnapshot)
         let mbc = menu
+
+        // P-01: Single actor-isolated kext snapshot instead of ~8 individual await calls.
+        // snapshotTelemetry() returns metric, loadIndex, numPhysicalCores, and GPU stats
+        // in one actor hop, cutting IPC overhead significantly.
+        let snap = await pm.snapshotTelemetry(forceMetric: true)
+        let metric = snap.metric
+        let loadIndex = snap.loadIndex
+        let numPhys = snap.numPhysicalCores
+
+        // GPU stats with TTL caching — use snapshot values when we need fresh data,
+        // fall back to stale published properties when cache is warm.
         let skipGPU = lightMode && !logging && !mbc.showGPU && !mbc.showGPUvram && !mbc.showGPUfan
         let skipGPUThermals = lightMode && !logging && !mbc.showGPUtemp && !mbc.showGPUpwr
 
-        let rawGPUTemp = skipGPUThermals ? Float(gpuTempC) : await pm.getGPUTemp()
-        let rawGPUPower = skipGPUThermals ? Float(gpuPowerW) : await pm.getGPUPower()
+        let rawGPUTemp = skipGPUThermals ? Float(gpuTempC) : snap.gpuTemp
+        let rawGPUPower = skipGPUThermals ? Float(gpuPowerW) : snap.gpuPower
         var newLastGPUExtraSample: Date? = nil
         let rawGPULoad: Float
         let rawGPUVram: Float
@@ -1057,13 +1054,13 @@ final class TelemetryModel: ObservableObject {
             rawGPUVram = Float(gpuVramUsedBytes)
             rawGPUFan = Float(gpuFanRPM)
         } else {
-            rawGPULoad = await pm.getGPUUtilization()
-            rawGPUVram = await pm.getGPUVramUsed()
-            rawGPUFan = await pm.getGPUFanRPM()
+            rawGPULoad = snap.gpuUtil
+            rawGPUVram = snap.gpuVram
+            rawGPUFan = snap.gpuFan
             newLastGPUExtraSample = nowTime
         }
 
-        // CCD temps with TTL caching
+        // CCD temps with TTL caching (nonisolated, no await needed)
         var newCachedCCDTemps: [Float]? = nil
         var newLastCCDCheck: Date? = nil
         let ccdTemps: [Float]
@@ -1080,10 +1077,10 @@ final class TelemetryModel: ObservableObject {
             }
         }
 
-        // Instruction delta
+        // Instruction delta (nonisolated)
         let instDelta = pm.getInstructionDelta()
 
-        // Fan RPMs and controls with TTL caching
+        // Fan RPMs and controls with TTL caching (nonisolated)
         var fanRpms: [UInt64] = []
         var fanCtrls: [UInt64] = []
         var newLastFanSampleTime: Date? = nil
