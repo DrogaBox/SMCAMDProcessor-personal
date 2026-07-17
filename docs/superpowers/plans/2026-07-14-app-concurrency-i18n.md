@@ -264,8 +264,6 @@ identified in audit A-07. IOKit calls remain thread-safe through
 the MIG subsystem. Moved IOKit fetch calls into captureSnapshot
 snapshot phase, keeping performBackgroundSample as pure computation.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -335,8 +333,6 @@ Add explicit [weak self] capture lists to all Task { @MainActor } blocks
 in TelemetryModel. Was relying on outer scope weak refs; explicit capture
 is more robust against refactoring.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -428,8 +424,6 @@ thread for UI observation. Adding @MainActor eliminates data races
 between sampleCurrentTelemetry() and pruneOldData(). The static
 performDownsample method already receives data-by-copy and is safe.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -498,8 +492,6 @@ The existing nil-length check (outputStrCount > 0) already prevents
 invalid range crashes. Added comment to clarify the guard for future
 readers.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -623,8 +615,6 @@ and Settings headers (ACTIVE MONITORS) with LocalizedStringKey. Add
 English source strings and Spanish translations to respective .strings
 files for Crowdin sync.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -707,8 +697,6 @@ Replace idiomatically fragile withUnsafePointer+UnsafeBufferPointer
 pattern in updateKextCurves() with the modern Data(bytes:count:)
 initializer. Same behavior, clearer lifetime semantics.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
 
@@ -821,7 +809,5 @@ structured-concurrency Task: captureSnapshot (async), then
 Task.detached(utility) for background computation, then
 MainActor.run for UI update. Reduces context switches from 3 to 2.
 
-Generated with Codebuff 🤖
-Co-Authored-By: Codebuff <noreply@codebuff.com>
 "
 ```
