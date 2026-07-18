@@ -1,12 +1,11 @@
 //
-//  PopoverViews.swift
+//  PopoverTabButton.swift
 //  AMD Power Gadget
 //
-//  Extracted from MainDashboardView.swift (2026) — Popover Views
+//  Moved from PopoverViews.swift during post-refactor cleanup
 //
 
 import SwiftUI
-import Charts
 
 struct PopoverTabButton: View {
     let title: String
@@ -38,5 +37,3 @@ struct PopoverTabButton: View {
         .buttonStyle(PlainButtonStyle())
     }
 }
-
-// MARK: - Menu Bar Popover View
