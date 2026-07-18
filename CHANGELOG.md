@@ -9,6 +9,41 @@
 
 ---
 
+## v3.33.4 — Codebase Restructure & Audit Hardening
+
+### Codebase Restructure (Phase 1–3)
+* **Views/ modularization**: Extracted monolithic SwiftUI views into focused files under `Views/Dashboard/`, `Views/Popover/`, `Views/Shared/`, `Views/Widgets/`, `Views/Config/`.
+* **Telemetry/ extraction**: Separated `TelemetryDataTypes.swift`, `HistoryStorage.swift`, and related types from `TelemetryModel.swift`.
+* Removed stale refactor scripts and superseded plan/spec docs (`scripts/refactor_*.py`, `docs/superpowers/plans/`).
+* Removed dead code from `Views/Shared/` (`BlockWindowDragView`, `VisualEffects`).
+* **`.gitattributes`**: Added `merge=union` strategy for `*.pbxproj` files to reduce merge conflicts; marked `MacKernelSDK/**` as `linguist-vendored`.
+
+### Kext (AMDRyzenCPUPowerManagement) — Audit Fixes
+* **K-2 — controlLock for provider state writes**: Added dedicated `IOLock *controlLock` to serialize `PStateCtl`, `cppcActiveMode`, and `cppcEPPValue` writes from concurrent UserClient connections. Protects selectors 10, 24, 25 against races between the timer workLoop and multiple UserClient callers.
+* **K-3 — Atomic kextAlertDisplayed clear**: Replaced non-atomic `kextAlertDisplayed = 0` with `OSCompareAndSwap(1, 0, ...)` to prevent race between the clear and another thread's atomic check-and-set.
+* **B-1 — Privilege re-validation**: `hasPrivilege()` now re-validates `proc_suser` on every call instead of using a cached flag. Removed `clientAuthorizedByUser` dead code. Stores `fOwningTask` from `initWithTask` (replaces `getTask()` which is unavailable in IOUserClient kext context).
+* Removed internal audit tracking codes (K-01, S-01, P-01) from source comments.
+
+### App (AMD Power Gadget)
+* **U-5 — Async flushToDisk**: Moved `HistoryManager.shared.flushToDisk()` from synchronous termination callback into a `Task { }` block to prevent blocking the main thread during app termination.
+
+---
+
+## v3.32.0 — Temperature Offset Flag & Documentation Update
+
+### Kext (AMDRyzenCPUPowerManagement)
+* **temperatureOffset49 per-profile flag**: Added `temperatureOffset49` field to `ZenCpuFeatureMap` profile struct, moving the 49°C offset from a kext-wide constant to a per-CPU-profile capability. Enabled for all Zen 1–4 profiles (verified against hardware), disabled for Zen 5 pending PPR validation. Eliminates the hardware flag bit check on architectures that do not support it.
+
+### App (AMD Power Gadget)
+* **Removed dead code**: Cleaned up `ResizableChart` unused methods and properties.
+
+### Documentation
+* Updated README supported processors table and ARCHITECTURE.md with current Zen family coverage.
+* User manuals (EN + ES) updated to v3.31.0; removed stale PDF versions.
+* Added "What We Removed and Why" section to README.
+
+---
+
 ## v3.31.0 - Native NSMenu + Kext Cleanup + Zen Family Profiles
 
 ### Fixed
