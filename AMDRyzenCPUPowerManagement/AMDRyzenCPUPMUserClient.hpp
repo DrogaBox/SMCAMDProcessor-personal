@@ -47,7 +47,6 @@ protected:
     
     AMDRyzenCPUPowerManagement *fProvider;
     void *token;
-    bool clientAuthorizedByUser = false;
     
     bool hasPrivilege(uint32_t selector);
     

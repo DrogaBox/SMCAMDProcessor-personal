@@ -74,6 +74,7 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     superIOLock = IOLockAlloc();
     smuCmdLock = IOLockAlloc();
     rendezvousLock = IOLockAlloc();
+    controlLock = IOLockAlloc();
     
     pmRyzen_symtable._KUNCUserNotificationDisplayAlert = lookup_symbol("_KUNCUserNotificationDisplayAlert");
     pmRyzen_symtable._tscFreq = lookup_symbol("_tscFreq");
@@ -95,6 +96,7 @@ void AMDRyzenCPUPowerManagement::free(){
     if (superIOLock)     { IOLockFree(superIOLock);           superIOLock = nullptr; }
     if (smuCmdLock)      { IOLockFree(smuCmdLock);            smuCmdLock = nullptr; }
     if (rendezvousLock)  { IOLockFree(rendezvousLock);        rendezvousLock = nullptr; }
+    if (controlLock)     { IOLockFree(controlLock);           controlLock = nullptr; }
     if (fIOPCIDevice)    { fIOPCIDevice->release();           fIOPCIDevice = nullptr; }
     IOService::free();
 }
@@ -662,6 +664,10 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     if (rendezvousLock) {
         IOLockFree(rendezvousLock);
         rendezvousLock = nullptr;
+    }
+    if (controlLock) {
+        IOLockFree(controlLock);
+        controlLock = nullptr;
     }
     if (workLoop) {
         workLoop->release();

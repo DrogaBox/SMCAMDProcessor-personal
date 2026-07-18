@@ -156,7 +156,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ aNotification: Notification) {
         TelemetryModel.shared.commitPendingChanges()
-        HistoryManager.shared.flushToDisk()
+        // flushToDisk is deferrered to a background Task so it doesn't block the
+        // termination callback with synchronous I/O (audit U-5). The OS gives the
+        // app a short grace period; async writing avoids stalling the main thread.
+        Task {
+            HistoryManager.shared.flushToDisk()
+        }
         Task {
             await NetworkStats.shared.stop()
             ProcessorModel.shared.closeDriver()

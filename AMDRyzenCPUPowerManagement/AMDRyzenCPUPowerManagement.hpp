@@ -408,6 +408,7 @@ public:
     IOLock *superIOLock{nullptr};   // Protects multi-step SuperIO I/O port sequences from concurrent UserClient calls
     IOLock *smuCmdLock{nullptr};    // Serializes full SMU command sequences (audit R-8)
     IOLock *rendezvousLock{nullptr}; // Serializes all mp_rendezvous calls (timer + UserClient control ops)
+    IOLock *controlLock{nullptr};   // Serializes provider state writes (PStateCtl, CPPC) from concurrent UserClients (audit K-2)
     
     static constexpr size_t kMAX_FANS = 16;
     FanCurveConfig fanCurves[MAX_FAN_CURVES];
