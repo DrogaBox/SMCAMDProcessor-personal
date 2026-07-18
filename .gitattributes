@@ -1,1 +1,5 @@
-*.h linguist-language=C++
+# Xcode project file — use union merge strategy to reduce conflicts
+*.pbxproj merge=union
+
+# Treat vendored SDK headers as binary to prevent text corruption
+MacKernelSDK/** linguist-vendored

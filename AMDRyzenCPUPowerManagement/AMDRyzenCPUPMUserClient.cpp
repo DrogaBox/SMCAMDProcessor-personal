@@ -40,11 +40,9 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     bool isDebugBypass = checkKernelArgument("-amdpnopchk");
     
     if (isRoot || isDebugBypass) {
-        clientAuthorizedByUser = true;
         IOLog("AMDRyzenCPUPMUserClient: ACCEPTED privileged pid=%d binary='%s' (root=%d debug=%d)\n",
               proc_pid(proc), taskProcessBinaryName, isRoot, isDebugBypass);
     } else {
-        clientAuthorizedByUser = false;
         IOLog("AMDRyzenCPUPMUserClient: ACCEPTED read-only pid=%d binary='%s' (writes require root or -amdpnopchk)\n",
               proc_pid(proc), taskProcessBinaryName);
     }
@@ -68,13 +66,18 @@ void AMDRyzenCPUPMUserClient::stop(IOService *provider){
 }
 
 bool AMDRyzenCPUPMUserClient::hasPrivilege(uint32_t selector){
-    // clientAuthorizedByUser is set at connection time in initWithTask:
-    //   - root (proc_suser == 0 || uid == 0) sets it true
-    //   - boot-arg -amdpnopchk also sets it true via the kext's disablePrivilegeCheck
-    // This cached check avoids re-evaluating proc_suser on every write selector.
-    if (clientAuthorizedByUser) return true;
     // Boot-arg bypass: allow writes without root when -amdpnopchk is present
     if (fProvider && fProvider->disablePrivilegeCheck) return true;
+    
+    // Re-validate root privilege on every call (audit B-1). This adds a small
+    // per-call overhead but is negligible for write selectors that are invoked
+    // infrequently (user-initiated control changes). It prevents a scenario
+    // where a process opens a UserClient connection as root, then drops
+    // privileges — the cached flag would incorrectly remain true.
+    proc_t proc = (proc_t)get_bsdtask_info(getTask());
+    if (proc && (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0))
+        return true;
+    
     IOLog("AMDRyzenCPUPMUserClient: DENIED select %u pid=%d binary='%s' (need root or -amdpnopchk)\n",
           selector, proc_selfpid(), taskProcessBinaryName);
     return false;
@@ -101,7 +104,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                           "AMDRyzenCPUPowerManagement", buf, "Ok", "Ok and Clear Alert", "WTF?", &rf);
             if (rf == 1) {
                 provider->kextloadAlerts = 0;
-                provider->kextAlertDisplayed = 0;
+                OSCompareAndSwap(1, 0, &provider->kextAlertDisplayed);
             }
         }
     }
@@ -378,8 +381,12 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if(arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
             
+            // controlLock protects PStateCtl + applyPowerControl as an atomic
+            // critical section against concurrent UserClient calls (audit K-2).
+            if (provider->controlLock) IOLockLock(provider->controlLock);
             provider->PStateCtl = (uint8_t)arguments->scalarInput[0];
             provider->applyPowerControl();
+            if (provider->controlLock) IOLockUnlock(provider->controlLock);
             break;
         }
 
@@ -661,10 +668,14 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if (arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
                 
+            // controlLock protects cppcActiveMode + applyEPPControl as an atomic
+            // critical section against concurrent UserClient calls (audit K-2).
+            if (provider->controlLock) IOLockLock(provider->controlLock);
             provider->cppcActiveMode = (arguments->scalarInput[0] == 1);
             if (provider->cppcActiveMode) {
                 provider->applyEPPControl();
             }
+            if (provider->controlLock) IOLockUnlock(provider->controlLock);
             
             break;
         }
@@ -677,10 +688,14 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             if (arguments->scalarInputCount != 1)
                 return kIOReturnBadArgument;
                 
+            // controlLock protects cppcEPPValue + applyEPPControl as an atomic
+            // critical section against concurrent UserClient calls (audit K-2).
+            if (provider->controlLock) IOLockLock(provider->controlLock);
             provider->cppcEPPValue = (uint8_t)arguments->scalarInput[0];
             if (provider->cppcActiveMode) {
                 provider->applyEPPControl();
             }
+            if (provider->controlLock) IOLockUnlock(provider->controlLock);
             
             break;
         }
