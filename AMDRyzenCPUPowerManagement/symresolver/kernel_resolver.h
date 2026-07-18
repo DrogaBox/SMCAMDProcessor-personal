@@ -4,7 +4,7 @@
 //
 // kernel_resolver — fragile dynamic symbol resolution for private kernel APIs.
 //
-// K-01: This module uses heuristic-based kernel base address discovery
+// This module uses heuristic-based kernel base address discovery
 // (walking Mach-O headers, _mh_execute_header / _version anchors, KASLR
 // slide calculation) to resolve symbols that Apple does not export.
 //

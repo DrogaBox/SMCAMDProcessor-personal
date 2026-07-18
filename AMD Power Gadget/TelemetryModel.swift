@@ -720,7 +720,7 @@ final class TelemetryModel: ObservableObject {
         let logging = isLoggingEnabled
         let mbc = menu
 
-        // P-01: Single actor-isolated kext snapshot instead of ~8 individual await calls.
+        // Single actor-isolated kext snapshot instead of ~8 individual await calls.
         // snapshotTelemetry() returns metric, loadIndex, numPhysicalCores, and GPU stats
         // in one actor hop, cutting IPC overhead significantly.
         let snap = await pm.snapshotTelemetry(forceMetric: true)
