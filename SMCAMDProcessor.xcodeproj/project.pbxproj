@@ -39,13 +39,6 @@
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
-		<key>0IXIIM04A9XBZ955GYR8N6WH</key>
-		<dict>
-			<key>fileRef</key>
-			<string>YB6TGCIOOORYBGE0P9TK5X9D</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
 		<key>114D99D55F7FC46D21540932</key>
 		<dict>
 			<key>fileRef</key>
@@ -119,17 +112,6 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
-		<key>31C6513B39E94D54A0464307</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>DashboardHistory.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
 		<key>3844C067099240698E4D34E1</key>
 		<dict>
 			<key>isa</key>
@@ -154,19 +136,6 @@
 			<string>EE91A0BC197D4621BF4FDBF2</string>
 			<key>isa</key>
 			<string>PBXBuildFile</string>
-		</dict>
-		<key>412E24CA035D1FFAEC751760</key>
-		<dict>
-			<key>includeInIndex</key>
-			<string>1</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>PopoverViews.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
 		</dict>
 		<key>438BBAEF07AB4D23BFC2B6CD</key>
 		<dict>
@@ -199,13 +168,6 @@
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
-		<key>463DC4A1457F1F20873F7777</key>
-		<dict>
-			<key>fileRef</key>
-			<string>9475A6F3C2BBA6C48EA0D0E1</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
 		<key>47B507E5C752D5AA03FF0B46</key>
 		<dict>
 			<key>includeInIndex</key>
@@ -218,13 +180,6 @@
 			<string>MenuBarConfig.swift</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
-		</dict>
-		<key>48F6246E579B45E599E906A8</key>
-		<dict>
-			<key>fileRef</key>
-			<string>31C6513B39E94D54A0464307</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
 		</dict>
 		<key>4ADF78D52CAB47BA89E5BEAA</key>
 		<dict>
@@ -301,6 +256,7 @@
 				<string>CF049C47B05943DDB2662F04</string>
 				<string>F986A5BB18DC4F589475A5EC</string>
 				<string>13F8B2816B8A48BE9934AED8</string>
+				<string>BBC11DC7B08F</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -365,13 +321,6 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
-		<key>5E7582558CD3FD87317E33A2</key>
-		<dict>
-			<key>fileRef</key>
-			<string>412E24CA035D1FFAEC751760</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
 		<key>5F808680DC9728B64461CD5B</key>
 		<dict>
 			<key>includeInIndex</key>
@@ -401,6 +350,7 @@
 				<string>6100NCPRDGG9ZUK3ETFWUTP4</string>
 				<string>JBNA7621D0R9JZ9MTJWBU8TW</string>
 				<string>WZC2DB2YYX4ODYYQXYXYW4VY</string>
+				<string>KKA23F011A95</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -436,7 +386,6 @@
 				<string>7FC1B5BF375F43C1BADDE26F</string>
 				<string>FA9BCD5E5FAF4E8D803663DD</string>
 				<string>8D3A38F4B6014EE8B2C79E53</string>
-				<string>31C6513B39E94D54A0464307</string>
 				<string>EC2739AA55E4485B84F106BE</string>
 				<string>73B5211A70F44BF79C31E3F6</string>
 				<string>7A34EFB3AC5D445091B063D5</string>
@@ -540,6 +489,7 @@
 				<string>81F4FCE7E50A43DDA617EFF1</string>
 				<string>FFBDC1832D174E98A7FA7479</string>
 				<string>4D446AEF358E4B99BCEC9E02</string>
+				<string>TH155DE49462</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -673,19 +623,6 @@
 			<string>sourcecode.swift</string>
 			<key>path</key>
 			<string>DashboardCharts.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>9475A6F3C2BBA6C48EA0D0E1</key>
-		<dict>
-			<key>includeInIndex</key>
-			<string>1</string>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>ChartDetailViews.swift</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
@@ -873,10 +810,13 @@
 				<string>IL0GS7HTXK01MY68386LLMOP</string>
 				<string>YB6TGCIOOORYBGE0P9TK5X9D</string>
 				<string>HURFMRG28GDHEQUR6L0KXO21</string>
+				<string>HH190A4CA2C3</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
 			<key>name</key>
+			<string>Telemetry</string>
+			<key>path</key>
 			<string>Telemetry</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -1210,14 +1150,12 @@
 				<string>5AB6D79272E07E00AC7E68B3</string>
 				<string>9F51098C8322AE65EE224AEF</string>
 				<string>B8DD2F1DFF552C5465AA8871</string>
-				<string>5E7582558CD3FD87317E33A2</string>
 				<string>E32E28C693D98B149646A32B</string>
 				<string>80710189E057BAD67746030D</string>
 				<string>CD16B06875C810EDF081C77A</string>
 				<string>84DB34DCAAB3D25A02F604E6</string>
 				<string>D5DBA1D0D348F77D96E0415B</string>
 				<string>64BDDC746691C18DA9A809F2</string>
-				<string>463DC4A1457F1F20873F7777</string>
 				<string>B5CH000100000002</string>
 				<string>AABB001100004002</string>
 				<string>FGT5Z4VAW684MAMRO2YES5Z9</string>
@@ -1225,11 +1163,6 @@
 				<string>H6M8ITE5BCFISDXJSG6RDM10</string>
 				<string>TZOPJLIYG4P5LGLULW9F1LQS</string>
 				<string>9NHGS4K8TUQH6H1X2U1WIZYC</string>
-				<string>ZZW6NWWEGQIXNIBOHS8WGGLZ</string>
-				<string>PSPQQDCRTBTP07QWLCB8JVMJ</string>
-				<string>ZCJ3WAKA7R289ZRPDLBR67XW</string>
-				<string>0IXIIM04A9XBZ955GYR8N6WH</string>
-				<string>UGQHVBVB84PSNXBA1DG4OETG</string>
 				<string>438BBAEF07AB4D23BFC2B6CD</string>
 				<string>3A91DD8BFFD348A6A0F9B476</string>
 				<string>50DE862257C247DB9CAAB408</string>
@@ -1239,7 +1172,6 @@
 				<string>F59DC5479AE242DD8A05B5D0</string>
 				<string>2E7B60835EAC40D39D6C51FF</string>
 				<string>C0AF58F449194A02B538CCB8</string>
-				<string>48F6246E579B45E599E906A8</string>
 				<string>5D6DD2CEB6754B8CAFEA8DE3</string>
 				<string>8B0AEA3D7DC04266AA596585</string>
 				<string>693CC59EA07843698F768C5F</string>
@@ -1256,6 +1188,12 @@
 				<string>B78142DABB7D4B6C84A948D9</string>
 				<string>EBFFBB34B23D485FA41433E4</string>
 				<string>29CCB804A8444565ACC86303</string>
+				<string>BB987AD7499B</string>
+				<string>KK1189DA4F59</string>
+				<string>TH0488D0FAAB</string>
+				<string>THDEAF1F0A31</string>
+				<string>TH89245A331A</string>
+				<string>TH567636C807</string>
 			</array>
 			<key>isa</key>
 			<string>PBXSourcesBuildPhase</string>
@@ -1359,18 +1297,15 @@
 				<string>5F808680DC9728B64461CD5B</string>
 				<string>4595D207D24DCAE63A8287FF</string>
 				<string>6B54CCA047416B7570B45057</string>
-				<string>412E24CA035D1FFAEC751760</string>
 				<string>6FDA65DF83D678288EEC73FD</string>
 				<string>C589FF26732FF993BF9FDD5B</string>
 				<string>21B9706A8AE6F6C460F073D0</string>
 				<string>9C206E0143DF662573E98952</string>
 				<string>47B507E5C752D5AA03FF0B46</string>
 				<string>DD1D725C7746F381324C5057</string>
-				<string>9475A6F3C2BBA6C48EA0D0E1</string>
 				<string>AABB001100004001</string>
 				<string>B5CH000100000001</string>
 				<string>5VS6G649XZB45SHM9GNDR578</string>
-				<string>ADL05OZTEOA25MKMENL8RCSZ</string>
 				<string>7D2273741EE44358A0E60378</string>
 			</array>
 			<key>isa</key>
@@ -3614,6 +3549,24 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
+		<key>BB987AD7499B</key>
+		<dict>
+			<key>fileRef</key>
+			<string>BBC11DC7B08F</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>BBC11DC7B08F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>PopoverTabButton.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
 		<key>BBC31AF7FEEF4C7E8BAF8714</key>
 		<dict>
 			<key>fileRef</key>
@@ -4247,45 +4200,12 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
-		<key>GECMU4P2N3LD7PABRJ0KIAJC</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>Telemetry/TelemetryDataTypes.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
 		<key>H6M8ITE5BCFISDXJSG6RDM10</key>
 		<dict>
 			<key>fileRef</key>
 			<string>6100NCPRDGG9ZUK3ETFWUTP4</string>
 			<key>isa</key>
 			<string>PBXBuildFile</string>
-		</dict>
-		<key>HURFMRG28GDHEQUR6L0KXO21</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>Telemetry/CaffeinateManager.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>IL0GS7HTXK01MY68386LLMOP</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>Telemetry/TelemetryStorage.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
 		</dict>
 		<key>JBNA7621D0R9JZ9MTJWBU8TW</key>
 		<dict>
@@ -4298,23 +4218,23 @@
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
-		<key>K87M2QH6ZYC703ADSUWYGM42</key>
+		<key>KK1189DA4F59</key>
+		<dict>
+			<key>fileRef</key>
+			<string>KKA23F011A95</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>KKA23F011A95</key>
 		<dict>
 			<key>isa</key>
 			<string>PBXFileReference</string>
 			<key>lastKnownFileType</key>
 			<string>sourcecode.swift</string>
 			<key>path</key>
-			<string>Telemetry/TelemetryPerformance.swift</string>
+			<string>HistoryStorage.swift</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
-		</dict>
-		<key>PSPQQDCRTBTP07QWLCB8JVMJ</key>
-		<dict>
-			<key>fileRef</key>
-			<string>K87M2QH6ZYC703ADSUWYGM42</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
 		</dict>
 		<key>S8ZDVKM7WJCVOPLAZ8S6XPPA</key>
 		<dict>
@@ -4323,17 +4243,100 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
+		<key>TH0488D0FAAB</key>
+		<dict>
+			<key>fileRef</key>
+			<string>TH866943730E</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>TH155DE49462</key>
+		<dict>
+			<key>children</key>
+			<array>
+				<string>TH866943730E</string>
+				<string>TH7BC6744FE4</string>
+				<string>TH8894F37C84</string>
+				<string>THEEF61EA16D</string>
+			</array>
+			<key>isa</key>
+			<string>PBXGroup</string>
+			<key>name</key>
+			<string>Themes</string>
+			<key>path</key>
+			<string>Themes</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>TH567636C807</key>
+		<dict>
+			<key>fileRef</key>
+			<string>THEEF61EA16D</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>TH7BC6744FE4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>ThemePresets.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>TH866943730E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>ThemeStudio.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>TH8894F37C84</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>ChartStylesViews.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>TH89245A331A</key>
+		<dict>
+			<key>fileRef</key>
+			<string>TH8894F37C84</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>THDEAF1F0A31</key>
+		<dict>
+			<key>fileRef</key>
+			<string>TH7BC6744FE4</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
+		<key>THEEF61EA16D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>ThemePickers.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
 		<key>TZOPJLIYG4P5LGLULW9F1LQS</key>
 		<dict>
 			<key>fileRef</key>
 			<string>JBNA7621D0R9JZ9MTJWBU8TW</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>UGQHVBVB84PSNXBA1DG4OETG</key>
-		<dict>
-			<key>fileRef</key>
-			<string>HURFMRG28GDHEQUR6L0KXO21</string>
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
@@ -4347,31 +4350,6 @@
 			<string>CaffeinateManager.swift</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
-		</dict>
-		<key>YB6TGCIOOORYBGE0P9TK5X9D</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>Telemetry/CSVLogger.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
-		<key>ZCJ3WAKA7R289ZRPDLBR67XW</key>
-		<dict>
-			<key>fileRef</key>
-			<string>IL0GS7HTXK01MY68386LLMOP</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>ZZW6NWWEGQIXNIBOHS8WGGLZ</key>
-		<dict>
-			<key>fileRef</key>
-			<string>GECMU4P2N3LD7PABRJ0KIAJC</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
