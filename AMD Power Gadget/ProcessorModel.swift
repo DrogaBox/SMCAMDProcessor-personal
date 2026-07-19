@@ -14,6 +14,25 @@ actor ProcessorModel {
 
     private let connect: io_connect_t
 
+    class TerminationState {
+        private let lock = NSLock()
+        private var _isTerminating = false
+        var isTerminating: Bool {
+            get {
+                lock.lock()
+                defer { lock.unlock() }
+                return _isTerminating
+            }
+            set {
+                lock.lock()
+                _isTerminating = newValue
+                lock.unlock()
+            }
+        }
+    }
+    nonisolated let terminationState = TerminationState()
+    nonisolated var isTerminating: Bool { terminationState.isTerminating }
+
     private var cachedMetric : [Float] = []
     private var numberOfCores : Int = 0
     private var lastMLoad : Double = 0
@@ -152,6 +171,10 @@ actor ProcessorModel {
         Task { await self._finishInit() }
     }
 
+    deinit {
+        retryTimer?.invalidate()
+    }
+
     private func _finishInit() async {
         if connect == 0 {
             alertAndQuit(message: NSLocalizedString("Please download AMDRyzenCPUPowerManagement from the release page.", comment: ""))
@@ -207,6 +230,7 @@ actor ProcessorModel {
     }
 
     nonisolated func closeDriver() {
+        terminationState.isTerminating = true
         IOServiceClose(connect)
     }
 
@@ -259,6 +283,7 @@ actor ProcessorModel {
     }
 
     nonisolated func kernelGetFloats(count: Int, selector: UInt32) -> [Float] {
+        if isTerminating || Task.isCancelled { return [] }
         var scalarOut: UInt64 = 0
         var scalarOutCount: UInt32 = 1
         var output = [Float](repeating: 0, count: count)
@@ -277,6 +302,7 @@ actor ProcessorModel {
     }
 
     nonisolated func kernelGetUInt64(count: Int, selector: UInt32) -> [UInt64] {
+        if isTerminating || Task.isCancelled { return [] }
         var scalarOut: UInt64 = 0
         var scalarOutCount: UInt32 = 1
         var output = [UInt64](repeating: 0, count: count)
@@ -298,6 +324,7 @@ actor ProcessorModel {
     static let kIOReturnNotPrivilegedCode: kern_return_t = kern_return_t(bitPattern: 0xe00002c1)
 
     nonisolated func kernelSetStruct(selector: UInt32, data: Data) -> kern_return_t {
+        if isTerminating || Task.isCancelled { return kIOReturnNotReady }
         return data.withUnsafeBytes { rawBuffer -> kern_return_t in
             guard let baseAddress = rawBuffer.baseAddress else { return kIOReturnBadArgument }
             return IOConnectCallMethod(connect, selector, nil, 0, baseAddress, data.count, nil, nil, nil, nil)
@@ -310,7 +337,7 @@ actor ProcessorModel {
     }
 
     nonisolated func kernelGetString(selector : UInt32, args : [UInt64]) -> String {
-
+        if isTerminating || Task.isCancelled { return "" }
         var argcpy = args
         var outbuffersize = 16
         var outputStr: [CChar] = [CChar](repeating: 0, count: outbuffersize)
@@ -340,6 +367,7 @@ actor ProcessorModel {
     /// Returns the raw IOKit status (KERN_SUCCESS / kIOReturnNotPrivileged / …).
     @discardableResult
     nonisolated func kernelSetUInt64Status(selector: UInt32, args: [UInt64]) -> kern_return_t {
+        if isTerminating || Task.isCancelled { return kIOReturnNotReady }
         var argcpy = args
         return IOConnectCallMethod(connect, selector, &argcpy, UInt32(args.count), nil, 0,
                                    nil, nil, nil, nil)

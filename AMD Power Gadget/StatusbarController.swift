@@ -190,6 +190,7 @@ class StatusbarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
     @objc func update() {
         let tm = TelemetryModel.shared
+        if tm.isSampling { return }
         let power = Float(tm.cpuWatts)
         let temperature = Float(tm.cpuTempC)
         let meanFre = Float(tm.cpuFreqAvgGHz * 1000.0)
