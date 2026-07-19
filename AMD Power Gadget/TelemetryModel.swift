@@ -293,7 +293,7 @@ final class TelemetryModel: ObservableObject {
     private var lastDiskCheck: Date = Date.distantPast
     /// Utility QoS: telemetry is continuous background work, not interactive UI.
     private let ioQueue = DispatchQueue(label: "com.drogabox.SMCAMDProcessor.io", qos: .utility)
-    private var isSampling = false
+    private(set) var isSampling = false
     private var lastFanSampleTime: Date = .distantPast
     private var lastHistoryPublishTime: Date = .distantPast
     private var lastGPUExtraSample: Date = .distantPast
