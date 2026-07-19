@@ -5,16 +5,7 @@
 
 OSDefineMetaClassAndStructors(SMCAMDProcessor, IOService);
 
-// Ensures sensor objects are released if VirtualSMCAPI::addKey fails,
-// preventing memory leaks on registration failure (audit K-1).
-static bool addKeySafe(VirtualSMCAPI::Key key, OSObject *node,
-                       VirtualSMCAPI::Value value, OSObject *sensor) {
-    if (VirtualSMCAPI::addKey(key, node, value))
-        return true;
-    if (sensor)
-        sensor->release();
-    return false;
-}
+
 
 
 bool SMCAMDProcessor::setupKeysVsmc(){
@@ -27,59 +18,23 @@ bool SMCAMDProcessor::setupKeysVsmc(){
     if (fProvider) {
         // === Temperature keys (SP78 format) ===
         // TC0x keys: package temperature reported by the SMU (index 0)
-        {
-            auto *s = new TempPackage(fProvider, 0);
-            suc &= addKeySafe(KeyTCxE(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-            keyCount++;
-        }
-        {
-            auto *s = new TempPackage(fProvider, 0);
-            suc &= addKeySafe(KeyTCxF(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-            keyCount++;
-        }
-        {
-            auto *s = new TempPackage(fProvider, 0);
-            suc &= addKeySafe(KeyTCxP(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-            keyCount++;
-        }
-        {
-            auto *s = new TempPackage(fProvider, 0);
-            suc &= addKeySafe(KeyTCxT(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-            keyCount++;
-        }
-        {
-            auto *s = new TempPackage(fProvider, 0);
-            suc &= addKeySafe(KeyTCxp(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-            keyCount++;
-        }
+        suc &= VirtualSMCAPI::addKey(KeyTCxE(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempPackage(fProvider, 0))); keyCount++;
+        suc &= VirtualSMCAPI::addKey(KeyTCxF(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempPackage(fProvider, 0))); keyCount++;
+        suc &= VirtualSMCAPI::addKey(KeyTCxP(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempPackage(fProvider, 0))); keyCount++;
+        suc &= VirtualSMCAPI::addKey(KeyTCxT(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempPackage(fProvider, 0))); keyCount++;
+        suc &= VirtualSMCAPI::addKey(KeyTCxp(0), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempPackage(fProvider, 0))); keyCount++;
         
         // === Energy keys (SP96/Float format) ===
         // PCPR/PSTR: package power reported by RAPL MSR
-        {
-            auto *s = new EnergyPackage(fProvider, 0);
-            suc &= addKeySafe(KeyPCPR, vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, s), s);
-            keyCount++;
-        }
-        {
-            auto *s = new EnergyPackage(fProvider, 0);
-            suc &= addKeySafe(KeyPSTR, vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, s), s);
-            keyCount++;
-        }
+        suc &= VirtualSMCAPI::addKey(KeyPCPR, vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, new EnergyPackage(fProvider, 0))); keyCount++;
+        suc &= VirtualSMCAPI::addKey(KeyPSTR, vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, new EnergyPackage(fProvider, 0))); keyCount++;
         
         // === Per-CCD temperature keys (SP78 format) ===
         // TCxC/TCxc: individual Core Complex Die temperatures, iterating over ccdCount
         uint8_t count = fProvider->ccdCount > 0 ? fProvider->ccdCount : 1;
         for (size_t ccd = 0; ccd < count; ccd++) {
-            {
-                auto *s = new TempCore(fProvider, 0, ccd);
-                suc &= addKeySafe(KeyTCxC(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-                keyCount++;
-            }
-            {
-                auto *s = new TempCore(fProvider, 0, ccd);
-                suc &= addKeySafe(KeyTCxc(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, s), s);
-                keyCount++;
-            }
+            suc &= VirtualSMCAPI::addKey(KeyTCxC(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(fProvider, 0, ccd))); keyCount++;
+            suc &= VirtualSMCAPI::addKey(KeyTCxc(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(fProvider, 0, ccd))); keyCount++;
         }
         IOLog("SMCAMDProcessor::setupKeysVsmc: registering %zu CCDs\n", size_t(count));
     } else {
