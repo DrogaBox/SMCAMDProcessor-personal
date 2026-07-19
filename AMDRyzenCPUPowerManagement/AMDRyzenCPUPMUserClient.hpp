@@ -47,6 +47,7 @@ protected:
     
     AMDRyzenCPUPowerManagement *fProvider;
     void *token;
+    task_t fOwningTask;
     
     bool hasPrivilege(uint32_t selector);
     

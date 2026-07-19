@@ -20,7 +20,7 @@ bool AMDRyzenCPUPMUserClient::initWithTask(task_t owningTask,
     }
     
     token = securityToken;
-    clientAuthorizedByUser = false;
+    fOwningTask = owningTask;
     
     proc_t proc = (proc_t)get_bsdtask_info(owningTask);
     if (!proc) return false;
@@ -74,7 +74,7 @@ bool AMDRyzenCPUPMUserClient::hasPrivilege(uint32_t selector){
     // infrequently (user-initiated control changes). It prevents a scenario
     // where a process opens a UserClient connection as root, then drops
     // privileges — the cached flag would incorrectly remain true.
-    proc_t proc = (proc_t)get_bsdtask_info(getTask());
+    proc_t proc = (proc_t)get_bsdtask_info(fOwningTask);
     if (proc && (proc_suser(proc) == 0 || kauth_cred_getuid(proc_ucred(proc)) == 0))
         return true;
     
@@ -215,26 +215,14 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
                 return kIOReturnBadArgument;
             }
 
+            uint32_t copyLen = (maxLen < requiredSize) ? maxLen : requiredSize;
             float *dataOut = (float*) arguments->structureOutput;
             
-            if (maxLen >= sizeof(float)) {
-                dataOut[0] = (float)provider->uniPackagePowerW;
-            }
-            if (maxLen >= 2 * sizeof(float)) {
-                dataOut[1] = provider->PACKAGE_TEMPERATURE_perPackage[0];
-            }
-            if (maxLen >= 3 * sizeof(float)) {
-                dataOut[2] = provider->PStateCtl;
-            }
+            if (copyLen >= 1 * sizeof(float)) dataOut[0] = (float)provider->uniPackagePowerW;
+            if (copyLen >= 2 * sizeof(float)) dataOut[1] = provider->PACKAGE_TEMPERATURE_perPackage[0];
+            if (copyLen >= 3 * sizeof(float)) dataOut[2] = (float)provider->PStateCtl;
             
-            uint32_t copyCount = 0;
-            if (maxLen > 3 * sizeof(float)) {
-                copyCount = (maxLen - 3 * sizeof(float)) / sizeof(float);
-            }
-            if (copyCount > numPhyCores) {
-                copyCount = numPhyCores;
-            }
-            
+            uint32_t copyCount = (copyLen > 3 * sizeof(float)) ? (copyLen - 3 * sizeof(float)) / sizeof(float) : 0;
             for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i + 3] = provider->effFreq_perCore[i];
             }
@@ -526,7 +514,7 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             }
             
             char *dataOut = (char*) arguments->structureOutput;
-            memset(dataOut, 0, maxLen);
+            memset(dataOut, 0, copyLen);
             
             if (copyLen > 0) {
                 size_t vendorCopy = copyLen < 64 ? copyLen : 64;
@@ -612,9 +600,11 @@ IOReturn AMDRyzenCPUPMUserClient::externalMethod(uint32_t selector, IOExternalMe
             float *dataOut = (float*) arguments->structureOutput;
             uint32_t copyCount = (maxLen / sizeof(float) < ccdCount) ? (maxLen / sizeof(float)) : ccdCount;
             
+            if (provider->controlLock) IOLockLock(provider->controlLock);
             for(uint32_t i = 0; i < copyCount; i++){
                 dataOut[i] = provider->ccdTemperatures[i];
             }
+            if (provider->controlLock) IOLockUnlock(provider->controlLock);
             
             break;
         }
