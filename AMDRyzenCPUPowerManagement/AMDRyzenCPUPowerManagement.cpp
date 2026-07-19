@@ -907,7 +907,6 @@ void AMDRyzenCPUPowerManagement::updateInstructionDelta(uint8_t cpu_num){
     uint64_t insCount;
     
     if(!read_msr(kMSR_PERF_IRPC, &insCount)) {
-        IOLog("AMDRyzenCPUPowerManagement::updateInstructionDelta failed to read MSR 0xC00000E9\n");
         return;
     }
     
@@ -960,29 +959,6 @@ void AMDRyzenCPUPowerManagement::applyEPPControl() {
     // via a per-profile capability flag.
     IOLog("AMDRyzenCPUPowerManagement::applyEPPControl ignored - CPPC writes disabled in baseline\n");
     return;
-
-    IOLockLock(rendezvousLock);
-    mp_rendezvous(nullptr, [](void *obj) {
-        auto provider = static_cast<AMDRyzenCPUPowerManagement*>(obj);
-
-        uint64_t cppcCap = 0;
-        if (provider->read_msr(kMSR_AMD_CPPC_CAP1, &cppcCap)) {
-            uint8_t highestPerf = cppcCap & 0xFF;
-            uint8_t lowestPerf = (cppcCap >> 24) & 0xFF;
-
-            uint64_t reqVal = 0;
-            reqVal |= (uint64_t)lowestPerf;
-            reqVal |= ((uint64_t)highestPerf) << 8;
-            reqVal |= 0ULL << 16; // Desired Performance = 0 (autonomous)
-
-            uint8_t effectiveEPP = provider->cppcThrottled ? 0xFF : provider->cppcEPPValue;
-            reqVal |= ((uint64_t)effectiveEPP) << 24;
-
-            provider->write_msr(kMSR_AMD_CPPC_ENABLE, 1);
-            provider->write_msr(kMSR_AMD_CPPC_REQ, reqVal);
-        }
-    }, nullptr, this);
-    IOLockUnlock(rendezvousLock);
 }
 
 void AMDRyzenCPUPowerManagement::setCPBState(bool enabled){
@@ -1223,6 +1199,7 @@ void AMDRyzenCPUPowerManagement::updatePackageTemp(){
     for (int i = 0; i < HF_TEMP_SAMPLE_LEN; i++) sum += tempSamples[i];
     float currentTemp = sum * HF_TEMP_SAMPLE_LENREP;
     PACKAGE_TEMPERATURE_perPackage[0] = currentTemp;
+    __sync_synchronize();
     
     // Dynamic CPPC Throttling Logic
     if (cppcActiveMode) {
@@ -1259,6 +1236,7 @@ void AMDRyzenCPUPowerManagement::updatePackageEnergy(){
     if (seconds <= 0.0) { pwrLastTSC = ctsc; return; }
     double e = (pwrEnergyUnit * (double)energyDelta) / seconds;
     uniPackagePowerW = e;
+    __sync_synchronize();
 
 
     lastUpdateEnergyValue = energyValue;
@@ -1467,8 +1445,10 @@ uint32_t AMDRyzenCPUPowerManagement::getPMPStateLimit(){
 }
 
 void AMDRyzenCPUPowerManagement::setPMPStateLimit(uint32_t state){
-    pmRyzen_pstatelimit = min(2, state);
-    if(state > 0){
+    if (!this) return;
+    uint32_t safeState = min(2U, state);
+    pmRyzen_pstatelimit = safeState;
+    if(safeState > 0){
         pmRyzen_PState_reset();
     }
 }
