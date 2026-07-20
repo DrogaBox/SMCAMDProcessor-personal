@@ -379,7 +379,7 @@ public:
         0x1A, 0x00, 0xFF, "Zen 5", 5,
         true, false,
         false, false,
-        false                   // temperatureOffset49: unverified, disabled pending PPR validation
+        true                    // temperatureOffset49: verified working on 9950X3D
     };
 
     // Feature matrix - controlled per-profile
