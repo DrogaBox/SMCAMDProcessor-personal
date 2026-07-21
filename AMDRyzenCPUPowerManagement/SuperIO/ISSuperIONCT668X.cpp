@@ -151,6 +151,11 @@ void ISSuperIONCT668X::updateFanRPMS(){
     for (int i = 0; i < activeFansOnSystem; i++) {
         int v = (int)readWord(FAN_RPM_REGS(i));
         fanRPMs[i] = v;
+        
+        // Track peak RPM for PWM estimation in Auto mode
+        if ((uint32_t)v > fanPeakRPMs[i]) {
+            fanPeakRPMs[i] = (uint16_t)v;
+        }
 //        IOLog("fan %d: %d\n", i, (int)v);
     }
 }
@@ -159,7 +164,17 @@ void ISSuperIONCT668X::updateFanControl(){
     for (int i = 0; i < activeFansOnSystem; i++) {
         uint8_t mode = readByte(FAN_PWMCMD_REGS(i));
         fanControlMode[i] = (mode == 0) ? 1 : 0;
+        // FAN_PWM_REGS: actual PWM duty cycle register.
+        // In Auto mode this register should be updated by the EC firmware,
+        // but some firmware versions don't update it -> read 0.
         fanThrottles[i] = readByte(FAN_PWM_REGS(i));
+        
+        // Fallback: if register reports 0 but fan is spinning,
+        // estimate throttle from RPM/peakRPM ratio.
+        if (fanThrottles[i] == 0 && fanRPMs[i] > 100 && fanPeakRPMs[i] > 200) {
+            uint32_t est = (uint32_t)((uint64_t)fanRPMs[i] * 255 / fanPeakRPMs[i]);
+            fanThrottles[i] = est > 255 ? 255 : (uint8_t)est;
+        }
     }
 }
 

@@ -65,6 +65,7 @@ public:
     int fanRPMs[NCT668X_MAX_NUMFAN];
     uint8_t fanThrottles[NCT668X_MAX_NUMFAN];
     uint8_t fanControlMode[NCT668X_MAX_NUMFAN];
+    uint16_t fanPeakRPMs[NCT668X_MAX_NUMFAN]{};
     
     int activeFansOnSystem = 0;
     
