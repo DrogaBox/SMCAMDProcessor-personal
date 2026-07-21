@@ -175,7 +175,10 @@ bool ISSuperIOIT86XXEFamily::getFanAutoControlMode(int fan)
 {
     if (fan < 0 || fan >= activeFansOnSystem)
         return 0;
-    return fanControlMode[fan] != 0;
+    // kFAN_PWM_CTRL_REGS[fan] (0x15-0x17): bit 7 = SmartGuardian mode
+    // In SmartGuardian mode: fan is controlled by SmartGuardian firmware (Auto).
+    // In Manual mode (bit 7 = 0): fan is overridden by software.
+    return (fanControlMode[fan] & 0x80) != 0;
 }
 
 uint8_t ISSuperIOIT86XXEFamily::getFanThrottle(int fan)
@@ -200,6 +203,11 @@ void ISSuperIOIT86XXEFamily::updateFanRPMS()
         {
             fanRPMs[i] = 0;
         }
+        
+        // Track peak RPM for PWM estimation in Auto mode
+        if ((uint32_t)fanRPMs[i] > fanPeakRPMs[i]) {
+            fanPeakRPMs[i] = (uint16_t)fanRPMs[i];
+        }
     }
 }
 
@@ -209,8 +217,20 @@ void ISSuperIOIT86XXEFamily::updateFanControl()
     {
         // kFAN_PWM_CTRL_REGS: contains the PWM control mode byte (bit 7 = SmartGuardian/auto)
         fanControlMode[i] = readByte(kFAN_PWM_CTRL_REGS[i]);
-        // kFAN_PWM_CTRL_EXT_REGS: contains the actual PWM duty cycle / throttle value
+        // kFAN_PWM_CTRL_EXT_REGS: contains the PWM duty cycle register.
+        // In manual mode (bit 7 clear): this register holds the user-set duty cycle.
+        // In SmartGuardian mode (bit 7 set): this register may not reflect the
+        // actual PWM being output — SmartGuardian controls the fan independently.
         fanThrottles[i]   = readByte(kFAN_PWM_CTRL_EXT_REGS[i]);
+        
+        // Fallback: if the register reports 0 but the fan is clearly spinning
+        // (RPM > 100), the chip is in SmartGuardian mode and doesn't update
+        // the ext register. Estimate the throttle from RPM/peakRPM ratio
+        // so the UI slider shows the real fan speed in Auto mode.
+        if (fanThrottles[i] == 0 && fanRPMs[i] > 100 && fanPeakRPMs[i] > 200) {
+            uint32_t est = (uint32_t)((uint64_t)fanRPMs[i] * 255 / fanPeakRPMs[i]);
+            fanThrottles[i] = est > 255 ? 255 : (uint8_t)est;
+        }
     }
 }
 

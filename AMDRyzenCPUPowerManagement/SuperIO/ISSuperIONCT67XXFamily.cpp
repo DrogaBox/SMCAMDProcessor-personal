@@ -186,6 +186,11 @@ void ISSuperIONCT67XXFamily::updateFanRPMS(){
     for (int i = 0; i < activeFansOnSystem; i++) {
         int v = (int)readWord(kFAN_RPM_REGS[i]);
         fanRPMs[i] = v;
+        
+        // Track peak RPM for PWM estimation in Auto mode
+        if ((uint32_t)v > fanPeakRPMs[i]) {
+            fanPeakRPMs[i] = (uint16_t)v;
+        }
         //IOLog("fan %d: %d\n", i, (int)v);
     }
 }
@@ -193,10 +198,18 @@ void ISSuperIONCT67XXFamily::updateFanRPMS(){
 void ISSuperIONCT67XXFamily::updateFanControl(){
     for (int i = 0; i < activeFansOnSystem; i++) {
         fanControlMode[i] = readByte(kFAN_CTRL_MODE_REGS[i]);
-//        IOLog("fan ctrl %d: %d\n", i, (int)v);
         
+        // kFAN_PWMCMD_REGS contains the manual PWM duty cycle.
+        // In SmartFan mode (auto), the chip may not update this register
+        // with the actual duty cycle being applied.
         fanThrottles[i] = readByte(kFAN_PWMCMD_REGS[i]);
-//        IOLog("fan pwm %d: %d\n", i, (int)v);
+        
+        // Fallback: if the register reports 0 but fan is spinning,
+        // estimate throttle from RPM/peakRPM ratio.
+        if (fanThrottles[i] == 0 && fanRPMs[i] > 100 && fanPeakRPMs[i] > 200) {
+            uint32_t est = (uint32_t)((uint64_t)fanRPMs[i] * 255 / fanPeakRPMs[i]);
+            fanThrottles[i] = est > 255 ? 255 : (uint8_t)est;
+        }
     }
 }
 
