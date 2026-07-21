@@ -529,8 +529,9 @@ final class TelemetryModel: ObservableObject {
         cachedNumPhysicalCores = 0
         cachedNumLogicalCores = 0
         let initRes = ProcessorModel.shared.kernelGetUInt64(count: 2, selector: 90)
-        guard initRes.count > 0 && initRes[0] == 1 else { return }
+        guard initRes.count > 0 else { return }
         smcDriverLoaded = true
+
 
         let cppcRes = ProcessorModel.shared.getCPPCScore()
         cppcSupported = cppcRes.supported
