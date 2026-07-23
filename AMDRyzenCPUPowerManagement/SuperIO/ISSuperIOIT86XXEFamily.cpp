@@ -238,7 +238,11 @@ void ISSuperIOIT86XXEFamily::overrideFanControl(int fan, uint8_t thr)
 {
     if (fan < 0 || fan >= activeFansOnSystem)
         return;
-    writeByte(kFAN_MAIN_CTRL_REG, (readByte(kFAN_MAIN_CTRL_REG) | (1 << fan)));
+    if (fan < 3) {
+        writeByte(kFAN_MAIN_CTRL_REG, (readByte(kFAN_MAIN_CTRL_REG) | (1 << fan)));
+    } else {
+        writeByte(0x14, (readByte(0x14) | (1 << (fan - 3))));
+    }
     writeByte(kFAN_PWM_CTRL_REGS[fan], (fanDefaultControlMode[fan] & 0x7F));
     writeByte(kFAN_PWM_CTRL_EXT_REGS[fan], thr);
 }
@@ -248,7 +252,11 @@ void ISSuperIOIT86XXEFamily::setDefaultFanControl(int fan)
     if (fan < 0 || fan >= activeFansOnSystem)
         return;
     // Clear override bit (restore BIOS automatic control)
-    writeByte(kFAN_MAIN_CTRL_REG, readByte(kFAN_MAIN_CTRL_REG) & ~(1 << fan));
+    if (fan < 3) {
+        writeByte(kFAN_MAIN_CTRL_REG, readByte(kFAN_MAIN_CTRL_REG) & ~(1 << fan));
+    } else {
+        writeByte(0x14, readByte(0x14) & ~(1 << (fan - 3)));
+    }
     writeByte(kFAN_PWM_CTRL_REGS[fan], fanDefaultControlMode[fan]);
     writeByte(kFAN_PWM_CTRL_EXT_REGS[fan], fanDefaultExtControlMode[fan]);
 }
