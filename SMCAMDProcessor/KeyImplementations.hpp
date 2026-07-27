@@ -32,4 +32,21 @@ class TempCore    : public AMDSupportVsmcValue { using AMDSupportVsmcValue::AMDS
 class EnergyPackage: public AMDSupportVsmcValue
 { using AMDSupportVsmcValue::AMDSupportVsmcValue; protected: SMC_RESULT readAccess() override; };
 
+// === GPU sensor value classes ===
+// RGPUTempValue: reads GPU temperature via the engine provider's AMDGPUDevice.
+// Uses the GPU index (package parameter) to select which GPU.
+class RGPUTempValue : public AMDSupportVsmcValue {
+    using AMDSupportVsmcValue::AMDSupportVsmcValue;
+protected:
+    SMC_RESULT readAccess() override;
+};
+
+// RGPUPowerValue: reads GPU power consumption in watts.
+// Only valid if the GPU supports power reading (gpuSupportsPower).
+class RGPUPowerValue : public AMDSupportVsmcValue {
+    using AMDSupportVsmcValue::AMDSupportVsmcValue;
+protected:
+    SMC_RESULT readAccess() override;
+};
+
 #endif /* KeyImplementations_hpp */

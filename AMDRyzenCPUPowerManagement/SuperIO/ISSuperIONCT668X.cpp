@@ -13,10 +13,8 @@ ISSuperIONCT668X::ISSuperIONCT668X(int psel, uint16_t addr, uint16_t chipIntel){
     
     activeFansOnSystem = NCT668X_MAX_NUMFAN;
     
-    //backup default ctrl mode
-//    for (int i = 0; i < activeFansOnSystem; i++) {
-//        fanDefaultControlMode[i] = readByte(kFAN_CTRL_MODE_REGS[i]);
-//    }
+    // Removed: fanDefaultControlMode backup not needed — control mode is
+    // restored to Auto per-request in setDefaultFanControl().
 }
 
 ISSuperIONCT668X* ISSuperIONCT668X::getDevice(uint16_t *chipIntel){
@@ -81,7 +79,7 @@ ISSuperIONCT668X* ISSuperIONCT668X::getDevice(uint16_t *chipIntel){
     //Now that the present of chip is confirmed, disable IO address space lock.
     uint8_t conf = 0;
     switch (*chipIntel) {
-        //in short these is all of what we currentlt supports.
+        // In short, these are all the chips we currently support.
         case CHIP_NCT6681:
         case CHIP_NCT6683:
             conf = ISLPCPort::readByte(portSel, 0x30);
