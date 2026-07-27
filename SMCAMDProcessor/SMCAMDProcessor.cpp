@@ -39,6 +39,35 @@ bool SMCAMDProcessor::setupKeysVsmc(){
             suc &= VirtualSMCAPI::addKey(KeyTCxc(ccd), vsmcPlugin.data, VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new TempCore(fProvider, 0, ccd))); keyCount++;
         }
         IOLog("SMCAMDProcessor::setupKeysVsmc: registering %zu CCDs\n", size_t(count));
+        
+        // === GPU temperature keys (TGxx SP78 format) ===
+        // Compatible with SMCRadeonSensors for iStat Menus / HWMonitor.
+        uint32_t gpuCountLocal = fProvider->getGPUCount();
+        for (uint32_t i = 0; i < gpuCountLocal && i < MaxGPUIndexCount; i++) {
+            suc &= VirtualSMCAPI::addKey(KeyTGxD(i), vsmcPlugin.data,
+                VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new RGPUTempValue(fProvider, i))); keyCount++;
+            suc &= VirtualSMCAPI::addKey(KeyTGxP(i), vsmcPlugin.data,
+                VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new RGPUTempValue(fProvider, i))); keyCount++;
+            suc &= VirtualSMCAPI::addKey(KeyTGxd(i), vsmcPlugin.data,
+                VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new RGPUTempValue(fProvider, i))); keyCount++;
+            suc &= VirtualSMCAPI::addKey(KeyTGxp(i), vsmcPlugin.data,
+                VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new RGPUTempValue(fProvider, i))); keyCount++;
+            
+            if (fProvider->gpuSupportsPower(i)) {
+                suc &= VirtualSMCAPI::addKey(KeyPGxR(i), vsmcPlugin.data,
+                    VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, new RGPUPowerValue(fProvider, i))); keyCount++;
+                suc &= VirtualSMCAPI::addKey(KeyPGxC(i), vsmcPlugin.data,
+                    VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp96, new RGPUPowerValue(fProvider, i))); keyCount++;
+            }
+        }
+        
+        // TGDD: primary GPU die temperature (legacy compatibility)
+        if (gpuCountLocal > 0) {
+            suc &= VirtualSMCAPI::addKey(KeyTGDD, vsmcPlugin.data,
+                VirtualSMCAPI::valueWithSp(0, SmcKeyTypeSp78, new RGPUTempValue(fProvider, 0))); keyCount++;
+        }
+        
+        IOLog("SMCAMDProcessor::setupKeysVsmc: registering %u GPUs\n", gpuCountLocal);
     } else {
         IOLog("SMCAMDProcessor::setupKeysVsmc: fProvider is null, skipping key registration\n");
     }

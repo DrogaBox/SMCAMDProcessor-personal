@@ -41,3 +41,35 @@ SMC_RESULT EnergyPackage::readAccess(){
     
     return SmcSuccess;
 }
+
+SMC_RESULT RGPUTempValue::readAccess() {
+    if (!provider) return SmcError;
+    
+    UInt16 tempC = 0;
+    IOReturn ret = provider->getGPUTemperature(static_cast<uint32_t>(package), &tempC);
+    if (ret != kIOReturnSuccess) {
+        return SmcError;
+    }
+    
+    __sync_synchronize();
+    uint16_t *ptr = reinterpret_cast<uint16_t *>(data);
+    *ptr = VirtualSMCAPI::encodeSp(type, (double)tempC);
+    
+    return SmcSuccess;
+}
+
+SMC_RESULT RGPUPowerValue::readAccess() {
+    if (!provider) return SmcError;
+    
+    float powerW = 0.0f;
+    IOReturn ret = provider->getGPUPower(static_cast<uint32_t>(package), &powerW);
+    if (ret != kIOReturnSuccess) {
+        return SmcError;
+    }
+    
+    __sync_synchronize();
+    uint16_t *ptr = reinterpret_cast<uint16_t *>(data);
+    *ptr = VirtualSMCAPI::encodeSp(type, (double)powerW);
+    
+    return SmcSuccess;
+}

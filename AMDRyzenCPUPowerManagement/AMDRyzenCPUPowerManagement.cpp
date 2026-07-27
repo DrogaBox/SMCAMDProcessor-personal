@@ -55,14 +55,14 @@ bool AMDRyzenCPUPowerManagement::init(OSDictionary *dictionary){
     
     pmRyzen_symtable_ready = 0;
     bool resolved = false;
+    find_mach_header_addr(getKernelVersion() >= KernelVersion::BigSur);
     for (int symbolRetries = 0; symbolRetries < 50; symbolRetries++) {
-        find_mach_header_addr(getKernelVersion() >= KernelVersion::BigSur);
         pmRyzen_symtable._wrmsr_carefully = lookup_symbol("_wrmsr_carefully");
         if (pmRyzen_symtable._wrmsr_carefully) {
             resolved = true;
             break;
         }
-        IOSleep(10);
+        if (symbolRetries < 49) IOSleep(10);
     }
     if (!resolved) {
         OSIncrementAtomic((SInt32*)&kextloadAlerts);
@@ -98,6 +98,16 @@ void AMDRyzenCPUPowerManagement::free(){
     if (rendezvousLock)  { IOLockFree(rendezvousLock);        rendezvousLock = nullptr; }
     if (controlLock)     { IOLockFree(controlLock);           controlLock = nullptr; }
     if (fIOPCIDevice)    { fIOPCIDevice->release();           fIOPCIDevice = nullptr; }
+
+    // GPU device cleanup
+    for (uint32_t i = 0; i < gpuCount; i++) {
+        if (gpuDevices[i]) {
+            gpuDevices[i]->release();
+            gpuDevices[i] = nullptr;
+        }
+    }
+    gpuCount = 0;
+
     IOService::free();
 }
 
@@ -107,7 +117,7 @@ void AMDRyzenCPUPowerManagement::free(){
 bool AMDRyzenCPUPowerManagement::getPCIService(){
     OSDictionary *matching_dict = serviceMatching("IOPCIDevice");
     if(!matching_dict){
-        IOLog("AMDRyzenCPUPowerManagement::getPCIService: serviceMatching unable to generate matching dictonary.\n");
+        IOLog("AMDRyzenCPUPowerManagement::getPCIService: serviceMatching unable to generate matching dictionary.\n");
         return false;
     }
     
@@ -145,6 +155,62 @@ bool AMDRyzenCPUPowerManagement::getPCIService(){
     fIOPCIDevice->retain();
     
     return true;
+}
+
+
+#pragma mark - GPU Enumeration
+
+void AMDRyzenCPUPowerManagement::enumerateGPUs() {
+    OSDictionary *matching_dict = IOService::serviceMatching("IOPCIDevice");
+    if (!matching_dict) {
+        IOLog("AMDRyzenCPUPowerManagement::enumerateGPUs: serviceMatching failed\n");
+        return;
+    }
+
+    waitForMatchingService(matching_dict);
+
+    OSIterator *service_iter = IOService::getMatchingServices(matching_dict);
+    matching_dict->release();
+
+    if (!service_iter) {
+        IOLog("AMDRyzenCPUPowerManagement::enumerateGPUs: no PCI devices found\n");
+        return;
+    }
+
+    while (OSObject *obj = service_iter->getNextObject()) {
+        IOPCIDevice *device = OSDynamicCast(IOPCIDevice, obj);
+        if (!device) continue;
+
+        uint16_t vendorID = device->configRead16(kIOPCIConfigVendorID);
+        if (vendorID != 0x1002) continue;  // AMD/ATI vendor
+
+        uint32_t fullClass = device->configRead32(kIOPCIConfigClassCode);
+        uint32_t baseClass = (fullClass >> 24) & 0xFF;
+        uint32_t subClass  = (fullClass >> 16) & 0xFF;
+
+        // Base Class 0x03 = Display Controller
+        // Subclasses: 0x00=VGA, 0x01=XGA, 0x02=3D
+        if (baseClass != 0x03) {
+            continue;
+        }
+
+        uint16_t devID = device->configRead16(kIOPCIConfigDeviceID);
+
+        auto *gpu = new AMDGPUDevice{};
+        // Max 16 GPUs (sufficient for workstation configs; expand if needed)
+        if (gpu && gpu->initFromDevice(device) && gpuCount < 16) {
+            gpuDevices[gpuCount] = gpu;
+            gpu->retain();
+            gpuCount++;
+            IOLog("AMDRyzenCPUPowerManagement: Found AMD GPU #%u (device 0x%04X, sub 0x%02X)\n",
+                  gpuCount, devID, subClass);
+        } else {
+            OSSafeReleaseNULL(gpu);
+        }
+    }
+
+    service_iter->release();
+    IOLog("AMDRyzenCPUPowerManagement: Total AMD GPU(s) found: %u\n", gpuCount);
 }
 
 
@@ -265,6 +331,9 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
         //Read stats from package.
         provider->updatePackageTemp();
         provider->updatePackageEnergy();
+        
+        // Read Package C6 Residency MSR (cumulative microseconds)
+        provider->read_msr(kMSR_PKG_C6_RES, &provider->packageC6Residency);
 
         IOLockUnlock(provider->rendezvousLock);
 
@@ -301,7 +370,23 @@ void AMDRyzenCPUPowerManagement::initWorkLoop() {
         }
         
         provider->evaluateFanCurves();
-        
+
+        // GPU temperature and power update
+        for (uint32_t i = 0; i < provider->gpuCount; i++) {
+            if (provider->gpuDevices[i]) {
+                provider->gpuDevices[i]->getTemperature(&provider->gpuTemperatures[i]);
+                if (provider->gpuDevices[i]->supportsPower()) {
+                    provider->gpuDevices[i]->getPower(&provider->gpuPowers[i]);
+                }
+            }
+        }
+
+        // Update gpuTempC for fan curve source sensor from first GPU
+        if (provider->gpuCount > 0) {
+            // Convert UInt16 temperature (degrees C) to float
+            provider->gpuTempC = (float)provider->gpuTemperatures[0];
+        }
+
         sender->setTimeoutMS(HF_TEMP_SAMPLE_PERIOD);
     });
     
@@ -507,6 +592,9 @@ bool AMDRyzenCPUPowerManagement::start(IOService *provider){
         IOLog("AMDRyzenCPUPowerManagement::start no PCI support found, failing...\n");
         return false;
     }
+
+    // Enumerate AMD GPUs
+    enumerateGPUs();
     
     // Probe for available CCDs by reading CCD temperature registers.
     // A CCD is considered present if the valid bit (bit 11) is set.
@@ -633,7 +721,16 @@ void AMDRyzenCPUPowerManagement::stop(IOService *provider){
     // 5. release() of fIOPCIDevice and null
     if (fIOPCIDevice) { fIOPCIDevice->release(); fIOPCIDevice = nullptr; }
 
-    // 6. SuperIO defaults + delete and workloop release before super::stop()
+    // 6. GPU devices cleanup before superIO and workloop
+    for (uint32_t i = 0; i < gpuCount; i++) {
+        if (gpuDevices[i]) {
+            gpuDevices[i]->release();
+            gpuDevices[i] = nullptr;
+        }
+    }
+    gpuCount = 0;
+
+    // 7. SuperIO defaults + delete and workloop release before super::stop()
     if (superIOLock) {
         IOLockLock(superIOLock);
         if (superIO) {
@@ -1543,6 +1640,30 @@ void AMDRyzenCPUPowerManagement::evaluateFanCurves() {
         lastPWMUpdateTime[fanIdx] = now;
     }
     IOLockUnlock(superIOLock);
+}
+
+
+#pragma mark - GPU Public Accessors
+
+IOReturn AMDRyzenCPUPowerManagement::getGPUTemperature(uint32_t index, UInt16 *data) {
+    if (index >= gpuCount || !gpuDevices[index]) {
+        return kIOReturnNoDevice;
+    }
+    return gpuDevices[index]->getTemperature(data);
+}
+
+IOReturn AMDRyzenCPUPowerManagement::getGPUPower(uint32_t index, float *data) {
+    if (index >= gpuCount || !gpuDevices[index]) {
+        return kIOReturnNoDevice;
+    }
+    return gpuDevices[index]->getPower(data);
+}
+
+bool AMDRyzenCPUPowerManagement::gpuSupportsPower(uint32_t index) {
+    if (index >= gpuCount || !gpuDevices[index]) {
+        return false;
+    }
+    return gpuDevices[index]->supportsPower();
 }
 
 EXPORT extern "C" kern_return_t amdryzencpupm_kern_start(kmod_info_t *, void *) {

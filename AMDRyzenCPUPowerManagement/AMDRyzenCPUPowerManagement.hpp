@@ -29,6 +29,7 @@
 #include "SuperIO/ISSuperIONCT668X.hpp"
 #include "SuperIO/ISSuperIONCT67XXFamily.hpp"
 #include "SuperIO/ISSuperIOIT86XXEFamily.hpp"
+#include "AMDGPU.hpp"
 
 #include "Headers/pmRyzenSymbolTable.h"
 
@@ -152,6 +153,7 @@ public:
     static constexpr uint32_t kMSR_PSTATE_STAT = 0xC0010063;
     static constexpr uint32_t kMSR_PSTATE_CTL = 0xC0010062;
     static constexpr uint32_t kMSR_RAPL_PWR_UNIT = 0xC0010299;
+    static constexpr uint32_t kMSR_PKG_C6_RES = 0xC0010296;
     static constexpr uint32_t kMSR_MPERF = 0x000000E7;
     static constexpr uint32_t kMSR_APERF = 0x000000E8;
     static constexpr uint32_t kMSR_PERF_CTL_0 = 0xC0010000;
@@ -233,6 +235,7 @@ public:
     uint8_t cppcHighestPerf_perCore[CPUInfo::MaxCpus] {};
     bool cppcThrottled {false};
     uint64_t cstateAddrConfig {0};
+    uint64_t packageC6Residency {0};
     
     uint8_t cpuFamily;
     uint8_t cpuModel;
@@ -421,6 +424,17 @@ public:
     static_assert(sizeof(lastPWMUpdateTime) / sizeof(lastPWMUpdateTime[0]) == kMAX_FANS, "fan array size mismatch");
     float gpuTempC;
     float curveSmoothedTemp[MAX_FAN_CURVES];
+
+    // GPU monitoring (added)
+    AMDGPUDevice *gpuDevices[16] {};
+    uint32_t gpuCount {0};
+    UInt16 gpuTemperatures[16] {};
+    float gpuPowers[16] {};
+
+    uint32_t getGPUCount() { return gpuCount; }
+    IOReturn getGPUTemperature(uint32_t index, UInt16 *data);
+    IOReturn getGPUPower(uint32_t index, float *data);
+    bool gpuSupportsPower(uint32_t index);
     
 private:
     IOWorkLoop *workLoop;
@@ -453,6 +467,7 @@ private:
     KernelPatcher *liluKernelPatcher;
     
     bool getPCIService();
+    void enumerateGPUs();
     bool wentToSleep{false};
     /// Set by resumeWorkLoop() on S3 wake. The main timer processes it on its
     /// first tick (workLoop thread) so reinitHwState() never runs on the PM thread.

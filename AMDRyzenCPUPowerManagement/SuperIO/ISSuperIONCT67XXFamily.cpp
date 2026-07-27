@@ -110,7 +110,7 @@ ISSuperIONCT67XXFamily* ISSuperIONCT67XXFamily::getDevice(uint16_t *chipIntel){
     //Now that the present of chip is confirmed, disable IO address space lock.
     uint8_t conf = 0;
     switch (*chipIntel) {
-        //in short these is all of what we currentlt supports.
+        // In short, these are all the chips we currently support.
         case CHIP_NCT6791D:
         case CHIP_NCT6792D:
         case CHIP_NCT6792DA:

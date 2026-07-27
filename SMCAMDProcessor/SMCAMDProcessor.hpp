@@ -40,6 +40,9 @@ class SMCAMDProcessor : public IOService {
     static constexpr size_t MaxIndexCount = sizeof("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ") - 1;
     static constexpr const char *KeyIndexes = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
+    /** GPU key index limit — 16 positions (0-9, A-F) matching SMCRadeonSensors convention. */
+    static constexpr size_t MaxGPUIndexCount = 16;
+    
     
     /**
      *  Supported SMC keys
@@ -92,6 +95,19 @@ class SMCAMDProcessor : public IOService {
     
     static constexpr SMC_KEY KeyTCxC(size_t i) { return SMC_MAKE_IDENTIFIER('T','C',KeyIndexes[i < MaxIndexCount ? i : 0],'C'); }
     static constexpr SMC_KEY KeyTCxc(size_t i) { return SMC_MAKE_IDENTIFIER('T','C',KeyIndexes[i < MaxIndexCount ? i : 0],'c'); }
+    
+    // === GPU temperature keys (TGxx) ===
+    // Follow SMCRadeonSensors convention for iStat Menus / HWMonitor compatibility.
+    // Indices: 0-9, A-F (up to 16 GPUs)
+    static constexpr SMC_KEY KeyTGxD(size_t i) { return SMC_MAKE_IDENTIFIER('T','G',KeyIndexes[i < MaxGPUIndexCount ? i : 0],'D'); }
+    static constexpr SMC_KEY KeyTGxP(size_t i) { return SMC_MAKE_IDENTIFIER('T','G',KeyIndexes[i < MaxGPUIndexCount ? i : 0],'P'); }
+    static constexpr SMC_KEY KeyTGxd(size_t i) { return SMC_MAKE_IDENTIFIER('T','G',KeyIndexes[i < MaxGPUIndexCount ? i : 0],'d'); }
+    static constexpr SMC_KEY KeyTGxp(size_t i) { return SMC_MAKE_IDENTIFIER('T','G',KeyIndexes[i < MaxGPUIndexCount ? i : 0],'p'); }
+    static constexpr SMC_KEY KeyTGDD = SMC_MAKE_IDENTIFIER('T','G','D','D');
+    
+    // === GPU power keys (PGxx) ===
+    static constexpr SMC_KEY KeyPGxR(size_t i) { return SMC_MAKE_IDENTIFIER('P','G',KeyIndexes[i < MaxGPUIndexCount ? i : 0],'R'); }
+    static constexpr SMC_KEY KeyPGxC(size_t i) { return SMC_MAKE_IDENTIFIER('P','G',KeyIndexes[i < MaxGPUIndexCount ? i : 0],'C'); }
     
 public:
     

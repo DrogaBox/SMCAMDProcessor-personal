@@ -321,6 +321,17 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
+		<key>5DA29FE847A3465EB9B827B1674E1690</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.cpp.cpp</string>
+			<key>path</key>
+			<string>AMDGPU.cpp</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
 		<key>5F808680DC9728B64461CD5B</key>
 		<dict>
 			<key>includeInIndex</key>
@@ -582,6 +593,13 @@
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
+		<key>8616D89CDF134B3DB54B6604EE99CBBF</key>
+		<dict>
+			<key>fileRef</key>
+			<string>5DA29FE847A3465EB9B827B1674E1690</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
 		<key>877300E93643ED9A5C3983FF</key>
 		<dict>
 			<key>includeInIndex</key>
@@ -645,6 +663,13 @@
 			<string>Charts</string>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
+		</dict>
+		<key>961FC8C7B1874F2F80E08F97025EF7A3</key>
+		<dict>
+			<key>fileRef</key>
+			<string>AABC370F28FB4D74BC6336314E6050BA</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
 		</dict>
 		<key>9C206E0143DF662573E98952</key>
 		<dict>
@@ -800,6 +825,17 @@
 			<string>AABB001100004001</string>
 			<key>isa</key>
 			<string>PBXBuildFile</string>
+		</dict>
+		<key>AABC370F28FB4D74BC6336314E6050BA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.cpp.h</string>
+			<key>path</key>
+			<string>AMDGPU.hpp</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
 		</dict>
 		<key>ADL05OZTEOA25MKMENL8RCSZ</key>
 		<dict>
@@ -1872,6 +1908,8 @@
 				<string>B57D280B23F66C8E002BC699</string>
 				<string>B57D280723F66C8E002BC699</string>
 				<string>B5810044246D629C00A38AB7</string>
+				<string>8616D89CDF134B3DB54B6604EE99CBBF</string>
+				<string>961FC8C7B1874F2F80E08F97025EF7A3</string>
 			</array>
 			<key>isa</key>
 			<string>PBXSourcesBuildPhase</string>
@@ -1972,6 +2010,8 @@
 				<string>B584F5C9242E2CBE007DEA77</string>
 				<string>B584F5CA242E2CBE007DEA77</string>
 				<string>B57D27FB23F66AE7002BC699</string>
+				<string>5DA29FE847A3465EB9B827B1674E1690</string>
+				<string>AABC370F28FB4D74BC6336314E6050BA</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
